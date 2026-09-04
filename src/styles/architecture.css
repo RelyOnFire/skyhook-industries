@@ -1,0 +1,56 @@
+/* Styles for the public Reference Architecture screening readout. */
+.architecture-readout {
+  margin-top: 4.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #53656d;
+}
+
+.architecture-readout .figure-head {
+  margin-bottom: 1.75rem;
+}
+
+.architecture-readout > .body-copy {
+  max-width: 52rem;
+}
+
+.compact-sequence {
+  margin-top: 2.25rem;
+}
+
+.compact-sequence .sequence-row {
+  grid-template-columns: 4.5rem 11rem 1fr;
+}
+
+.compact-sequence .sequence-row b {
+  font-size: 0.78rem;
+  color: #d9e9ed;
+}
+
+.compact-sequence .sequence-row strong {
+  color: #f5f7f7;
+}
+
+.compact-sequence .sequence-row span {
+  color: #9fadb2;
+}
+
+@media (max-width: 900px) {
+  .compact-sequence .sequence-row {
+    grid-template-columns: 4rem 1fr;
+  }
+
+  .compact-sequence .sequence-row span {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .architecture-readout {
+    margin-top: 3.5rem;
+  }
+
+  .compact-sequence .sequence-row {
+    grid-template-columns: 3.5rem 1fr;
+    gap: 0.7rem;
+  }
+}

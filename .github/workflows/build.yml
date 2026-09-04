@@ -19,5 +19,9 @@ jobs:
           cache-dependency-path: package.json
       - name: Install dependencies
         run: npm install
+      - name: Verify reference architecture model
+        run: |
+          python3 analysis/reference_architecture_v03.py > /tmp/reference_architecture_v03_output.md
+          diff -u analysis/reference_architecture_v03_output.md /tmp/reference_architecture_v03_output.md
       - name: Build site
         run: npm run build
