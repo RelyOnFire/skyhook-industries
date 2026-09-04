@@ -1,16 +1,108 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="Research — Skyhook Industries" description="Research heritage behind rotating momentum-exchange tethers, electrodynamic reboost, tether deployment and orbital transportation.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">Research</p><h1>Build on what has already been learned.</h1><p>Skyhook Industries is not starting from a blank sheet of paper. Space-tether deployment, electrodynamics and momentum exchange have decades of flight and analytical heritage. The job is to distinguish that heritage from the architecture that has not yet been demonstrated.</p></section>
-    <section class="page-section"><div class="grid-3">
-      <article class="card research-card"><span class="number">FLIGHT HERITAGE</span><h3>SEDS</h3><p>NASA's Small Expendable Deployer System missions demonstrated deployment of approximately 20 km tethers in orbit and provided important tether-dynamics data.</p><small>Demonstrated: long-tether deployment and dynamics.</small></article>
-      <article class="card research-card"><span class="number">FLIGHT HERITAGE</span><h3>TSS-1R</h3><p>The Tethered Satellite System Reflight deployed nearly 20 km of conducting tether and measured strong electrodynamic interaction with the ionospheric plasma and geomagnetic field.</p><small>Demonstrated: current collection and electrodynamic effects.</small></article>
-      <article class="card research-card"><span class="number">FLIGHT HERITAGE</span><h3>YES2</h3><p>The Young Engineers' Satellite 2 deployed a roughly 32 km tether and used tether dynamics to release a capsule onto a re-entry trajectory.</p><small>Demonstrated: tether-assisted momentum exchange.</small></article>
-    </div></section>
-    <section class="page-section prose"><p class="eyebrow">Transportation studies</p><h2>HASTOL and momentum-exchange architectures</h2><p>NASA Institute for Advanced Concepts work and Boeing-led HASTOL studies examined hypersonic aircraft rendezvous with rotating orbital tethers, capture dynamics, structural sizing and electrodynamic reboost. These studies are especially relevant because they treated the tether as transportation infrastructure rather than as a small science experiment.</p><p>They should not be presented as proof that Skyhook Industries' present geometry is already solved. Their value is that they expose the coupled engineering problem in enough detail to build from.</p></section>
-    <section class="page-section prose"><p class="eyebrow">Research standard</p><h2>Four kinds of claims.</h2><ul class="list-clean"><li><b>Flight heritage</b><span>Measured or demonstrated in space.</span></li><li><b>Prior research</b><span>Modeled or analyzed in credible aerospace literature.</span></li><li><b>Skyhook design direction</b><span>An architectural choice we are presently exploring.</span></li><li><b>Open target</b><span>A value or feature that still depends on modeling, testing or material performance.</span></li></ul></section>
-    <section class="page-section prose"><p class="eyebrow">Primary starting points</p><h2>Selected literature</h2><ul><li>NASA / Boeing — Hypersonic Airplane Space Tether Orbital Launch (HASTOL), Phase I and Phase II.</li><li>Robert P. Hoyt and Chauncey Uphoff — Cislunar Tether Transport System.</li><li>NASA — Tethers in Space Handbook and electrodynamic tether flight literature.</li><li>SEDS, TSS-1R and YES2 mission publications and post-flight analyses.</li></ul><p>The bibliography will expand alongside the reference architecture, with primary sources preferred over summaries.</p></section>
-  </div>
-</BaseLayout>
+<ProductionLayout title="Research — Skyhook Industries" description="Primary research and flight heritage behind rotating momentum-exchange tethers, electrodynamic reboost, tether deployment and payload capture.">
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">Research record</p>
+    <h1>What flew. What was studied. What remains.</h1>
+    <p>The useful question is not whether “space tethers” exist as an idea. It is which parts of a transportation-scale Skyhook have already been demonstrated, which were analyzed in serious aerospace studies, and which still belong to the engineering program ahead.</p>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">01 / Flight heritage</p>
+      <div>
+        <h2>Tethers have flown in orbit.</h2>
+        <p class="lede">The flight record is real but specific. It demonstrates deployment, dynamics, electrodynamic interaction and tether-assisted momentum exchange—not the complete high-speed capture-and-reuse system proposed here.</p>
+        <div class="fact-table">
+          <div class="fact-row"><b>SEDS-1 / 1993</b><p>NASA’s Small Expendable Deployer System successfully deployed a 20 km tether and used it to deorbit an end mass.</p><small>Flight heritage</small></div>
+          <div class="fact-row"><b>SEDS-2 / 1994</b><p>A second 20 km-class deployment tested controlled tether deployment along the local vertical before the tether was later severed.</p><small>Flight heritage</small></div>
+          <div class="fact-row"><b>TSS-1R / 1996</b><p>The Tethered Satellite System Reflight deployed about 19.7 km of conducting tether and produced high voltage and current through interaction with the ionosphere and geomagnetic field.</p><small>Flight heritage</small></div>
+          <div class="fact-row"><b>YES2 / 2007</b><p>ESA’s Young Engineers’ Satellite 2 deployed roughly 32 km of tether and released a small capsule onto a re-entry trajectory.</p><small>Flight heritage</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">02 / Transportation studies</p>
+      <div>
+        <h2>Researchers studied the machine, not just the tether.</h2>
+        <p class="body-copy">HASTOL examined a hypersonic aircraft rendezvousing with a rotating tether at the edge of the atmosphere. MXER studies treated a momentum-exchange tether as a reusable upper-stage facility and coupled payload capture to electrodynamic reboost. Hoyt and Uphoff developed a separate cislunar tether architecture and formalized damage-tolerant multiline tether structures.</p>
+        <p class="body-copy">These studies are valuable because they expose the coupled problem: orbit, rotation, material strength, capture, payload mass, reboost and facility mass cannot be solved independently. They are not proof that Skyhook Industries’ current ~4,000 km study configuration is already closed.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">03 / Primary sources</p>
+      <div>
+        <h2>Start with the reports.</h2>
+        <p class="lede">The site links directly to primary or institutional sources wherever possible. Each source below is included for a specific reason.</p>
+        <div class="source-list">
+          <a class="source" href="https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf">
+            <span class="source-type">NIAC / Boeing</span><div><h3>Hypersonic Airplane Space Tether Orbital Launch System — HASTOL Phase I</h3><p>Atmospheric rendezvous with a rotating tether, vehicle/tether trades, grapple concepts, tether sizing and materials.</p></div><span class="source-year">1999–2000 ↗</span>
+          </a>
+          <a class="source" href="https://www.niac.usra.edu/files/studies/final_report/391Grant.pdf">
+            <span class="source-type">NIAC / Boeing</span><div><h3>Hypersonic Airplane Space Tether Orbital Launch — HASTOL Phase II</h3><p>Architecture sizing, simulations, airplane trades, tether boost-facility concepts and follow-on recommendations.</p></div><span class="source-year">2001 ↗</span>
+          </a>
+          <a class="source" href="https://ntrs.nasa.gov/citations/20020068839">
+            <span class="source-type">NASA NTRS</span><div><h3>Orbital Propagation of Momentum Exchange Tether Systems</h3><p>Models the MXER facility as a momentum-exchange system that gives Δv to a payload, loses orbital energy, and then reboosts electrodynamically.</p></div><span class="source-year">2002 ↗</span>
+          </a>
+          <a class="source" href="https://ntrs.nasa.gov/citations/20060005548">
+            <span class="source-type">NASA / Lockheed</span><div><h3>Design Concept for a Reusable/Propellantless MXER Tether Space Transportation System</h3><p>Identifies survivable high-strength tether systems and reliable lightweight catch/release mechanisms as major technology areas.</p></div><span class="source-year">2005 ↗</span>
+          </a>
+          <a class="source" href="https://ntrs.nasa.gov/citations/20070013898">
+            <span class="source-type">NASA NTRS</span><div><h3>Electrodynamic Bare Tether Systems as a Thruster for the MXER Project</h3><p>Examines electrodynamic tether design and performance as the recovery/reboost element of a momentum-exchange facility.</p></div><span class="source-year">2006 ↗</span>
+          </a>
+          <a class="source" href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">
+            <span class="source-type">NIAC / AIAA</span><div><h3>Cislunar Tether Transport System — Hoyt & Uphoff</h3><p>A separate two-tether Earth–Moon transportation architecture; also relevant for rotating-tether mechanics and damage-tolerant tether concepts.</p></div><span class="source-year">1999 ↗</span>
+          </a>
+          <a class="source" href="https://ntrs.nasa.gov/api/citations/19980018321/downloads/19980018321.pdf?attachment=true">
+            <span class="source-type">NASA</span><div><h3>Tethers in Space Handbook</h3><p>Flight history, tether dynamics, deployers, electrodynamics, materials and multiline/Hoytether concepts.</p></div><span class="source-year">1997 ↗</span>
+          </a>
+          <a class="source" href="https://spdf.gsfc.nasa.gov/pub/data/tss/tss_docs/TIS_chap1.pdf">
+            <span class="source-type">NASA / GSFC</span><div><h3>Tethered Satellite System flight record</h3><p>Institutional account of major tether flights including TSS-1R’s 19.7 km deployment and electrodynamic observations.</p></div><span class="source-year">Flight record ↗</span>
+          </a>
+          <a class="source" href="https://www.esa.int/Enabling_Support/Space_Engineering_Technology/ESA_Young_Professionals_Satellites/The_YES_and_YES2_Projects_Fuelling_Inspiration_for_YPSat-1">
+            <span class="source-type">ESA</span><div><h3>The YES and YES2 Projects</h3><p>ESA’s account of the 2007 YES2 mission and its approximately 32 km tether deployment.</p></div><span class="source-year">2007 ↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">04 / What is not demonstrated</p>
+      <div>
+        <h2>The missing experiment is the transportation loop.</h2>
+        <p class="lede">No flight program has yet demonstrated the full sequence that matters for a reusable atmospheric-access Skyhook.</p>
+        <div class="hard-list">
+          <div class="hard-row"><b>01</b><span>HIGH-SPEED VEHICLE RENDEZVOUS WITH A ROTATING TETHER TIP</span></div>
+          <div class="hard-row"><b>02</b><span>CAPTURE AND LOAD TRANSFER INTO A TRANSPORTATION-SCALE STRENGTH TETHER</span></div>
+          <div class="hard-row"><b>03</b><span>LARGE MOMENTUM EXCHANGE FOLLOWED BY CONTROLLED PAYLOAD RELEASE</span></div>
+          <div class="hard-row"><b>04</b><span>ORBITAL/ROTATIONAL RECOVERY AND REPEAT OPERATION</span></div>
+        </div>
+        <p class="body-copy">That gap is not an embarrassment to hide in the footer. It is the development program.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">05 / Claim standard</p>
+      <div>
+        <h2>Four labels. No blurred boundaries.</h2>
+        <div class="sequence">
+          <div class="sequence-row"><b>A</b><strong>FLIGHT HERITAGE</strong><span>Measured or demonstrated in space.</span></div>
+          <div class="sequence-row"><b>B</b><strong>PRIOR RESEARCH</strong><span>Modeled or analyzed in credible aerospace literature.</span></div>
+          <div class="sequence-row"><b>C</b><strong>SKYHOOK STUDY</strong><span>A present architectural choice being explored by Skyhook Industries.</span></div>
+          <div class="sequence-row"><b>D</b><strong>OPEN TARGET</strong><span>A number or feature that still depends on modeling, testing or material performance.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</ProductionLayout>
