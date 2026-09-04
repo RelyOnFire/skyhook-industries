@@ -11,6 +11,8 @@ interface Props {
 
 const { title, description, theme = 'dark', noindex = false } = Astro.props;
 const path = Astro.url.pathname;
+const paperPaths = ['/research/', '/about/', '/contact/', '/archive/'];
+const effectiveTheme = theme === 'paper' || paperPaths.includes(path) ? 'paper' : 'dark';
 const nav = [
   ['The System', '/system/'],
   ['Research', '/research/'],
@@ -20,12 +22,12 @@ const nav = [
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
-<html lang="en" data-theme={theme}>
+<html lang="en" data-theme={effectiveTheme}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content={theme === 'paper' ? '#e8e4da' : '#030506'} />
+    <meta name="theme-color" content={effectiveTheme === 'paper' ? '#e8e4da' : '#030506'} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {noindex && <meta name="robots" content="noindex,follow" />}
