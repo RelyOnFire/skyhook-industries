@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import OrbitalGraphic from '../components/OrbitalGraphic.astro';
+---
+<BaseLayout title="Skyhook Industries — Rotating Orbital Tether Systems" description="Skyhook Industries is developing a concept for reusable orbital transportation using a freely orbiting momentum-exchange tether, high-altitude capture, and electrodynamic reboost.">
+  <div class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Rotating orbital tether systems</p>
+        <h1>A reusable transportation system for orbit.</h1>
+        <p class="hero-copy">Skyhook Industries is developing a concept for a <strong>rotating momentum-exchange tether</strong>: a freely orbiting structure designed to rendezvous with a high-altitude vehicle, capture a payload, transfer momentum to it, and release it onto a higher-energy trajectory.</p>
+        <p class="hero-copy">It is not a space elevator. Nothing connects it to the ground.</p>
+        <div class="actions"><a class="button" href="/system/">Explore the system</a><a class="button secondary" href="/research/">Read the research</a></div>
+        <p class="principle">Established physics. Unsolved engineering. Enormous potential.</p>
+      </div>
+      <OrbitalGraphic />
+    </section>
+
+    <section class="section">
+      <div class="section-head"><p class="eyebrow">The operating cycle</p><div><h2>The idea in three steps.</h2><p>The tether does not create energy. It acts as a reusable momentum-transfer machine: exchange momentum quickly with a payload, then rebuild it between missions.</p></div></div>
+      <div class="grid-3">
+        <article class="card"><span class="number">01</span><h3>Rendezvous</h3><p>A launch vehicle or spaceplane climbs onto a precisely timed trajectory. Near the bottom of the tether's rotation, the tip can move substantially slower than the orbital center of mass.</p></article>
+        <article class="card"><span class="number">02</span><h3>Exchange momentum</h3><p>After capture, continued rotation transfers orbital energy and momentum to the payload while the tether system gives up an equal amount.</p></article>
+        <article class="card"><span class="number">03</span><h3>Release and recover</h3><p>The payload is released onto a higher-energy trajectory. The tether then rebuilds the momentum it transferred; electrodynamic reboost is a leading candidate.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="callout"><strong>Nothing connects it to Earth.</strong><div><p>A space elevator extends continuously from the surface. A Skyhook remains entirely in orbit and rotates around its own center of mass while orbiting Earth.</p><p>That distinction changes the structure, materials, rendezvous problem and operational model completely.</p><a class="text-link" href="/system/">How the orbital geometry works →</a></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><p class="eyebrow">Current design direction</p><div><h2>A transportation-scale tether.</h2><p>These are architectural targets, not frozen specifications. The purpose of the reference architecture is to make assumptions visible enough to test and replace.</p></div></div>
+      <div class="spec-grid">
+        <div class="spec"><span>Configuration</span><strong>Freely orbiting, rotating tether</strong></div>
+        <div class="spec"><span>Length target</span><strong>Approximately 4,000 km</strong></div>
+        <div class="spec"><span>Structure</span><strong>Tapered, redundant, sectional</strong></div>
+        <div class="spec"><span>Earth anchor</span><strong>None</strong></div>
+        <div class="spec"><span>Mass target</span><strong>Few-hundred-tonne class*</strong></div>
+        <div class="spec"><span>Capture</span><strong>Moving-tip rendezvous</strong></div>
+        <div class="spec"><span>Recovery</span><strong>Electrodynamic reboost candidate</strong></div>
+        <div class="spec"><span>Counterweight</span><strong>No multi-million-ton ballast assumption</strong></div>
+      </div>
+      <p class="principle">* Not yet a validated mass estimate. Material performance is a gating problem.</p>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><p class="eyebrow">Flight heritage</p><div><h2>Space tethers are not purely theoretical.</h2><p>Long tethers have flown. SEDS, TSS-1R and YES2 demonstrated deployment, dynamics, electrodynamic effects and momentum exchange. None demonstrated the complete transportation architecture proposed here.</p><a class="text-link" href="/research/">What has flown, what has been modeled, and what remains →</a></div></div>
+    </section>
+  </div>
+</BaseLayout>
