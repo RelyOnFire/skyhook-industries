@@ -6,8 +6,10 @@ Public website for **Skyhook Industries**, an independent engineering project in
 
 - Astro
 - Static output
-- Cloudflare Pages (planned production hosting)
+- Cloudflare Workers with Static Assets for deployment
 - GitHub for version control and technical documentation
+
+Production deployments are built from the `main` branch with `npm run build` and deployed from `dist` through Wrangler.
 
 ## Local development
 
