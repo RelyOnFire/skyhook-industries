@@ -1,51 +1,110 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import OrbitalGraphic from '../components/OrbitalGraphic.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="Skyhook Industries — Rotating Orbital Tether Systems" description="Skyhook Industries is developing a concept for reusable orbital transportation using a freely orbiting momentum-exchange tether, high-altitude capture, and electrodynamic reboost.">
-  <div class="shell">
-    <section class="hero">
+<ProductionLayout title="Skyhook Industries — Rotating Orbital Transportation" description="Skyhook Industries is developing a rotating orbital tether concept for reusable momentum-exchange transportation, high-altitude payload capture, and electrodynamic reboost.">
+  <section class="hero-orbit">
+    <div class="hero-earth"></div>
+    <div class="hero-tether"><i></i><i></i><i></i></div>
+    <div class="hero-note n1">STUDY LENGTH<br />~4,000 km</div>
+    <div class="hero-note n2">CENTER OF MASS<br />ORBITAL MOTION + ROTATION</div>
+    <div class="hero-note n3">LOWER TIP<br />RENDEZVOUS END</div>
+    <div class="hero-copy">
+      <p class="eyebrow">Rotating orbital transportation</p>
+      <h1>Catch the payload. Swing it higher.</h1>
+      <p>A Skyhook is a tether thousands of kilometres long, rotating freely around Earth. Once per rotation, its lower end sweeps through a rendezvous point above the atmosphere. A vehicle meets it there. The tether takes the payload, carries it upward, and releases it with more orbital energy than the vehicle could have reached alone.</p>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="chapter-head">
+      <p class="chapter-label">01 / How it works</p>
       <div>
-        <p class="eyebrow">Rotating orbital tether systems</p>
-        <h1>A reusable transportation system for orbit.</h1>
-        <p class="hero-copy">Skyhook Industries is developing a concept for a <strong>rotating momentum-exchange tether</strong>: a freely orbiting structure designed to rendezvous with a high-altitude vehicle, capture a payload, transfer momentum to it, and release it onto a higher-energy trajectory.</p>
-        <p class="hero-copy">It is not a space elevator. Nothing connects it to the ground.</p>
-        <div class="actions"><a class="button" href="/system/">Explore the system</a><a class="button secondary" href="/research/">Read the research</a></div>
-        <p class="principle">Established physics. Unsolved engineering. Enormous potential.</p>
+        <h2>Two motions create the handoff.</h2>
+        <p class="lede">The whole structure circles Earth while the tether turns around its own center of mass. Near the bottom of the rotation, the tip’s rotational velocity opposes part of its orbital velocity. For a brief part of every cycle, the lower end becomes reachable from below.</p>
       </div>
-      <OrbitalGraphic />
-    </section>
+    </div>
+    <div class="mechanism">
+      <div class="figure">
+        <div class="figure-head"><span>Fig. 01 / Velocity geometry</span><span>Concept — not to scale</span></div>
+        <svg viewBox="0 0 560 470" role="img" aria-label="Diagram of Earth, a rotating tether, and the lower-tip rendezvous geometry">
+          <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d9e9ed"/></marker></defs>
+          <circle cx="280" cy="385" r="160" fill="#0b1a23" stroke="#284554"/>
+          <ellipse cx="280" cy="242" rx="217" ry="88" fill="none" stroke="#455860" stroke-dasharray="6 8"/>
+          <g transform="rotate(-28 282 205)"><line x1="151" y1="334" x2="434" y2="72" stroke="#eff5f6" stroke-width="4"/><circle cx="282" cy="205" r="8" fill="#f5f7f7"/><circle cx="151" cy="334" r="6" fill="#d8e9ed"/></g>
+          <path d="M132 320 C97 306 79 283 68 257" fill="none" stroke="#d9e9ed" marker-end="url(#arrow)"/>
+          <path d="M388 114 C420 99 442 80 455 54" fill="none" stroke="#d9e9ed" marker-end="url(#arrow)"/>
+          <text x="39" y="240" fill="#9dafb6" font-family="monospace" font-size="12">LOWER TIP</text><text x="397" y="41" fill="#9dafb6" font-family="monospace" font-size="12">ROTATION</text><text x="297" y="196" fill="#9dafb6" font-family="monospace" font-size="12">COM</text>
+        </svg>
+      </div>
+      <div class="body-copy">
+        <p>The lower tip is not stationary. It is still moving very quickly relative to Earth. The objective is to make it move substantially slower than an ordinary object at the same orbital altitude at the instant the vehicle arrives.</p>
+        <p>The vehicle does not climb all the way to its final orbit. It climbs to the handoff. The tether does the next part of the acceleration by giving up some of its own orbital momentum.</p>
+        <a class="cta" href="/system/">See the full system →</a>
+      </div>
+    </div>
+    <div class="sequence">
+      <div class="sequence-row"><b>01</b><strong>APPROACH</strong><span>The launch vehicle climbs onto a precisely timed intercept.</span></div>
+      <div class="sequence-row"><b>02</b><strong>CAPTURE</strong><span>The lower end takes the payload and transfers load into the tether.</span></div>
+      <div class="sequence-row"><b>03</b><strong>SWING</strong><span>Continued rotation carries the payload upward and increases its orbital energy.</span></div>
+      <div class="sequence-row"><b>04</b><strong>RELEASE</strong><span>The payload departs on a higher-energy trajectory. The tether begins recovery.</span></div>
+    </div>
+  </section>
 
-    <section class="section">
-      <div class="section-head"><p class="eyebrow">The operating cycle</p><div><h2>The idea in three steps.</h2><p>The tether does not create energy. It acts as a reusable momentum-transfer machine: exchange momentum quickly with a payload, then rebuild it between missions.</p></div></div>
-      <div class="grid-3">
-        <article class="card"><span class="number">01</span><h3>Rendezvous</h3><p>A launch vehicle or spaceplane climbs onto a precisely timed trajectory. Near the bottom of the tether's rotation, the tip can move substantially slower than the orbital center of mass.</p></article>
-        <article class="card"><span class="number">02</span><h3>Exchange momentum</h3><p>After capture, continued rotation transfers orbital energy and momentum to the payload while the tether system gives up an equal amount.</p></article>
-        <article class="card"><span class="number">03</span><h3>Release and recover</h3><p>The payload is released onto a higher-energy trajectory. The tether then rebuilds the momentum it transferred; electrodynamic reboost is a leading candidate.</p></article>
+  <div class="paper-band">
+    <section class="chapter">
+      <div class="chapter-head">
+        <p class="chapter-label">02 / Study configuration</p>
+        <div>
+          <h2>Put the assumptions where people can see them.</h2>
+          <p class="lede">The current Skyhook work is a design study, not a frozen vehicle specification. Numbers appear where they define the problem, and study values are kept separate from flight heritage and demonstrated performance.</p>
+        </div>
+      </div>
+      <div class="study-grid">
+        <div class="study"><span>CONFIGURATION</span><strong>Freely orbiting, rotating tether</strong></div>
+        <div class="study"><span>LENGTH CLASS</span><strong>~4,000 km study target</strong></div>
+        <div class="study"><span>STRUCTURE</span><strong>Tapered, redundant, sectional</strong></div>
+        <div class="study"><span>GROUND CONNECTION</span><strong>None</strong></div>
+        <div class="study"><span>CAPTURE</span><strong>Moving-tip rendezvous</strong></div>
+        <div class="study"><span>RECOVERY</span><strong>Electrodynamic reboost candidate</strong></div>
+        <div class="study"><span>MASS</span><strong>To be closed by material + geometry study</strong></div>
+        <div class="study"><span>COUNTERWEIGHT</span><strong>No multi-million-ton ballast assumption</strong></div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="callout"><strong>Nothing connects it to Earth.</strong><div><p>A space elevator extends continuously from the surface. A Skyhook remains entirely in orbit and rotates around its own center of mass while orbiting Earth.</p><p>That distinction changes the structure, materials, rendezvous problem and operational model completely.</p><a class="text-link" href="/system/">How the orbital geometry works →</a></div></div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><p class="eyebrow">Current design direction</p><div><h2>A transportation-scale tether.</h2><p>These are architectural targets, not frozen specifications. The purpose of the reference architecture is to make assumptions visible enough to test and replace.</p></div></div>
-      <div class="spec-grid">
-        <div class="spec"><span>Configuration</span><strong>Freely orbiting, rotating tether</strong></div>
-        <div class="spec"><span>Length target</span><strong>Approximately 4,000 km</strong></div>
-        <div class="spec"><span>Structure</span><strong>Tapered, redundant, sectional</strong></div>
-        <div class="spec"><span>Earth anchor</span><strong>None</strong></div>
-        <div class="spec"><span>Mass target</span><strong>Few-hundred-tonne class*</strong></div>
-        <div class="spec"><span>Capture</span><strong>Moving-tip rendezvous</strong></div>
-        <div class="spec"><span>Recovery</span><strong>Electrodynamic reboost candidate</strong></div>
-        <div class="spec"><span>Counterweight</span><strong>No multi-million-ton ballast assumption</strong></div>
+    <section class="chapter">
+      <div class="chapter-head">
+        <p class="chapter-label">03 / The hard part</p>
+        <div>
+          <h2>The physics is the beginning of the project, not the end.</h2>
+          <p class="lede">A useful Skyhook has to survive as a machine. Materials, capture loads, fatigue, debris, deployment, reboost, inspection and controlled failure all have to close together.</p>
+        </div>
       </div>
-      <p class="principle">* Not yet a validated mass estimate. Material performance is a gating problem.</p>
+      <div class="hard-list">
+        <div class="hard-row"><b>MATERIALS</b><span>SPECIFIC STRENGTH / FATIGUE / ATOMIC OXYGEN / THERMAL CYCLING / JOINING</span></div>
+        <div class="hard-row"><b>CAPTURE</b><span>NAVIGATION / CLOSING ERROR / SHOCK LOAD / RETENTION / ABORT LOGIC</span></div>
+        <div class="hard-row"><b>SURVIVABILITY</b><span>REDUNDANT LOAD PATHS / DEBRIS AVOIDANCE / LOCAL DAMAGE / SECTION ISOLATION</span></div>
+        <div class="hard-row"><b>RECOVERY</b><span>ORBIT LOSS PER PAYLOAD / ELECTRODYNAMIC PERFORMANCE / POWER / MISSION CADENCE</span></div>
+      </div>
     </section>
 
-    <section class="section">
-      <div class="section-head"><p class="eyebrow">Flight heritage</p><div><h2>Space tethers are not purely theoretical.</h2><p>Long tethers have flown. SEDS, TSS-1R and YES2 demonstrated deployment, dynamics, electrodynamic effects and momentum exchange. None demonstrated the complete transportation architecture proposed here.</p><a class="text-link" href="/research/">What has flown, what has been modeled, and what remains →</a></div></div>
+    <section class="chapter">
+      <div class="chapter-head">
+        <p class="chapter-label">04 / What came before</p>
+        <div>
+          <h2>Long tethers have already flown.</h2>
+          <p class="lede">SEDS deployed twenty-kilometre tethers. TSS-1R flew nearly twenty kilometres of conducting tether and measured strong electrodynamic interaction with the ionosphere. YES2 deployed roughly thirty-two kilometres and released a capsule onto a re-entry trajectory. HASTOL and MXER then studied how tether dynamics could become transportation infrastructure.</p>
+          <a class="cta light" href="/research/">Read the research record →</a>
+        </div>
+      </div>
     </section>
   </div>
-</BaseLayout>
+
+  <section class="closing">
+    <div>
+      <p class="eyebrow">Skyhook Industries</p>
+      <h2>Orbital infrastructure should get better with use.</h2>
+      <p>Rockets make access to orbit possible. A Skyhook asks what happens when part of the transportation system stays in space, survives the mission, and is ready to work again.</p>
+      <a class="cta" href="/roadmap/">See the engineering program →</a>
+    </div>
+  </section>
+</ProductionLayout>
