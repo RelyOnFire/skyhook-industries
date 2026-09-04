@@ -35,4 +35,13 @@ Public claims are separated into four classes:
 
 The website should describe the machine concretely and confidently without converting study assumptions into established specifications.
 
-See `docs/editorial-standard.md` and `docs/reference-architecture.md`.
+## Design rule
+
+The current site deliberately combines cinematic orbital scale with aerospace-program documentation. Future redesigns should preserve that identity unless the visual direction is explicitly reopened.
+
+See:
+
+- `docs/editorial-standard.md`
+- `docs/reference-architecture.md`
+- `docs/visual-standard.md`
+- `docs/design-audit-taste-skills.md`

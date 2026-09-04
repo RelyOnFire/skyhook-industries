@@ -10,6 +10,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  color: #030506;
+  background: #d9e9ed;
+}
+
+html[data-theme="paper"] ::selection {
+  color: #f5f7f7;
+  background: #335e73;
+}
+
 h1,
 h2,
 h3 {
@@ -39,11 +49,51 @@ p,
   font-variant-numeric: tabular-nums;
 }
 
-/* The original hero composition is retained, but a minimum dynamic viewport
-   height is safer than a hard mobile viewport height. */
+/* Paper pages share the same chrome but reverse it deliberately. */
+html[data-theme="paper"] .site-nav {
+  color: #171a1c;
+}
+
+html[data-theme="paper"] .wordmark-mark {
+  border-color: #335e73;
+}
+
+html[data-theme="paper"] .wordmark-mark i {
+  background: #335e73;
+}
+
+html[data-theme="paper"] .desktop-nav a {
+  color: #596166;
+}
+
+html[data-theme="paper"] .desktop-nav a:hover,
+html[data-theme="paper"] .desktop-nav a.active {
+  color: #171a1c;
+  border-color: #335e73;
+}
+
+html[data-theme="paper"] .mobile-nav summary {
+  color: #171a1c;
+}
+
+/* Keep the hero cinematic, but protect the copy from the tether at every
+   desktop width. The tether shifts progressively right as the viewport narrows. */
 .hero-orbit {
   height: auto;
   min-height: max(720px, 100dvh);
+}
+
+.hero-earth,
+.hero-tether {
+  pointer-events: none;
+}
+
+.hero-tether {
+  left: 74%;
+}
+
+.hero-copy > p:last-child {
+  max-width: 46rem;
 }
 
 /* Keyboard focus is intentionally obvious. */
@@ -158,6 +208,147 @@ html[data-theme="paper"] .mobile-nav a.active {
   }
 }
 
+/* A same-scale length reference for the system page. It compares physical
+   lengths only and deliberately avoids drawing the tether attached to Earth. */
+.scale-reference {
+  margin-top: 4.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #53656d;
+}
+
+.scale-reference .figure-head {
+  margin-bottom: 2.1rem;
+}
+
+.scale-row {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: 2rem;
+  align-items: end;
+  padding: 1.2rem 0 1.35rem;
+  border-bottom: 1px solid #2e3b40;
+}
+
+.scale-meta {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.scale-meta b,
+.scale-meta span,
+.scale-meta strong,
+.scale-note {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.scale-meta b {
+  font-size: 0.65rem;
+  letter-spacing: 0.11em;
+  color: #d9e9ed;
+}
+
+.scale-meta span {
+  font-size: 0.67rem;
+  color: #819198;
+}
+
+.scale-meta strong {
+  font-size: 0.85rem;
+  color: #f1f6f7;
+}
+
+.scale-track {
+  position: relative;
+  height: 1.2rem;
+  border-left: 1px solid #71838b;
+  border-right: 1px solid #71838b;
+}
+
+.scale-track::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #455860;
+}
+
+.scale-bar {
+  position: absolute;
+  left: 0;
+  top: calc(50% - 2px);
+  display: block;
+  height: 4px;
+  background: #d9e9ed;
+}
+
+.scale-bar.earth {
+  width: 100%;
+}
+
+.scale-bar.tether {
+  width: 31.4%;
+  background: #f5f7f7;
+}
+
+.scale-note {
+  margin: 1rem 0 0;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #819198;
+}
+
+/* Mid-desktop visual QA. At these widths the original diagonal crossed the
+   paragraph even though the layout was technically responsive. */
+@media (max-width: 1500px) and (min-width: 1201px) {
+  .hero-tether {
+    left: 82%;
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  .hero-tether {
+    left: 90%;
+  }
+
+  .hero-note {
+    display: none;
+  }
+
+  .hero-copy > p:last-child {
+    max-width: 43rem;
+  }
+}
+
+/* Short laptops need a different vertical composition, not a globally smaller
+   hero. This protects 1280×800 / 1366×768-class screens while leaving tall
+   desktop displays untouched. */
+@media (min-width: 901px) and (max-height: 850px) {
+  .hero-copy {
+    bottom: 4dvh;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 1.05rem;
+    font-size: clamp(4.1rem, 7.2vw, 7.3rem);
+    line-height: 0.84;
+  }
+
+  .hero-copy > p:last-child {
+    max-width: 43rem;
+    font-size: 1.04rem;
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-tether {
+    left: 92%;
+  }
+}
+
 @media (max-width: 640px) {
   .site-nav {
     padding: 1rem;
@@ -228,9 +419,10 @@ html[data-theme="paper"] .mobile-nav a.active {
   }
 
   .hard-row,
-  .contact-line {
+  .contact-line,
+  .scale-row {
     grid-template-columns: 1fr;
-    gap: 0.45rem;
+    gap: 0.7rem;
   }
 
   .hard-row span,
@@ -245,6 +437,14 @@ html[data-theme="paper"] .mobile-nav a.active {
 
   .gate aside {
     grid-column: 1;
+  }
+
+  .scale-reference {
+    margin-top: 3.5rem;
+  }
+
+  .scale-track {
+    height: 1rem;
   }
 
   .footer-top {
