@@ -1,10 +1,16 @@
-# Skyhook Reference Architecture v0.3
+# Skyhook Reference Architecture v0.4
 
-**Status:** first-order screening model, not a validated specification.
+**Status:** first-order kinematic and ideal structural mass screening model, not a validated specification.
 
-The purpose of this document is to prevent attractive numbers from becoming inherited facts. Every public value should have a model, source, test result or explicit rationale. Version 0.3 closes the first simple kinematic loop for the current ~4,000 km study length and makes the material/recovery consequences visible.
+This document exists to stop attractive numbers from becoming inherited facts. Every public value should have a model, source, test result or explicit rationale.
 
-The reproducible calculation is committed at [`analysis/reference_architecture_v03.py`](../analysis/reference_architecture_v03.py).
+Version 0.3 closed the first simple kinematic loop for the current ~4,000 km study length. Version 0.4 adds payload/end-mass tension, an ideal constant-stress tapered tether mass model, facility-mass sensitivity, an instantaneous post-capture center-of-mass calculation, and a first symmetric-versus-asymmetric architecture trade.
+
+Reproducible calculations:
+
+- [`analysis/reference_architecture_v03.py`](../analysis/reference_architecture_v03.py)
+- [`analysis/reference_architecture_v04.py`](../analysis/reference_architecture_v04.py)
+- generated outputs are committed beside both scripts and verified by CI.
 
 ## Current study baseline
 
@@ -13,131 +19,198 @@ The reproducible calculation is committed at [`analysis/reference_architecture_v
 | Configuration | Freely orbiting rotating momentum-exchange tether | Skyhook study |
 | Earth anchor | None | Skyhook study |
 | Nominal physical tether length | ~4,000 km total length class | Open target |
-| Baseline topology | Two-ended / approximately mass-balanced configuration under study | Open trade |
+| Baseline topology | Two equal ~2,000 km working arms | Preferred screening baseline |
 | Tether construction | Tapered, redundant, sectional | Skyhook study |
-| Total system mass | Few-hundred-tonne class remains an aspirational target, not a closed estimate | Open target |
-| Dedicated ballast | No multi-million-ton counterweight assumption | Skyhook study |
+| Payload class | 5–20 t sensitivity sweep; no frozen payload | Open trade |
+| Total system mass | First ideal mass closure now exists; real facility mass remains open | Open target |
+| Dedicated ballast | No large dedicated counterweight in the preferred symmetric baseline | Skyhook study |
 | Capture | Moving-tip rendezvous | Skyhook study |
 | Capture mechanism | Not selected | Open trade |
 | Reboost | Electrodynamic reboost is a leading candidate | Open trade |
 | Energy source | Solar-electric is a leading candidate | Open trade |
 | Failure management | Redundant load paths, sectional isolation and controlled post-failure behavior | Skyhook study |
 
-## Geometry fixed for the first screening model
+## Geometry retained from v0.3
 
-For v0.3, **~4,000 km means total physical tether length**, modeled first as two equal 2,000 km arms. The rendezvous instant is treated as a radial pass with the lower tip at 100 km altitude and the center of mass on a circular orbit.
+For the first screening architecture, **~4,000 km means total physical tether length**, modeled as two equal 2,000 km arms. The capture comparison instant is a radial pass with the lower tip at 100 km altitude and the center of mass initially on a circular orbit.
 
-That gives, before choosing a rendezvous speed:
-
-| Quantity | v0.3 screening value |
+| Quantity | Screening value |
 | --- | ---: |
 | Total physical tether length | 4,000 km |
 | Arm length | 2,000 km |
-| Lower-tip altitude at rendezvous | 100 km |
-| Center-of-mass altitude | 2,100 km |
+| Lower-tip altitude at comparison capture | 100 km |
+| Center-of-mass altitude before capture | 2,100 km |
 | Upper-tip altitude at the same radial pass | 4,100 km |
 | Center-of-mass circular-orbit speed | 6.860 km/s |
-| Center-of-mass orbital period | 129.3 min |
+| Lower-tip inertial speed comparison | 4.100 km/s |
+| Rotational tip speed relative COM | 2.760 km/s |
+| Rotation period | 75.9 min |
 
-The 100 km altitude is a comparison point, not a frozen operational requirement. HASTOL Phase I used a 100 km / 4.1 km/s inertial rendezvous in its selected **600 km** architecture, so 4.1 km/s is included below as a useful historical comparison rather than imported as a Skyhook requirement. See the Boeing/NIAC Phase I report: <https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf>.
+The **4.1 km/s** lower-tip value remains a historical comparison point, not a Skyhook vehicle requirement. Boeing's HASTOL work used a 100 km / ~4.1 km/s inertial rendezvous in a very different ~600 km architecture.
 
-## Kinematic sensitivity
+## What v0.4 adds: absolute tether mass
 
-At the lower radial pass, the tether-tip rotational velocity opposes the center-of-mass orbital velocity. For the equal-arm model:
+For an ideal constant-stress arm with terminal design mass `m_tip`, allowable specific strength `S`, and tension-supported acceleration field `a(x)`:
 
-`v_lower = v_COM - omega * arm_length`
+`T_tip = m_tip * a_tip`
 
-The same physical endpoint reaches the upper radial position half a rotation later, where its rotational velocity adds to the center-of-mass orbital velocity.
+`T(x) = T_tip * exp( integral(a dx) / S )`
 
-| Lower-tip inertial speed | Rotational tip speed relative COM | Rotation period | Upper-tip inertial speed | Lower-arm distributed self-load index | Full lower-to-upper energy gain* |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 3.0 km/s | 3.86 km/s | 54.3 min | 10.72 km/s | 10.88 MJ/kg | 76.5 MJ/kg |
-| **4.1 km/s** | **2.76 km/s** | **75.9 min** | **9.62 km/s** | **7.24 MJ/kg** | **61.4 MJ/kg** |
-| 5.0 km/s | 1.86 km/s | 112.6 min | 8.72 km/s | 5.16 MJ/kg | 49.0 MJ/kg |
+`linear_mass_density = T / S`
 
-\*The energy column is an intentionally aggressive reference case: capture at the lower radial point, carry that endpoint through half a rotation, and release at the opposite upper radial point. An operational mission can release earlier and deliver much less energy.
+The input `S` is **allowable specific strength**, not ultimate fiber strength. It must already include the chosen derating for safety factor, joints, manufacturing variation, fatigue, environment and other material-system losses.
+
+The model sizes each symmetric arm against the more demanding lower-side radial load case. Both arms are assumed capable of carrying the design payload so the facility does not need a dedicated massive counterweight or a single permanently designated working arm.
+
+### Structural mass multiplier
+
+For the 4.1 km/s comparison geometry:
+
+| Allowable specific strength | One arm mass / terminal design mass | Two-arm tether mass / terminal design mass | Center/tip area ratio |
+| ---: | ---: | ---: | ---: |
+| 4 MJ/kg | 15.00× | 30.00× | 6.11× |
+| 6 MJ/kg | 6.22× | 12.44× | 3.34× |
+| 8 MJ/kg | 3.71× | 7.42× | 2.47× |
+| 10 MJ/kg | 2.59× | 5.19× | 2.06× |
+
+This is the first useful answer to the old "few hundred tonnes" question: the answer depends very strongly on the **allowable** material system, not simply on choosing a nominal tether length.
+
+## Screening facility-mass closure
+
+To turn the structural multiplier into an absolute facility mass, v0.4 introduces two explicit placeholders:
+
+- **5 t terminal module per end** for local capture hardware / avionics / interfaces;
+- **30 t central functional allowance** for hub, power, control, servicing and other near-COM hardware.
+
+These are study allowances, not specifications. They exist so the mass sensitivity can be seen rather than hidden behind a normalized ratio.
+
+For a **15 t payload**:
+
+| Allowable specific strength | Ideal tether mass | Screening dry facility mass |
+| ---: | ---: | ---: |
+| 4 MJ/kg | 599.9 t | 639.9 t |
+| 6 MJ/kg | 248.8 t | 288.8 t |
+| 8 MJ/kg | 148.4 t | 188.4 t |
+| 10 MJ/kg | 103.8 t | 143.8 t |
+
+Under these idealized assumptions, keeping the dry facility at or below **300 t** requires about:
+
+| Payload | Required allowable specific strength |
+| ---: | ---: |
+| 5 t | 4.24 MJ/kg |
+| 10 t | 5.09 MJ/kg |
+| 15 t | 5.86 MJ/kg |
+| 20 t | 6.60 MJ/kg |
 
 ### Immediate conclusion
 
-**Rendezvous speed is a structural variable, not merely a vehicle variable.** Lowering the tether-tip inertial speed makes the atmospheric vehicle's job easier, but it requires more rotational tip speed, a shorter rotation period and sharply higher tether self-load.
+A few-hundred-tonne 4,000 km facility is **not ruled out by the first ideal taper model**, but neither is it established. For a 15 t payload, the screening model crosses 300 t near **5.9 MJ/kg allowable specific strength**. That is a requirement for the complete derated material system, not a claim that a current material already provides it in flight-ready form.
 
-This means the launch vehicle, tether material, taper, facility mass and delivered trajectory have to be optimized together.
+Real mass will increase from capture shock margin, redundant load paths, joints, coatings, conductor, minimum manufacturable sections, instrumentation, repair architecture, power hardware and damage tolerance. Some central mass may also be operationally useful as a momentum buffer rather than dead ballast.
 
-## The 4.1 km/s comparison case
+## HASTOL sanity check
 
-Using the middle column only as a reference case:
+The v0.4 mass equation was checked against Boeing/NIAC HASTOL numbers rather than accepted on faith.
 
-- center-of-mass speed: **6.860 km/s**;
-- rotational tip speed: **2.760 km/s**;
-- rotation period: **75.9 min**;
-- lower-tip speed: **4.100 km/s** by construction;
-- upper-tip speed at the opposite radial pass: **9.619 km/s**;
-- lower-arm distributed self-load index: **7.241 MJ/kg**;
-- upper-arm distributed self-load index: **5.930 MJ/kg**.
+HASTOL reported:
 
-At 4,100 km altitude, local Earth escape speed is about **8.73 km/s** in this spherical-Earth model. The 9.62 km/s upper-tip value therefore shows that a 4,000 km symmetric tether at this rotation rate is capable of substantially more than ordinary LEO insertion if a payload is carried all the way to the opposite tip. That is not automatically desirable. Release phase and mission destination become architecture variables.
+- a 600 km tether;
+- the COM 510 km from the grapple and 90 km from the central station;
+- ~3.5 km/s rotational tip speed;
+- Spectra 2000 derated characteristic velocity **2.03 km/s** with safety factor 2;
+- central-station mass about **110× payload**;
+- tether mass about **91× payload**.
 
-## What the self-load index means
+For a characteristic velocity `Vc`, specific strength is `S = Vc² / 2`, so the reported derated Spectra figure corresponds to about **2.060 MJ/kg allowable specific strength**.
 
-The self-load index is the exact radial-pass integral, in this simplified model, of the acceleration that internal tether tension must supply against both rotation and Earth's gravity gradient. Its units are specific energy: km²/s², numerically equal to MJ/kg.
+Using those HASTOL geometry/mass inputs, the v0.4 ideal taper calculation gives:
 
-For an ideal constant-stress taper under distributed self-load alone:
+- grapple-side tether contribution: **71.2× payload**;
+- station-side tether contribution: **22.8× payload**;
+- total modeled tether: **94.0× payload**.
 
-`A_center / A_tip = exp(load_index / allowable_specific_strength)`
+That is within a few percent of the reported ~91× value. It is not a substitute for HASTOL's full simulation, but it is a useful order-of-magnitude validation that the simple constant-stress integration is behaving sensibly.
 
-The strength input must be **allowable specific strength**, after joints, manufacturing variation, environment, fatigue and required safety factor. It is not a published ultimate fiber number.
+Primary source: <https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf>.
 
-For the 4.1 km/s comparison case:
+## Capture makes facility mass a dynamics variable
 
-| Allowable specific strength | Lower arm center/tip area ratio | Upper arm center/tip area ratio |
-| ---: | ---: | ---: |
-| 2 MJ/kg | 37.37× | 19.39× |
-| 4 MJ/kg | 6.11× | 4.40× |
-| 6 MJ/kg | 3.34× | 2.69× |
-| 8 MJ/kg | 2.47× | 2.10× |
-| 10 MJ/kg | 2.06× | 1.81× |
+A perfectly velocity-matched payload produces no relative-velocity impact impulse in this idealization, but attaching the payload still changes the combined center of mass and its translational orbital state.
 
-These are **not tether mass estimates**. They include distributed self-load only. Payload/end-mass tension sets the absolute tip cross-section, while redundancy, joints, minimum manufacturable section, damage allowance, capture shock and safety factor all add mass. Payload capture also changes the center of mass and rotational state.
+For a 15 t payload in the symmetric reference geometry:
 
-The table does, however, make one point unambiguous: a few-hundred-tonne 4,000 km tether cannot be justified from headline tensile strength alone. It needs a material system with high *allowable* specific strength and a full tapered mass model.
+| Allowable | Screening dry facility | COM shift toward payload | COM speed loss | Immediate osculating COM perigee |
+| ---: | ---: | ---: | ---: | ---: |
+| 4 MJ/kg | 639.9 t | 45.8 km | 63 m/s | 1,665 km |
+| 6 MJ/kg | 288.8 t | 98.8 km | 136 m/s | 1,196 km |
+| 8 MJ/kg | 188.4 t | 147.5 km | 204 m/s | 793 km |
+| 10 MJ/kg | 143.8 t | 188.9 km | 261 m/s | 471 km |
 
-NASA's tether design criteria explicitly treat strength, dynamics, materials, severing by micrometeoroids/debris, safety and reliability as coupled design concerns: <https://ntrs.nasa.gov/citations/19970027081>.
+The perigee column is **only the osculating orbit of the combined center of mass immediately after idealized capture**. It is not a minimum tether-tip altitude and it does not prove a safe post-capture trajectory. The tether continues rotating while the COM follows the new orbit, so full coupled propagation is required next.
 
-## Energy and reboost scale
+The design lesson is nevertheless important: **making the tether extremely light increases the fraction of system mass represented by each payload and therefore increases the facility-state change per capture.** Stronger material does not make system inertia irrelevant.
 
-In the 4.1 km/s full lower-to-upper reference transfer, the payload's Earth-relative mechanical energy increases by about **61.4 MJ/kg**, or **61.4 GJ per metric tonne of payload**.
+## Symmetric vs asymmetric architecture
 
-Recovering that amount of facility energy in one day would require an ideal average input of about **0.71 MW per tonne of payload**, before electrodynamic, power-conversion or operational losses. A ten-tonne payload would therefore correspond to roughly 7.1 MW average for a one-day ideal recovery in this deliberately high-energy reference transfer.
+v0.4 also tests a single payload-rated working arm with a lighter counterarm. The dry structural first moment is balanced by adding mass at the counter tip.
 
-This is why reboost cannot be described merely as a propulsion choice. **Payload throughput is a power-system requirement.** Earlier release, lower delivered energy, incoming momentum exchange and longer recovery time all change the number substantially.
+For a 10 t payload, 5 t terminal modules and 30 t central allowance:
 
-HASTOL likewise treated solar-powered electrodynamic recovery as a multi-day cycle dependent on payload trajectory and available power; its geometry and mass were very different from the present Skyhook study and should not be conflated with it.
+| Allowable | Equal 2,000 km single-working-arm dry mass | Added counter-tip balance | Symmetric dual-working-arm dry mass |
+| ---: | ---: | ---: | ---: |
+| 6 MJ/kg | 216.3 t | 7.2 t | 226.6 t |
+| 8 MJ/kg | 143.2 t | 6.2 t | 151.3 t |
+| 10 MJ/kg | 111.1 t | 5.4 t | 117.8 t |
 
-## Assumptions and omissions in v0.3
+So the single-working-arm arrangement saves only about **5%** in this screening case while introducing dedicated balancing mass and losing the operational symmetry of two payload-capable ends.
 
-The model currently assumes:
+Making the working arm longer than 2,000 km makes the balance problem worse. At 6 MJ/kg, extending it to 2,400 km raises required counter-tip balance to about **38 t** and the dry facility to about **267 t**.
 
-- spherical Earth;
-- center of mass in a circular orbit;
-- two equal 2,000 km arms;
-- tether instantaneously radial at capture/release comparison points;
-- rigid kinematics for screening purposes;
-- no atmosphere or aerodynamic loading;
-- no J2 or higher-order gravity;
-- no flexible-body modes;
-- no capture shock;
-- no payload-induced center-of-mass shift during the calculation;
-- no terminal hardware mass in the taper ratios;
-- no electrodynamic force model;
-- no deployment dynamics.
+A mathematically zero-ballast balance solution exists only if the payload-rated working arm is *shorter* than 2,000 km. But then the opposite arm is longer than 2,000 km and, on a full rotation, its lower excursion passes hundreds of kilometres below Earth's reference surface. That geometry is physically invalid.
 
-Therefore none of the v0.3 numbers should be presented as a flight specification.
+### Current architecture decision
+
+The symmetric two-working-arm baseline is therefore strengthened rather than weakened by v0.4. It is slightly heavier in the ideal structural model, but it:
+
+- avoids a dedicated tip counterweight;
+- keeps both arm lengths compatible with the 100 km minimum-altitude screening geometry;
+- makes the dry mass distribution naturally symmetric;
+- permits either end to be designed as a working/capture end;
+- costs only a modest mass penalty versus the single-working-arm case in the current sweep.
+
+This is still a study conclusion, not a frozen configuration.
+
+## Energy and reboost scale from v0.3
+
+The 4.1 km/s full lower-to-upper reference transfer increases payload Earth-relative mechanical energy by about **61.4 MJ/kg**, or **61.4 GJ per metric tonne**.
+
+Recovering that in one day would require an ideal average of about **0.71 MW per tonne of payload**, before electrodynamic or electrical losses. This remains an intentionally high-energy reference transfer; earlier release can deliver much less energy.
+
+## What remains outside v0.4
+
+The model still omits:
+
+- flexible-body tether dynamics;
+- capture shock and finite closing error;
+- post-capture coupled orbit/rotation propagation;
+- release-phase targeting for LEO, GTO, cislunar or escape missions;
+- aerodynamic drag/heating during the low-altitude pass;
+- J2 and higher-order gravity;
+- detailed terminal hardware sizing;
+- redundant strand / laminate topology;
+- joints, coatings and repair hardware as explicit masses;
+- electrodynamic conductor/collector mass and force model;
+- solar-array/storage sizing;
+- debris survival probability;
+- sever-fragment propagation.
+
+Therefore the 144–640 t screening results above are **not flight mass estimates**. They are the mass scale of an idealized, payload-loaded, constant-stress structural core plus explicit placeholder hardware allowances.
 
 ## Failure management remains an analysis problem
 
-The structural direction remains tapered, redundant and sectional, but deliberate severing is not assumed safe. NASA's active orbital-debris standard requires tether analyses to address tether dimensions/materials, sever probability, collision probability, severed-fragment lifetime and disposal behavior. See NASA-STD-8719.14C: <https://standards.nasa.gov/standard/NASA/NASA-STD-871914>.
+The structural direction remains tapered, redundant and sectional, but deliberate severing is not assumed safe. NASA's active orbital-debris standard requires tether analyses to address tether dimensions/materials, sever probability, collision probability, severed-fragment lifetime and disposal behavior: <https://standards.nasa.gov/standard/NASA/NASA-STD-871914>.
 
-A credible sectional design therefore needs propagated fragment trajectories for each intended break/isolation boundary before any controlled-sever concept can be called a safety feature.
+A credible sectional design therefore needs propagated fragment trajectories for each intended isolation boundary before any controlled-sever concept can be called a safety feature.
 
 ## Retired inherited values
 
@@ -150,19 +223,17 @@ The following values from the former website remain retired unless freshly deriv
 - a 67 m spider-tentacle capture mechanism;
 - the 2024 / 2027 / 2031 / 2042 prototype schedule.
 
-## What v0.4 must close
+## What v0.5 should close
 
-Version 0.3 is enough to show that the 4,000 km concept is kinematically powerful and structurally unforgiving. The next model should add the quantities that determine whether it is practical:
+Version 0.4 establishes a first mass/material threshold and strengthens the symmetric two-arm baseline. The next model should focus on **what happens after capture in time**, not just at the capture instant:
 
-1. payload mass and terminal capture-hardware mass;
-2. ideal tapered tether mass for a sweep of allowable specific strengths;
-3. asymmetric arm-length and mass-distribution trades;
-4. payload-induced center-of-mass shift and rotational-state change;
-5. capture impulse / shock attenuation;
-6. release phase required for target LEO, GTO, cislunar and escape trajectories;
-7. flexible-tether dynamics and gravity-gradient coupling through the full rotation;
-8. electrodynamic force, conductor mass, collection architecture and orbit/inclination dependence;
-9. solar-array/storage sizing versus mission cadence;
-10. debris survival, sectional isolation and sever-fragment propagation.
+1. propagate the COM osculating orbit and tether rotation together through at least one full cycle;
+2. track both tip altitudes through the post-capture transient;
+3. conserve full system linear and angular momentum with the captured payload;
+4. include release phase as a variable and solve target trajectories;
+5. determine whether immediate reboost/control is required to protect minimum altitude;
+6. add finite capture-velocity error and shock attenuation;
+7. introduce a first flexible-tether mode model rather than rigid-body rotation only;
+8. then couple the required recovery impulse/energy to an electrodynamic force and power model.
 
-Only after those quantities are internally consistent should the study claim a payload class, total system mass or operational cadence.
+That is the next point at which the facility can start claiming an operational payload/cadence envelope rather than only a structural mass envelope.
