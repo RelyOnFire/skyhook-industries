@@ -20,6 +20,16 @@ The public site should be ambitious without collapsing different levels of evide
 - Use calendar dates only when a funded, measurable program justifies them.
 - Archive superseded concepts instead of leaving them mixed into current plans.
 
+## Numerical-model rules
+
+- Public calculated values must be traceable to a committed model version or an explicit hand calculation.
+- When a number depends on a screening allowance, state the allowance near the result rather than letting it harden into a specification.
+- Separate normalized structural results from absolute facility-mass assumptions.
+- “Allowable specific strength” means the derated material-system value used for design, not headline ultimate tensile strength divided by density.
+- If a model has not propagated a state through time, do not describe an instantaneous osculating orbit or force balance as a safe trajectory.
+- Where practical, benchmark simplified models against a published architecture before using them to support a Skyhook conclusion.
+- Generated model output should be reproducible in CI so edits to equations or constants cannot silently leave stale public numbers behind.
+
 ## Voice rules
 
 - Describe the physical event first: vehicle, tether, motion, load, orbit, release.

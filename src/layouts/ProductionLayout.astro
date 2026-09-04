@@ -12,7 +12,7 @@ interface Props {
 
 const { title, description, theme = 'dark', noindex = false } = Astro.props;
 const path = Astro.url.pathname;
-const paperPaths = ['/research/', '/about/', '/contact/', '/archive/'];
+const paperPaths = ['/research/', '/reference-architecture/', '/about/', '/contact/', '/archive/'];
 const effectiveTheme = theme === 'paper' || paperPaths.includes(path) ? 'paper' : 'dark';
 const nav = [
   ['The System', '/system/'],
@@ -78,7 +78,7 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
           <p>Rotating orbital transportation and momentum-exchange infrastructure.</p>
         </div>
         <div class="footer-nav">
-          <a href="/system/">System</a><a href="/research/">Research</a><a href="/roadmap/">Roadmap</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/archive/">Archive</a>
+          <a href="/system/">System</a><a href="/reference-architecture/">Reference Architecture</a><a href="/research/">Research</a><a href="/roadmap/">Roadmap</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/archive/">Archive</a>
         </div>
       </div>
       <div class="footer-bottom">
