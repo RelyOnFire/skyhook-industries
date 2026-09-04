@@ -1,0 +1,114 @@
+---
+import ProductionLayout from '../layouts/ProductionLayout.astro';
+---
+<ProductionLayout title="Reference Architecture — Skyhook Industries" description="The current numerical Skyhook study: 4,000 km geometry, first-order tether mass, payload sensitivity, architecture trades and the assumptions still left open." theme="paper">
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">Reference Architecture v0.4</p>
+    <h1>Put the numbers where they can be challenged.</h1>
+    <p>The current Skyhook study uses a 4,000 km two-arm tether as a working geometry. This page shows what that choice implies before any of it is promoted from study value to specification.</p>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">01 / Baseline</p>
+      <div>
+        <h2>The first model has a shape.</h2>
+        <p class="lede">The screening architecture is two equal 2,000 km arms. At the comparison capture instant, the lower tip is 100 km above Earth and moving at 4.1 km/s inertial speed. That puts the center of mass at about 2,100 km altitude.</p>
+        <div class="fact-table">
+          <div class="fact-row"><b>Total length</b><p>4,000 km physical tether.</p><small>Study value</small></div>
+          <div class="fact-row"><b>Arm length</b><p>2,000 km each in the symmetric baseline.</p><small>Study value</small></div>
+          <div class="fact-row"><b>Capture comparison</b><p>100 km altitude / 4.1 km/s inertial lower-tip speed.</p><small>Historical comparison</small></div>
+          <div class="fact-row"><b>COM altitude</b><p>2,100 km before capture in the circular-orbit screening model.</p><small>Derived</small></div>
+          <div class="fact-row"><b>Rotation period</b><p>75.9 minutes for the 4.1 km/s comparison case.</p><small>Derived</small></div>
+        </div>
+        <p class="body-copy">The 4.1 km/s value is not a frozen vehicle requirement. It is retained because Boeing's HASTOL work used a similar 100 km / 4.1 km/s rendezvous in a much shorter 600 km architecture, giving the present model a useful historical comparison point.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">02 / Mass closure</p>
+      <div>
+        <h2>“A few hundred tonnes” now has a threshold.</h2>
+        <p class="body-copy">Version 0.4 adds payload tension to an ideal constant-stress taper. Both arms are sized as working arms, each capable of carrying the design payload. The strength variable is allowable specific strength after whatever derating is required for joints, environment, fatigue, manufacturing and safety factor.</p>
+        <div class="sequence">
+          <div class="sequence-row"><b>4</b><strong>MJ/kg allowable</strong><span>15 t payload → 599.9 t ideal tether → 639.9 t screening dry facility.</span></div>
+          <div class="sequence-row"><b>6</b><strong>MJ/kg allowable</strong><span>15 t payload → 248.8 t ideal tether → 288.8 t screening dry facility.</span></div>
+          <div class="sequence-row"><b>8</b><strong>MJ/kg allowable</strong><span>15 t payload → 148.4 t ideal tether → 188.4 t screening dry facility.</span></div>
+          <div class="sequence-row"><b>10</b><strong>MJ/kg allowable</strong><span>15 t payload → 103.8 t ideal tether → 143.8 t screening dry facility.</span></div>
+        </div>
+        <p class="body-copy">Those facility totals include explicit screening allowances of 5 t for each terminal module and 30 t for central hub/power/control hardware. They are not flight mass estimates.</p>
+        <p class="body-copy"><strong>For a 15 t payload, the idealized model crosses a 300 t dry-facility target at about 5.86 MJ/kg allowable specific strength.</strong> For 10 t it is about 5.09 MJ/kg; for 20 t, about 6.60 MJ/kg.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">03 / Sanity check</p>
+      <div>
+        <h2>The mass equation was tested against HASTOL.</h2>
+        <p class="lede">A simple model is useful only if it reproduces a known case to the right order of magnitude.</p>
+        <p class="body-copy">Boeing reported a derated Spectra 2000 characteristic velocity of 2.03 km/s with safety factor 2, a 510 km grapple-side arm, a 90 km station-side arm, a central-station mass around 110 times payload, and a total tether mass around 91 times payload.</p>
+        <div class="fact-table">
+          <div class="fact-row"><b>HASTOL reported</b><p>~91× payload tether mass.</p><small>Boeing / NIAC</small></div>
+          <div class="fact-row"><b>v0.4 model</b><p>94.0× payload using the reported HASTOL geometry, station mass and derated material performance.</p><small>Screening reproduction</small></div>
+        </div>
+        <p class="body-copy">That agreement does not turn the Skyhook model into a flight-dynamics solver. It does show that the constant-stress integration is producing the same mass scale as a well-documented prior tether study instead of being wrong by an order of magnitude.</p>
+        <a class="cta light" href="https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf">Read the HASTOL report ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">04 / Balance</p>
+      <div>
+        <h2>Symmetry is costing less than expected.</h2>
+        <p class="lede">A tempting alternative is one payload-rated working arm and a lighter counterarm. The first balance trade does not buy much.</p>
+        <div class="fact-table">
+          <div class="fact-row"><b>6 MJ/kg</b><p>10 t payload: symmetric dual-working-arm facility 226.6 t; single-working-arm balanced facility 216.3 t.</p><small>~5% saving</small></div>
+          <div class="fact-row"><b>8 MJ/kg</b><p>10 t payload: symmetric 151.3 t; single-working-arm balanced 143.2 t.</p><small>~5% saving</small></div>
+          <div class="fact-row"><b>10 MJ/kg</b><p>10 t payload: symmetric 117.8 t; single-working-arm balanced 111.1 t.</p><small>~6% saving</small></div>
+        </div>
+        <p class="body-copy">The single-working-arm case still needs roughly 5–7 t of dedicated counter-tip balance at equal arm lengths. Making the working arm longer increases the required counterbalance rapidly. The mathematically zero-ballast solution makes the opposite arm longer than 2,000 km, which would carry that tip hundreds of kilometres below Earth's reference surface during a full rotation.</p>
+        <p class="body-copy"><strong>The symmetric two-working-arm layout therefore remains the preferred baseline.</strong> It is slightly heavier, but it avoids dedicated tip ballast, preserves two useful ends and satisfies the current minimum-altitude geometry naturally.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">05 / Capture transient</p>
+      <div>
+        <h2>Strong material makes inertia more important, not less.</h2>
+        <p class="body-copy">Even a perfectly velocity-matched capture changes the combined center of mass because the arriving payload is thousands of kilometres from the facility COM. A lighter facility experiences a larger state change per payload.</p>
+        <div class="sequence">
+          <div class="sequence-row"><b>6</b><strong>MJ/kg / 15 t payload</strong><span>288.8 t dry facility → COM shifts 98.8 km toward the payload → COM speed drops about 136 m/s.</span></div>
+          <div class="sequence-row"><b>8</b><strong>MJ/kg / 15 t payload</strong><span>188.4 t dry facility → COM shifts 147.5 km → COM speed drops about 204 m/s.</span></div>
+          <div class="sequence-row"><b>10</b><strong>MJ/kg / 15 t payload</strong><span>143.8 t dry facility → COM shifts 188.9 km → COM speed drops about 261 m/s.</span></div>
+        </div>
+        <p class="body-copy">The current model calculates the immediate osculating COM orbit only. It does not yet propagate both tether tips through the resulting orbit. That is the next critical calculation because the facility can be structurally light and still be operationally unusable if post-capture phasing drives a tip too low.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">06 / Next closure</p>
+      <div>
+        <h2>Now propagate the machine.</h2>
+        <p class="lede">v0.5 should stop treating capture as one instant and follow the combined system through time.</p>
+        <div class="hard-list">
+          <div class="hard-row"><b>ORBIT</b><span>PROPAGATE POST-CAPTURE COM STATE THROUGH A FULL ROTATION</span></div>
+          <div class="hard-row"><b>TIPS</b><span>TRACK BOTH TIP ALTITUDES AND PHASING THROUGH THE NEW ORBIT</span></div>
+          <div class="hard-row"><b>RELEASE</b><span>SOLVE RELEASE PHASE FOR LEO / GTO / CISLUNAR / ESCAPE TARGETS</span></div>
+          <div class="hard-row"><b>CONTROL</b><span>DETERMINE HOW QUICKLY REBOOST OR ATTITUDE CONTROL MUST RESPOND</span></div>
+        </div>
+        <p class="body-copy">The calculation and generated tables are public in the repository. If the assumptions change, the model output changes with them.</p>
+        <a class="cta light" href="https://github.com/RelyOnFire/skyhook-industries/blob/main/analysis/reference_architecture_v04.py">Inspect the model ↗</a>
+      </div>
+    </div>
+  </section>
+</ProductionLayout>
