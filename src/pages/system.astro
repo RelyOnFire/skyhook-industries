@@ -1,15 +1,109 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import OrbitalGraphic from '../components/OrbitalGraphic.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="The System — Skyhook Industries" description="How the Skyhook concept works: orbital rotation, high-altitude rendezvous, momentum exchange, electrodynamic reboost, tether structure and failure management.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">The system</p><h1>A rotating orbital machine, not a tower to space.</h1><p>The entire structure remains in orbit. Rotation allows one end to move more slowly than the system's orbital center of mass during the lower part of its cycle, creating a rendezvous opportunity for a vehicle arriving from below.</p></section>
-    <section class="page-section"><div class="callout"><OrbitalGraphic /><div><h2>Two motions at once.</h2><p>The system orbits Earth while the tether rotates around its own center of mass. Near the bottom of the rotation, tip velocity can oppose part of the system's orbital velocity. Near the top, it adds to it.</p><p>The exact orbit, rotation period, tip speed and rendezvous altitude are coupled design variables and are not yet frozen.</p></div></div></section>
-    <section class="page-section prose"><p class="eyebrow">01 — Capture</p><h2>Rendezvous is a complete subsystem.</h2><p>A payload cannot simply fly near the tether and attach at leisure. Capture requires precise navigation, synchronized guidance, a realistic capture envelope, shock-load management, positive retention, abort logic and controlled release.</p><p>The old site described a specific 67 m spider-like grabber. That number is no longer treated as a requirement. The final capture architecture remains an open engineering trade.</p></section>
-    <section class="page-section prose"><p class="eyebrow">02 — Momentum exchange</p><h2>Every payload changes the tether's orbit.</h2><p>When the tether accelerates a payload, conservation of momentum requires the tether system to lose orbital momentum and energy. A useful Skyhook therefore cannot be characterized only by the velocity it can give one payload; payload mass, tether mass, orbit, release geometry and mission cadence must close together.</p></section>
-    <section class="page-section prose"><p class="eyebrow">03 — Reboost</p><h2>Recover the energy between missions.</h2><p>A conducting tether moving through Earth's magnetic field can exchange momentum through Lorentz forces. Electrodynamic reboost is attractive because it can use electrical power rather than conventional reaction mass.</p><p>That does not make the transportation system “fuel free.” The arriving vehicle still requires propulsion, the tether requires power and supporting spacecraft systems, and electrodynamic performance depends on orbit, plasma conditions, conductor geometry and field orientation.</p></section>
-    <section class="page-section prose"><p class="eyebrow">04 — Structure</p><h2>A 4,000 km tether cannot be treated like one rope.</h2><p>The current direction is a tapered, redundant and sectional structure with multiple load paths. Local damage should not automatically propagate into loss of the full system.</p><p>Materials are a gating technology. Heritage polymer tether concepts are valuable reference points, but a few-hundred-tonne transportation-scale architecture would demand specific strength and long-duration environmental performance beyond what should be assumed without evidence.</p></section>
-    <section class="page-section prose"><p class="eyebrow">05 — Failure management</p><h2>Survivability must be designed in.</h2><p>Micrometeoroids, orbital debris, fatigue, thermal cycling, atomic oxygen and deployment faults all matter. The architecture therefore separates three problems: damage tolerance, collision avoidance and controlled failure.</p><p>Deliberate isolation or severing mechanisms may ultimately be useful, but fragmentation is not automatically safe. Any such strategy must demonstrate predictable post-sever trajectories and lower total orbital and re-entry risk.</p></section>
+<ProductionLayout title="The System — Skyhook Industries" description="How the Skyhook transportation concept works: orbital rotation, moving-tip rendezvous, momentum exchange, tether structure, reboost and failure management.">
+  <section class="page-hero">
+    <p class="eyebrow">The system / MXT study</p>
+    <h1>A machine in two motions.</h1>
+    <p>The Skyhook orbits Earth while rotating around its own center of mass. That combination creates the handoff: a lower tip that can momentarily move much more slowly than the orbital center, and an upper tip that moves faster.</p>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">01 / Geometry</p>
+      <div>
+        <h2>Orbit and rotation are inseparable.</h2>
+        <p class="body-copy">The tether is not anchored to Earth and it does not hang motionless over one point. Its center of mass follows an orbit while the structure rotates. Pickup altitude, center-of-mass altitude, rotation period, tether length and lower-tip velocity therefore have to be solved together.</p>
+        <div class="mechanism">
+          <div class="figure">
+            <div class="figure-head"><span>Fig. 02 / Coupled motions</span><span>Concept — not to scale</span></div>
+            <svg viewBox="0 0 560 430" role="img" aria-label="Skyhook orbital and rotational motion diagram">
+              <defs><marker id="sArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d9e9ed"/></marker></defs>
+              <circle cx="280" cy="365" r="145" fill="#0b1a23" stroke="#284554"/><ellipse cx="280" cy="230" rx="220" ry="92" fill="none" stroke="#455860" stroke-dasharray="6 8"/>
+              <g transform="rotate(-22 280 188)"><line x1="133" y1="330" x2="444" y2="38" stroke="#f1f6f7" stroke-width="4"/><circle cx="280" cy="188" r="8" fill="#f1f6f7"/><circle cx="133" cy="330" r="6" fill="#d9e9ed"/><circle cx="444" cy="38" r="6" fill="#d9e9ed"/></g>
+              <path d="M350 117 C405 104 447 75 474 34" fill="none" stroke="#d9e9ed" marker-end="url(#sArrow)"/><path d="M78 232 C91 194 119 165 159 146" fill="none" stroke="#79909a" marker-end="url(#sArrow)"/>
+              <text x="359" y="98" fill="#9dafb6" font-family="monospace" font-size="12">ROTATION</text><text x="53" y="216" fill="#7f939c" font-family="monospace" font-size="12">ORBIT</text><text x="293" y="181" fill="#9dafb6" font-family="monospace" font-size="12">COM</text>
+            </svg>
+          </div>
+          <div class="body-copy"><p>For the current study, “~4,000 km” means the physical tether length class, not a claim that every final design will use exactly that span. A symmetric two-ended configuration is attractive because it avoids assuming a separate multi-million-ton counterweight, but payload capture still changes the system’s center of mass and rotational state.</p><p>That makes mass distribution and post-capture control part of the architecture, not details to be added later.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="paper-band">
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">02 / Capture</p>
+        <div>
+          <h2>The handoff lasts seconds, not minutes.</h2>
+          <p class="lede">A payload cannot loiter next to a rotating tether and dock at leisure. The lower end arrives at the rendezvous point on a clock.</p>
+          <div class="fact-table">
+            <div class="fact-row"><b>Navigation</b><p>Vehicle and tether state estimates must converge tightly enough that the payload enters the capture volume at the right position, velocity and attitude.</p><small>Open subsystem</small></div>
+            <div class="fact-row"><b>Capture envelope</b><p>The mechanism must tolerate realistic closing error rather than requiring mathematical perfection.</p><small>Open subsystem</small></div>
+            <div class="fact-row"><b>Load transfer</b><p>Capture converts relative motion into structural load. Shock management and controlled load transfer are central design problems.</p><small>Open subsystem</small></div>
+            <div class="fact-row"><b>Abort</b><p>A missed or unhealthy capture must leave both vehicle and tether in survivable trajectories.</p><small>Required behavior</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">03 / Momentum exchange</p>
+        <div>
+          <h2>The payload gains what the tether gives up.</h2>
+          <p class="lede">There is no free energy in the handoff. Accelerating the payload costs the tether orbital energy and momentum. That loss is exactly why a reusable system needs recovery between missions.</p>
+          <p class="body-copy">A useful design is therefore sized around more than a dramatic tip velocity. Payload mass, tether mass, release geometry, allowable orbit change and recovery time all determine throughput. The engineering question is not “can one payload be thrown?” but “can the facility do it repeatedly without drifting out of its operating envelope?”</p>
+        </div>
+      </div>
+    </section>
   </div>
-</BaseLayout>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">04 / Recovery</p>
+      <div>
+        <h2>Rebuild the orbit between missions.</h2>
+        <p class="body-copy">Electrodynamic reboost is a leading candidate because a conductor moving through Earth’s magnetic field can exchange momentum with the environment through Lorentz forces. Electrical power can therefore restore orbital energy without carrying conventional reaction mass for that reboost function.</p>
+        <div class="sequence">
+          <div class="sequence-row"><b>A</b><strong>PAYLOAD RELEASE</strong><span>Tether orbit and rotational state are lower-energy than before capture.</span></div>
+          <div class="sequence-row"><b>B</b><strong>POWER</strong><span>Solar arrays or another electrical source drive the recovery system.</span></div>
+          <div class="sequence-row"><b>C</b><strong>CURRENT</strong><span>The electrodynamic element interacts with ionospheric plasma and Earth’s magnetic field.</span></div>
+          <div class="sequence-row"><b>D</b><strong>RESTORE</strong><span>The facility climbs back toward its operational state before the next mission.</span></div>
+        </div>
+        <p class="body-copy">This does not make the complete transportation chain “fuel free.” The vehicle arriving from Earth still needs propulsion, and the recovery rate depends on orbit, magnetic-field geometry, current collection, conductor design, power and plasma conditions.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="paper-band">
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">05 / Structure</p>
+        <div>
+          <h2>Four thousand kilometres cannot behave like one rope.</h2>
+          <p class="lede">The current structural direction is tapered, redundant and sectional: more material where the load demands it, multiple load paths where damage is credible, and boundaries that help keep a local failure local.</p>
+          <div class="hard-list">
+            <div class="hard-row"><b>TAPER</b><span>CROSS-SECTION FOLLOWS LOAD / MASS IS NOT UNIFORM / PEAK STRESS MUST SET GEOMETRY</span></div>
+            <div class="hard-row"><b>REDUNDANCY</b><span>MULTIPLE LOAD PATHS / SPATIALLY SEPARATED ELEMENTS / DAMAGE TOLERANCE</span></div>
+            <div class="hard-row"><b>SECTIONS</b><span>INSPECTION / REPLACEMENT / ISOLATION / CONTROLLED FAILURE BOUNDARIES</span></div>
+            <div class="hard-row"><b>MATERIAL</b><span>ALLOWABLE SPECIFIC STRENGTH AFTER JOINTS / FATIGUE / ENVIRONMENT / SAFETY FACTOR</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">06 / Failure</p>
+        <div>
+          <h2>Design the broken machine too.</h2>
+          <p class="lede">Micrometeoroids, orbital debris, thermal cycling, atomic oxygen, fatigue and deployment faults are not edge cases for a tether. Survivability has to be part of the initial architecture.</p>
+          <p class="body-copy">Deliberate severing or sectional isolation may eventually help prevent one local failure from becoming a full-length event, but cutting a tether is not automatically safe. Every credible sever location has to be propagated forward: fragment orbit, collision probability, lifetime and eventual re-entry all matter.</p>
+          <a class="cta light" href="/roadmap/">See how the program closes these risks →</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</ProductionLayout>
