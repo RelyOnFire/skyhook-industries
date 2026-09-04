@@ -1,16 +1,59 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="Roadmap — Skyhook Industries" description="A risk-driven development roadmap for Skyhook Industries, from reference architecture and materials through orbital demonstrations and momentum exchange.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">Roadmap</p><h1>Engineering gates, not fictional deadlines.</h1><p>The original website attached calendar dates to increasingly large tethers before the underlying architecture had closed. The new roadmap advances when a measurable technical risk has been retired.</p></section>
-    <section class="page-section">
-      <div class="roadmap-step"><span class="step">01</span><div><h2>Reference architecture</h2><p>Close the first coherent model of orbit, tether length, mass distribution, rotation rate, rendezvous geometry, payload class, momentum transfer and reboost throughput. Publish assumptions and sensitivity ranges.</p></div></div>
-      <div class="roadmap-step"><span class="step">02</span><div><h2>Materials and structural coupons</h2><p>Characterize specific strength, fatigue, joining, thermal cycling, radiation and atomic-oxygen exposure for candidate tether constructions. Validate redundant load paths rather than assuming ideal fibers.</p></div></div>
-      <div class="roadmap-step"><span class="step">03</span><div><h2>Ground dynamics demonstrator</h2><p>Test deployment, rotation control, segmented construction, capture compliance and failure isolation at the smallest scale that can answer meaningful questions.</p></div></div>
-      <div class="roadmap-step"><span class="step">04</span><div><h2>Subscale orbital tether</h2><p>Demonstrate deployment, tracking, long-duration dynamics, collision-avoidance operations and electrodynamic interaction in the intended operational environment.</p></div></div>
-      <div class="roadmap-step"><span class="step">05</span><div><h2>Momentum-exchange demonstration</h2><p>Rendezvous with and capture a small free-flying payload, transfer a measurable amount of momentum, release predictably and quantify the resulting change to the tether's orbit.</p></div></div>
-      <div class="roadmap-step"><span class="step">06</span><div><h2>Reusable transportation prototype</h2><p>Scale only after the preceding system demonstrates repeatability, survivability and a credible path to restoring momentum between missions.</p></div></div>
+<ProductionLayout title="Roadmap — Skyhook Industries" description="The Skyhook Industries development roadmap, organized by engineering gates rather than calendar promises.">
+  <section class="page-hero">
+    <p class="eyebrow">Engineering program</p>
+    <h1>Earn the next scale.</h1>
+    <p>A transportation-scale Skyhook should not be scheduled by optimism. Each step has to retire a specific class of uncertainty before the project earns the right to become larger, faster or more expensive.</p>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">Program logic</p>
+      <div>
+        <h2>Gates, not dates.</h2>
+        <p class="body-copy">The old roadmap used fixed years for kilometre-scale and ultimately multi-thousand-kilometre hardware. That implied more certainty than the engineering supported. The replacement roadmap is conditional: pass the exit condition, then move on.</p>
+        <div class="gate-list">
+          <div class="gate"><span>GATE 01</span><div><h3>Close the reference architecture.</h3><p>Choose a baseline geometry, define what the ~4,000 km length means physically, solve first-order orbit and rotation kinematics, and identify the material performance required for the study mass range.</p></div><aside>EXIT / one internally consistent baseline with traceable assumptions</aside></div>
+          <div class="gate"><span>GATE 02</span><div><h3>Prove the material system.</h3><p>Move beyond headline tensile strength. Characterize allowable specific strength after joints, manufacturing defects, creep, fatigue, thermal cycling, atomic oxygen, radiation and safety factor.</p></div><aside>EXIT / coupon + joint data support structural model assumptions</aside></div>
+          <div class="gate"><span>GATE 03</span><div><h3>Prove dynamics at small scale.</h3><p>Build and operate a rotating tether test article that exercises deployment, control, load redistribution, sensor fusion, sectional behavior and representative failure cases.</p></div><aside>EXIT / measured dynamics match the control model across normal + faulted cases</aside></div>
+          <div class="gate"><span>GATE 04</span><div><h3>Fly an orbital tether demonstrator.</h3><p>Deploy a modest tether in orbit and verify deployment, long-duration dynamics, inspection, attitude/orbit control and survivability assumptions in the actual environment.</p></div><aside>EXIT / stable controlled tether operation over a meaningful mission duration</aside></div>
+          <div class="gate"><span>GATE 05</span><div><h3>Demonstrate momentum exchange.</h3><p>Use a controlled payload handoff to measure capture loads, facility-state change and release accuracy. The experiment can be small; the physics and control loop must be real.</p></div><aside>EXIT / capture → swing → release demonstrated with closed energy/momentum accounting</aside></div>
+          <div class="gate"><span>GATE 06</span><div><h3>Recover and reuse.</h3><p>Restore the tether’s orbital/rotational state after a momentum-exchange event and repeat the operation. Electrodynamic reboost is the leading study path, but the gate is about repeatability rather than allegiance to one mechanism.</p></div><aside>EXIT / repeat mission after measured state recovery</aside></div>
+          <div class="gate"><span>GATE 07</span><div><h3>Move the rendezvous downward.</h3><p>Progressively raise closing speed and lower the handoff altitude using increasingly flight-like vehicles, navigation and capture hardware.</p></div><aside>EXIT / high-altitude vehicle capture with credible operational margins</aside></div>
+          <div class="gate"><span>GATE 08</span><div><h3>Build transportation infrastructure.</h3><p>Only after the preceding gates are closed does a multi-thousand-kilometre operational tether become a procurement and deployment problem instead of a collection of assumptions.</p></div><aside>EXIT / system-level case closes technically, operationally and economically</aside></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="paper-band">
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">What scales first</p>
+        <div>
+          <h2>Scale knowledge before hardware.</h2>
+          <p class="lede">The first useful prototypes do not need to resemble the final tether. Their job is to make the models wrong in informative ways.</p>
+          <div class="fact-table">
+            <div class="fact-row"><b>Structure</b><p>Break specimens, joints and redundant sections before trying to build heroic lengths.</p><small>Early</small></div>
+            <div class="fact-row"><b>Controls</b><p>Use instrumented rotating rigs and deployment tests to validate estimation and control laws.</p><small>Early</small></div>
+            <div class="fact-row"><b>Capture</b><p>Test moving-target acquisition, retention and load transfer independently before orbital integration.</p><small>Early</small></div>
+            <div class="fact-row"><b>Orbit</b><p>Use increasingly realistic simulation and then small orbital hardware to expose environmental and operational coupling.</p><small>Progressive</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">Decision rule</p>
+        <div>
+          <h2>If a gate fails, change the machine.</h2>
+          <p class="lede">The ~4,000 km study length, symmetric geometry, material family, capture architecture and reboost method are not sacred. A failed gate should force a design change, not a rhetorical defense of the old baseline.</p>
+          <a class="cta light" href="/research/">See the research the program builds from →</a>
+        </div>
+      </div>
     </section>
   </div>
-</BaseLayout>
+</ProductionLayout>

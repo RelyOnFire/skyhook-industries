@@ -1,9 +1,53 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="Contact — Skyhook Industries" description="Contact Skyhook Industries about orbital tether research, materials, dynamics, guidance and reusable space transportation.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">Contact</p><h1>Work on the hard parts.</h1><p>Conversations are welcome with researchers, engineers and organizations working on tether dynamics, orbital mechanics, advanced materials, guidance and control, electrodynamic propulsion, debris survivability and reusable launch systems.</p><div class="actions"><a class="button" href="mailto:skyhookindustries@protonmail.com">skyhookindustries@protonmail.com</a><a class="button secondary" href="https://github.com/RelyOnFire/skyhook-industries">View the repository</a></div></section>
-    <section class="page-section prose"><h2>Useful correspondence</h2><p>If you are contacting Skyhook Industries about technical work, the most useful messages identify the subsystem or assumption you want to challenge and point to the calculation, experiment, paper, material dataset or design approach that could move it forward.</p><p>Disagreement is useful when it makes the model better.</p></section>
+<ProductionLayout title="Contact — Skyhook Industries" description="Contact Skyhook Industries about rotating tether research, engineering collaboration, materials, controls, capture systems and orbital transportation.">
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">Contact</p>
+    <h1>Bring a real problem.</h1>
+    <p>The most useful conversations are specific: a material limit, a capture mechanism, an orbital-control problem, a debris case, a test method, a piece of flight heritage we should be using better.</p>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">01 / Contact</p>
+      <div>
+        <h2>Skyhook Industries</h2>
+        <div class="contact-block">
+          <div class="contact-line"><b>Email</b><a href="mailto:skyhookindustries@protonmail.com">skyhookindustries@protonmail.com</a></div>
+          <div class="contact-line"><b>GitHub</b><a href="https://github.com/RelyOnFire/skyhook-industries">RelyOnFire/skyhook-industries ↗</a></div>
+          <div class="contact-line"><b>Project</b><span>Independent engineering study</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">02 / Useful conversations</p>
+      <div>
+        <h2>Where outside expertise matters most.</h2>
+        <div class="sequence">
+          <div class="sequence-row"><b>A</b><strong>MATERIALS + STRUCTURES</strong><span>Allowable specific strength, fiber architectures, joints, fatigue, creep, environmental degradation and damage tolerance.</span></div>
+          <div class="sequence-row"><b>B</b><strong>ORBIT + CONTROLS</strong><span>Coupled tether dynamics, post-capture transients, state estimation, deployment and recovery control.</span></div>
+          <div class="sequence-row"><b>C</b><strong>CAPTURE</strong><span>Moving-target rendezvous, guidance, capture envelopes, shock attenuation, retention, release and abort logic.</span></div>
+          <div class="sequence-row"><b>D</b><strong>ELECTRODYNAMICS</strong><span>Current collection, conductor architecture, Lorentz-force performance, power and orbit-dependent reboost.</span></div>
+          <div class="sequence-row"><b>E</b><strong>SURVIVABILITY</strong><span>Orbital debris, micrometeoroids, inspection, repair, sectional isolation and severed-fragment trajectories.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="paper-band">
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">03 / Before sending</p>
+        <div>
+          <h2>Keep sensitive material out of email.</h2>
+          <p class="lede">Please do not send export-controlled, classified, confidential or proprietary technical information without an appropriate agreement and a secure channel.</p>
+          <p class="body-copy">Public papers, published test data, open calculations, corrections to the site and pointers to relevant work are always welcome.</p>
+        </div>
+      </div>
+    </section>
   </div>
-</BaseLayout>
+</ProductionLayout>

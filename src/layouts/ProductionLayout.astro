@@ -1,0 +1,78 @@
+---
+import '../styles/production.css';
+import '../styles/paper-nav.css';
+
+interface Props {
+  title: string;
+  description: string;
+  theme?: 'dark' | 'paper';
+  noindex?: boolean;
+}
+
+const { title, description, theme = 'dark', noindex = false } = Astro.props;
+const path = Astro.url.pathname;
+const paperPaths = ['/research/', '/about/', '/contact/', '/archive/'];
+const effectiveTheme = theme === 'paper' || paperPaths.includes(path) ? 'paper' : 'dark';
+const nav = [
+  ['The System', '/system/'],
+  ['Research', '/research/'],
+  ['Roadmap', '/roadmap/'],
+  ['About', '/about/'],
+];
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en" data-theme={effectiveTheme}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={effectiveTheme === 'paper' ? '#e8e4da' : '#030506'} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {noindex && <meta name="robots" content="noindex,follow" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/social-card.svg', Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <header class="site-nav">
+      <a class="wordmark" href="/" aria-label="Skyhook Industries home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i></span>
+        <span>Skyhook Industries</span>
+      </a>
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        {nav.map(([label, href]) => <a class:list={{active:path === href}} href={href}>{label}</a>)}
+        <a class:list={{active:path === '/contact/'}} href="/contact/">Contact</a>
+      </nav>
+      <details class="mobile-nav">
+        <summary>Menu</summary>
+        <div>
+          {nav.map(([label, href]) => <a href={href}>{label}</a>)}
+          <a href="/contact/">Contact</a>
+        </div>
+      </details>
+    </header>
+    <main id="content"><slot /></main>
+    <footer class="site-footer">
+      <div class="footer-top">
+        <div>
+          <a class="wordmark" href="/"><span class="wordmark-mark" aria-hidden="true"><i></i></span><span>Skyhook Industries</span></a>
+          <p>Rotating orbital transportation and momentum-exchange infrastructure.</p>
+        </div>
+        <div class="footer-nav">
+          <a href="/system/">System</a><a href="/research/">Research</a><a href="/roadmap/">Roadmap</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/archive/">Archive</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© {new Date().getFullYear()} Skyhook Industries</span>
+        <a href="https://github.com/RelyOnFire/skyhook-industries">Source on GitHub ↗</a>
+      </div>
+    </footer>
+  </body>
+</html>

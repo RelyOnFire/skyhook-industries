@@ -1,11 +1,71 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="About — Skyhook Industries" description="About Skyhook Industries, an independent engineering project investigating reusable orbital transportation with rotating momentum-exchange tethers.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">About</p><h1>Revisiting an unusually powerful idea.</h1><p>Skyhook Industries is an independent effort to examine whether decades of space-tether research can be translated into a modern, testable architecture for reusable orbital transportation.</p></section>
-    <section class="page-section prose"><h2>Why Skyhook?</h2><p>Launch vehicles have improved enormously, but nearly every mission still carries the machinery and reaction mass needed for each major velocity change. A momentum-exchange tether asks a different question: what transportation work becomes possible if part of that machinery is built once and left in orbit for repeated use?</p><p>The concept is ambitious enough that credibility matters. We do not describe analytical studies as flight demonstrations, design targets as specifications, or unresolved materials problems as solved engineering.</p></section>
-    <section class="page-section prose"><p class="eyebrow">Founder</p><h2>Isaac A. Mattoo</h2><p>Skyhook Industries was founded by Isaac A. Mattoo. His professional background is in complex infrastructure and systems engineering, with a focus on automation, reliability and fault-tolerant systems.</p><p>The project applies the same instinct to orbital infrastructure: expose assumptions, design around failure, test progressively, and prefer systems that can be inspected and improved over one-shot heroics.</p></section>
-    <section class="page-section prose"><p class="eyebrow">Engineering principles</p><h2>How we intend to work.</h2><ul class="list-clean"><li><b>Test how you fly</b><span>Increase environmental and operational fidelity as a design matures.</span></li><li><b>Design for failure</b><span>Use redundant load paths, graceful degradation and replaceable subsystems where practical.</span></li><li><b>Shorten the path to evidence</b><span>Break large problems into tests that retire specific risks.</span></li><li><b>Optimize for learning</b><span>A prototype does not need to be perfect. It needs to answer a question.</span></li></ul></section>
+<ProductionLayout title="About — Skyhook Industries" description="About Skyhook Industries, its engineering thesis, founder and operating principles.">
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">About Skyhook Industries</p>
+    <h1>Build the part that stays in space.</h1>
+    <p>Skyhook Industries is an independent engineering project exploring rotating orbital tethers as reusable transportation infrastructure. The thesis is simple: if part of the launch system can remain in orbit and be used again, each mission does not have to buy the same velocity from scratch.</p>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">01 / The thesis</p>
+      <div>
+        <h2>Infrastructure changes the economics of motion.</h2>
+        <p class="lede">A rocket carries its propellant, structure and engines through the mission. A Skyhook would move part of the acceleration problem into a persistent orbital machine.</p>
+        <p class="body-copy">That does not remove rockets from the system. It changes the job they have to do. Instead of carrying a payload all the way to its final orbital energy, an arriving vehicle would climb to a timed handoff and let the tether perform the next part of the acceleration through momentum exchange.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section">
+    <div class="section-grid">
+      <p class="chapter-label">02 / Why this project</p>
+      <div>
+        <h2>The interesting part starts after the equation works.</h2>
+        <p class="body-copy">Rotating tether mechanics have been studied for decades. The harder question is whether the idea can become a maintainable transportation system: one that can be built, deployed, inspected, controlled, repaired, survived through damage, recovered after each payload and operated often enough to matter.</p>
+        <p class="body-copy">Skyhook Industries exists to treat that system-level problem seriously, without pretending that a compelling orbital-mechanics diagram is the same thing as an engineered machine.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="paper-band">
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">03 / Principles</p>
+        <div>
+          <h2>How the work should be done.</h2>
+          <div class="principles">
+            <article class="principle"><b>01 / TEST THE ASSUMPTION</b><h3>Build experiments around what could make the design wrong.</h3><p>A good prototype should answer a question. It does not need to resemble the final machine if a simpler article can expose the same uncertainty.</p></article>
+            <article class="principle"><b>02 / DESIGN THE FAILURE</b><h3>A broken system is still a system state.</h3><p>Damage tolerance, severed trajectories, aborts and loss of control belong in the architecture from the beginning.</p></article>
+            <article class="principle"><b>03 / CLOSE THE WHOLE LOOP</b><h3>Do not optimize one spectacular number.</h3><p>Tip speed means little without tether mass, payload mass, capture loads, orbit loss, recovery power and mission cadence.</p></article>
+            <article class="principle"><b>04 / SHOW THE EVIDENCE</b><h3>Separate what flew from what was modeled from what we propose.</h3><p>Credibility comes from clear boundaries, not from making every sentence sound certain.</p></article>
+            <article class="principle"><b>05 / KEEP THE AMBITION</b><h3>Rigor is not the same thing as timidity.</h3><p>The purpose of careful engineering is to make large things possible—not to make them sound smaller.</p></article>
+            <article class="principle"><b>06 / EARN THE NEXT SCALE</b><h3>Length and cost follow knowledge.</h3><p>Each larger demonstrator should exist because the previous one closed the risks that mattered at its scale.</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="paper-section">
+      <div class="section-grid">
+        <p class="chapter-label">04 / Founder</p>
+        <div>
+          <h2>Isaac Mattoo</h2>
+          <p class="lede">Founder of Skyhook Industries, with a professional background in complex technical infrastructure and systems engineering.</p>
+          <p class="body-copy">The project is intentionally interdisciplinary. A transportation-scale tether touches orbital mechanics, structures, materials, controls, plasma physics, navigation, robotics, manufacturing, debris analysis and operations. Skyhook Industries is not presented as having solved all of those disciplines internally. The goal is to build a coherent system problem that serious specialists can attack together.</p>
+        </div>
+      </div>
+    </section>
   </div>
-</BaseLayout>
+
+  <section class="closing">
+    <div>
+      <p class="eyebrow">Work with us</p>
+      <h2>Hard problems are better when they are specific.</h2>
+      <p>If your work touches tether materials, capture systems, orbital dynamics, electrodynamic propulsion, debris analysis or high-altitude flight, there is probably a useful question here.</p>
+      <a class="cta" href="/contact/">Get in touch →</a>
+    </div>
+  </section>
+</ProductionLayout>

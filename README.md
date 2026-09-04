@@ -1,15 +1,13 @@
 # Skyhook Industries
 
-Public website for **Skyhook Industries**, an independent engineering project investigating rotating orbital tethers and reusable momentum-exchange infrastructure.
+Public website and technical working documents for **Skyhook Industries**, an independent engineering project investigating rotating orbital tethers and reusable momentum-exchange transportation.
 
 ## Stack
 
-- Astro
-- Static output
-- Cloudflare Workers with Static Assets for deployment
+- Astro static output
+- Cloudflare Workers Static Assets
 - GitHub for version control and technical documentation
-
-Production deployments are built from the `main` branch with `npm run build` and deployed from `dist` through Wrangler.
+- GitHub Actions build validation
 
 ## Local development
 
@@ -24,10 +22,17 @@ Production build:
 npm run build
 ```
 
-## Editorial principle
+Cloudflare deployment is configured in `wrangler.jsonc` and builds from GitHub.
 
-> Established physics. Unsolved engineering. Enormous potential.
+## Editorial rule
 
-Public claims should distinguish flight heritage, prior research, Skyhook design direction, and open design targets.
+Public claims are separated into four classes:
+
+1. **Flight heritage** — measured or demonstrated in space.
+2. **Prior research** — modeled or analyzed in credible aerospace literature.
+3. **Skyhook study** — a present architectural choice under investigation.
+4. **Open target** — a value or feature that still depends on modeling, testing, or material performance.
+
+The website should describe the machine concretely and confidently without converting study assumptions into established specifications.
 
 See `docs/editorial-standard.md` and `docs/reference-architecture.md`.
