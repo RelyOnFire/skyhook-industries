@@ -1,6 +1,7 @@
 ---
 import '../styles/production.css';
 import '../styles/paper-nav.css';
+import '../styles/polish.css';
 
 interface Props {
   title: string;
@@ -20,6 +21,7 @@ const nav = [
   ['About', '/about/'],
 ];
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const socialImage = new URL('/social-card.svg', Astro.site);
 ---
 <!doctype html>
 <html lang="en" data-theme={effectiveTheme}>
@@ -32,29 +34,33 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {noindex && <meta name="robots" content="noindex,follow" />}
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Skyhook Industries" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL('/social-card.svg', Astro.site)} />
+    <meta property="og:image" content={socialImage} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
     <title>{title}</title>
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
     <header class="site-nav">
-      <a class="wordmark" href="/" aria-label="Skyhook Industries home">
+      <a class="wordmark" href="/" aria-label="Skyhook Industries home" aria-current={path === '/' ? 'page' : undefined}>
         <span class="wordmark-mark" aria-hidden="true"><i></i></span>
         <span>Skyhook Industries</span>
       </a>
       <nav class="desktop-nav" aria-label="Primary navigation">
-        {nav.map(([label, href]) => <a class:list={{active:path === href}} href={href}>{label}</a>)}
-        <a class:list={{active:path === '/contact/'}} href="/contact/">Contact</a>
+        {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
+        <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
       </nav>
       <details class="mobile-nav">
         <summary>Menu</summary>
         <div>
-          {nav.map(([label, href]) => <a href={href}>{label}</a>)}
-          <a href="/contact/">Contact</a>
+          {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
+          <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
         </div>
       </details>
     </header>
