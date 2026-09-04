@@ -10,6 +10,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  color: #030506;
+  background: #d9e9ed;
+}
+
+html[data-theme="paper"] ::selection {
+  color: #f5f7f7;
+  background: #335e73;
+}
+
 h1,
 h2,
 h3 {
@@ -37,6 +47,33 @@ p,
 .sequence-row b,
 .sequence-row strong {
   font-variant-numeric: tabular-nums;
+}
+
+/* Paper pages share the same chrome but reverse it deliberately. */
+html[data-theme="paper"] .site-nav {
+  color: #171a1c;
+}
+
+html[data-theme="paper"] .wordmark-mark {
+  border-color: #335e73;
+}
+
+html[data-theme="paper"] .wordmark-mark i {
+  background: #335e73;
+}
+
+html[data-theme="paper"] .desktop-nav a {
+  color: #596166;
+}
+
+html[data-theme="paper"] .desktop-nav a:hover,
+html[data-theme="paper"] .desktop-nav a.active {
+  color: #171a1c;
+  border-color: #335e73;
+}
+
+html[data-theme="paper"] .mobile-nav summary {
+  color: #171a1c;
 }
 
 /* Keep the hero cinematic, but protect the copy from the tether at every
@@ -282,6 +319,27 @@ html[data-theme="paper"] .mobile-nav a.active {
 
   .hero-copy > p:last-child {
     max-width: 43rem;
+  }
+}
+
+/* Short laptops need a different vertical composition, not a globally smaller
+   hero. This protects 1280×800 / 1366×768-class screens while leaving tall
+   desktop displays untouched. */
+@media (min-width: 901px) and (max-height: 850px) {
+  .hero-copy {
+    bottom: 4dvh;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 1.05rem;
+    font-size: clamp(4.1rem, 7.2vw, 7.3rem);
+    line-height: 0.84;
+  }
+
+  .hero-copy > p:last-child {
+    max-width: 43rem;
+    font-size: 1.04rem;
+    line-height: 1.45;
   }
 }
 
