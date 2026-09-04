@@ -40,6 +40,17 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
           </div>
           <p class="scale-note">Scale comparison only. This is not an orbital-geometry diagram and does not depict a ground connection.</p>
         </div>
+
+        <div class="architecture-readout">
+          <div class="figure-head"><span>Fig. 04 / First numerical closure</span><span>Reference Architecture v0.3</span></div>
+          <p class="body-copy">A first screening model now exists behind the study length. It assumes two equal 2,000 km arms, a 100 km lower-tip altitude at the radial pass, and a circular center-of-mass orbit. That puts the center of mass at about 2,100 km altitude and the opposite tip at about 4,100 km.</p>
+          <div class="sequence compact-sequence">
+            <div class="sequence-row"><b>3.0</b><strong>km/s lower tip</strong><span>54.3 min rotation / 10.72 km/s upper tip / 10.88 MJ/kg lower-arm self-load index</span></div>
+            <div class="sequence-row"><b>4.1</b><strong>km/s lower tip</strong><span>75.9 min rotation / 9.62 km/s upper tip / 7.24 MJ/kg lower-arm self-load index</span></div>
+            <div class="sequence-row"><b>5.0</b><strong>km/s lower tip</strong><span>112.6 min rotation / 8.72 km/s upper tip / 5.16 MJ/kg lower-arm self-load index</span></div>
+          </div>
+          <p class="body-copy">The 4.1 km/s row is included because Boeing’s HASTOL Phase I study used a 100 km / 4.1 km/s inertial rendezvous in a very different 600 km architecture. Skyhook Industries has not adopted that vehicle speed as a requirement. The sensitivity is the point: making the lower tip easier to reach forces the tether to rotate harder, which raises structural load quickly.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -86,6 +97,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
           <div class="sequence-row"><b>D</b><strong>RESTORE</strong><span>The facility climbs back toward its operational state before the next mission.</span></div>
         </div>
         <p class="body-copy">This does not make the complete transportation chain “fuel free.” The vehicle arriving from Earth still needs propulsion, and the recovery rate depends on orbit, magnetic-field geometry, current collection, conductor design, power and plasma conditions.</p>
+        <p class="body-copy">The v0.3 screening model also puts a scale on the recovery problem. In the deliberately aggressive 4.1 km/s full lower-to-upper transfer, the payload gains about 61.4 MJ/kg of Earth-relative mechanical energy. Recovering that in one day would require an ideal average of about 0.71 MW per metric tonne of payload before losses. Earlier release or longer recovery time reduces the requirement.</p>
       </div>
     </div>
   </section>
@@ -103,6 +115,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
             <div class="hard-row"><b>SECTIONS</b><span>INSPECTION / REPLACEMENT / ISOLATION / CONTROLLED FAILURE BOUNDARIES</span></div>
             <div class="hard-row"><b>MATERIAL</b><span>ALLOWABLE SPECIFIC STRENGTH AFTER JOINTS / FATIGUE / ENVIRONMENT / SAFETY FACTOR</span></div>
           </div>
+          <p class="body-copy">For the 4.1 km/s comparison case, distributed self-load alone gives an ideal lower-arm center-to-tip taper ratio of about 6.1× at 4 MJ/kg allowable specific strength, 3.3× at 6 MJ/kg and 2.5× at 8 MJ/kg. Those are not mass estimates: payload tension, capture hardware, joints, redundancy and damage allowance still have to set the absolute section size.</p>
         </div>
       </div>
     </section>
