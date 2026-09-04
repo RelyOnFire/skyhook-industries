@@ -1,0 +1,31 @@
+<div class="orbital-graphic" role="img" aria-label="Conceptual diagram of a freely orbiting rotating tether above Earth">
+  <svg viewBox="0 0 760 620" aria-hidden="true">
+    <defs>
+      <radialGradient id="earth" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#456c83" />
+        <stop offset="55%" stop-color="#163447" />
+        <stop offset="100%" stop-color="#071018" />
+      </radialGradient>
+      <linearGradient id="tether" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#9fb3bd" />
+        <stop offset="50%" stop-color="#edf5f7" />
+        <stop offset="100%" stop-color="#81929b" />
+      </linearGradient>
+    </defs>
+    <circle cx="380" cy="510" r="238" fill="url(#earth)" />
+    <ellipse cx="380" cy="338" rx="330" ry="142" class="orbit" transform="rotate(-8 380 338)" />
+    <g transform="rotate(-25 382 252)">
+      <path d="M 176 378 Q 302 309 382 252 Q 466 188 596 70" class="tether-main" />
+      <path d="M 176 378 Q 302 309 382 252" class="tether-highlight" />
+      <circle cx="382" cy="252" r="10" class="hub" />
+      <circle cx="176" cy="378" r="7" class="tip" />
+      <circle cx="596" cy="70" r="7" class="tip" />
+    </g>
+    <path d="M118 396 C82 390 66 373 44 358" class="vehicle-path" />
+    <path d="M50 351 l-20 -3 13 16 z" class="vehicle" />
+    <text x="36" y="330" class="svg-label">rendezvous</text>
+    <text x="485" y="112" class="svg-label">rotating tether</text>
+    <text x="394" y="242" class="svg-label">center of mass</text>
+  </svg>
+  <p>Concept only — not to scale. The system remains entirely in orbit; nothing is anchored to Earth.</p>
+</div>
