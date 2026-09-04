@@ -61,6 +61,7 @@ html[data-theme="paper"] summary:focus-visible {
 
 .mobile-nav summary {
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .mobile-nav summary::-webkit-details-marker {
@@ -77,6 +78,11 @@ html[data-theme="paper"] summary:focus-visible {
 
 .mobile-nav[open] summary::after {
   content: " −";
+}
+
+.mobile-nav a.active {
+  color: #f5f7f7;
+  background: rgb(217 233 237 / 0.1);
 }
 
 /* Interactive feedback: restrained and mechanical rather than decorative. */
@@ -141,8 +147,15 @@ html[data-theme="paper"] .mobile-nav div {
   box-shadow: 0 12px 36px rgb(23 26 28 / 0.12);
 }
 
-html[data-theme="paper"] .mobile-nav a:hover {
-  background: rgb(51 94 115 / 0.08);
+html[data-theme="paper"] .mobile-nav a.active {
+  color: #171a1c;
+  background: rgb(51 94 115 / 0.1);
+}
+
+@media (hover: hover) {
+  html[data-theme="paper"] .mobile-nav a:hover {
+    background: rgb(51 94 115 / 0.08);
+  }
 }
 
 @media (max-width: 640px) {
