@@ -15,7 +15,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
         <h2>Gates, not dates.</h2>
         <p class="body-copy">The old roadmap used fixed years for kilometre-scale and ultimately multi-thousand-kilometre hardware. That implied more certainty than the engineering supported. The replacement roadmap is conditional: pass the exit condition, then move on.</p>
         <div class="gate-list">
-          <div class="gate"><span>GATE 01</span><div><h3>Close the reference architecture.</h3><p>Reference Architecture v0.3 now defines the 4,000 km quantity as total physical length, closes one symmetric 100 km-altitude screening geometry, and calculates first-order rotation, self-load and energy sensitivity. Payload mass, absolute tapered mass, release mission and post-capture dynamics remain open.</p></div><aside>STATUS / first-order geometry closed; system mass still open</aside></div>
+          <div class="gate"><span>GATE 01</span><div><h3>Close the reference architecture.</h3><p>Reference Architecture v0.4 now closes one 4,000 km symmetric screening geometry, ideal tapered mass versus payload/material performance, instantaneous post-capture COM change, and the first symmetric-versus-asymmetric balance trade. Full post-capture propagation, release targeting and real material-system mass remain open.</p></div><aside>STATUS / first geometry + ideal mass closure complete; dynamics still open</aside></div>
           <div class="gate"><span>GATE 02</span><div><h3>Prove the material system.</h3><p>Move beyond headline tensile strength. Characterize allowable specific strength after joints, manufacturing defects, creep, fatigue, thermal cycling, atomic oxygen, radiation and safety factor.</p></div><aside>EXIT / coupon + joint data support structural model assumptions</aside></div>
           <div class="gate"><span>GATE 03</span><div><h3>Prove dynamics at small scale.</h3><p>Build and operate a rotating tether test article that exercises deployment, control, load redistribution, sensor fusion, sectional behavior and representative failure cases.</p></div><aside>EXIT / measured dynamics match the control model across normal + faulted cases</aside></div>
           <div class="gate"><span>GATE 04</span><div><h3>Fly an orbital tether demonstrator.</h3><p>Deploy a modest tether in orbit and verify deployment, long-duration dynamics, inspection, attitude/orbit control and survivability assumptions in the actual environment.</p></div><aside>EXIT / stable controlled tether operation over a meaningful mission duration</aside></div>
@@ -41,6 +41,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
             <div class="fact-row"><b>Capture</b><p>Test moving-target acquisition, retention and load transfer independently before orbital integration.</p><small>Early</small></div>
             <div class="fact-row"><b>Orbit</b><p>Use increasingly realistic simulation and then small orbital hardware to expose environmental and operational coupling.</p><small>Progressive</small></div>
           </div>
+          <a class="cta light" href="/reference-architecture/">Read the current reference architecture →</a>
         </div>
       </div>
     </section>
