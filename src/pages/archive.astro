@@ -1,9 +1,40 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<BaseLayout title="Archive — Skyhook Industries" description="Historical Skyhook Industries concepts preserved for project context but no longer presented as the current development roadmap.">
-  <div class="shell">
-    <section class="page-hero"><p class="eyebrow">Archive</p><h1>Early concepts, preserved in context.</h1><p>Skyhook Industries has explored ideas beyond the present tether program. Some were intentionally speculative; others used assumptions or schedules that no longer represent the project.</p></section>
-    <section class="page-section prose"><div class="archive-note"><strong>Archive policy:</strong> material listed here is historical. It should not be interpreted as an active mission commitment, current engineering specification or current development schedule.</div><h2>Comet mission concepts</h2><p>The former website proposed using robotic infrastructure and in-situ resources to substantially alter the orbit of comet 26P/Grigg–Skjellerup. That concept is not part of the current Skyhook Industries development roadmap.</p><h2>Original Skyhook schedule</h2><p>The former site published prototype milestones beginning in 2024 and extending to a 4,252 km operational system in 2042. Those dates are retired. The current roadmap is risk-driven and advances through engineering gates rather than unsupported calendar commitments.</p><h2>Why preserve these?</h2><p>Deleting old thinking makes projects look cleaner than they really are. Preserving it with explicit status makes the evolution of the engineering visible without confusing old exploration with present claims.</p></section>
-  </div>
-</BaseLayout>
+<ProductionLayout title="Archive — Skyhook Industries" description="Archived early Skyhook Industries concepts preserved for project history." theme="paper" noindex={true}>
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">Archive / project history</p>
+    <h1>Old ideas stay visible. Old assumptions do not stay active.</h1>
+    <p>Skyhook Industries has changed substantially over time. This archive preserves early concepts without allowing obsolete numbers, schedules or mission ideas to masquerade as the current engineering baseline.</p>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">Archived concepts</p>
+      <div>
+        <h2>Preserve the trail.</h2>
+        <article class="archive-item">
+          <p class="status-label">ARCHIVED CONCEPT — NOT CURRENT ROADMAP</p>
+          <h3>Comet 26P / Grigg–Skjellerup mission proposal</h3>
+          <p>An early exploratory proposal involving robotic operations on a comet and large trajectory modification. It is preserved as part of the project’s history and does not represent Skyhook Industries’ current engineering baseline, schedule or mission plan.</p>
+        </article>
+        <article class="archive-item">
+          <p class="status-label">RETIRED INHERITED VALUES</p>
+          <h3>Legacy Skyhook specification set</h3>
+          <p>The former website treated values such as exactly 4,252 km of tether, 64 interwoven Kevlar strands, roughly $1/kg material cost, a fixed hub altitude at one-third Earth radius, a 67 m “spider” grabber and calendar milestones through 2042 as if they were established design requirements. They are no longer active specifications.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section">
+    <div class="section-grid">
+      <p class="chapter-label">Current baseline</p>
+      <div>
+        <h2>Use the live system pages.</h2>
+        <p class="lede">Current architecture, assumptions, research sources and program gates live on the main site and in the repository documentation.</p>
+        <a class="cta light" href="/system/">Current system →</a>
+      </div>
+    </div>
+  </section>
+</ProductionLayout>
