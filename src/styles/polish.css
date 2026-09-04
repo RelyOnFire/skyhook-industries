@@ -1,0 +1,279 @@
+/* Targeted production polish applied after the core Skyhook visual system. */
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p,
+.body-copy,
+.lede {
+  text-wrap: pretty;
+}
+
+.eyebrow,
+.chapter-label,
+.figure-head,
+.status-label,
+.study span,
+.fact-row b,
+.fact-row small,
+.source-type,
+.source-year,
+.gate > span,
+.gate aside,
+.hard-row,
+.sequence-row b,
+.sequence-row strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The original hero composition is retained, but a minimum dynamic viewport
+   height is safer than a hard mobile viewport height. */
+.hero-orbit {
+  height: auto;
+  min-height: max(720px, 100dvh);
+}
+
+/* Keyboard focus is intentionally obvious. */
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #d9e9ed;
+  outline-offset: 4px;
+  border-radius: 1px;
+}
+
+html[data-theme="paper"] a:focus-visible,
+html[data-theme="paper"] summary:focus-visible {
+  outline-color: #335e73;
+}
+
+.mobile-nav summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-nav summary::marker {
+  content: "";
+}
+
+.mobile-nav summary::after {
+  content: " +";
+}
+
+.mobile-nav[open] summary::after {
+  content: " −";
+}
+
+/* Interactive feedback: restrained and mechanical rather than decorative. */
+.desktop-nav a,
+.footer-nav a,
+.footer-bottom a,
+.mobile-nav a,
+.mobile-nav summary,
+.cta,
+.source {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+@media (hover: hover) {
+  .cta:hover {
+    color: #171a1c;
+    background: #d9e9ed;
+    border-color: #d9e9ed;
+    transform: translateY(-1px);
+  }
+
+  .paper-band .cta.light:hover,
+  html[data-theme="paper"] .cta.light:hover {
+    color: #e8e4da;
+    background: #171a1c;
+    border-color: #171a1c;
+  }
+
+  .source:hover {
+    background: rgb(23 26 28 / 0.045);
+    box-shadow: inset 3px 0 #335e73;
+  }
+
+  .footer-nav a:hover,
+  .footer-bottom a:hover {
+    color: #f5f7f7;
+  }
+}
+
+.cta:active {
+  transform: translateY(1px);
+}
+
+/* Small text on paper surfaces clears WCAG AA more comfortably. */
+.paper-band .study span,
+.paper-band .fact-row small,
+.paper-section .fact-row small,
+.paper-section .source-year {
+  color: #5b6264;
+}
+
+/* Match the mobile menu to the authored page surface. */
+html[data-theme="paper"] .mobile-nav div {
+  color: #171a1c;
+  background: #e8e4da;
+  border-color: #8f908a;
+  box-shadow: 0 12px 36px rgb(23 26 28 / 0.12);
+}
+
+html[data-theme="paper"] .mobile-nav a:hover {
+  background: rgb(51 94 115 / 0.08);
+}
+
+@media (max-width: 640px) {
+  .site-nav {
+    padding: 1rem;
+  }
+
+  .wordmark {
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    letter-spacing: 0.075em;
+  }
+
+  .wordmark-mark {
+    width: 1.5rem;
+  }
+
+  .hero-orbit {
+    min-height: 100dvh;
+  }
+
+  .hero-copy {
+    left: 1rem;
+    bottom: max(2rem, 5dvh);
+    width: calc(100% - 2rem);
+  }
+
+  .hero-copy h1,
+  .page-hero h1 {
+    font-size: clamp(3.1rem, 15vw, 4.8rem);
+    line-height: 0.86;
+    letter-spacing: -0.065em;
+  }
+
+  .hero-copy > p:last-child {
+    max-width: 34rem;
+    font-size: 1rem;
+    line-height: 1.48;
+  }
+
+  .page-hero {
+    min-height: 65dvh;
+    padding: 8rem 1rem 4rem;
+  }
+
+  .chapter {
+    width: calc(100% - 2rem);
+    padding: 5rem 0;
+  }
+
+  .paper-section,
+  .dark-section {
+    padding: 5rem 1rem;
+  }
+
+  .chapter h2,
+  .paper-section h2,
+  .dark-section h2 {
+    font-size: clamp(2.6rem, 13vw, 4.2rem);
+    line-height: 0.9;
+  }
+
+  .study-grid,
+  .principles {
+    grid-template-columns: 1fr;
+  }
+
+  .study {
+    min-height: 0;
+  }
+
+  .hard-row,
+  .contact-line {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .hard-row span,
+  .contact-line a {
+    overflow-wrap: anywhere;
+  }
+
+  .gate {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .gate aside {
+    grid-column: 1;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .closing {
+    height: auto;
+    min-height: 70dvh;
+    padding: 6rem 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .wordmark > span:last-child {
+    max-width: 9rem;
+    line-height: 1.15;
+  }
+
+  .hero-copy h1,
+  .page-hero h1 {
+    font-size: clamp(2.85rem, 14.5vw, 4rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
