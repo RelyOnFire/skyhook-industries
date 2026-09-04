@@ -1,0 +1,60 @@
+---
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Concept A — Advanced Aerospace Program</title>
+  <style>
+    :root{--paper:#e8e4da;--ink:#161a1d;--muted:#5b6064;--line:#8d8e8a;--blue:#235a78;--orange:#c8562b;font-family:Arial,Helvetica,sans-serif;background:var(--paper);color:var(--ink)}*{box-sizing:border-box}body{margin:0}.frame{width:min(1240px,calc(100% - 3rem));margin:auto}.mast{display:flex;justify-content:space-between;gap:2rem;padding:1.25rem 0;border-bottom:2px solid var(--ink);font:700 .72rem/1 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}.mast a{color:inherit;text-decoration:none}.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:4rem;padding:5.5rem 0 4rem;border-bottom:1px solid var(--line)}.tag{font:700 .72rem/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}h1{font-size:clamp(3.8rem,7vw,7.6rem);line-height:.88;letter-spacing:-.065em;margin:.75rem 0 1.5rem;max-width:8.4ch}.lead{font-family:Georgia,serif;font-size:1.28rem;line-height:1.55;max-width:39rem}.note{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);font:600 .78rem/1.5 ui-monospace,monospace;color:var(--muted)}.diagram{border:1px solid var(--line);background:rgba(255,255,255,.16);padding:1rem;align-self:end}.diagram-head{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:.8rem;font:700 .66rem/1 ui-monospace,monospace;letter-spacing:.1em}.diagram svg{width:100%;display:block}.diagram text{font:13px ui-monospace,monospace;fill:#3e464a}.diagram .earth{fill:#c9d6da;stroke:#51646d;stroke-width:1}.diagram .orbit{fill:none;stroke:#74858c;stroke-dasharray:5 6}.diagram .tether{fill:none;stroke:#111;stroke-width:4}.diagram .vector{stroke:var(--orange);stroke-width:2}.diagram .guide{stroke:#858985;stroke-width:1;stroke-dasharray:3 5}.grid{display:grid;grid-template-columns:repeat(4,1fr);border-left:1px solid var(--line);margin:3rem 0 0}.datum{border-right:1px solid var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:1.2rem}.datum span{display:block;font:700 .64rem/1 ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);margin-bottom:.7rem}.datum strong{font-size:1.03rem}.section{display:grid;grid-template-columns:15rem 1fr;gap:4rem;padding:4.5rem 0;border-bottom:1px solid var(--line)}.section>p{font:700 .68rem/1.5 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin:0}.section h2{font-size:clamp(2.2rem,4vw,4.3rem);line-height:.98;letter-spacing:-.04em;margin:0 0 1.3rem;max-width:13ch}.section .copy{max-width:46rem}.section .copy p{font-family:Georgia,serif;font-size:1.1rem;line-height:1.7;color:#34393c}.steps{margin-top:2.4rem;border-top:2px solid var(--ink)}.step{display:grid;grid-template-columns:5rem 12rem 1fr;gap:1rem;border-bottom:1px solid var(--line);padding:1rem 0;align-items:start}.step b,.step strong{font:700 .72rem/1.4 ui-monospace,monospace}.step span{font-family:Georgia,serif;color:#4b5053}.footer{padding:2rem 0 4rem;font:700 .68rem/1.5 ui-monospace,monospace;color:var(--muted)}@media(max-width:850px){.hero,.section{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.step{grid-template-columns:4rem 1fr}.step span{grid-column:2}.mast{flex-wrap:wrap}}@media(max-width:520px){.frame{width:calc(100% - 2rem)}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header class="mast"><span>Skyhook Industries / Concept A</span><span>Advanced Aerospace Program</span><a href="/concepts/">← All directions</a></header>
+    <main>
+      <section class="hero">
+        <div>
+          <p class="tag">Momentum-exchange transportation system / study configuration</p>
+          <h1>Four thousand kilometres of tether, rotating around Earth.</h1>
+          <p class="lead">At the bottom of each rotation, one end sweeps across the edge of the atmosphere. A vehicle launched from Earth meets it there. The tether catches the payload, swings it upward, and releases it with far more orbital energy than the vehicle could have supplied on its own.</p>
+          <p class="note">SYSTEM STATUS / CONCEPT DEVELOPMENT<br>ALL DIMENSIONS SHOWN ARE STUDY VALUES, NOT FLIGHT SPECIFICATIONS</p>
+        </div>
+        <div class="diagram">
+          <div class="diagram-head"><span>FIG. 01 / SYSTEM GEOMETRY</span><span>NOT TO SCALE</span></div>
+          <svg viewBox="0 0 620 560" role="img" aria-label="Technical diagram of a rotating tether above Earth">
+            <defs><marker id="arrowA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c8562b"/></marker></defs>
+            <circle class="earth" cx="310" cy="478" r="210"/>
+            <ellipse class="orbit" cx="310" cy="290" rx="270" ry="110" transform="rotate(-7 310 290)"/>
+            <line class="guide" x1="310" y1="55" x2="310" y2="485"/>
+            <g transform="rotate(-31 318 248)"><line class="tether" x1="160" y1="405" x2="500" y2="78"/><circle cx="318" cy="248" r="8" fill="#111"/><circle cx="160" cy="405" r="6" fill="#c8562b"/><circle cx="500" cy="78" r="5" fill="#111"/></g>
+            <line class="vector" x1="173" y1="385" x2="111" y2="349" marker-end="url(#arrowA)"/><line class="vector" x1="489" y1="99" x2="544" y2="61" marker-end="url(#arrowA)"/>
+            <text x="42" y="332">LOWER-TIP VELOCITY</text><text x="444" y="42">ROTATION</text><text x="328" y="235">CENTER OF MASS</text><text x="55" y="423">RENDEZVOUS REGION</text><text x="410" y="535">EARTH</text>
+          </svg>
+        </div>
+      </section>
+
+      <div class="grid">
+        <div class="datum"><span>CONFIGURATION</span><strong>Freely orbiting rotating tether</strong></div>
+        <div class="datum"><span>STUDY LENGTH</span><strong>~4,000 km</strong></div>
+        <div class="datum"><span>CAPTURE MODE</span><strong>Moving-tip rendezvous</strong></div>
+        <div class="datum"><span>GROUND CONNECTION</span><strong>None</strong></div>
+      </div>
+
+      <section class="section">
+        <p>Operational principle</p>
+        <div class="copy"><h2>The tether trades momentum with the payload.</h2><p>The Skyhook does not create energy. It stores orbital momentum in a massive rotating structure and transfers some of that momentum during capture. The price of accelerating the payload is a small reduction in the tether system’s own orbital energy.</p><p>Between missions, that energy must be restored. Electrodynamic reboost is attractive because a conducting tether can exchange momentum with Earth’s magnetic environment using electrical power instead of carrying all of the recovery propellant onboard.</p>
+          <div class="steps"><div class="step"><b>01</b><strong>RENDEZVOUS</strong><span>Vehicle intersects the lower tip at a precisely timed point in the tether’s rotation.</span></div><div class="step"><b>02</b><strong>CAPTURE</strong><span>Retention hardware absorbs the closing error and transfers load into the tether structure.</span></div><div class="step"><b>03</b><strong>SWING</strong><span>The payload rotates upward with the tether and gains orbital energy.</span></div><div class="step"><b>04</b><strong>RELEASE</strong><span>The payload departs on a higher-energy trajectory; the tether begins recovery.</span></div></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p>Design language</p>
+        <div class="copy"><h2>What this direction says about Skyhook.</h2><p>This version behaves like an advanced-concepts office that happens to publish on the web. Nearly every visual carries a figure number, state, scale note or engineering label. The tone is composed and specific. Excitement comes from the machine itself, not from marketing language.</p><p>The final site would use this language for research pages, geometry, architecture notes, source citations and the detailed engineering sections beneath a more visually dramatic homepage.</p></div>
+      </section>
+    </main>
+    <footer class="footer">SKYHOOK INDUSTRIES / DESIGN STUDY / CONCEPT A / ADVANCED AEROSPACE PROGRAM</footer>
+  </div>
+</body>
+</html>
