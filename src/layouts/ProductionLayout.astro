@@ -22,6 +22,7 @@ const nav = [
 ];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const socialImage = new URL('/social-card.svg', Astro.site);
+const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
 ---
 <!doctype html>
 <html lang="en" data-theme={effectiveTheme}>
@@ -39,10 +40,12 @@ const socialImage = new URL('/social-card.svg', Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={socialImage} />
+    <meta property="og:image:alt" content={socialImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
+    <meta name="twitter:image:alt" content={socialImageAlt} />
     <title>{title}</title>
   </head>
   <body>
