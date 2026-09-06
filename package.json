@@ -1,19 +1,29 @@
 {
   "name": "skyhook-industries",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test:lab": "tsc -p tsconfig.engine.json && node --test tests/lab-engine.test.mjs",
+    "check:lab": "tsc -p tsconfig.lab.json"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.2.2"
+    "@astrojs/sitemap": "3.7.3",
+    "astro": "7.2.2",
+    "@astrojs/react": "6.0.5",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "three": "0.180.0"
   },
-  "allowScripts": {
-    "esbuild@0.28.2": true
-  }
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.180.0"
+  },
+  "allowScripts": { "esbuild@0.28.2": true }
 }

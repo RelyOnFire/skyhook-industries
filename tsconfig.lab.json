@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2022","module":"ESNext","moduleResolution":"Bundler","strict":true,"skipLibCheck":true,"jsx":"react-jsx","lib":["ES2022","DOM","WebWorker"],"allowImportingTsExtensions":true,"noEmit":true},"include":["src/lab/**/*.ts","src/lab/**/*.tsx","src/simulation/**/*.ts"]}
