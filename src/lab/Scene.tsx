@@ -71,8 +71,8 @@ export function Plane({result,clock}:Omit<Props,'view'|'onFailure'>){
  const canvas=useRef<HTMLCanvasElement>(null),rref=useRef(result),zoom=useRef(1);rref.current=result;
  useEffect(()=>{const c=canvas.current!,g=c.getContext('2d')!;let request=0;const parent=c.parentElement!;
  const resize=()=>{c.width=parent.clientWidth*Math.min(devicePixelRatio,2);c.height=parent.clientHeight*Math.min(devicePixelRatio,2);};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
- let previous=-1,previousR:Result|null=null,previousW=0,previousZoom=0;
- const draw=()=>{request=requestAnimationFrame(draw);if(document.hidden)return;const r=rref.current,t=clock.current??0;if(t===previous&&r===previousR&&previousW===c.width&&previousZoom===zoom.current)return;previous=t;previousR=r;previousW=c.width;previousZoom=zoom.current;
+ let previous=-1,previousR:Result|null=null,previousW=0,previousH=0,previousZoom=0;
+ const draw=()=>{request=requestAnimationFrame(draw);if(document.hidden)return;const r=rref.current,t=clock.current??0;if(t===previous&&r===previousR&&previousW===c.width&&previousH===c.height&&previousZoom===zoom.current)return;previous=t;previousR=r;previousW=c.width;previousH=c.height;previousZoom=zoom.current;
  const w=c.width,h=c.height,s=Math.min(w,h)/3.5/EARTH*zoom.current,x=w/2,y=h/2;
  const xy=(p:number[])=>[x+p[0]*s,y-p[1]*s];g.clearRect(0,0,w,h);
  const glow=g.createRadialGradient(x-w*.03,y-h*.05,0,x,y,EARTH*s);glow.addColorStop(0,'#294b59');glow.addColorStop(1,'#10202c');g.fillStyle=glow;g.beginPath();g.arc(x,y,EARTH*s,0,Math.PI*2);g.fill();g.strokeStyle='#5e899c';g.lineWidth=1;g.stroke();

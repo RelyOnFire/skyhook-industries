@@ -7,3 +7,7 @@
 
 /* Keep filled catalogue links legible after the generic link treatment. */
 a.button-link.primary { color: #07131c; }
+
+/* Do not let intrinsic canvas/text sizes widen an implicit mobile grid track. */
+.flight-panel { grid-template-columns: minmax(0, 1fr); }
+.flight-console, .mission-narration, .scene-toolbar { min-width: 0; }

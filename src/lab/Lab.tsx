@@ -51,7 +51,7 @@ export default function Lab() {
   const chemicalBudget = useRef(DEFAULT.fuelT), resultRef = useRef(result), playingRef = useRef(playing), speedRef = useRef(speed);
   resultRef.current = result; playingRef.current = playing; speedRef.current = speed;
   const max = result?.frames.at(-1)?.t ?? 0;
-  const dirty = !!result && JSON.stringify(design) !== JSON.stringify(result.design);
+  const dirty = !!result && (Object.keys(DEFAULT) as (keyof Design)[]).some(key => design[key] !== result.design[key]);
   const frame = useMemo(() => result ? sample(result, time) : null, [result, time]);
   const currentEvent = result?.events.filter(e => e.t <= time + .01).at(-1);
   const material = MATERIALS.find(m => m.id === design.material)!;
