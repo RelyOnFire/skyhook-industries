@@ -70,7 +70,7 @@ export default function Scene({result,clock,view,onFailure}:Props){
 export function Plane({result,clock}:Omit<Props,'view'|'onFailure'>){
  const canvas=useRef<HTMLCanvasElement>(null),rref=useRef(result),zoom=useRef(1);rref.current=result;
  useEffect(()=>{const c=canvas.current!,g=c.getContext('2d')!;let request=0;const parent=c.parentElement!;
- const resize=()=>{c.width=parent.clientWidth*Math.min(devicePixelRatio,2);c.height=parent.clientHeight*Math.min(devicePixelRatio,2);};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
+ const resize=()=>{const w=Math.round(parent.clientWidth*Math.min(devicePixelRatio,2)),h=Math.round(parent.clientHeight*Math.min(devicePixelRatio,2));if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
  let previous=-1,previousR:Result|null=null,previousW=0,previousH=0,previousZoom=0;
  const draw=()=>{request=requestAnimationFrame(draw);if(document.hidden)return;const r=rref.current,t=clock.current??0;if(t===previous&&r===previousR&&previousW===c.width&&previousH===c.height&&previousZoom===zoom.current)return;previous=t;previousR=r;previousW=c.width;previousH=c.height;previousZoom=zoom.current;
  const w=c.width,h=c.height,s=Math.min(w,h)/3.5/EARTH*zoom.current,x=w/2,y=h/2;
