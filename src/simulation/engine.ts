@@ -1,7 +1,10 @@
-/** Tether Lab D1p/0.1.0. Planar rigid extended-body educational model.
+/** Tether Lab D1p/0.2.0. Planar rigid extended-body educational model.
  * SI throughout. No atmosphere, elasticity, capture shock, or debris model.
  * Rendering is never an input to this module. */
-export const MODEL = 'D1p-0.1.0';
+export const MODEL = 'D1p-0.2.0';
+export const PAYLOAD_LIMIT_T = 250;
+export const STANDARD_PAYLOAD_T = 20;
+export const ACTIVE_ARCHITECTURE = 'single-stage-rotovator' as const;
 export const MU = 3.986004418e14;
 export const EARTH = 6371000;
 export const G0 = 9.80665;
@@ -14,33 +17,37 @@ export const MATERIALS: Material[] = [
   {id:'custom', name:'Custom material', density:1500, ultimate:6e9, basis:'User-defined hypothetical input', source:'', locator:'User assumption'},
 ];
 export interface Design {
-  schema: 1; model: typeof MODEL; material: string; spanKm: number; altitudeKm: number;
+  schema: 2; model: typeof MODEL; architecture: typeof ACTIVE_ARCHITECTURE; material: string; spanKm: number; altitudeKm: number;
   tipSpeedKms: number; areaMm2: number; shape: 'uniform'|'tapered'; payloadT: number;
   fuelT: number; recovery: 'none'|'chemical'; releaseDeg: number; safetyFactor: number;
   density: number; ultimateGPa: number; thrustN: number; isp: number;
 }
-export const DEFAULT: Design = {schema:1,model:MODEL,material:'zylon',spanKm:600,altitudeKm:1600,
+export const DEFAULT: Design = {schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:'zylon',spanKm:600,altitudeKm:1600,
   tipSpeedKms:1.2,areaMm2:80,shape:'uniform',payloadT:3,fuelT:20,recovery:'chemical',releaseDeg:180,
   safetyFactor:2,density:1500,ultimateGPa:6,thrustN:5000,isp:320};
 export const PRESETS = [
   {id:'relay',name:'Orbital relay',description:'Make two deliveries. Recover the orbit between them.',design:{...DEFAULT}},
-  {id:'coast',name:'What if we never reboost?',description:'Same hardware, same payload. No recovery thrust.',design:{...DEFAULT,recovery:'none' as const}},
+  {id:'coast',name:'What if we never reboost?',description:'Same dry structure and payload. No thrust or onboard propellant.',design:{...DEFAULT,recovery:'none' as const,fuelT:0}},
   {id:'light',name:'The material challenge',description:'Less cross-section. Does this fiber carry the load?',design:{...DEFAULT,material:'kevlar',areaMm2:35,payloadT:5}},
   {id:'future',name:'A longer reach',description:'Hypothetical carbon, 1,200 km span, more demanding transfer.',design:{...DEFAULT,material:'future',spanKm:1200,altitudeKm:2400,tipSpeedKms:1.7,areaMm2:100,fuelT:15,payloadT:5}},
 ];
-const BOUNDS: Record<string,[number,number]> = {spanKm:[80,4000],altitudeKm:[400,8000],tipSpeedKms:[0.25,2.5],areaMm2:[5,2500],payloadT:[0.1,20],fuelT:[0,80],releaseDeg:[70,210],safetyFactor:[1.2,5],density:[500,12000],ultimateGPa:[0.1,100],thrustN:[100,10000],isp:[150,450]};
+const BOUNDS: Record<string,[number,number]> = {spanKm:[80,4000],altitudeKm:[400,8000],tipSpeedKms:[0.25,2.5],areaMm2:[5,2500],payloadT:[0.1,PAYLOAD_LIMIT_T],fuelT:[0,80],releaseDeg:[70,210],safetyFactor:[1.2,5],density:[500,12000],ultimateGPa:[0.1,100],thrustN:[100,10000],isp:[150,450]};
 export function validate(input: unknown): Design {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Design must be an object.');
   const d = input as Record<string,unknown>;
-  if (d.schema !== 1 || d.model !== MODEL) throw Error('This saved design needs a different model version. It has not been silently migrated.');
+  if (d.schema !== 2 || d.model !== MODEL) throw Error('This saved design needs a different model version. It has not been silently migrated.');
+  if (d.architecture !== ACTIVE_ARCHITECTURE) throw Error('This architecture has no simulation engine in this build. Open the architecture catalogue for its status.');
   if (!MATERIALS.some(m=>m.id===d.material)) throw Error('Unknown material profile.');
   if (!['uniform','tapered'].includes(String(d.shape))) throw Error('Unsupported structure.');
   if (!['none','chemical'].includes(String(d.recovery))) throw Error('Unsupported recovery model.');
-  const clean: Record<string,unknown> = {schema:1,model:MODEL,material:d.material,shape:d.shape,recovery:d.recovery};
+  const clean: Record<string,unknown> = {schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:d.material,shape:d.shape,recovery:d.recovery};
   for (const [key,[lo,hi]] of Object.entries(BOUNDS)) {
     if (typeof d[key] !== 'number' || !Number.isFinite(d[key]) || (d[key] as number)<lo || (d[key] as number)>hi) throw Error(`${key} must be between ${lo} and ${hi}.`);
     clean[key] = d[key];
   }
+  // Coast is a no-propulsion scenario, not a tank of unused reaction mass.
+  // Reject ambiguous imports rather than silently changing their mass.
+  if (d.recovery === 'none' && d.fuelT !== 0) throw Error('Coast uses no onboard propellant. Set fuelT to 0 or select chemical recovery.');
   return clean as unknown as Design;
 }
 export function properties(d: Design) {

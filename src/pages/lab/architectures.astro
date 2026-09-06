@@ -1,0 +1,46 @@
+---
+import LabLayout from '../../layouts/LabLayout.astro';
+import { ARCHITECTURES } from '../../simulation/catalogue';
+import { DEFAULT } from '../../simulation/engine';
+import { designFragment } from '../../simulation/design-io';
+---
+<LabLayout title="Architecture catalogue · Tether Lab" description="Explore rotating, two-tier, electrodynamic and cislunar tether concepts. See what the lab can run and what needs a different model." active="architectures">
+  <main id="lab-content" class="guide">
+    <header class="guide-header">
+      <p class="micro">ARCHITECTURE CATALOGUE</p>
+      <h1>More than one way to build a tether.</h1>
+      <p>Start with a spinning cable. Then explore two-tier machines, atmospheric pickup concepts and orbital transport networks.</p>
+      <div class="guide-meta"><span>1 RUNNABLE MODEL</span><span>7 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
+    </header>
+    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>These are not eight skins for the same simulation. Reference-only entries explain the extra physics they need; they cannot be launched in the current engine.</p></div>
+    <div class="architecture-grid">
+      {ARCHITECTURES.map(record => <article id={record.id} class:list={['architecture-card', {runnable: record.availability === 'runnable'}]}>
+        <div class="architecture-art">
+          <svg viewBox="0 0 300 120" aria-hidden="true" focusable="false">
+            {record.id === 'single-stage-rotovator' && <><ellipse cx="150" cy="60" rx="104" ry="39" stroke-dasharray="3 7" opacity=".3"/><path d="M100 102 L200 18" stroke-width="3"/><circle cx="150" cy="60" r="6"/><circle cx="100" cy="102" r="3"/><circle cx="200" cy="18" r="3"/></>}
+            {record.id === 't4' && <><path d="M58 91 L202 49" stroke-width="3"/><circle cx="58" cy="91" r="8"/><path d="M177 17 L227 81" stroke="#ffc186" stroke-width="3"/><circle cx="202" cy="49" r="6" stroke="#ffc186"/><circle cx="177" cy="17" r="3" stroke="#ffc186"/><circle cx="227" cy="81" r="3" stroke="#ffc186"/><path d="M230 19 A40 40 0 0 1 240 64" stroke="#ffc186" opacity=".5"/><path d="M114 52 L123 31 M219 93 L241 103" stroke="#96acc1"/><text x="84" y="23" fill="#bccdde" stroke="none" font-size="10">Primary stage</text><text x="193" y="116" fill="#ffc186" stroke="none" font-size="10">Secondary rotor</text></>}
+            {record.id === 'cardiorotovator' && <><ellipse cx="148" cy="60" rx="110" ry="43" opacity=".4"/><circle cx="200" cy="60" r="16" opacity=".5"/><path d="M27 88 L66 20 M242 39 L268 81" stroke-width="3"/><circle cx="47" cy="54" r="4"/><circle cx="255" cy="60" r="4"/></>}
+            {record.id === 'hyperskyhook' && <><path d="M46 116 Q150 41 254 116" opacity=".5"/><path d="M150 9 V79" stroke-width="3"/><circle cx="150" cy="9" r="5"/><circle cx="150" cy="79" r="3"/><path d="M163 9 H208 M200 4 L209 9 L200 14"/><path d="M40 77 Q150 2 260 77" stroke-dasharray="3 7" opacity=".3"/></>}
+            {record.id === 'liftether' && <><path d="M10 95 H290 M10 106 H290" stroke-dasharray="5 8" opacity=".3"/><circle cx="110" cy="15" r="7"/><path d="M114 21 Q110 50 168 81" stroke-width="2"/><path d="M153 86 Q171 57 190 86" stroke="#ffc186"/><path d="M195 76 H222 M190 90 H232" stroke="#ffc186" opacity=".6"/></>}
+            {record.id === 'mxer' && <><path d="M103 104 L183 15" stroke-width="3"/><circle cx="143" cy="60" r="6"/><path d="M143 60 L215 97" stroke="#ffc186" stroke-width="2"/><path d="M172 60 L185 42 L207 55 L194 74 Z" opacity=".65"/><path d="M55 10 V104 M40 86 L55 104 L70 86 M242 10 V104 M227 86 L242 104 L257 86" opacity=".25"/></>}
+            {record.id === 'cislunar' && <><circle cx="68" cy="70" r="29" opacity=".6"/><circle cx="250" cy="40" r="14" opacity=".6"/><path d="M95 45 Q160 -1 230 31" stroke="#ffc186" stroke-dasharray="4 5"/><path d="M78 42 L111 23 M219 32 L245 17" stroke-width="3"/><path d="M233 54 Q169 119 95 83" stroke-dasharray="3 6" opacity=".4"/></>}
+            {record.id === 'hoytether' && <><path d="M27 29 H273 M27 59 H120 M168 59 H273 M27 89 H273" stroke-width="2"/><path d="M27 29 L75 59 L123 29 L171 59 L219 29 L267 59 M27 59 L75 89 L123 59 L171 89 L219 59 L267 89 M27 89 L75 59 L123 89 L171 59 L219 89 L267 59 M27 59 L75 29 L123 59 L171 29 L219 59 L267 29" stroke-width=".7" opacity=".55"/><path d="M121 53 L133 65 M133 53 L121 65" stroke="#ffc186"/></>}
+          </svg>
+          <span class="schematic-label">TOPOLOGY SKETCH / NOT TO SCALE</span>
+        </div>
+        <div class="architecture-content">
+          <span class:list={['tag', {'tag-amber': record.availability !== 'runnable'}]}>{record.availability === 'runnable' ? 'RUNNABLE APPROXIMATION' : 'REFERENCE ONLY'}</span>
+          <p class="micro">{record.category.toUpperCase()}</p><h3>{record.name}</h3><p>{record.summary}</p>
+          <dl><dt>Configuration</dt><dd>{record.topology}</dd><dt>{record.availability === 'runnable' ? 'In the current lab' : 'Before it can run'}</dt><dd>{record.missing}</dd></dl>
+          <a class="source-link" href={record.source.url}>{record.source.title} ↗<br/><span>{record.source.locator}</span></a>
+          {record.availability === 'runnable' && <a class="button-link primary" href={`/lab/${designFragment(DEFAULT)}`}>Open the rotovator experiment →</a>}
+        </div>
+      </article>)}
+    </div>
+    <section class="catalogue-note" id="t4-model"><h2>T4 needs a second moving system, not a second line.</h2><p>The smaller rotor turns about a moving pivot. Its phase and loads couple back into the primary stage. A future T4 solver must track both stages, the payload and the pivot reaction; the current single-rigid-body solver cannot supply those results.</p><p>The source is Brian Tillotson’s two-tier concept as documented in <a href="https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf#page=101">HASTOL Phase I, Appendix 2</a>. Its early simplifying assumptions are not adopted as a validated lab preset.</p></section>
+    <section class="catalogue-note" id="recovery"><h2>Recovery is a separate design choice.</h2><p>Chemical and Coast are runnable today. The next recovery models need their own physical inputs and tests, not just new buttons.</p>
+      <div class="recovery-reference"><div><span class="tag tag-amber">REFERENCE ONLY</span><h3>Electrodynamic reboost</h3><p>A conductor, current and magnetic field produce an orientation-dependent force. Available power and current collection constrain the result.</p><a href="https://ntrs.nasa.gov/citations/20070013898">NASA / electrodynamic tether performance ↗</a></div><div><span class="tag tag-amber">REFERENCE ONLY</span><h3>Incoming traffic exchange</h3><p>An incoming payload can give energy and momentum to a tether as it is slowed. The exchange must follow an actual arrival state and schedule, not a refill credit.</p><a href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">Cislunar transport / return traffic ↗</a></div></div>
+    </section>
+    <p class="guide-ending">HASTOL is an aircraft–tether launch-system study. MXER is a transfer-and-recovery system. Hoytether is a structural construction. Keeping those categories separate makes future comparisons meaningful.</p>
+  </main>
+</LabLayout>

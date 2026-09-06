@@ -1,18 +1,13 @@
 ---
 import Lab from '../lab/Lab';
+import LabLayout from '../layouts/LabLayout.astro';
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tether Lab — Skyhook Industries</title>
-    <meta name="description" content="Build a space tether, transfer a payload, and recover the orbit. An interactive, inspectable Earth-tether experiment in your browser." />
-    <meta name="theme-color" content="#070d12" />
-    <meta name="robots" content="noindex,follow" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  </head>
-  <body>
-    <Lab client:only="react"><div slot="fallback" style="padding:3rem;background:#070d12;color:#e6efed;min-height:100vh;font-family:system-ui"><h1>Skyhook Tether Lab</h1><p>Loading the orbital workshop…</p><noscript><p>The simulator needs JavaScript. The <a href="/lab/method/">model notes</a> and <a href="/research/">research library</a> work without it.</p></noscript></div></Lab>
-  </body>
-</html>
+<LabLayout title="Tether Lab — Orbital Workbench" description="Design a space tether, fly a payload transfer, and recover the orbit. An interactive orbital workbench by Skyhook Industries.">
+  <Lab client:only="react">
+    <main slot="fallback" class="guide" id="lab-content">
+      <h1>Loading the orbital workbench…</h1>
+      <p>Design. Fly. Recover. Your calculation runs in this browser.</p>
+      <noscript><p>The simulator needs JavaScript. The <a href="/lab/method/">model guide</a> and <a href="/lab/architectures/">architecture catalogue</a> do not.</p></noscript>
+    </main>
+  </Lab>
+</LabLayout>
