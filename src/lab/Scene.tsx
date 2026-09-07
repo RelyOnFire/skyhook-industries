@@ -110,11 +110,14 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
         setPoints(incomingTrail,f.incoming?[...r.frames.filter(q=>q.t<=t&&q.incoming&&q.incomingId===f.incomingId).map(q=>point(q.incoming!)),point(f.incoming)]:[]);
         outgoing.forEach((l,j)=>setPoints(l,[...r.frames.filter(q=>q.t<=t&&q.payloads[j]).map(q=>point(q.payloads[j])),...(f.payloads[j]?[point(f.payloads[j])]:[])]));
       }
+      // Both vectors use one display scale; fixed world-size heads would look
+      // like additional spacecraft when the camera moves close to the tip.
+      const vectorPixel=2*Math.tan(camera.fov*Math.PI/360)*camera.position.distanceTo(controls.target)/Math.max(1,root.clientHeight);
       [p.hub,selected==='facility'?null:active.state].forEach((state,j)=>{
         const arrow=velocity[j];arrow.visible=show&&!!state;if(!state)return;
         const direction=point([state[2],state[3]]);arrow.position.copy(point(state));
         arrow.setColor(new T.Color(j?active.color:OBJECTS[0].color));
-        arrow.setDirection(direction.clone().normalize());arrow.setLength(Math.max(.01,Math.hypot(state[2],state[3])/1000*.025),.018,.007);
+        arrow.setDirection(direction.clone().normalize());arrow.setLength(Math.max(1e-6,Math.hypot(state[2],state[3])/1000*vectorPixel*12),vectorPixel*7,vectorPixel*3);
       });
       controls.update();
       root.dataset.followErrorKm=v==='follow'&&active.state?String(controls.target.distanceTo(point(active.state))*EARTH/1000):'';

@@ -74,6 +74,11 @@ def main():
         def no_overflow():
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), f'Horizontal overflow at {page.viewport_size}'
         def shot(name, full=True):
+            # Flush the canvas/compositor after React updates; a DOM assertion
+            # alone can succeed before the requested replay frame is painted.
+            page.evaluate('() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+            if page.locator('.scene-plane canvas').count():
+                assert page.locator('.scene-plane canvas').evaluate('''c=>{const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;for(let i=3;i<pixels.length;i+=4)if(pixels[i])return true;return false;}'''), 'Visible orbital canvas must not be blank'
             page.screenshot(path=str(out/(name+'.png')), full_page=full)
         def choose_tab(name):
             mobile=page.get_by_role('navigation', name='Workspace panels')
