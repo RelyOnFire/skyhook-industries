@@ -8,6 +8,10 @@ export function readDesign(text: string): ImportedDesign {
   const value: unknown = JSON.parse(text);
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     const d = value as Record<string, unknown>;
+    if (d.schema === 2 && d.model === 'D1p-0.2.0') {
+      return { design: validate({ ...d, model: MODEL }), needsConfirmation: true, explanation:
+        'This design used model 0.2, which inserted Payload 2 at the tip. Model 0.3 predicts an ideal second approach, propagates it independently and checks the meeting before attachment. Update to run the new model; the previous result is not being reused.' };
+    }
     if (d.schema === 1 && d.model === 'D1p-0.1.0') {
       const coast = d.recovery === 'none';
       const design = validate({ ...d, schema: 2, model: MODEL,

@@ -134,6 +134,54 @@ def main():
             assert report['format']=='tether-lab-flight-report' and len(report['deliveries'])==2
             dialog.get_by_role('button', name='Pin this flight', exact=True).click();shot('flight-debrief')
             page.keyboard.press('Escape');done('full-run debrief and actual JSON flight-report download')
+            # Distinct shipments and a persistent camera target at the second handoff.
+            assert len(report['approaches']) == 2 and len(report['rendezvous']) == 2
+            assert all(c['accepted'] and c['positionErrorM'] < 2 and c['velocityErrorMs'] < .02 for c in report['rendezvous'])
+            one = page.locator('[data-object-id="payload-1"]')
+            two = page.locator('[data-object-id="payload-2"]')
+            def scene_root():
+                return page.locator('.scene-three') if page.locator('.scene-three').count() else page.locator('.scene-plane')
+            def expect_follow(target):
+                expect(scene_root()).to_have_attribute('data-follow-target', target)
+                if findings['webgl'] and target != 'none':
+                    assert float(scene_root().get_attribute('data-follow-error-km')) < 1e-6
+            page.get_by_role('button', name='Select Payload 1', exact=True).click()
+            page.locator('.view-switch').get_by_role('button', name='Follow', exact=True).click()
+            page.locator('.timeline-events').get_by_role('button', name=re.compile('Payload 2 · approach')).click()
+            expect(one).to_have_attribute('data-phase', 'released')
+            expect(two).to_have_attribute('data-phase', 'approach')
+            expect(one).to_have_attribute('aria-pressed', 'true');expect_follow('payload-1')
+            assert one.evaluate("e=>getComputedStyle(e).getPropertyValue('--object-color')") != two.evaluate("e=>getComputedStyle(e).getPropertyValue('--object-color')")
+            page.get_by_role('button', name='Next mission event', exact=True).click()
+            expect(two).to_have_attribute('data-phase', 'attached')
+            expect(one).to_have_attribute('data-phase', 'released');expect_follow('payload-1')
+            page.get_by_role('button', name='Select Payload 2', exact=True).click();expect_follow('payload-2')
+            page.get_by_role('button', name='Restart replay', exact=True).click()
+            expect(two).to_have_attribute('aria-pressed', 'true')
+            expect(two).to_have_attribute('data-phase', 'absent');expect_follow('none')
+            expect(page.locator('.tracking-detail')).to_contain_text('Not in the scene at this time')
+            page.get_by_role('button', name=re.compile('Go to approach')).click()
+            expect(two).to_have_attribute('data-phase', 'approach');expect_follow('payload-2')
+            expect(page.locator('.range-to-tip')).to_be_visible()
+            if findings['webgl']:
+                boxes = page.locator('.world-label:visible').evaluate_all('els=>els.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})')
+                for i,a in enumerate(boxes):
+                    for b in boxes[i+1:]:
+                        assert not (a['x']<b['x']+b['w'] and a['x']+a['w']>b['x'] and a['y']<b['y']+b['h'] and a['y']+a['h']>b['y'])
+            shot('payload-2-approach')
+            page.get_by_role('button', name='Next mission event', exact=True).click()
+            expect(two).to_have_attribute('data-phase', 'attached');expect_follow('payload-2')
+            shot('distinct-shipments')
+            page.locator('.timeline-events').get_by_role('button', name=re.compile('Payload 2 · release')).click()
+            expect(two).to_have_attribute('data-phase', 'released');expect_follow('payload-2')
+            # Explicitly repeat selection and scrubbing in the Canvas renderer.
+            page.locator('.view-switch').get_by_role('button', name='Orbit plane', exact=True).click()
+            page.get_by_role('button', name='Select Payload 1', exact=True).click()
+            page.locator('.timeline-events').get_by_role('button', name=re.compile('Payload 2 · capture')).click()
+            expect(one).to_have_attribute('aria-pressed', 'true');expect(one).to_have_attribute('data-phase', 'released')
+            expect(two).to_have_attribute('data-phase', 'attached');shot('payload-identities-plane')
+            done('both checked approaches, numbered shipment states, stable follow target and absent-object replay')
+
             page.get_by_role('button', name='Flight school', exact=True).click();shot('mission-room')
             page.locator('.mission-choice').first.click()
             page.get_by_role('button', name=re.compile('Start this mission')).click();ready()

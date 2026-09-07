@@ -177,3 +177,76 @@ test('section inspector reads the same cuts and peak stress as the numerical sto
     assert.ok(cuts[0].s<0&&cuts.at(-1).s>0);
   }
 });
+
+// Shipments retain identity throughout the entire recorded mission.
+const { flightObjects, trackedObject } = await import('../.lab-test/lab/objects.js');
+const { sample } = await import('../.lab-test/lab/view.js');
+const { particleStep, planApproach, rendezvousResidual } = await import('../.lab-test/simulation/engine.js');
+const identityRun = simulate(DEFAULT);
+test('both payloads have independently propagated approaches and accepted numerical matches',()=>{
+  assert.equal(identityRun.approaches.length,2);
+  assert.equal(identityRun.rendezvous.length,2);
+  for(const id of [1,2]) {
+    const a=identityRun.approaches.find(a=>a.payloadId===id),check=identityRun.rendezvous.find(c=>c.payloadId===id);
+    near(a.captureTime-a.startTime,90,1e-6);
+    assert.ok(check.accepted&&check.positionErrorM<2&&check.velocityErrorMs<.02);
+    const frames=identityRun.frames.filter(f=>f.incomingId===id);
+    assert.ok(frames.length>=10);
+    near(frames[0].t,a.startTime,1e-6);
+    // Reintegrate the incoming particle independently from its supplied state.
+    let p=[...a.initialState],t=a.startTime;
+    for(const frame of frames) {
+      while(t<frame.t-1e-9){const h=Math.min(2,frame.t-t);p=particleStep(p,h);t+=h;}
+      p.forEach((v,i)=>near(v,frame.incoming[i],i<2?.01:1e-5));
+    }
+  }
+  assert.ok(identityRun.frames.every(f=>(f.incoming===null)===(f.incomingId===null)));
+});
+test('readiness never counts as a payload recapture; coast never inserts shipment two',()=>{
+  for(const e of identityRun.events.filter(e=>e.kind==='ready')) {
+    const f=sample(identityRun,e.t);
+    assert.equal(f.loaded,false);assert.equal(f.payloads.length,1);
+    assert.match(e.title,/Facility ready/);
+  }
+  const coast=simulate({...DEFAULT,recovery:'none',fuelT:0});
+  assert.equal(coast.approaches.length,1);assert.equal(coast.rendezvous.length,1);
+  assert.ok(coast.frames.every(f=>f.incomingId!==2));
+  const y=initial(DEFAULT);
+  assert.equal(planApproach(y,DEFAULT,Math.PI+2*Math.PI,0,2,48,10),null);
+});
+test('a distant or velocity-mismatched shipment fails capture checks regardless of marker size',()=>{
+  const p=[8000000,0,0,7000];
+  assert.ok(rendezvousResidual(p,[...p]).matched);
+  assert.equal(rendezvousResidual(p,[8000010,0,0,7000]).matched,false);
+  assert.equal(rendezvousResidual(p,[8000000,0,0,7001]).matched,false);
+  assert.throws(()=>rendezvousResidual(p,[NaN,0,0,7000]));
+});
+test('payload one stays independent when payload two approaches and attaches',()=>{
+  const capture=identityRun.events.find(e=>e.kind==='capture'&&e.payloadId===2);
+  for(const time of [capture.t-90,capture.t-30,capture.t,capture.t+100]) {
+    const f=sample(identityRun,time),one=trackedObject(identityRun,f,'payload-1'),two=trackedObject(identityRun,f,'payload-2');
+    assert.equal(one.phase,'released');assert.deepEqual(one.state,f.payloads[0]);
+    assert.equal(two.phase,time<capture.t?'approach':'attached');
+    assert.notEqual(one.color,two.color);assert.notEqual(one.glyph,two.glyph);
+    assert.ok(Math.hypot(one.state[0]-two.state[0],one.state[1]-two.state[1])>1000000);
+  }
+  const before=sample(identityRun,0);
+  assert.equal(trackedObject(identityRun,before,'payload-2').state,null);
+  assert.equal(flightObjects(identityRun,before).length,3);
+});
+test('interpolation approaches event boundaries continuously without morphing shipment identity',()=>{
+  for(const e of identityRun.events.filter(e=>['capture','release'].includes(e.kind))) {
+    const left=sample(identityRun,e.t-.001),at=sample(identityRun,e.t);
+    assert.equal(at.loaded,e.kind==='capture');
+    const id=`payload-${e.payloadId}`,a=trackedObject(identityRun,left,id),b=trackedObject(identityRun,at,id);
+    assert.ok(a.state&&b.state);
+    assert.ok(Math.hypot(a.state[0]-b.state[0],a.state[1]-b.state[1])<20);
+    assert.equal(a.id,b.id);
+  }
+});
+test('model 0.2 imports require confirmation before independently checked second approaches',async()=>{
+  const {readDesign}=await import('../.lab-test/simulation/design-io.js');
+  const old={...DEFAULT,model:'D1p-0.2.0'},copy=JSON.stringify(old),updated=readDesign(copy);
+  assert.equal(updated.needsConfirmation,true);assert.equal(updated.design.model,MODEL);
+  assert.match(updated.explanation,/propagates it independently/);assert.equal(JSON.stringify(old),copy);
+});

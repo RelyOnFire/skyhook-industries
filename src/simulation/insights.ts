@@ -51,6 +51,8 @@ export function diagnose(r: Result): Diagnosis {
     return { title: 'The cable runs out of load margin.', explanation: `Minimum allowable-to-stress ratio: ${r.minMargin.toFixed(2)}×. The first limiting state is where the assumed allowable was exceeded; no broken-cable motion is simulated.`, action: 'Increase section, compare a stronger material, or lower the payload. Resizing is explicit.', tab:'structure', time };
   if (r.outcome === 'limit')
     return { title: 'This rigid cable would need to push.', explanation:r.reason, action:'Change the orbit or spin and rerun. A flexible-tether model is needed beyond this limit.', tab:'mission', time };
+  if (r.outcome === 'rendezvous-missed')
+    return { title:'The incoming shipment did not meet the capture checks.', explanation:r.reason, action:'Inspect the approach and its numerical residuals. No payload was attached and no capture impulse was invented.', tab:'mission', time };
   if (r.outcome === 'delivery-failed')
     return { title: 'Release did not meet the delivery criterion.', explanation:r.reason, action:'Try another release phase. Use a release-phase study to compare actual resulting orbits.', tab:'mission', time };
   if (r.outcome === 'complete')

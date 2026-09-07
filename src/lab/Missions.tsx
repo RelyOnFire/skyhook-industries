@@ -42,12 +42,13 @@ export function MissionProgress({challenge:c,result,dirty,onBrief,onExit,onRevie
 const NOTES:Record<string,{heading:string;text:string}>={
   start:{heading:'Two motions. One rendezvous.',text:'The facility moves around Earth while its tether rotates. The supplied payload trajectory matches the working tip at capture. This example does not calculate the launch from Earth.'},
   capture:{heading:'The payload joins the rotating machine.',text:'Capture changes the combined center of mass. Existing tether points stay continuous: the tip does not teleport, and the payload is not given free velocity.'},
-  release:{heading:'The payload leaves; the facility pays.',text:'The orange path is the actual released trajectory. Its new orbit is reported in the recorder. The facility keeps the state left by the exchange, rather than resetting.'},
-  ready:{heading:'Recovery is part of the mission.',text:'The orbit and spin have stayed inside the readiness tolerances for 60 seconds. The machine still has to reach the next working-tip pass. A second incoming rendezvous is supplied only if it stays ready.'},
+  release:{heading:'The payload leaves; the facility pays.',text:'Payload 1 keeps its orange marker and follows its own released trajectory. Its new orbit is reported in the recorder. The facility keeps the state left by the exchange, rather than resetting.'},
+  ready:{heading:'The facility is ready, not the payload recovered.',text:'The facility’s orbit and spin have stayed inside tolerance for 60 seconds. Payload 1 remains independent. A coast forecast checks the next pass before constructing Payload 2’s approach.'},
+  approach:{heading:'A new shipment, not the old payload returning.',text:'Payload 2 has a violet diamond and its own calculated approach. The engine checks its position and velocity at the working tip before attaching it. Payload 1 keeps its orange marker elsewhere in orbit.'},
   end:{heading:'Now change one thing.',text:'Use the debrief to find the limiting condition. Pin the run or sweep a design parameter. A better number is only useful when the deliveries and the modeled limits still pass.'},
 };
 export function checkpoints(r:Result) {
-  const selected=[r.events[0],r.events.find(e=>e.kind==='capture'),r.events.find(e=>e.kind==='release'),r.events.find(e=>e.kind==='ready'),r.events.at(-1)].filter((e):e is NonNullable<typeof e>=>!!e);
+  const selected=[r.events[0],r.events.find(e=>e.kind==='capture'),r.events.find(e=>e.kind==='release'),r.events.find(e=>e.kind==='ready'),r.events.find(e=>e.kind==='approach'),r.events.find(e=>e.kind==='capture'&&e.payloadId===2),r.events.at(-1)].filter((e):e is NonNullable<typeof e>=>!!e);
   return selected.filter((e,i)=>selected.findIndex(x=>x.t===e.t)===i);
 }
 export function GuidedReplay({ result,index,onStep,onClose }: {result:Result;index:number;onStep:(i:number)=>void;onClose:()=>void}) {

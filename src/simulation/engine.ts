@@ -1,7 +1,7 @@
-/** Tether Lab D1p/0.2.0. Planar rigid extended-body educational model.
+/** Tether Lab D1p/0.3.0. Planar rigid extended-body educational model.
  * SI throughout. No atmosphere, elasticity, capture shock, or debris model.
  * Rendering is never an input to this module. */
-export const MODEL = 'D1p-0.2.0';
+export const MODEL = 'D1p-0.3.0';
 export const PAYLOAD_LIMIT_T = 250;
 export const STANDARD_PAYLOAD_T = 20;
 export const ACTIVE_ARCHITECTURE = 'single-stage-rotovator' as const;
@@ -159,10 +159,60 @@ export function ready(y:State,d:Design) {
   const r=Math.hypot(y[0],y[1]),vr=(y[0]*y[2]+y[1]*y[3])/r,vt=(y[0]*y[3]-y[1]*y[2])/r,target=EARTH+d.altitudeKm*1000;
   return Math.abs(r-target)<15000 && Math.abs(vr)<8 && Math.abs(vt-Math.sqrt(MU/target))<12 && Math.abs(y[5]/spinReference(y,d).omega-1)<0.005;
 }
-export interface Frame {t:number;state:State;loaded:boolean;burn:boolean;payloads:number[][];incoming:number[]|null;clearance:number;margin:number;deliveries:number;fuel:number}
-export interface MissionEvent {t:number;kind:string;title:string;detail:string}
+export type PayloadId = 1 | 2;
+export interface Frame {t:number;state:State;loaded:boolean;burn:boolean;payloads:number[][];incoming:number[]|null;incomingId:PayloadId|null;clearance:number;margin:number;deliveries:number;fuel:number}
+export interface RendezvousCheck {payloadId:PayloadId;t:number;leadInSeconds:number;positionErrorM:number;velocityErrorMs:number;accepted:boolean}
+export interface Approach {payloadId:PayloadId;startTime:number;captureTime:number;initialState:number[]}
+export const APPROACH_SECONDS = 90;
+export const CAPTURE_POSITION_TOLERANCE_M = 2;
+export const CAPTURE_VELOCITY_TOLERANCE_MS = 0.02;
+
+/** Numerical event check, not an engineering capture-envelope specification. */
+export function rendezvousResidual(tip:number[], incoming:number[]) {
+  if(tip.length<4||incoming.length<4||![...tip.slice(0,4),...incoming.slice(0,4)].every(Number.isFinite)) throw Error('Invalid rendezvous state.');
+  const positionErrorM=Math.hypot(tip[0]-incoming[0],tip[1]-incoming[1]);
+  const velocityErrorMs=Math.hypot(tip[2]-incoming[2],tip[3]-incoming[3]);
+  return {positionErrorM,velocityErrorMs,matched:positionErrorM<=CAPTURE_POSITION_TOLERANCE_M && velocityErrorMs<=CAPTURE_VELOCITY_TOLERANCE_MS};
+}
+
+/** Forecast a coast to the next radial pass, using the same dynamical equations.
+ * This constructs an ideal meeting, not a launch or a guidance solution.
+ * The incoming particle is then independently propagated and checked at capture.
+ * No renderer, animation clock or enlarged marker affects this calculation. */
+export function planApproach(y:State, d:Design, targetPhase:number, now:number,
+  step:number, cells:number, remaining:number):Approach|null {
+  let predicted=[...y], duration=0;
+  while(duration<remaining && duration<21600) {
+    let h=Math.min(step,remaining-duration);
+    let next=rk4(predicted,h,d,false,false,cells);
+    if(next.some(v=>!Number.isFinite(v))) return null;
+    if(next[4]-next[7]>=targetPhase) {
+      let lo=0,hi=h;
+      for(let k=0;k<22;k++) {
+        const mid=(lo+hi)/2, state=rk4(predicted,mid,d,false,false,cells);
+        if(state[4]-state[7]>=targetPhase) hi=mid; else lo=mid;
+      }
+      h=hi; next=rk4(predicted,h,d,false,false,cells);
+    }
+    duration+=h; predicted=next;
+    const b=compile(d,predicted[6],false,cells), load=loadCheck(predicted,b,d,false);
+    if(clearance(predicted,b)<120000 || load.margin<1 || load.minTension<-100) return null;
+    if(predicted[4]-predicted[7]>=targetPhase-1e-8) {
+      if(!ready(predicted,d)) return null;
+      const lead=Math.min(APPROACH_SECONDS,duration);
+      let incoming=pointState(predicted,b,b.half);
+      for(let back=0;back<lead;) {
+        const dt=Math.min(step,lead-back); incoming=particleStep(incoming,-dt); back+=dt;
+        if(Math.hypot(incoming[0],incoming[1])<EARTH+120000) return null;
+      }
+      return {payloadId:2,startTime:now+duration-lead,captureTime:now+duration,initialState:incoming};
+    }
+  }
+  return null;
+}
+export interface MissionEvent {t:number;kind:string;title:string;detail:string;payloadId?:PayloadId}
 export interface Delivery {number:number;t:number;gain:number;perigee:number;apogee:number|null;energy:number}
-export interface Result {model:string;design:Design;frames:Frame[];events:MissionEvent[];deliveries:Delivery[];outcome:string;reason:string;dryMass:number;structuralMass:number;minClearance:number;minMargin:number;fuelUsed:number;final:State;maxStep:number;cells:number}
+export interface Result {model:string;design:Design;frames:Frame[];events:MissionEvent[];deliveries:Delivery[];approaches:Approach[];rendezvous:RendezvousCheck[];outcome:string;reason:string;dryMass:number;structuralMass:number;minClearance:number;minMargin:number;fuelUsed:number;final:State;maxStep:number;cells:number}
 export function resize(d:Design):number {
   const {density,allowable}=properties(d),h=d.spanKm*500,r=EARTH+d.altitudeKm*1000,w=d.tipSpeedKms*1000/h;
   const a=(s:number)=>MU/(r-s)**2-MU/r**2+w*w*s;
@@ -183,18 +233,21 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
   let y=initial(d),loaded=false,t=0,burn=false,nextCapture=90,phaseAtCapture=0,stable=0,checkTime=0,awaitingPass=false,passTarget=0;
   let capturedEnergy=0,stopAt=Infinity,minClearance=Infinity,minMargin=Infinity,outcome='incomplete',reason='Recovery did not meet the orbit and spin tolerances within six simulated hours.';
   const events:MissionEvent[]=[],frames:Frame[]=[],deliveries:Delivery[]=[],payloads:number[][]=[];
+  const approaches:Approach[]=[],rendezvous:RendezvousCheck[]=[];
+  let pendingApproach:Approach|null=null, incomingId:PayloadId|null=1;
   const dry=compile(d,0,false,cells);
-  const event=(kind:string,title:string,detail:string)=>events.push({t,kind,title,detail});
+  const event=(kind:string,title:string,detail:string,payloadId?:PayloadId)=>events.push({t,kind,title,detail,...(payloadId?{payloadId}:{})});
   // Start exactly at a supplied, velocity-matched rendezvous. The first 90 s
   // are an independently propagated lead-in, not a decorative approach arc.
-  let incoming=pointState(y,compile(d,y[6],false,cells),d.spanKm*500);
+  let incoming:number[]|null=pointState(y,compile(d,y[6],false,cells),d.spanKm*500);
   for(let back=0;back<90;){const h=Math.min(step,90-back);y=rk4(y,-h,d,false,false,cells);incoming=particleStep(incoming,-h);back+=h;}
-  event('start','Rendezvous supplied','The incoming orbit was constructed to match the tip at capture. No rocket ascent or guidance is simulated.');
+  approaches.push({payloadId:1,startTime:0,captureTime:90,initialState:[...incoming]});
+  event('start','Payload 1 on approach','An independently propagated 90-second approach, constructed to meet the moving tip. This is an ideal rendezvous, not a simulated launch or guidance system.',1);
   let nextSample=0;
   for(let count=0;t<=Math.min(horizon,stopAt)+1e-8&&count<40000;count++) {
     let b=compile(d,y[6],loaded,cells),low=clearance(y,b),load=loadCheck(y,b,d,burn);
     minClearance=Math.min(minClearance,low);minMargin=Math.min(minMargin,load.margin);
-    const save=()=>frames.push({t,state:[...y],loaded,burn,payloads:payloads.map(p=>[...p]),incoming:t<90?[...incoming]:null,clearance:low,margin:load.margin,deliveries:deliveries.length,fuel:Math.max(0,y[6])});
+    const save=()=>frames.push({t,state:[...y],loaded,burn,payloads:payloads.map(p=>[...p]),incoming:incoming?[...incoming]:null,incomingId,clearance:low,margin:load.margin,deliveries:deliveries.length,fuel:Math.max(0,y[6])});
     if(low<120000||load.margin<1||load.minTension<-100) {
       outcome='limit';reason=low<120000?'A part of the tether crossed the 120 km model cutoff. Atmospheric flight is not modeled.':load.margin<1?'The axial stress exceeded the chosen fiber allowable. Elastic failure is not simulated.':'A cable section requires compression. A rigid tether is no longer a valid taut-cable approximation.';
       event('limit','Modeled limit reached',reason);save();break;
@@ -202,33 +255,57 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
     if(y.some(v=>!Number.isFinite(v))){throw Error('Non-finite state; numerical calculation stopped.');}
     if(t>=nextCapture-1e-7) {
       const tip=pointState(y,b,b.half);
-      if(deliveries.length===0) {
-        const positionError=Math.hypot(tip[0]-incoming[0],tip[1]-incoming[1]),velocityError=Math.hypot(tip[2]-incoming[2],tip[3]-incoming[3]);
-        if(positionError>2||velocityError>0.02)throw Error('Supplied rendezvous failed its numerical position/velocity check.');
+      const id=(deliveries.length+1) as PayloadId;
+      if(!incoming || incomingId!==id) throw Error('Capture has no independently propagated incoming payload.');
+      const {positionErrorM:positionError,velocityErrorMs:velocityError,matched}=rendezvousResidual(tip,incoming);
+      const accepted=matched && (id===1 || ready(y,d));
+      const approach=approaches.find(a=>a.payloadId===id)!;
+      rendezvous.push({payloadId:id,t,leadInSeconds:approach.captureTime-approach.startTime,positionErrorM:positionError,velocityErrorMs:velocityError,accepted});
+      if(!accepted) {
+        outcome='rendezvous-missed';reason=`Payload ${id} did not satisfy the numerical rendezvous checks or facility readiness. No attachment was made.`;
+        event('miss',`Payload ${id} rendezvous rejected`,reason,id);save();break;
       }
+      save(); // Preserve the unladen endpoint state at the event for continuous replay.
+      incoming=null; incomingId=null; pendingApproach=null;
       capturedEnergy=orbit(tip).energy;const nb=compile(d,y[6],true,cells);y=reframe(y,b,nb);loaded=true;burn=false;awaitingPass=false;stable=0;phaseAtCapture=y[4]-y[7];nextCapture=Infinity;
-      event('capture',`Payload ${deliveries.length+1} captured`,'Ideal velocity match. Existing material points remain continuous; the combined center of mass is recomputed.');b=nb;checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
+      event('capture',`Payload ${id} captured`,`Payload ${id} met the working tip: ${positionError.toFixed(3)} m position error and ${velocityError.toFixed(5)} m/s velocity error. Ideal matched attachment; no capture shock is modeled.${id===2?' Payload 1 remains on its own orbit.':''}`,id);b=nb;checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
     }
     const local=y[4]-y[7];
     if(loaded&&local>=phaseAtCapture+d.releaseDeg*Math.PI/180-1e-8) {
+      save(); // Interpolation may approach the release, but never cross attachment states.
       const p=pointState(y,b,b.half),o=orbit(p);payloads.push(p);deliveries.push({number:deliveries.length+1,t,gain:o.energy-capturedEnergy,...o});
       const nb=compile(d,y[6],false,cells);y=reframe(y,b,nb);loaded=false;b=nb;
-      event('release',`Payload ${deliveries.length} released`,o.perigee>=120000?`Released orbit: ${Math.round(o.perigee/1000)} km perigee; ${o.apogee===null?'Earth escape':Math.round(o.apogee/1000)+' km apogee'}.`:'The released payload orbit intersects the 120 km cutoff; this is not a successful delivery.');
+      event('release',`Payload ${deliveries.length} released`,o.perigee>=120000?`Released orbit: ${Math.round(o.perigee/1000)} km perigee; ${o.apogee===null?'Earth escape':Math.round(o.apogee/1000)+' km apogee'}.`:'The released payload orbit intersects the 120 km cutoff; this is not a successful delivery.',deliveries.length as PayloadId);
       if(o.perigee<120000||o.energy<=capturedEnergy){outcome='delivery-failed';reason='The payload did not reach a higher-energy orbit with perigee above 120 km.';stopAt=t+120;}
-      else if(deliveries.length===2){outcome='complete';reason='Two higher-energy deliveries, with orbit and spin readiness checked before the second supplied rendezvous.';stopAt=t+240;}
-      else if(d.recovery==='chemical'&&y[6]>0){burn=true;event('recovery','Chemical recovery begins','Bounded thrust restores radius, orbital speed and spin; propellant is consumed continuously.');}
+      else if(deliveries.length===2){outcome='complete';reason='Two distinct payloads delivered to higher-energy orbits, with facility readiness and both incoming position/velocity matches checked.';stopAt=t+240;}
+      else if(d.recovery==='chemical'&&y[6]>0){burn=true;event('recovery','Facility reboost begins','The thrusters restore the facility’s orbit and spin, not the released payload. Payload 1 continues independently; propellant is consumed continuously.');}
       else event('coast','Coasting without reboost','The second rendezvous waits for radius, radial/tangential speed and spin to return within the defined tolerances.');
       checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
     }
     if(!loaded&&deliveries.length===1&&stopAt===Infinity) {
       stable=ready(y,d)?stable+Math.max(0,t-checkTime):0;checkTime=t;
-      if(stable>=60&&!awaitingPass){burn=false;awaitingPass=true;passTarget=Math.PI+TAU*(Math.floor(((y[4]-y[7])-Math.PI)/TAU)+1);event('ready','Orbit and spin recovered','Readiness held for 60 s. A second supplied rendezvous will be attempted at the next working-tip lower radial pass.');}
-      if(awaitingPass&&y[4]-y[7]>=passTarget-1e-8){if(ready(y,d)){nextCapture=t;continue;}awaitingPass=false;stable=0;burn=d.recovery==='chemical'&&y[6]>0;event('wait','Readiness drifted','Recovery resumes; the missed window does not count as a capture.');}
+      if(stable>=60&&!awaitingPass){
+        burn=false;awaitingPass=true;passTarget=Math.PI+TAU*(Math.floor(((y[4]-y[7])-Math.PI)/TAU)+1);
+        event('ready','Facility ready for next pickup','Orbit and spin stayed within tolerance for 60 seconds. This is facility readiness, not recapture of Payload 1. The next radial pass must also meet the checks.');
+        pendingApproach=planApproach(y,d,passTarget,t,step,cells,horizon-t);
+        if(pendingApproach){approaches.push(pendingApproach);nextCapture=pendingApproach.captureTime;}
+        else event('plan-wait','No incoming shipment scheduled','The coast forecast did not pass the rendezvous readiness, clearance or time-budget checks. No payload is inserted.');
+        save();
+      }
+      if(awaitingPass && !pendingApproach && y[4]-y[7]>=passTarget-1e-8){
+        awaitingPass=false;stable=0;burn=d.recovery==='chemical'&&y[6]>0;
+        event('wait','Next pickup deferred','Facility recovery resumes. Payload 1 is still independent; no new shipment was captured.');save();
+      }
+      if(pendingApproach && !incoming && t>=pendingApproach.startTime-1e-7){
+        incoming=[...pendingApproach.initialState];incomingId=2;
+        event('approach','Payload 2 on approach',`A separate shipment now follows a calculated ${(pendingApproach.captureTime-pendingApproach.startTime).toFixed(0)}-second approach. Its position and velocity will be checked at the tip. Payload 1 is not returning.`,2);save();
+      }
     }
     if(burn&&y[6]<=1e-7){y[6]=0;burn=false;event('fuel','Propellant exhausted','No further recovery thrust is applied.');}
     if(t>=nextSample-1e-8){save();nextSample=t+10;}
     if(t>=Math.min(horizon,stopAt)-1e-7)break;
     let h=Math.min(step,nextCapture-t,Math.min(horizon,stopAt)-t);
+    if(pendingApproach && !incoming && pendingApproach.startTime>t+1e-7) h=Math.min(h,pendingApproach.startTime-t);
     // Split the step at a release/radial event; do not skip events at warp speed.
     let yn=rk4(y,h,d,loaded,burn,cells),target=loaded?phaseAtCapture+d.releaseDeg*Math.PI/180:awaitingPass?passTarget:Infinity;
     if(y[4]-y[7]<target&&yn[4]-yn[7]>=target){let lo=0,hi=h;for(let k=0;k<22;k++){const mid=(lo+hi)/2,v=rk4(y,mid,d,loaded,burn,cells);if(v[4]-v[7]>=target)hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
@@ -237,11 +314,11 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
     const violates=(v:State)=>{const body=compile(d,v[6],loaded,cells),check=loadCheck(v,body,d,burn);return clearance(v,body)<120000||check.margin<1||check.minTension<-100;};
     if(violates(yn)){let lo=0,hi=h;for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(violates(rk4(y,mid,d,loaded,burn,cells)))hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
     // Limit crossings and mission commands are bracketed independently of render time.
-    incoming=particleStep(incoming,h);
+    if(incoming) incoming=particleStep(incoming,h);
     for(let i=0;i<payloads.length;i++){if(Math.hypot(payloads[i][0],payloads[i][1])>EARTH+120000)payloads[i]=particleStep(payloads[i],h);}
     y=yn;t+=h;
   }
   if(outcome==='incomplete')event('end','Second delivery not achieved',reason);
   if(outcome==='complete')event('end','Two deliveries complete',reason);
-  return {model:MODEL,design:d,frames,events,deliveries,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells};
+  return {model:MODEL,design:d,frames,events,deliveries,approaches,rendezvous,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells};
 }

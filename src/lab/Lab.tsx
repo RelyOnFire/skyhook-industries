@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Scene, { Plane, type View } from './Scene.js';
 import Trace from './Trace.js';
+import ObjectTracker from './ObjectTracker.js';
+import { type ObjectId } from './objects.js';
 import Structure from './Structure.js';
 import Debrief from './Debrief.js';
 import Studies, { type StudyRow } from './Studies.js';
@@ -60,6 +62,7 @@ export default function Lab() {
   const [busy, setBusy] = useState(true), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const [time, setTime] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(240);
   const [view, setView] = useState<View>('earth'), [gpu, setGpu] = useState(true);
+  const [selectedObject, setSelectedObject] = useState<ObjectId>('payload-1');
   const [control, setControl] = useState<ControlTab>('structure'), [mobile, setMobile] = useState<MobileTab>('fly');
   const [extended, setExtended] = useState(false), [invalidFields, setInvalidFields] = useState<string[]>([]);
   const payloadOutsideRange = !extended && design.payloadT > STANDARD_PAYLOAD_T;
@@ -193,7 +196,9 @@ export default function Lab() {
   };
   const showCheckpoint=(index:number)=>{
     if(!result)return;const points=checkpoints(result);const i=Math.max(0,Math.min(points.length-1,index));
-    setGuide(i);seek(points[i].t);setMobile('fly');setView(gpu?(i===0?'earth':'follow'):'plane');
+    setGuide(i);seek(points[i].t);setMobile('fly');
+    setSelectedObject(points[i].payloadId===2?'payload-2':points[i].payloadId===1?'payload-1':'facility');
+    setView(gpu?(i===0?'earth':'follow'):'plane');
   };
   const openEdit=(tab:ControlTab)=>{setModal(null);setControl(tab);setMobile('build');setFocusScene(false);};
   const pin=()=>{if(result){setBaseline(result);setNotice('Pinned this calculated flight. It stays available while you try other designs.');}};
@@ -285,21 +290,22 @@ export default function Lab() {
       </aside>
 
       <section className="flight-panel" aria-label="Flight workspace">
-        <div className="scene-toolbar"><span className="scene-name"><i aria-hidden="true" />EARTH ORBIT</span><div className="view-switch" role="group" aria-label="View mode"><button disabled={!gpu} aria-pressed={view === 'earth'} onClick={() => setView('earth')}>Globe</button><button aria-pressed={view === 'plane'} onClick={() => setView('plane')}>Orbit plane</button><button disabled={!gpu} aria-pressed={view === 'follow'} onClick={() => setView('follow')}>Payload</button><button aria-pressed={view === 'structure'} onClick={() => setView('structure')}>Structure</button></div></div>
+        <div className="scene-toolbar"><span className="scene-name"><i aria-hidden="true" />EARTH ORBIT</span><div className="view-switch" role="group" aria-label="View mode"><button disabled={!gpu} aria-pressed={view === 'earth'} onClick={() => setView('earth')}>Globe</button><button aria-pressed={view === 'plane'} onClick={() => setView('plane')}>Orbit plane</button><button aria-pressed={view === 'follow'} onClick={() => setView('follow')}>Follow</button><button aria-pressed={view === 'structure'} onClick={() => setView('structure')}>Structure</button></div></div>
         <div className={`scene-box ${view==='structure'?'is-structure':''}`}>
-          {result ? view === 'structure' ? <Structure result={result} time={time}/> : view === 'plane' ? <Plane result={result} clock={clock} vectors={vectors} /> : <Scene result={result} clock={clock} view={view} vectors={vectors} onFailure={error3D} /> : <div className="scene-loading"><div className="loading-orbit" /><h2>{busy ? 'Solving the trajectory' : 'Ready for a new experiment'}</h2><p>{busy ? 'Gravity, rotation, payload transfer and recovery.' : 'Choose a design and run the simulation.'}</p></div>}
+          {result ? view === 'structure' ? <Structure result={result} time={time}/> : view === 'plane' || (!gpu && view === 'follow') ? <Plane result={result} clock={clock} vectors={vectors} selectedObject={selectedObject} follow={view==='follow'} /> : <Scene result={result} clock={clock} view={view} vectors={vectors} selectedObject={selectedObject} onFailure={error3D} /> : <div className="scene-loading"><div className="loading-orbit" /><h2>{busy ? 'Solving the trajectory' : 'Ready for a new experiment'}</h2><p>{busy ? 'Gravity, rotation, payload transfer and recovery.' : 'Choose a design and run the simulation.'}</p></div>}
           {busy && <div className="scene-pending">Calculating mission <button onClick={cancel}>Cancel</button></div>}
           {dirty && !busy && <div className="stale-notice">Unrun changes · scene and telemetry show the last calculation</div>}
           <div className="scene-tools">{view!=='structure'&&<button aria-pressed={vectors} onClick={()=>setVectors(v=>!v)} title="Velocity arrows share a display scale">Velocity vectors</button>}<button onClick={()=>setFocusScene(v=>!v)} aria-label={focusScene?'Exit expanded flight view':'Expand flight view'}>{focusScene?'Exit expanded view':'Expand view'}</button></div>
-          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" />Tether / facility</span><span><i className="legend-line payload" />Payload</span><span><i className="legend-line dashed" />Initial orbit</span></div>}
+          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" />Tether / facility</span><span><i className="legend-line payload" />Payload 1</span><span><i className="legend-line payload-two" />Payload 2</span><span><i className="legend-line dashed" />Initial orbit</span></div>}
         </div>
         <div className="flight-console">
-          <div className="scene-caption"><span>{view === 'structure' ? 'Load distribution · same calculated state' : view === 'plane' ? 'Same trajectory · flat orbital view' : 'Drag to orbit · scroll to zoom'}</span><span>Markers & cable width enlarged</span></div>
+          {result && frame && <ObjectTracker result={result} frame={frame} selected={selectedObject} following={view==='follow'} onSelect={setSelectedObject} onSeek={t=>{setGuide(null);seek(t);}}/>}
+          <div className="scene-caption"><span>{view === 'structure' ? 'Load distribution · same calculated state' : view === 'plane' ? 'Same trajectory · flat orbital view' : view === 'follow' ? 'Locked to selected object · zoom to inspect' : 'Drag to orbit · scroll to zoom'}</span><span>Markers & cable width enlarged</span></div>
           <div className="replay-actions"><button onClick={()=>showCheckpoint(0)} disabled={!result||busy||dirty}>Guided replay</button><button onClick={()=>{setPlaying(false);setModal('debrief');}} disabled={!result||busy}>Full-run debrief</button>{baseline&&<span>Pinned flight available in debrief</span>}</div>
           <div className="transport"><button className="play-button" onClick={play} disabled={!result || busy || dirty} aria-label={playing ? 'Pause replay' : 'Play replay'}>{playing ? 'Ⅱ' : '▶'}</button><button className="icon-button" onClick={() => { setGuide(null); seek(0); }} disabled={!result} aria-label="Restart replay">↺</button><button className="icon-button" onClick={nextEvent} disabled={!result} aria-label="Next mission event">▸|</button><span className="mission-clock">T+ <b>{elapsed(time)}</b></span><label className="speed-label">Playback<select aria-label="Playback speed" value={speed} onChange={e => setSpeed(Number(e.target.value))}><option value={10}>10× · handoff</option><option value={60}>60×</option><option value={240}>240×</option><option value={600}>600×</option></select></label></div>
           <input className="timeline-scrub" aria-label="Mission time" type="range" min={0} max={max || 1} step={1} value={time} disabled={!result} onChange={e => { setGuide(null); seek(Number(e.target.value)); }} />
           <div className="timeline-scale"><span>00:00:00</span><span>{max ? elapsed(max) : 'Awaiting calculation'}</span></div>
-          <div className="timeline-events">{result?.events.filter(e => ['capture', 'release', 'ready', 'limit'].includes(e.kind)).map((e, i) => <button key={i} className={e.t <= time + .01 ? 'visited' : ''} onClick={() => { setGuide(null); seek(e.t); }}><span>{elapsed(e.t)}</span>{e.title.replace('Payload ', '').replace(' captured', ' · capture').replace(' released', ' · release').replace('Orbit and spin recovered', 'Recovery window')}</button>)}</div>
+          <div className="timeline-events">{result?.events.filter(e => ['capture', 'release', 'approach', 'ready', 'limit', 'miss'].includes(e.kind)).map((e, i) => <button key={i} className={e.t <= time + .01 ? 'visited' : ''} onClick={() => { setGuide(null); seek(e.t); }}><span>{elapsed(e.t)}</span>{e.title.replace(' captured', ' · capture').replace(' released', ' · release').replace(' on approach', ' · approach').replace('Facility ready for next pickup', 'Facility ready')}</button>)}</div>
         </div>
         {guide!==null&&result?<GuidedReplay result={result} index={guide} onStep={showCheckpoint} onClose={()=>setGuide(null)}/> : <div className="mission-narration" aria-live="polite"><span className="micro">FLIGHT LOG</span><h2>{currentEvent?.title ?? 'A payload leaves. What happens next?'}</h2><p>{currentEvent?.detail ?? 'Select an experiment and run it. Every line in the scene follows a calculated state.'}</p></div>}
       </section>
@@ -310,7 +316,7 @@ export default function Lab() {
           <dl className="telemetry"><div><dt>Facility altitude</dt><dd>{frame ? fmt((Math.hypot(frame.state[0], frame.state[1]) - EARTH) / 1000) : '—'}<span>km</span></dd></div><div><dt>Closest tether point</dt><dd>{frame ? fmt(frame.clearance / 1000) : '—'}<span>km</span></dd></div><div><dt>Axial load margin</dt><dd className={frame && frame.margin < 1 ? 'bad' : ''}>{frame ? frame.margin > 99 ? '>99' : fmt(frame.margin, 2) : '—'}<span>×</span></dd></div>{(!result || result.design.recovery === 'chemical') ? <div><dt>Propellant remaining</dt><dd>{frame ? fmt(frame.fuel / 1000, 2) : '—'}<span>t</span></dd></div> : <div className="coast-status"><dt>Recovery state</dt><dd>Coast<small>No active thrust · 0 t propellant</small></dd></div>}</dl>
           {result&&diagnosis&&<div className="recorder-insight"><span className="micro">CALCULATED OUTCOME / FULL RUN</span><h3>{diagnosis.title}</h3><button onClick={()=>{setPlaying(false);setModal('debrief');}}>Why did this happen? →</button><button onClick={pin}>{baseline===result?'Flight pinned':'Pin for comparison'}</button></div>}
           {result && <div className="trace-stack"><p className="micro">FULL RUN / CURSOR = REPLAY TIME</p><Trace result={result} time={time} metric="clearance" /><Trace result={result} time={time} metric="margin" /></div>}
-          {atEnd && result && <div className={`outcome ${result.outcome === 'complete' ? 'success' : ''}`} role="status"><h3>{result.outcome === 'complete' ? 'Transport, recovered.' : result.outcome === 'limit' ? 'The model found a limit.' : 'Change one thing. Try again.'}</h3><p>{result.reason}</p>{result.design.recovery === 'chemical' && <p><b>{fmt(result.fuelUsed / 1000, 2)} t</b> propellant used by this controller.</p>}{result.deliveries.map(d => <p key={d.number}>Payload {d.number}: <b>{d.gain >= 0 ? '+' : ''}{fmt(d.gain / 1e6, 1)} MJ/kg</b></p>)}</div>}
+          {atEnd && result && <div className={`outcome ${result.outcome === 'complete' ? 'success' : ''}`} role="status"><h3>{result.outcome === 'complete' ? 'Two payloads delivered.' : result.outcome === 'limit' ? 'The model found a limit.' : 'Change one thing. Try again.'}</h3><p>{result.reason}</p>{result.design.recovery === 'chemical' && <p><b>{fmt(result.fuelUsed / 1000, 2)} t</b> propellant used by this controller.</p>}{result.deliveries.map(d => <p key={d.number}>Payload {d.number}: <b>{d.gain >= 0 ? '+' : ''}{fmt(d.gain / 1e6, 1)} MJ/kg</b></p>)}</div>}
           {previous && result && <details className="comparison"><summary>Compare with previous run</summary><div className="comparison-grid"><span /> <b>Previous</b><b>This run</b><span>Payload (t)</span><span>{previous.design.payloadT}</span><span>{result.design.payloadT}</span><span>Deliveries</span><span>{goodDeliveries(previous).length}</span><span>{goodDeliveries(result).length}</span><span>Fuel used (t)</span><span>{fmt(previous.fuelUsed / 1000, 2)}</span><span>{fmt(result.fuelUsed / 1000, 2)}</span><span>Dry mass (t)</span><span>{fmt(previous.dryMass / 1000, 1)}</span><span>{fmt(result.dryMass / 1000, 1)}</span></div><p>Complete-run totals, not a normalized ranking.</p></details>}
           <a className="recorder-help" href="/lab/method/#limits">What counts as a successful run? ↗</a>
         </div>
