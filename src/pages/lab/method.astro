@@ -1,7 +1,7 @@
 ---
 import LabLayout from '../../layouts/LabLayout.astro';
 import { MATERIALS, MODEL, PAYLOAD_LIMIT_T } from '../../simulation/engine';
-const sections = [['scope','Model scope'],['materials','Materials & sizing'],['recovery','Recovery modes'],['events','Capture & release'],['equations','Equations'],['limits','Success & limits'],['validation','Tests'],['sources','Sources & display']];
+const sections = [['scope','Model scope'],['flight-school','Missions & studies'],['materials','Materials & sizing'],['recovery','Recovery modes'],['events','Capture & release'],['equations','Equations'],['limits','Success & limits'],['validation','Tests'],['sources','Sources & display']];
 ---
 <LabLayout title="Method — Tether Lab" description="A readable guide to the Tether Lab model: materials, capture and release, recovery, equations, tests and limitations." active="method">
   <main class="guide" id="lab-content">
@@ -19,6 +19,15 @@ const sections = [['scope','Model scope'],['materials','Materials & sizing'],['r
           <p>The current experiment is a symmetric, single-stage rotovator. Gravity acts on the distributed tether mass, its hub and its terminal modules. Translation and rotation evolve together.</p>
           <div class="scope-grid"><div class="scope-box"><h3>Calculated in this build</h3><ul><li>Distributed spherical-Earth gravity and torque</li><li>Material-dependent mass and rotational inertia</li><li>Ideal matched capture and impulse-free release</li><li>Axial-load and full-segment clearance checks</li><li>Coast or bounded chemical recovery</li></ul></div><div class="scope-box omitted"><h3>Not simulated</h3><ul><li>Atmospheric flight or capture guidance</li><li>Cable waves, elasticity, fatigue or creep</li><li>Debris impacts, severing or repairs</li><li>Electrodynamics or inbound-traffic recovery</li><li>T4 joints, lunar encounters or solar-system dynamics</li></ul></div></div>
           <div class="guide-note"><p>A successful run means the modeled scenario met its conditions. It does not establish that a real tether could be built or flown.</p></div>
+        </section>
+        <section class="guide-section" id="flight-school">
+          <h2>Learn from the next flight.</h2>
+          <p><strong>Flight school and the sandbox use the same equations.</strong> Each challenge supplies a starting design and states which controls can change. The objectives include two qualifying deliveries, a minimum apogee, a dry-mass limit and a loaded-propellant budget. Escape trajectories do not satisfy these bound-orbit missions.</p>
+          <p>Checks use the complete calculated run, not the current replay position. A passed mission is stored only in this browser; it is not a public leaderboard or hardware certification. Unrun edits never update the result of an earlier flight.</p>
+          <div class="scope-grid"><div class="scope-box"><h3>Guided replay</h3><p>Pause at actual capture, release and recovery events. These checkpoints explain the recorded state without changing it. Playback speed affects the view, not the numerical time step.</p></div><div class="scope-box"><h3>Trade studies</h3><p>Run separate simulations for recovery, material, release-phase or payload variants. Selecting a result restores that exact design and its recorded flight. Incomplete and model-limited runs remain visible.</p></div></div>
+          <p>Pin a flight before changing a design to retain a comparison baseline. Fuel, mass and clearance differences are observations, not an automatic efficiency ranking: runs can deliver different energy or last for different durations. Coast also removes the carried propellant mass.</p>
+          <details class="guide-details"><summary>Read the trade plot and structural inspector</summary><div><p>The trade plot shows consumed propellant against the first payload’s specific mechanical-energy gain. Filled circles complete both deliveries; open circles do not. A cross means there was no release. The result table and debrief provide the quantities behind the points.</p><p>The structural inspector samples the same axial-load cuts used by the solver’s stop condition at the selected replay time. It shows section area, tension and stress against the chosen allowable. It does not model transverse deformation or elastic waves. Cable thickness is enlarged for visibility.</p></div></details>
+          <p><strong>Export flight report</strong> records the design, model version, numerical settings, events, outputs and challenge checks. This report is distinct from the small design JSON used for imports and sharing.</p>
         </section>
         <section class="guide-section" id="materials">
           <h2>Change the material. Keep the geometry.</h2>
@@ -58,15 +67,15 @@ I θ̈ = Σ (rᵢ − R) × Fᵢ + thrust torque</pre><p>R and V locate the inst
         </section>
         <section class="guide-section" id="validation">
           <h2>Reproducible, not self-certifying.</h2>
-          <p>Tests cover mass and inertia, point continuity, capture/release conservation, conservative coast, interior-segment clearance, material limits, finite fuel, input bounds, versioned imports and time-step / mass-cell convergence. A separate SciPy DOP853 calculation supplies a conservative-coast reference.</p>
+          <p>Tests cover challenge pass/fail criteria and reachable solutions, fixed-variable trade studies, agreement between the load inspector and solver, mass and inertia, point continuity, capture/release conservation, conservative coast, interior-segment clearance, material limits, finite fuel, input bounds, versioned imports and time-step / mass-cell convergence. A separate SciPy DOP853 calculation supplies a conservative-coast reference.</p>
           <p>The expanded payload range has finite-state and limit-handling regression coverage. It is not a validated engineering envelope for every combination of inputs.</p>
           <p><a href="https://github.com/RelyOnFire/skyhook-industries/tree/tether-lab-first-playable/tests">Read the tests ↗</a></p>
           <details class="guide-details"><summary>Saved designs and the 0.2 update</summary><div><p>Configuration schema 2 records the architecture explicitly and supports payload inputs up to 250 t. Model {MODEL} defines Coast as carrying zero propellant. Older 0.1 designs are shown for review before updating; they are never silently presented as identical calculations.</p><p>Share URLs contain bounded JSON inputs in their fragment. Imports are validated data, not executable code. Local saves use browser storage. Export JSON for a portable copy.</p></div></details>
         </section>
         <section class="guide-section" id="sources">
           <h2>The scene is a view, not a second model.</h2>
-          <p>3D and orbital-plane views read the same trajectory. Cable width, markers and the visual atmosphere are enlarged. Sunlight is illustrative. The 28° orbital-plane display tilt is not a modeled inclination parameter.</p>
-          <p>Earth’s outline uses simplified, public-domain Natural Earth coastlines, without country borders. <a href="https://www.naturalearthdata.com/about/terms-of-use/">Data terms ↗</a></p>
+          <p>Globe, payload-follow and orbital-plane views read the same trajectory. The payload camera follows the supplied, attached or most recently released payload. Velocity arrows use a shared display scale within each view; they are not force arrows. Cable width, markers and the visual atmosphere are enlarged. Sunlight is illustrative. The 28° orbital-plane display tilt is not a modeled inclination parameter.</p>
+          <p>Earth’s outline uses simplified, public-domain Natural Earth coastlines, without country borders. The colors are procedural illustration, not satellite photography or terrain data. <a href="https://www.naturalearthdata.com/about/terms-of-use/">Data terms ↗</a></p>
           <p>The <a href="/lab/architectures/">architecture catalogue</a> links to historical primary studies, including HASTOL, Tillotson’s T4 and MXER. Those studies describe other systems; their results are not passed off as validation of this lab.</p>
           <p>The older project sizing studies remain in the <a href="/reference-architecture/">reference archive</a>. Their estimates are not used as proof that a lab mission will work.</p>
           <a class="button-link" href="/lab/">Back to your experiment →</a>

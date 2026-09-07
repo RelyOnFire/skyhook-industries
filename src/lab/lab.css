@@ -4,6 +4,7 @@
 @import "./styles/flight.css";
 @import "./styles/guide.css";
 @import "./styles/responsive.css";
+@import "./styles/experience.css";
 
 /* Keep filled catalogue links legible after the generic link treatment. */
 a.button-link.primary { color: #07131c; }

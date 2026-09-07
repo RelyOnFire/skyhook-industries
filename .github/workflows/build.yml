@@ -34,6 +34,19 @@ jobs:
           diff -u analysis/reference_architecture_v04_output.md /tmp/reference_architecture_v04_output.md
       - name: Build site
         run: npm run build
+      - name: Install browser regression tooling
+        run: |
+          python3 -m pip install playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+      - name: Exercise native-origin Flight Studio and WebGL
+        run: python3 tests/lab-flight-studio.browser.py --require-webgl
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa
+          path: qa/browser/
+          retention-days: 7
       - name: Package tracked source for reproducible browser review
         run: git archive --format=tar HEAD > source-review.tar
       - name: Upload browser-review build
@@ -45,14 +58,3 @@ jobs:
             package-lock.json
             source-review.tar
           retention-days: 7
-      - name: Package installed runtime for this offline QA pass
-        run: |
-          mkdir -p review-runtime
-          cp "$(command -v node)" review-runtime/node
-          tar -czf review-runtime.tgz node_modules package-lock.json review-runtime
-      - name: Upload temporary QA runtime
-        uses: actions/upload-artifact@v4
-        with:
-          name: offline-qa-runtime
-          path: review-runtime.tgz
-          retention-days: 1

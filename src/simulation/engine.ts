@@ -126,7 +126,11 @@ export function clearance(y:State,b:Body) {
   const a=pointState(y,b,-b.half),z=pointState(y,b,b.half),dx=z[0]-a[0],dy=z[1]-a[1],u=Math.max(0,Math.min(1,-(a[0]*dx+a[1]*dy)/(dx*dx+dy*dy)));
   return Math.hypot(a[0]+u*dx,a[1]+u*dy)-EARTH;
 }
-export function loadCheck(y:State,b:Body,d:Design,burn:boolean) {
+export interface LoadCut { s:number; area:number; tension:number; stress:number }
+export function loadProfile(y:State,b:Body,d:Design,burn:boolean):LoadCut[] {
+  const cuts:LoadCut[]=[];loadCheck(y,b,d,burn,cuts);return cuts;
+}
+export function loadCheck(y:State,b:Body,d:Design,burn:boolean,cuts?:LoadCut[]) {
   const f=forces(y,b,d,burn),c=Math.cos(y[4]),s=Math.sin(y[4]),allow=properties(d).allowable;
   let axial=0,maxStress=0,minTension=0,peak=0;
   for(let i=0;i<b.points.length-1;i++) {
@@ -137,7 +141,7 @@ export function loadCheck(y:State,b:Body,d:Design,burn:boolean) {
     const ry=p.m*(f.ay-y[5]**2*q*s+f.alpha*q*c-f.grav[i][1])-ty;
     axial+=rx*c+ry*s;minTension=Math.min(minTension,axial);
     const pos=(p.s+b.points[i+1].s)/2, factor=d.shape==='uniform'?1:1-0.7*(pos/b.half)**2;
-    const stress=axial/(b.area*factor);if(stress>maxStress){maxStress=stress;peak=pos;}
+    const stress=axial/(b.area*factor);if(cuts)cuts.push({s:pos,area:b.area*factor,tension:axial,stress});if(stress>maxStress){maxStress=stress;peak=pos;}
   }
   return {margin:maxStress>0?allow/maxStress:999,stress:maxStress,minTension,peak};
 }

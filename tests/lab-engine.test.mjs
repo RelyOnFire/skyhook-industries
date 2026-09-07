@@ -119,3 +119,61 @@ test('architecture catalogue never marks an unsupported solver as runnable', asy
   assert.equal(ARCHITECTURES.find(a => a.id === 'hoytether').category, 'Structural construction');
   assert.equal(new Set(ARCHITECTURES.map(a => a.id)).size, ARCHITECTURES.length);
 });
+
+// Flight school interprets the same numerical results, never a separate arcade model.
+const { CHALLENGES, challengeGates, diagnose, deliveries: goodDeliveries, studyDesigns,
+  designChanges, readiness } = await import('../.lab-test/simulation/insights.js');
+const { loadProfile, loadCheck, properties } = await import('../.lab-test/simulation/engine.js');
+test('each mission has a failing starting state and a reachable passing solution',()=>{
+  const solutions=[DEFAULT,{...DEFAULT,payloadT:5,areaMm2:45},{...DEFAULT,fuelT:12,areaMm2:45,releaseDeg:210}];
+  CHALLENGES.forEach((c,i)=>{
+    const start=simulate(c.start),solution=simulate(solutions[i]);
+    assert.ok(challengeGates(c,start).some(g=>!g.pass),`${c.id} starting state must teach a trade`);
+    assert.ok(challengeGates(c,solution).every(g=>g.pass),`${c.id}: ${JSON.stringify(challengeGates(c,solution))}`);
+  });
+});
+test('mission checks reject changed payload, hypothetical materials, excess fuel and low delivered orbit',()=>{
+  const r=simulate(DEFAULT),mission=CHALLENGES[0];
+  for(const edit of [{payloadT:1},{material:'future'},{fuelT:21},{altitudeKm:1700}]){
+    assert.ok(challengeGates(mission,{...r,design:{...r.design,...edit}}).some(g=>!g.pass));
+  }
+  const lowOrbit={...r,deliveries:r.deliveries.map(d=>({...d,apogee:7000000}))};
+  assert.ok(!challengeGates(mission,lowOrbit).find(g=>g.label.startsWith('Apogee')).pass);
+  const escape={...r,deliveries:r.deliveries.map(d=>({...d,apogee:null}))};
+  assert.ok(!challengeGates(mission,escape).find(g=>g.label.startsWith('Apogee')).pass);
+});
+test('a stored release is not counted as a successful delivery without energy gain and clearance',()=>{
+  const r=simulate(DEFAULT,{horizon:10});
+  const partial={...r,deliveries:[{gain:0,perigee:130000},{gain:1,perigee:110000},{gain:1,perigee:130000}]};
+  assert.equal(goodDeliveries(partial).length,1);
+});
+test('debrief explanations distinguish tensile limit, coasting, exhaustion and completion',()=>{
+  assert.match(diagnose(simulate({...DEFAULT,material:'kevlar',areaMm2:35,payloadT:5})).title,/load margin/);
+  assert.match(diagnose(simulate({...DEFAULT,recovery:'none',fuelT:0})).title,/no second/);
+  assert.match(diagnose(simulate({...DEFAULT,fuelT:2})).title,/budget runs out/);
+  const complete=simulate(DEFAULT);assert.match(diagnose(complete).title,/Two deliveries/);
+  assert.ok(readiness(complete).every(g=>Number.isFinite(g.value)));
+});
+test('trade candidates keep non-target controls fixed, bound payloads and never mutate the source',()=>{
+  const copy={...DEFAULT};
+  for(const kind of ['recovery','material','release','payload']){
+    const allowed={recovery:['recovery','fuelT'],material:['material'],release:['releaseDeg'],payload:['payloadT']}[kind];
+    for(const candidate of studyDesigns(copy,kind)) {
+      validate(candidate.design);
+      assert.ok(designChanges(copy,candidate.design).every(key=>allowed.includes(key)));
+    }
+  }
+  assert.deepEqual(copy,DEFAULT);
+  const high=studyDesigns({...copy,payloadT:250},'payload');
+  assert.equal(high.length,2);assert.ok(high.every(v=>v.design.payloadT<=250));
+  assert.equal(studyDesigns(copy,'recovery')[0].design.fuelT,0);
+});
+test('section inspector reads the same cuts and peak stress as the numerical stop condition',()=>{
+  for(const loaded of [false,true]) {
+    const d={...DEFAULT,shape:'tapered'},y=initial(d),b=compile(d,y[6],loaded),cuts=loadProfile(y,b,d,false),check=loadCheck(y,b,d,false);
+    assert.ok(cuts.length>20&&cuts.every(c=>Number.isFinite(c.stress)&&c.area>0));
+    const peak=Math.max(...cuts.map(c=>c.stress));
+    near(check.margin,properties(d).allowable/peak,1e-10);
+    assert.ok(cuts[0].s<0&&cuts.at(-1).s>0);
+  }
+});
