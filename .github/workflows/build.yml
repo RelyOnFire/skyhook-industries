@@ -45,3 +45,14 @@ jobs:
             package-lock.json
             source-review.tar
           retention-days: 7
+      - name: Package installed runtime for this offline QA pass
+        run: |
+          mkdir -p review-runtime
+          cp "$(command -v node)" review-runtime/node
+          tar -czf review-runtime.tgz node_modules package-lock.json review-runtime
+      - name: Upload temporary QA runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-qa-runtime
+          path: review-runtime.tgz
+          retention-days: 1
