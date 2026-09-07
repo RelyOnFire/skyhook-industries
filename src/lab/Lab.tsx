@@ -17,8 +17,13 @@ function Field({ label, unit, value, min, max, step, onChange, onValidity }: {
 }) {
   const id = useId();
   const [text, setText] = useState(String(value));
-  const [invalid, setInvalid] = useState(false);
-  useEffect(() => { setText(String(value)); setInvalid(false); onValidity(label, false); }, [value, label, onValidity]);
+  const outsideRange = !Number.isFinite(value) || value < min || value > max;
+  const [invalid, setInvalid] = useState(outsideRange);
+  // Changing the editing range must revalidate the accepted value without
+  // changing it. A native range input would otherwise silently display max.
+  useEffect(() => {
+    setText(String(value)); setInvalid(outsideRange); onValidity(label, outsideRange);
+  }, [value, min, max, outsideRange, label, onValidity]);
   useEffect(() => () => onValidity(label, false), [label, onValidity]);
   function edit(raw: string) {
     setText(raw);
@@ -29,12 +34,12 @@ function Field({ label, unit, value, min, max, step, onChange, onValidity }: {
   return <div className="lab-field">
     <div className="field-heading"><label htmlFor={id}>{label}</label><span className="field-value">
       <input id={id} aria-label={`${label} value`} type="number" inputMode="decimal" value={text} min={min} max={max} step="any"
-        aria-invalid={invalid || undefined} aria-describedby={invalid ? `${id}-error` : undefined}
+        aria-invalid={invalid || outsideRange || undefined} aria-describedby={invalid || outsideRange ? `${id}-error` : undefined}
         onChange={e => edit(e.target.value)} /><span>{unit}</span>
     </span></div>
-    <input aria-label={label} type="range" min={min} max={max} step={step} value={value}
-      onChange={e => { const n = Number(e.target.value); setText(String(n)); setInvalid(false); onValidity(label, false); onChange(n); }} />
-    {invalid && <p id={`${id}-error`} className="field-error">Enter {min}–{max} {unit}.</p>}
+    {!outsideRange && <input aria-label={label} type="range" min={min} max={max} step={step} value={value}
+      onChange={e => { const n = Number(e.target.value); setText(String(n)); setInvalid(false); onValidity(label, false); onChange(n); }} />}
+    {(invalid || outsideRange) && <p id={`${id}-error`} className="field-error">Enter {min}–{max} {unit}.</p>}
   </div>;
 }
 
@@ -46,6 +51,9 @@ export default function Lab() {
   const [view, setView] = useState<View>('earth'), [gpu, setGpu] = useState(true);
   const [control, setControl] = useState<ControlTab>('structure'), [mobile, setMobile] = useState<MobileTab>('fly');
   const [extended, setExtended] = useState(false), [invalidFields, setInvalidFields] = useState<string[]>([]);
+  const payloadOutsideRange = !extended && design.payloadT > STANDARD_PAYLOAD_T;
+  // Keep this derived guard even when the Mission fields are unmounted.
+  const hasInvalidInput = invalidFields.length > 0 || payloadOutsideRange;
   const [shareUrl, setShareUrl] = useState(''), [pendingImport, setPendingImport] = useState<ImportedDesign | null>(null);
   const clock = useRef(0), worker = useRef<Worker | null>(null), request = useRef(0), fileInput = useRef<HTMLInputElement>(null);
   const chemicalBudget = useRef(DEFAULT.fuelT), resultRef = useRef(result), playingRef = useRef(playing), speedRef = useRef(speed);
@@ -124,7 +132,7 @@ export default function Lab() {
   const cancel = () => { worker.current?.terminate(); worker.current = null; request.current++; setBusy(false); setNotice('Calculation cancelled. The last accepted run is unchanged.'); };
   const share = async () => {
     try {
-      if (invalidFields.length) throw Error('Correct the highlighted input before sharing.');
+      if (hasInvalidInput) throw Error('Correct the highlighted input before sharing.');
       const hash = designFragment(design), url = `${location.origin}${location.pathname}${hash}`;
       history.replaceState(null, '', url); setShareUrl(url);
       try { await navigator.clipboard.writeText(url); setNotice('Design link copied.'); } catch { setNotice('Copy the design link below.'); }
@@ -135,7 +143,7 @@ export default function Lab() {
     if (imported.needsConfirmation) setPendingImport(imported); else adopt(imported.design);
   };
   const save = () => { try {
-    if (invalidFields.length) throw Error('Correct the highlighted input first.');
+    if (hasInvalidInput) throw Error('Correct the highlighted input first.');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(validate(design))); setNotice('Saved in this browser. Export JSON for a portable copy.');
   } catch (e) { setError(`Save failed: ${(e as Error).message}`); } };
   const load = () => { try {
@@ -143,7 +151,7 @@ export default function Lab() {
     if (!raw) throw Error('No saved design in this browser.'); acceptImport(raw);
   } catch (e) { setError(`Load failed: ${(e as Error).message}`); } };
   const exportFile = () => { try {
-    if (invalidFields.length) throw Error('Correct the highlighted input first.');
+    if (hasInvalidInput) throw Error('Correct the highlighted input first.');
     const url = URL.createObjectURL(new Blob([JSON.stringify(validate(design), null, 2)], { type: 'application/json' }));
     const a = document.createElement('a'); a.href = url; a.download = 'skyhook-tether-design.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (e) { setError((e as Error).message); } };
@@ -187,8 +195,14 @@ export default function Lab() {
           </>}
           {control === 'mission' && <>
             <div className="control-intro"><span className="micro">THE EXPERIMENT</span><h3>Make the second delivery.</h3><p>Release a payload into a higher-energy orbit. Restore the facility’s operating state, then attempt another handoff.</p></div>
-            <label className="extended-switch"><input type="checkbox" checked={extended} onChange={e => { if (!e.target.checked && design.payloadT > STANDARD_PAYLOAD_T) { setNotice('Lower the payload to 20 t or less before leaving the extended range. Your input has not been reduced.'); return; } setExtended(e.target.checked); }} /><span>Extended payload range <small>up to {PAYLOAD_LIMIT_T} t</small></span></label>
+            <label className="extended-switch"><input type="checkbox" checked={extended}
+              onChange={e => setExtended(e.currentTarget.checked)} /><span>Extended payload range <small>up to {PAYLOAD_LIMIT_T} t</small></span></label>
             {field('payloadT', 'Payload per delivery', 't', .1, extended ? PAYLOAD_LIMIT_T : STANDARD_PAYLOAD_T, .1)}
+            {payloadOutsideRange && <div className="range-warning" role="status">
+              <p>Your {fmt(design.payloadT, 1)} t payload is unchanged. Standard range is 0.1–{STANDARD_PAYLOAD_T} t.
+                Enter a smaller payload or turn extended range back on.</p>
+              <button type="button" onClick={() => change('payloadT', STANDARD_PAYLOAD_T)}>Use {STANDARD_PAYLOAD_T} t</button>
+            </div>}
             {extended && <p className="range-warning">Exploratory input range, not a rated capacity. The same physics applies; larger payloads can exceed the load or clearance limits. No automatic resizing.</p>}
             {field('altitudeKm', 'Initial circular altitude', 'km', 400, 8000, 50)}
             {field('tipSpeedKms', 'Tip speed relative to center', 'km/s', .25, 2.5, .05)}
@@ -208,8 +222,10 @@ export default function Lab() {
           </>}
         </div>
         <div className="design-summary"><div><span>Dry facility</span><b>{draft ? fmt(draft.body.mass / 1000, 1) : '—'} <small>t</small></b></div><p>{draft ? fmt(draft.body.structural / 1000, 1) : '—'} t tether + 34 t hub & terminals</p>
-          <button className="primary run-design" disabled={busy || invalidFields.length > 0} onClick={() => { run(design); setMobile('fly'); }}>{busy ? 'Calculating…' : dirty ? 'Run changed design' : 'Run experiment'}<span aria-hidden="true">↗</span></button>
-          {invalidFields.length > 0 && <p className="field-error">Correct {invalidFields.join(', ')} to run.</p>}
+          <button className="primary run-design" disabled={busy || hasInvalidInput} onClick={() => { run(design); setMobile('fly'); }}>{busy ? 'Calculating…' : dirty ? 'Run changed design' : 'Run experiment'}<span aria-hidden="true">↗</span></button>
+          {hasInvalidInput && <p className="field-error">{payloadOutsideRange
+            ? 'Open Mission: lower the payload or enable extended range to run.'
+            : `Correct ${invalidFields.join(', ')} to run.`}</p>}
           <div className="file-actions"><button onClick={exportFile}>Export JSON</button><button onClick={() => fileInput.current?.click()}>Import design</button><input ref={fileInput} type="file" hidden accept=".json,application/json" onChange={e => importFile(e.target.files?.[0])} /></div>
         </div>
       </aside>
