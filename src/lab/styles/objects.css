@@ -1,0 +1,29 @@
+/* A stable identity belongs to an object, not to its current mission role. */
+.object-tracker { padding:12px 0 2px; }
+.object-choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.object-choices button { --object-color:var(--lab-cyan); display:flex; align-items:center; gap:8px; min-width:0; padding:9px; text-align:left; background:#091521; border:1px solid #314657; }
+.object-choices button[aria-pressed=true] { border-color:var(--object-color); background:#1a2e40; }
+.object-choices button strong { display:block; font-size:12px; color:var(--object-color); }
+.object-choices button small { display:block; font-size:10px; line-height:1.4; color:#c3d0df; margin-top:3px; }
+.object-symbol { width:8px; height:8px; flex:0 0 8px; background:var(--object-color); display:inline-block; }
+.object-symbol.circle { border-radius:50%; }
+.object-symbol.diamond { transform:rotate(45deg); }
+.tracking-detail { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; padding:9px 0 3px; font-size:11px; line-height:1.5; color:#c1d6e6; }
+.tracking-detail b { color:#eef7ff; font-weight:500; }
+.tracking-detail button { background:none; border:0; padding:0; min-height:24px; font-size:11px; color:var(--lab-cyan); }
+.range-to-tip { font-family:var(--lab-mono); }
+.legend-line.payload-two { border-color:#c9b8ff; }
+/* The object list adds a small, fixed control row; keep room for the scene. */
+.lab-workspace { min-height:865px; }
+@media (max-width:800px) {
+  .object-choices button { padding:8px 6px; gap:5px; align-items:flex-start; }
+  .object-choices button .object-symbol { margin-top:4px; }
+  .object-choices button strong { font-size:11px; }
+  .object-choices button small { font-size:10px; }
+  .object-choices { gap:4px; }
+  .scene-legend { column-gap:10px; row-gap:4px; }
+}
+
+.rendezvous-checks > div { display:grid; gap:5px; padding:12px 0; border-bottom:1px solid #314a61; font-size:12px; }
+.rendezvous-checks b { color:#e6f2ff; }
+.rendezvous-checks small { color:#b9cce0; line-height:1.6; }

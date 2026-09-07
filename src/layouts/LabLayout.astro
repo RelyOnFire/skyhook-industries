@@ -1,0 +1,27 @@
+---
+import '../lab/lab.css';
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures'; }
+const { title, description, active = 'lab' } = Astro.props;
+const links = [ ['lab', 'Flight deck', '/lab/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#080e18" />
+    <meta name="robots" content="noindex,follow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="lab-body">
+    <a class="lab-skip" href="#lab-content">Skip to content</a>
+    <header class="lab-chrome">
+      <a class="lab-logo" href="/lab/" aria-label="Tether Lab home"><img src="/favicon.svg" width="30" height="30" alt="" /><span><b>TETHER LAB</b><small>by Skyhook Industries</small></span></a>
+      <nav aria-label="Lab navigation">{links.map(([id, label, href]) => <a href={href} aria-current={active === id ? 'page' : undefined}>{label}</a>)}</nav>
+      <a class="company-link" href="/">Company & research ↗</a>
+    </header>
+    <slot />
+  </body>
+</html>

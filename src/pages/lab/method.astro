@@ -1,0 +1,87 @@
+---
+import LabLayout from '../../layouts/LabLayout.astro';
+import { MATERIALS, MODEL, PAYLOAD_LIMIT_T } from '../../simulation/engine';
+const sections = [['scope','Model scope'],['flight-school','Missions & studies'],['materials','Materials & sizing'],['recovery','Recovery modes'],['events','Capture & release'],['equations','Equations'],['limits','Success & limits'],['validation','Tests'],['sources','Sources & display']];
+---
+<LabLayout title="Method — Tether Lab" description="A readable guide to the Tether Lab model: materials, capture and release, recovery, equations, tests and limitations." active="method">
+  <main class="guide" id="lab-content">
+    <header class="guide-header">
+      <p class="micro">THE MODEL GUIDE</p><h1>Know what you’re flying.</h1>
+      <p>The globe shows a calculation, not a scripted success story. This guide explains what the model includes, which assumptions you control, and where its answers stop.</p>
+      <div class="guide-actions"><a class="button-link" href="/lab/">Back to the workbench →</a><a href="/lab/architectures/">Explore tether architectures</a></div>
+      <div class="guide-meta"><span>{MODEL}</span><span>Planar rigid-body dynamics</span><span>Educational, not flight-qualified</span></div>
+    </header>
+    <div class="guide-layout">
+      <nav class="guide-nav" aria-label="On this page"><span>IN THIS GUIDE</span>{sections.map(([id,title])=><a href={`#${id}`}>{title}</a>)}</nav>
+      <div class="guide-body">
+        <section class="guide-section" id="scope">
+          <h2>One Earth. One rotating facility.</h2>
+          <p>The current experiment is a symmetric, single-stage rotovator. Gravity acts on the distributed tether mass, its hub and its terminal modules. Translation and rotation evolve together.</p>
+          <div class="scope-grid"><div class="scope-box"><h3>Calculated in this build</h3><ul><li>Distributed spherical-Earth gravity and torque</li><li>Material-dependent mass and rotational inertia</li><li>Ideal matched capture and impulse-free release</li><li>Axial-load and full-segment clearance checks</li><li>Coast or bounded chemical recovery</li></ul></div><div class="scope-box omitted"><h3>Not simulated</h3><ul><li>Atmospheric flight or capture guidance</li><li>Cable waves, elasticity, fatigue or creep</li><li>Debris impacts, severing or repairs</li><li>Electrodynamics or inbound-traffic recovery</li><li>T4 joints, lunar encounters or solar-system dynamics</li></ul></div></div>
+          <div class="guide-note"><p>A successful run means the modeled scenario met its conditions. It does not establish that a real tether could be built or flown.</p></div>
+        </section>
+        <section class="guide-section" id="flight-school">
+          <h2>Learn from the next flight.</h2>
+          <p><strong>Flight school and the sandbox use the same equations.</strong> Each challenge supplies a starting design and states which controls can change. The objectives include two qualifying deliveries, a minimum apogee, a dry-mass limit and a loaded-propellant budget. Escape trajectories do not satisfy these bound-orbit missions.</p>
+          <p>Checks use the complete calculated run, not the current replay position. A passed mission is stored only in this browser; it is not a public leaderboard or hardware certification. Unrun edits never update the result of an earlier flight.</p>
+          <div class="scope-grid"><div class="scope-box"><h3>Guided replay</h3><p>Pause at actual capture, release and recovery events. These checkpoints explain the recorded state without changing it. Playback speed affects the view, not the numerical time step.</p></div><div class="scope-box"><h3>Trade studies</h3><p>Run separate simulations for recovery, material, release-phase or payload variants. Selecting a result restores that exact design and its recorded flight. Incomplete and model-limited runs remain visible.</p></div></div>
+          <p>Pin a flight before changing a design to retain a comparison baseline. Fuel, mass and clearance differences are observations, not an automatic efficiency ranking: runs can deliver different energy or last for different durations. Coast also removes the carried propellant mass.</p>
+          <details class="guide-details"><summary>Read the trade plot and structural inspector</summary><div><p>The trade plot shows consumed propellant against the first payload’s specific mechanical-energy gain. Filled circles complete both deliveries; open circles do not. A cross means there was no release. The result table and debrief provide the quantities behind the points.</p><p>The structural inspector samples the same axial-load cuts used by the solver’s stop condition at the selected replay time. It shows section area, tension and stress against the chosen allowable. It does not model transverse deformation or elastic waves. Cable thickness is enlarged for visibility.</p></div></details>
+          <p><strong>Export flight report</strong> records the design, model version, numerical settings, events, outputs and challenge checks. This report is distinct from the small design JSON used for imports and sharing.</p>
+        </section>
+        <section class="guide-section" id="materials">
+          <h2>Change the material. Keep the geometry.</h2>
+          <p>Material selection changes density and the strength input. It does <strong>not</strong> silently thicken the tether. That makes the trade visible: the same dimensions can become lighter, heavier or unable to carry the modeled load.</p>
+          <div class="guide-table-wrap"><table><caption class="micro">STRUCTURAL INPUTS</caption><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td><b>Cross-section</b></td><td>Center area in mm². Uniform keeps that area throughout. The parabolic taper ends at 30% of center area.</td></tr><tr><td><b>Allowable stress</b></td><td>Ultimate fiber strength divided by the chosen safety factor. This simplified derating excludes environmental and joint losses.</td></tr><tr><td><b>Resize</b></td><td>An explicit calculation for the lower-radial load with a 15% area reserve. It may refuse a design. A resized design still needs a mission run.</td></tr><tr><td><b>Payload range</b></td><td>Standard: 0.1–20 t. Extended: 0.1–{PAYLOAD_LIMIT_T} t. Both use the same equations; the upper input limit is not a rated capacity.</td></tr></tbody></table></div>
+          <details class="guide-details"><summary>Inspect the material profiles</summary><div>{MATERIALS.map(m=><article class="source-record"><span class="micro">{m.source?'PUBLISHED FIBER DATA':'HYPOTHETICAL INPUT'}</span><h3>{m.name}</h3><p>{m.basis}. {m.id!=='custom'&&`${m.density} kg/m³; ${(m.ultimate/1e9).toFixed(1)} GPa ultimate strength.`}</p><p>{m.locator}</p>{m.source&&<a href={m.source}>Read the source ↗</a>}</article>)}<p>Kevlar 49 uses the 3.0 GPa conditioned-yarn value, not the resin-impregnated-strand value. “Future carbon” is a scenario assumption, not a claim of available hardware. No endorsement is implied.</p></div></details>
+        </section>
+        <section class="guide-section" id="recovery">
+          <h2>No free reset for the orbit.</h2>
+          <div class="scope-grid"><div class="scope-box"><h3>Chemical recovery</h3><p>The facility carries the selected propellant mass. A bounded controller uses thrust and torque to recover orbit and spin. Fuel is consumed; empty tanks stop thrust.</p></div><div class="scope-box"><h3>Coast</h3><p>No active recovery and no onboard propellant. The orbit evolves after the transfer. The same readiness conditions still govern the next handoff.</p></div></div>
+          <p>Switching back to Chemical restores the last budget entered in this session. That remembered setting is not carried as hidden mass in Coast. Telemetry always belongs to the last completed calculation, not an unrun edit.</p>
+          <details class="guide-details"><summary>Controller assumptions and fuel accounting</summary><div><p>Ideal steerable thrusters produce net translation and a terminal couple. A simple feedback law seeks the initial circular radius and angular momentum. Spin follows a circular short-rod gravity-gradient reference; actual propagation still uses distributed gravity.</p><pre class="equation-panel" tabindex="0" aria-label="Propellant-flow equation">mass flow = (|translation thrust| + |torque| / half-span) / (Isp × g₀)</pre><p>The total force budget is bounded. The reported fuel cost belongs to this controller, not an optimized minimum. Feed-system mass, plume interactions and transient cable loads are omitted.</p></div></details>
+          <p><a href="/lab/architectures/#recovery">Electrodynamic and incoming-traffic recovery</a> are documented concepts, not selectable simulation modes yet.</p>
+        </section>
+        <section class="guide-section" id="events">
+          <h2>The payload gets the tip’s actual velocity.</h2>
+          <p>The first incoming orbit is constructed to meet the tip with matching position and velocity. The lead-in is propagated, but the lab does not solve vehicle guidance or capture shock.</p>
+          <p>Capture changes the combined center of mass without teleporting existing material points. Release adds no ejector impulse: the payload departs with its current position and velocity and is propagated separately.</p>
+          <p><strong>Release phase is Earth-relative.</strong> It is measured against the moving local vertical, not a fixed half-turn in inertial space. Both orbit and tether rotation matter.</p>
+          <p>Payload 2 is a separate shipment, not a recapture of Payload 1. Once the facility is ready, a coast forecast checks the next lower radial pass. If that forecast passes, the lab constructs an incoming state by propagating backward from the predicted meeting, then propagates that particle independently forward. The final approach is up to 90 seconds long; shorter windows are reported as such. Both captures must match within 2 m and 0.02 m/s, and the second also rechecks facility readiness. Failed checks do not attach a payload. These are numerical tolerances for constructed examples, not hardware capture-envelope requirements. Launch, autonomous guidance and return-traffic planning are not simulated.</p>
+          <p><a href="https://ntrs.nasa.gov/citations/20060051892">NASA’s MXER dynamics study</a> discusses why high-precision prediction matters for tether capture. It is background research, not validation of this simplified rendezvous model.</p>
+        </section>
+        <section class="guide-section" id="equations">
+          <h2>Small equations, explicit assumptions.</h2>
+          <p>The rigid body uses 48 tether mass cells, a 30 t hub and two 2 t terminal modules. Density and area set the distributed mass. Propellant, when selected, is at the hub. The numerical core uses metres, kilograms, seconds and radians.</p>
+          <details class="guide-details"><summary>Inspect the translation and rotation equations</summary><div><pre class="equation-panel" tabindex="0" aria-label="Rigid-body equations">rᵢ = R + qᵢ [cos θ, sin θ]
+vᵢ = V + ω qᵢ [−sin θ, cos θ]
+Fᵢ = −μ mᵢ rᵢ / |rᵢ|³
+M R̈ = Σ Fᵢ + thrust
+I θ̈ = Σ (rᵢ − R) × Fᵢ + thrust torque</pre><p>R and V locate the instantaneous center of mass. qᵢ is a material point’s distance along the tether from that center. θ is inertial orientation and ω is spin rate.</p><p>RK4 advances the state with a default 2 s step. Capture, release, radial-pass and limit events split the time step. Playback speed does not change the integration step.</p></div></details>
+        </section>
+        <section class="guide-section" id="limits">
+          <h2>Success is a condition, not a score.</h2>
+          <p>Both payloads must leave with greater Earth-relative mechanical energy and an osculating perigee above 120 km. Before the second capture, the facility must meet the following readiness conditions for 60 s and satisfy them again at the next eligible pass.</p>
+          <div class="guide-table-wrap"><table><thead><tr><th>Readiness check</th><th>Tolerance</th></tr></thead><tbody><tr><td>Radius relative to target</td><td>15 km</td></tr><tr><td>Radial speed</td><td>8 m/s</td></tr><tr><td>Tangential speed relative to target</td><td>12 m/s</td></tr><tr><td>Spin relative to reference</td><td>0.5%</td></tr></tbody></table></div>
+          <p>A run stops when any part of the tether crosses the 120 km model cutoff, axial stress exceeds the assumed allowable, or a section requires a compressive force beyond the numerical tolerance. These are model limits, not animated explosions or predictions of survivable re-entry.</p>
+          <p>The scenario has a six-hour integration budget. Failure to make the second delivery within that budget is not proof that no possible controller or mission schedule could succeed.</p>
+        </section>
+        <section class="guide-section" id="validation">
+          <h2>Reproducible, not self-certifying.</h2>
+          <p>Tests cover challenge pass/fail criteria and reachable solutions, fixed-variable trade studies, agreement between the load inspector and solver, mass and inertia, point continuity, capture/release conservation, conservative coast, interior-segment clearance, material limits, finite fuel, input bounds, versioned imports, continuous event interpolation, separate shipment identities, both numerical rendezvous checks and time-step / mass-cell convergence. A separate SciPy DOP853 calculation supplies a conservative-coast reference.</p>
+          <p>The expanded payload range has finite-state and limit-handling regression coverage. It is not a validated engineering envelope for every combination of inputs.</p>
+          <p><a href="https://github.com/RelyOnFire/skyhook-industries/tree/tether-lab-first-playable/tests">Read the tests ↗</a></p>
+          <details class="guide-details"><summary>Saved designs and the 0.3 update</summary><div><p>Configuration schema 2 records the architecture explicitly and supports payload inputs up to 250 t. Model {MODEL} adds a predicted, independently propagated second approach and persistent shipment identity. Coast still carries zero propellant. Older 0.1 and 0.2 designs require explicit review before recalculation in this model; prior results are not reused or relabeled.</p><p>Share URLs contain bounded JSON inputs in their fragment. Imports are validated data, not executable code. Local saves use browser storage. Export JSON for a portable copy.</p></div></details>
+        </section>
+        <section class="guide-section" id="sources">
+          <h2>Track the object, not just an orange dot.</h2>
+          <p>Globe, payload-follow and orbital-plane views read the same trajectory. Choose Facility, Payload 1 or Payload 2 in the object list, then select Follow. That identity remains selected through later captures and releases. Payload 1 stays orange; Payload 2 stays violet with a diamond marker. Both retain numbered labels in the globe and orbital-plane views. Before a selected shipment’s recorded approach begins, no substitute object is followed. Follow also works in the 2D fallback; approaching or attached payloads open at a closer scale. Marker size is a screen aid, not a physical spacecraft dimension. Velocity arrows use a shared display scale within each view; they are not force arrows. Cable width, markers and the visual atmosphere are enlarged. Sunlight is illustrative. The 28° orbital-plane display tilt is not a modeled inclination parameter.</p>
+          <p>Earth’s outline uses simplified, public-domain Natural Earth coastlines, without country borders. The colors are procedural illustration, not satellite photography or terrain data. <a href="https://www.naturalearthdata.com/about/terms-of-use/">Data terms ↗</a></p>
+          <p>The <a href="/lab/architectures/">architecture catalogue</a> links to historical primary studies, including HASTOL, Tillotson’s T4 and MXER. Those studies describe other systems; their results are not passed off as validation of this lab.</p>
+          <p>The older project sizing studies remain in the <a href="/reference-architecture/">reference archive</a>. Their estimates are not used as proof that a lab mission will work.</p>
+          <a class="button-link" href="/lab/">Back to your experiment →</a>
+        </section>
+      </div>
+    </div>
+  </main>
+</LabLayout>

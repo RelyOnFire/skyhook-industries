@@ -5,6 +5,9 @@ on:
   push:
     branches: [main, site-rebuild]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,7 +22,11 @@ jobs:
           cache-dependency-path: package.json
       - name: Install dependencies
         run: npm install
-      - name: Verify reference architecture models
+      - name: Test Tether Lab numerical core
+        run: npm run test:lab
+      - name: Typecheck Tether Lab
+        run: npm run check:lab
+      - name: Verify legacy reference architecture outputs
         run: |
           python3 analysis/reference_architecture_v03.py > /tmp/reference_architecture_v03_output.md
           diff -u analysis/reference_architecture_v03_output.md /tmp/reference_architecture_v03_output.md
@@ -27,3 +34,27 @@ jobs:
           diff -u analysis/reference_architecture_v04_output.md /tmp/reference_architecture_v04_output.md
       - name: Build site
         run: npm run build
+      - name: Install browser regression tooling
+        run: |
+          python3 -m pip install playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+      - name: Exercise native-origin Flight Studio and WebGL
+        run: python3 tests/lab-flight-studio.browser.py --require-webgl
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa
+          path: qa/browser/
+          retention-days: 7
+      - name: Package tracked source for reproducible browser review
+        run: git archive --format=tar HEAD > source-review.tar
+      - name: Upload browser-review build
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-review
+          path: |
+            dist/
+            package-lock.json
+            source-review.tar
+          retention-days: 7
