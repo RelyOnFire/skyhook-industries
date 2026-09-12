@@ -1,0 +1,12 @@
+/* E0 fits the existing recorder; never inherit low-contrast paper styles. */
+.electrical-controls .range-warning{margin-top:20px;color:#ffe0b6}
+.electrical-example{width:100%;font-size:12px;text-align:left;color:#a9f4d6;border-color:#4b8b79;background:#142d2c;margin-top:5px}
+.electrical-recorder{margin:18px 0;border:1px solid #37584f;border-radius:7px;padding:13px;background:#102421}
+.electrical-heading{display:grid;gap:6px}.electrical-heading .micro{color:#aff5d7}.electrical-heading>b{font-size:13px;color:#effbf6}
+.electrical-boundary,.electrical-limits{font-size:11px;line-height:1.6;color:#c4dacf}
+.electrical-recorder dl{margin:10px 0}.electrical-recorder dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px;padding:8px 0;border-top:1px solid #2a443c}
+.electrical-recorder dt{font-size:11px;color:#bfd2cb}.electrical-recorder dd{margin:0;color:#e4fff1;font:600 12px var(--lab-mono)}.electrical-recorder small{font-weight:400;color:#c4dacf}
+.electrical-recorder a{font-size:11px;color:#b4f7da}.electrical-ledger{border:1px solid #3b6557;background:#102421;border-radius:8px;padding:20px;margin:20px 0}
+.electrical-ledger h4{margin:0 0 12px}.electrical-ledger dl{margin:0}.electrical-ledger dl>div{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #2b4a40;font-size:13px}.electrical-ledger dd{margin:0;white-space:nowrap;font-family:var(--lab-mono);color:#b4f7da}.electrical-ledger p,.electrical-ledger a{font-size:12px;line-height:1.7;color:#d2eade}
+
+.scene-legend .legend-line.conductor{background:#82f6ae;border-color:#82f6ae}.electrical-ledger p{max-width:65ch}
