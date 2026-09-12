@@ -10,3 +10,6 @@
 .electrical-ledger h4{margin:0 0 12px}.electrical-ledger dl{margin:0}.electrical-ledger dl>div{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #2b4a40;font-size:13px}.electrical-ledger dd{margin:0;white-space:nowrap;font-family:var(--lab-mono);color:#b4f7da}.electrical-ledger p,.electrical-ledger a{font-size:12px;line-height:1.7;color:#d2eade}
 
 .scene-legend .legend-line.conductor{background:#82f6ae;border-color:#82f6ae}.electrical-ledger p{max-width:65ch}
+
+/* The larger circle is only a pointer target, not another data marker. */
+.study-plot .study-point circle[fill="transparent"] { fill: transparent; stroke: none; }
