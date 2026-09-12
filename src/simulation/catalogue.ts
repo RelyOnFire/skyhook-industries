@@ -16,7 +16,7 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     id: 'single-stage-rotovator', name: 'Single-stage rotovator', category: 'Mechanical configuration', availability: 'runnable',
     summary: 'A tether rotates around its center of mass while orbiting Earth. The lab runs a two-ended, rigid approximation with equal arms.',
     topology: 'One rotating body · two equal working arms',
-    missing: 'Available: fixed dimensions, material changes, ideal payload transfers, chemical recovery or coast. This is not a reproduction of any complete historical design.',
+    missing: 'Available: fixed dimensions, material changes, ideal payload transfers, chemical recovery, coast or the bounded E0 electrodynamic experiment. This is not a reproduction of any complete historical design.',
     source: { title: 'Cislunar Tether Transport System', url: cislunar, locator: '1999 · introduction: momentum-exchange tethers' },
   },
   {
@@ -51,7 +51,7 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     id: 'mxer', name: 'MXER', category: 'Mission system', availability: 'reference-only',
     summary: 'Momentum Exchange / Electrodynamic Reboost combines a payload-transfer tether with an electrically powered recovery system.',
     topology: 'Strength tether + conductor + electrical power',
-    missing: 'Needs a field and circuit model, current collection, orientation-dependent force, electrical losses and power limits. A chemical run is not an MXER run.',
+    missing: 'The lab now has an educational E0 field/circuit actuator, but not a reproduced MXER architecture. Plasma collection, qualified power hardware, flexible dynamics and historical mission geometry remain unmodeled.',
     source: { title: 'Design Concept for a Reusable/Propellantless MXER Tether Space Transportation System', url: 'https://ntrs.nasa.gov/citations/20060005548', locator: 'NASA NTRS · document 20060005548' },
   },
   {

@@ -1,3 +1,4 @@
+import ElectricalPanel from './ElectricalPanel.js';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Scene, { Plane, type View } from './Scene.js';
 import Trace from './Trace.js';
@@ -8,7 +9,7 @@ import Debrief from './Debrief.js';
 import Studies, { type StudyRow } from './Studies.js';
 import { MissionSelect, MissionBrief, MissionProgress, GuidedReplay, checkpoints } from './Missions.js';
 import { CHALLENGES, challengeGates, diagnose, deliveries as goodDeliveries, type Challenge } from '../simulation/insights.js';
-import { DEFAULT, MODEL, MATERIALS, PRESETS, PAYLOAD_LIMIT_T, STANDARD_PAYLOAD_T,
+import { DEFAULT, EDT_PRESET, MODEL, MATERIALS, PRESETS, PAYLOAD_LIMIT_T, STANDARD_PAYLOAD_T,
   validate, compile, properties, resize, EARTH, type Design, type Result } from '../simulation/engine.js';
 import { readDesign, designFragment, type ImportedDesign } from '../simulation/design-io.js';
 import { elapsed, sample } from './view.js';
@@ -67,7 +68,8 @@ export default function Lab() {
   const [extended, setExtended] = useState(false), [invalidFields, setInvalidFields] = useState<string[]>([]);
   const payloadOutsideRange = !extended && design.payloadT > STANDARD_PAYLOAD_T;
   // Keep this derived guard even when the Mission fields are unmounted.
-  const hasInvalidInput = invalidFields.length > 0 || payloadOutsideRange;
+  const conductorOutsideArm = design.recovery==='electrodynamic' && design.edLengthKm>design.spanKm/2;
+  const hasInvalidInput = invalidFields.length > 0 || payloadOutsideRange || conductorOutsideArm;
   const [shareUrl, setShareUrl] = useState(''), [pendingImport, setPendingImport] = useState<ImportedDesign | null>(null);
   const clock = useRef(0), worker = useRef<Worker | null>(null), request = useRef(0), fileInput = useRef<HTMLInputElement>(null);
   const chemicalBudget = useRef(DEFAULT.fuelT), resultRef = useRef(result), playingRef = useRef(playing), speedRef = useRef(speed);
@@ -149,7 +151,7 @@ export default function Lab() {
   const change = <K extends keyof Design>(key: K, value: Design[K]) => { setDesign(d => ({ ...d, [key]: value })); setPlaying(false); setError(''); };
   const changeRecovery = (recovery: Design['recovery']) => {
     if (design.recovery === 'chemical') chemicalBudget.current = design.fuelT;
-    setDesign(d => ({ ...d, recovery, fuelT: recovery === 'none' ? 0 : chemicalBudget.current }));
+    setDesign(d => ({ ...d, recovery, fuelT: recovery === 'chemical' ? chemicalBudget.current : 0 }));
     setPlaying(false); setError('');
   };
   const play = () => { if (!result || dirty || busy) return; setGuide(null); if (time >= max) { clock.current = 0; setTime(0); } setPlaying(p => !p); };
@@ -248,8 +250,8 @@ export default function Lab() {
             {field('spanKm', 'Total tether span', 'km', 80, 4000, 20)}
             <div className="field-heading"><span>Cross-section profile</span></div><div className="segmented" role="group" aria-label="Cross-section profile"><button aria-pressed={design.shape === 'uniform'} onClick={() => change('shape', 'uniform')}>Uniform</button><button aria-pressed={design.shape === 'tapered'} onClick={() => change('shape', 'tapered')}>Tapered</button></div>
             {field('areaMm2', 'Center cross-section', 'mm²', 5, 2500, 1)}
-            <button className="resize-button" onClick={() => { try { const area = resize(validate(design)); change('areaMm2', area); setNotice(`Resized to ${area} mm² for the lower-radial load with a 15% area reserve. Run the mission to check the rest of the trajectory.`); } catch (e) { setError((e as Error).message); } }}>Resize for radial load <span aria-hidden="true">↗</span></button>
-            <p className="control-hint">Changing material keeps these dimensions. Resizing is a separate decision.</p>
+            <button className="resize-button" disabled={design.recovery==='electrodynamic'} onClick={() => { try { const area = resize(validate(design)); change('areaMm2', area); setNotice(`Resized to ${area} mm² for the lower-radial load with a 15% area reserve. Run the mission to check the rest of the trajectory.`); } catch (e) { setError((e as Error).message); } }}>Resize for radial load <span aria-hidden="true">↗</span></button>
+            <p className="control-hint">{design.recovery==='electrodynamic'?'Set the strength-tether section manually. The automatic sizing shortcut does not include conductor mass; the full run checks its loads.':'Changing material keeps these dimensions. Resizing is a separate decision.'}</p>
             <details className="engineering-controls"><summary>Strength assumption</summary>{field('safetyFactor', 'Safety factor', '×', 1.2, 5, .1)}<p>Joints, fatigue, environmental aging and damage are not included.</p></details>
           </>}
           {control === 'mission' && <>
@@ -269,22 +271,35 @@ export default function Lab() {
             <p className="control-hint">In-space, velocity-matched rendezvous. Neither a rocket ascent nor a capture-guidance system is simulated.</p><a className="text-link" href="/lab/method/#events">How the handoff is modeled ↗</a>
           </>}
           {control === 'recovery' && <>
-            <div className="control-intro"><span className="micro">AFTER THE FIRST TRANSFER</span><h3>Recover, or coast.</h3><p>The payload takes energy with it. Choose what the facility does next.</p></div>
-            <div className="recovery-options" role="group" aria-label="Recovery method"><button aria-pressed={design.recovery === 'chemical'} onClick={() => changeRecovery('chemical')}><span className="recovery-symbol" aria-hidden="true">↗</span><span><b>Chemical</b><small>Finite thrust, finite propellant</small></span></button><button aria-pressed={design.recovery === 'none'} onClick={() => changeRecovery('none')}><span className="recovery-symbol" aria-hidden="true">→</span><span><b>Coast</b><small>No thrust, no propellant mass</small></span></button></div>
+            <div className="control-intro"><span className="micro">AFTER THE FIRST TRANSFER</span><h3>Choose what pays for recovery.</h3><p>The payload takes energy with it. Choose what the facility does next.</p></div>
+            <div className="recovery-options" role="group" aria-label="Recovery method"><button aria-pressed={design.recovery === 'chemical'} onClick={() => changeRecovery('chemical')}><span className="recovery-symbol" aria-hidden="true">↗</span><span><b>Chemical</b><small>Finite thrust, finite propellant</small></span></button><button aria-pressed={design.recovery === 'none'} onClick={() => changeRecovery('none')}><span className="recovery-symbol" aria-hidden="true">→</span><span><b>Coast</b><small>No thrust, no propellant mass</small></span></button><button aria-pressed={design.recovery==='electrodynamic'} onClick={()=>changeRecovery('electrodynamic')}><span className="recovery-symbol" aria-hidden="true">∿</span><span><b>Electrodynamic</b><small>Power + conductors · E0 experiment</small></span></button></div>
             {design.recovery === 'chemical' ? <>
               {field('fuelT', 'Propellant budget', 't', 0, 80, 1)}
               {field('thrustN', 'Total available thrust', 'N', 100, 10000, 100)}
               {field('isp', 'Specific impulse', 's', 150, 450, 5)}
               <p className="control-hint">The controller spends fuel to recover orbit and spin. It is bounded, not fuel-optimal.</p>
-            </> : <div className="coast-explainer"><span className="tag">NO ACTIVE RECOVERY</span><h4>Let the trajectory play out.</h4><p>Propellant mass is zero. Thrusters are inactive. The second handoff still requires the same orbit and spin tolerances.</p><p>Your chemical budget is remembered only for switching back; it is not carried in this run.</p></div>}
-            <a className="next-architecture" href="/lab/architectures/#recovery"><span>Other recovery concepts</span><b>Electrodynamics & incoming traffic ↗</b><small>Reference only in this build</small></a>
+            </> : design.recovery==='electrodynamic' ? <div className="electrical-controls">
+              <p className="range-warning"><b>Educational circuit model.</b> Two independently powered conductor segments; aligned equatorial field and assumed plasma closure. Not a validated MXER design.</p>
+              <button className="electrical-example" onClick={()=>{setChallenge(null);challengeRef.current=null;setGuide(null);adopt({...EDT_PRESET});setControl('recovery');}}>Load powered-conductor example →</button>
+              <p className="control-hint">Loads a separate 0.5 t / 700 km example. Does not overwrite a pinned flight.</p>
+              {field('edPowerKw','Drive bus cap','kW',0,5000,25)}
+              {field('edCurrentA','Circuit current cap','A',0,100,1)}
+              {field('edLengthKm','Conductor length / arm','km',1,500,1)}
+              {conductorOutsideArm&&<p className="field-error">Each conductor must fit inside a {fmt(design.spanKm/2)} km arm. The value is unchanged; reduce it to run.</p>}
+              {field('edAreaMm2','Conductor cross-section','mm²',1,200,1)}
+              {field('edVoltageKv','Drive voltage cap','kV',0,200,1)}
+              {field('edHardwareT','Power/contact hardware','t',.1,500,.1)}
+              <p className="control-hint">Hardware mass is a user budget, not a power-system sizing result. No battery, eclipse, thermal or plasma-density model. Generating intervals dump electricity; no free refill.</p>
+              <a className="text-link" href="/lab/method/#electrodynamic">Inspect E0 assumptions & equations ↗</a>
+            </div> : <div className="coast-explainer"><span className="tag">NO ACTIVE RECOVERY</span><h4>Let the trajectory play out.</h4><p>Propellant mass is zero. Thrusters are inactive. The second handoff still requires the same orbit and spin tolerances.</p><p>Your chemical budget is remembered only for switching back; it is not carried in this run.</p></div>}
+            <a className="next-architecture" href="/lab/architectures/#recovery"><span>Other recovery concepts</span><b>Incoming-traffic exchange ↗</b><small>Reference only in this build</small></a>
           </>}
         </div>
-        <div className="design-summary"><div><span>Dry facility</span><b>{draft ? fmt(draft.body.mass / 1000, 1) : '—'} <small>t</small></b></div><p>{draft ? fmt(draft.body.structural / 1000, 1) : '—'} t tether + 34 t hub & terminals</p>
+        <div className="design-summary"><div><span>Dry facility</span><b>{draft ? fmt(draft.body.mass / 1000, 1) : '—'} <small>t</small></b></div><p>{draft ? fmt(draft.body.structural / 1000, 1) : '—'} t tether + 34 t hub & terminals{design.recovery==='electrodynamic'&&<> + {draft?fmt((draft.body.conductorMass+draft.body.electricalHardwareMass)/1000,1):'—'} t electrical system</>}</p>
           <button className="primary run-design" disabled={busy || hasInvalidInput} onClick={() => { run(design); setMobile('fly'); }}>{busy ? 'Calculating…' : dirty ? 'Run changed design' : 'Run experiment'}<span aria-hidden="true">↗</span></button>
           {hasInvalidInput && <p className="field-error">{payloadOutsideRange
             ? 'Open Mission: lower the payload or enable extended range to run.'
-            : `Correct ${invalidFields.join(', ')} to run.`}</p>}
+            : conductorOutsideArm ? 'Open Recovery: each conductor must fit within one arm.' : `Correct ${invalidFields.join(', ')} to run.`}</p>}
           <div className="file-actions"><button onClick={exportFile}>Export JSON</button><button onClick={() => fileInput.current?.click()}>Import design</button><input ref={fileInput} type="file" hidden accept=".json,application/json" onChange={e => importFile(e.target.files?.[0])} /></div>
         </div>
       </aside>
@@ -296,7 +311,7 @@ export default function Lab() {
           {busy && <div className="scene-pending">Calculating mission <button onClick={cancel}>Cancel</button></div>}
           {dirty && !busy && <div className="stale-notice">Unrun changes · scene and telemetry show the last calculation</div>}
           <div className="scene-tools">{view!=='structure'&&<button aria-pressed={vectors} onClick={()=>setVectors(v=>!v)} title="Velocity arrows share a display scale">Velocity vectors</button>}<button onClick={()=>setFocusScene(v=>!v)} aria-label={focusScene?'Exit expanded flight view':'Expand flight view'}>{focusScene?'Exit expanded view':'Expand view'}</button></div>
-          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" />Tether / facility</span><span><i className="legend-line payload" />Payload 1</span><span><i className="legend-line payload-two" />Payload 2</span><span><i className="legend-line dashed" />Initial orbit</span></div>}
+          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" />Tether / facility</span><span><i className="legend-line payload" />Payload 1</span><span><i className="legend-line payload-two" />Payload 2</span><span><i className="legend-line dashed" />Initial orbit</span>{result?.design.recovery==='electrodynamic'&&<span><i className="legend-line conductor" />Powered conductors · equatorial E0</span>}</div>}
         </div>
         <div className="flight-console">
           {result && frame && <ObjectTracker result={result} frame={frame} selected={selectedObject} following={view==='follow'} onSelect={setSelectedObject} onSeek={t=>{setGuide(null);seek(t);}}/>}
@@ -313,11 +328,12 @@ export default function Lab() {
       <aside inert={focusScene || undefined} className="results-panel lab-panel" aria-label="Mission telemetry">
         <div className="panel-heading"><h2>Flight recorder</h2><span className="tag">{dirty ? 'LAST RUN' : 'MODEL OUTPUT'}</span></div>
         <div className="telemetry-scroll"><div className="delivery-count"><div><span className="micro">DELIVERIES</span><strong>{result ? goodDeliveries(result).filter(d=>d.t<=time+.01).length : 0}<small>/ 2</small></strong></div><p>{atEnd ? result?.outcome === 'complete' ? 'Second delivery achieved' : 'Experiment finished' : currentEvent?.kind === 'recovery' ? 'Recovering orbit & spin' : 'Capture. Transfer. Repeat.'}</p></div>
-          <dl className="telemetry"><div><dt>Facility altitude</dt><dd>{frame ? fmt((Math.hypot(frame.state[0], frame.state[1]) - EARTH) / 1000) : '—'}<span>km</span></dd></div><div><dt>Closest tether point</dt><dd>{frame ? fmt(frame.clearance / 1000) : '—'}<span>km</span></dd></div><div><dt>Axial load margin</dt><dd className={frame && frame.margin < 1 ? 'bad' : ''}>{frame ? frame.margin > 99 ? '>99' : fmt(frame.margin, 2) : '—'}<span>×</span></dd></div>{(!result || result.design.recovery === 'chemical') ? <div><dt>Propellant remaining</dt><dd>{frame ? fmt(frame.fuel / 1000, 2) : '—'}<span>t</span></dd></div> : <div className="coast-status"><dt>Recovery state</dt><dd>Coast<small>No active thrust · 0 t propellant</small></dd></div>}</dl>
+          <dl className="telemetry"><div><dt>Facility altitude</dt><dd>{frame ? fmt((Math.hypot(frame.state[0], frame.state[1]) - EARTH) / 1000) : '—'}<span>km</span></dd></div><div><dt>Closest tether point</dt><dd>{frame ? fmt(frame.clearance / 1000) : '—'}<span>km</span></dd></div><div><dt>Axial load margin</dt><dd className={frame && frame.margin < 1 ? 'bad' : ''}>{frame ? frame.margin > 99 ? '>99' : fmt(frame.margin, 2) : '—'}<span>×</span></dd></div>{(!result || result.design.recovery === 'chemical') ? <div><dt>Propellant remaining</dt><dd>{frame ? fmt(frame.fuel / 1000, 2) : '—'}<span>t</span></dd></div> : <div className="coast-status"><dt>Recovery state</dt><dd>{result.design.recovery==='electrodynamic'?'Electrodynamic':'Coast'}<small>{result.design.recovery==='electrodynamic'?'E0 circuit model · 0 t propellant':'No active thrust · 0 t propellant'}</small></dd></div>}</dl>
+          {result&&frame&&<ElectricalPanel result={result} frame={frame}/>}
           {result&&diagnosis&&<div className="recorder-insight"><span className="micro">CALCULATED OUTCOME / FULL RUN</span><h3>{diagnosis.title}</h3><button onClick={()=>{setPlaying(false);setModal('debrief');}}>Why did this happen? →</button><button onClick={pin}>{baseline===result?'Flight pinned':'Pin for comparison'}</button></div>}
           {result && <div className="trace-stack"><p className="micro">FULL RUN / CURSOR = REPLAY TIME</p><Trace result={result} time={time} metric="clearance" /><Trace result={result} time={time} metric="margin" /></div>}
           {atEnd && result && <div className={`outcome ${result.outcome === 'complete' ? 'success' : ''}`} role="status"><h3>{result.outcome === 'complete' ? 'Two payloads delivered.' : result.outcome === 'limit' ? 'The model found a limit.' : 'Change one thing. Try again.'}</h3><p>{result.reason}</p>{result.design.recovery === 'chemical' && <p><b>{fmt(result.fuelUsed / 1000, 2)} t</b> propellant used by this controller.</p>}{result.deliveries.map(d => <p key={d.number}>Payload {d.number}: <b>{d.gain >= 0 ? '+' : ''}{fmt(d.gain / 1e6, 1)} MJ/kg</b></p>)}</div>}
-          {previous && result && <details className="comparison"><summary>Compare with previous run</summary><div className="comparison-grid"><span /> <b>Previous</b><b>This run</b><span>Payload (t)</span><span>{previous.design.payloadT}</span><span>{result.design.payloadT}</span><span>Deliveries</span><span>{goodDeliveries(previous).length}</span><span>{goodDeliveries(result).length}</span><span>Fuel used (t)</span><span>{fmt(previous.fuelUsed / 1000, 2)}</span><span>{fmt(result.fuelUsed / 1000, 2)}</span><span>Dry mass (t)</span><span>{fmt(previous.dryMass / 1000, 1)}</span><span>{fmt(result.dryMass / 1000, 1)}</span></div><p>Complete-run totals, not a normalized ranking.</p></details>}
+          {previous && result && <details className="comparison"><summary>Compare with previous run</summary><div className="comparison-grid"><span /> <b>Previous</b><b>This run</b><span>Payload (t)</span><span>{previous.design.payloadT}</span><span>{result.design.payloadT}</span><span>Deliveries</span><span>{goodDeliveries(previous).length}</span><span>{goodDeliveries(result).length}</span><span>Fuel used (t)</span><span>{fmt(previous.fuelUsed / 1000, 2)}</span><span>{fmt(result.fuelUsed / 1000, 2)}</span><span>Bus energy (MWh)</span><span>{fmt(previous.electricalEnergyJ/3.6e9,3)}</span><span>{fmt(result.electricalEnergyJ/3.6e9,3)}</span><span>Dry mass (t)</span><span>{fmt(previous.dryMass / 1000, 1)}</span><span>{fmt(result.dryMass / 1000, 1)}</span></div><p>Complete-run totals, not a normalized ranking.</p></details>}
           <a className="recorder-help" href="/lab/method/#limits">What counts as a successful run? ↗</a>
         </div>
       </aside>

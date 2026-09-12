@@ -1,3 +1,4 @@
+import { ED_DEFAULTS } from './electrodynamic.js';
 import { ACTIVE_ARCHITECTURE, MODEL, validate, type Design } from './engine.js';
 
 export interface ImportedDesign { design: Design; needsConfirmation: boolean; explanation: string }
@@ -8,13 +9,13 @@ export function readDesign(text: string): ImportedDesign {
   const value: unknown = JSON.parse(text);
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     const d = value as Record<string, unknown>;
-    if (d.schema === 2 && d.model === 'D1p-0.2.0') {
-      return { design: validate({ ...d, model: MODEL }), needsConfirmation: true, explanation:
-        'This design used model 0.2, which inserted Payload 2 at the tip. Model 0.3 predicts an ideal second approach, propagates it independently and checks the meeting before attachment. Update to run the new model; the previous result is not being reused.' };
+    if (d.schema === 2 && ['D1p-0.2.0','D1p-0.3.0'].includes(String(d.model))) {
+      return { design: validate({ ...ED_DEFAULTS, ...d, model: MODEL }), needsConfirmation: true, explanation:
+        'This design used an earlier model. Updating preserves Coast or Chemical recovery, adds inactive electrodynamic settings and constructs each approach, propagates it independently and checks it with model 0.4. No old result is reused, and no electrical hardware is added unless you select Electrodynamic.' };
     }
     if (d.schema === 1 && d.model === 'D1p-0.1.0') {
       const coast = d.recovery === 'none';
-      const design = validate({ ...d, schema: 2, model: MODEL,
+      const design = validate({ ...ED_DEFAULTS, ...d, schema: 2, model: MODEL,
         architecture: ACTIVE_ARCHITECTURE, ...(coast ? { fuelT: 0 } : {}) });
       return { design, needsConfirmation: true, explanation: coast
         ? 'This design used the first model, where Coast still carried unused propellant. Updating removes that fuel mass and recalculates the mission. The result may change.'

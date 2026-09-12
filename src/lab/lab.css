@@ -6,6 +6,7 @@
 @import "./styles/responsive.css";
 @import "./styles/experience.css";
 @import "./styles/objects.css";
+@import "./styles/electrical.css";
 
 /* Keep filled catalogue links legible after the generic link treatment. */
 a.button-link.primary { color: #07131c; }
@@ -13,3 +14,7 @@ a.button-link.primary { color: #07131c; }
 /* Do not let intrinsic canvas/text sizes widen an implicit mobile grid track. */
 .flight-panel { grid-template-columns: minmax(0, 1fr); }
 .flight-console, .mission-narration, .scene-toolbar { min-width: 0; }
+
+/* Keep the unfocused skip link truly clipped, including full-page captures.
+   It remains keyboard-focusable and recovers its complete button on focus. */
+.lab-skip:not(:focus) { clip-path: inset(50%); width: 1px; height: 1px; padding: 0; overflow: hidden; white-space: nowrap; }
