@@ -1,24 +1,23 @@
-name: Brand source review
+name: Brand asset preparation
 on:
   push:
     branches: [brand-heritage-motion]
-    paths: [.github/workflows/brand-source-review.yml, tools/brand-source-review.py, tools/brand-browser-reference.py]
+    paths: [.github/workflows/brand-source-review.yml, tools/prepare-owner-brand.py]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  sources:
+  assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          python3 -m pip install requests beautifulsoup4 playwright==1.55.0
-          python3 -m playwright install --with-deps chromium
-      - run: python3 tools/brand-source-review.py
-      - run: python3 tools/brand-browser-reference.py
+      - run: python3 -m pip install requests pillow numpy scipy
+      - name: Prepare hash-pinned owner artwork as unreferenced Git blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/prepare-owner-brand.py
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: brand-source-review
-          path: qa/brand-source-review/
+          name: owner-brand-assets
+          path: qa/owner-brand-assets/
           retention-days: 7
