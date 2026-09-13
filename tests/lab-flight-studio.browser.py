@@ -63,7 +63,7 @@ def main():
         def open_page(path='/lab/'):
             if args.isolated:
                 page.route('**/*', assets)
-                source = next((DIST/'_astro').glob('worker-*.js')).read_text()
+                source = next(f for f in (DIST/'_astro').glob('worker-*.js') if 'OPS-0.1.0' not in f.read_text()).read_text()
                 page.evaluate('''source=>{if(window.__testWorker)return;window.__testWorker=true;const Native=Worker;window.Worker=class extends Native{constructor(url,opts){const blob=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));super(blob,{...opts,type:'classic'});URL.revokeObjectURL(blob);}}}''', source)
                 page.set_content((DIST/path.strip('/')/'index.html').read_text().replace('<head>', '<head><base href="http://skyhook.test/">', 1), wait_until='networkidle')
             else: page.goto(origin+path, wait_until='networkidle')
@@ -263,7 +263,7 @@ def main():
                 for width in [1440,390,320]:
                     page.set_viewport_size({'width':width,'height':900});open_page(path);no_overflow()
                     if path.endswith('method/'):
-                        page.locator('summary').first.click();expect(page.locator('details').first).to_have_attribute('open','')
+                        page.locator('.guide details summary').first.click();expect(page.locator('.guide details').first).to_have_attribute('open','')
                     shot(f'{path.split("/")[2]}-{width}')
             done('Method and architecture catalogue responsive routes and disclosures')
             assert not findings['errors'], findings['errors']

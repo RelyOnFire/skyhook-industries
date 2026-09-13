@@ -48,3 +48,31 @@ select,input[type=number],input[readonly],.segmented,.recovery-options button {b
 /* Accommodate the shared header without adding another screenful of empty space. */
 @media(min-width:1180px){.lab-workspace{height:calc(100svh - 380px);min-height:620px;max-height:1100px}}
 @media(max-width:800px){.lab-app{padding-top:20px}.lab-section-nav{gap:18px;padding:0 16px;overflow-x:auto;white-space:nowrap}.lab-section-nav>span{display:none}.workbench-bar h1{font-size:26px}.lab-section-nav a{font-size:14px}.workbench-bar .micro{font-size:11px}}
+
+
+/* Operations is part of the same product. Object colors stay in the renderer. */
+.lab-body .ops-app {
+  --ops-line: var(--lab-line); --ops-muted: var(--lab-soft);
+  --ops-panel: var(--lab-panel); --ops-surface: var(--lab-bg);
+  color: var(--lab-text);
+}
+.lab-body .ops-app h1 { font-weight:400; font-size:clamp(28px,3vw,40px); }
+.lab-body .ops-app button { border-radius:3px; background:var(--lab-raised); border-color:var(--lab-line); color:var(--lab-text); }
+.lab-body .ops-app button:hover:not(:disabled) { background:#29353b; border-color:#798a92; }
+.lab-body .ops-app button[aria-pressed=true] { background:#30271f; color:var(--lab-cyan); border-color:#85684f; }
+.lab-body .ops-app .ops-primary { background:var(--lab-cyan); border-color:var(--lab-cyan); color:#13191c; }
+.lab-body .ops-app .ops-primary:hover:not(:disabled) { background:#ffd1b3; }
+.lab-body .ops-app a, .lab-body .ops-app .ops-secondary, .lab-body .ops-presets i { color:#f1b58f; }
+.lab-body .ops-flight, .lab-body .ops-boundary, .lab-body .ops-history, .lab-body .ops-comparison { background:var(--lab-panel); border-color:var(--lab-line); border-radius:3px; }
+.lab-body .ops-presets button, .lab-body .ops-receipt>div { background:var(--lab-raised); }
+.lab-body .ops-tabs { background:#080b0df0; }
+.lab-body .ops-app :is(select,input[type=number],input[readonly]) { background:#0c1216; border-color:#43535c; color:var(--lab-text); }
+.lab-body .ops-app :is(button,a,input,select,summary):focus-visible { outline-color:var(--lab-cyan); }
+.lab-body .ops-app .micro { color:var(--lab-muted); }
+.lab-body .ops-receipt>div { border-top-color:#85684f; }
+.lab-body .ops-planning, .lab-body .ops-results { border-radius:3px; }
+.lab-section-nav a.active { color:var(--lab-cyan); border-color:var(--lab-cyan); }
+@media(max-width:600px) {
+  .lab-section-nav { flex-wrap:wrap; gap:0 16px; overflow:visible; white-space:normal; padding:4px 16px; }
+  .lab-section-nav a { font-size:12px; padding:12px 0; }
+}

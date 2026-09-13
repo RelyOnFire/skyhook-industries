@@ -9,7 +9,7 @@ export type View = 'earth' | 'plane' | 'follow' | 'structure';
 type Props = {result:Result;clock:RefObject<number>;view:View;selectedObject:ObjectId;vectors?:boolean;onFailure:(message:string)=>void};
 // Display-plane inclination only. The integrator remains planar/spherical Earth.
 
-function earthTexture() {
+export function earthTexture() {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;const g=canvas.getContext('2d')!;
   const ocean=g.createLinearGradient(0,0,0,1024);ocean.addColorStop(0,'#224859');ocean.addColorStop(.2,'#12344d');ocean.addColorStop(.5,'#0e2941');ocean.addColorStop(.8,'#12394d');ocean.addColorStop(1,'#294e5b');
   g.fillStyle=ocean;g.fillRect(0,0,2048,1024);

@@ -34,7 +34,7 @@ def main():
             else:route.abort()
         def open_page(path='/lab/'):
             if args.isolated:
-                page.route('**/*',assets);source=next((DIST/'_astro').glob('worker-*.js')).read_text()
+                page.route('**/*',assets);source=next(f for f in (DIST/'_astro').glob('worker-*.js') if 'OPS-0.1.0' not in f.read_text()).read_text()
                 page.evaluate("""s=>{if(window.__testWorker)return;window.__testWorker=true;const Native=Worker;window.Worker=class extends Native{constructor(url,opts){const b=URL.createObjectURL(new Blob([s],{type:'text/javascript'}));super(b,{...opts,type:'classic'});URL.revokeObjectURL(b);}}}""",source)
                 page.set_content((DIST/path.strip('/')/'index.html').read_text().replace('<head>','<head><base href="http://skyhook.test/">',1),wait_until='networkidle')
             else:page.goto(origin+path,wait_until='networkidle')

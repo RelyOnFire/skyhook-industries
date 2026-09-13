@@ -1,0 +1,7 @@
+---
+import LabLayout from '../../../layouts/LabLayout.astro';
+import Operations from '../../../lab/operations/Operations';
+---
+<LabLayout title="Operations · Tether Lab" description="Operate a finite manifest of outbound and inbound cargo. Compare fixed capture windows, recovery resources and facility energy history." active="operations">
+  <Operations client:only="react"><main slot="fallback" id="lab-content" class="guide"><h1>Preparing the operations desk…</h1><p>A finite manifest. One evolving machine.</p><noscript><p>The simulator requires JavaScript. Read the <a href="/lab/operations/method/">Operations guide</a> without it.</p></noscript></main></Operations>
+</LabLayout>

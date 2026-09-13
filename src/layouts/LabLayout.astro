@@ -2,9 +2,9 @@
 import '../lab/lab.css';
 import '../lab/styles/orbital-theme.css';
 import SiteHeader from '../components/SiteHeader.astro';
-interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures'; }
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'operations'; }
 const { title, description, active = 'lab' } = Astro.props;
-const links = [ ['lab', 'Flight studio', '/lab/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
+const links = [ ['lab', 'Flight studio', '/lab/'], ['operations', 'Operations', '/lab/operations/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
 ---
 <!doctype html>
 <html lang="en">
@@ -22,7 +22,7 @@ const links = [ ['lab', 'Flight studio', '/lab/'], ['architectures', 'Architectu
     <SiteHeader />
     <nav class="lab-section-nav" aria-label="Lab navigation">
       <span>Tether Lab</span>
-      {links.map(([id, label, href]) => <a href={href} aria-current={active === id ? 'page' : undefined}>{label}</a>)}
+      {links.map(([id, label, href]) => <a href={href} class:list={{active:active === id}} aria-current={Astro.url.pathname === href ? 'page' : undefined}>{label}</a>)}
     </nav>
     <slot />
   </body>

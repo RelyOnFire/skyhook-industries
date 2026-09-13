@@ -35,3 +35,14 @@ const active = (href: string) => current(href) || (href === '/lab/' && path.star
   @media(max-width:1000px){.brand-links{display:none}.brand-mobile{display:block}}
   @media(max-width:700px){.brand-header{min-height:72px;padding:18px 20px;gap:12px}.brand-wordmark{font-size:12px;gap:9px}.brand-symbol{width:25px}}
 </style>
+
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>('.brand-mobile');
+  const trigger = menu?.querySelector('summary');
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && menu?.open) { menu.open = false; trigger?.focus(); }
+  });
+  document.addEventListener('click', event => {
+    if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+  });
+</script>
