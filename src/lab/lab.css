@@ -7,6 +7,7 @@
 @import "./styles/experience.css";
 @import "./styles/objects.css";
 @import "./styles/electrical.css";
+@import "./styles/orbital-theme.css";
 
 /* Keep filled catalogue links legible after the generic link treatment. */
 a.button-link.primary { color: #07131c; }
