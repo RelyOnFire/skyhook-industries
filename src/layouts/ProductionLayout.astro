@@ -3,6 +3,7 @@ import '../styles/production.css';
 import '../styles/polish.css';
 import '../styles/architecture.css';
 import '../styles/orbital.css';
+import SiteHeader from '../components/SiteHeader.astro';
 
 interface Props {
   title: string;
@@ -15,13 +16,6 @@ const { title, description, theme = 'dark', noindex = false } = Astro.props;
 const path = Astro.url.pathname;
 const paperPaths = ['/research/', '/reference-architecture/', '/about/', '/contact/', '/archive/'];
 const effectiveTheme = theme === 'paper' || paperPaths.includes(path) ? 'paper' : 'dark';
-const nav = [
-  ['Tether Lab', '/lab/'],
-  ['The System', '/system/'],
-  ['Research', '/research/'],
-  ['Roadmap', '/roadmap/'],
-  ['About', '/about/'],
-];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const socialImage = new URL('/social-card.svg', Astro.site);
 const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
@@ -55,23 +49,7 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
-    <header class="site-nav">
-      <a class="wordmark" href="/" aria-label="Skyhook Industries home" aria-current={path === '/' ? 'page' : undefined}>
-        <span class="wordmark-mark" aria-hidden="true"><i></i></span>
-        <span>Skyhook Industries</span>
-      </a>
-      <nav class="desktop-nav" aria-label="Primary navigation">
-        {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
-        <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
-      </nav>
-      <details class="mobile-nav">
-        <summary>Menu</summary>
-        <div>
-          {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
-          <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
-        </div>
-      </details>
-    </header>
+    <SiteHeader />
     <main id="content"><slot /></main>
     <footer class="site-footer">
       <div class="footer-top">

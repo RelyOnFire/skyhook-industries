@@ -36,3 +36,11 @@ Following feedback on oversized headings, screen proportions, and the abrupt whi
 Applied: 72 px maximum homepage title (previously 168 px), 48 px maximum section headings, a real two-column hero with natural text flow, mobile stacking, viewport-aware hero height without fixed 780–930 px minimums, a consistent 1240 px content measure, smaller section spacing, and a continuous dark lower page with subtle tonal transitions. Mobile content can exceed one viewport when necessary to remain readable; no scroll snapping or forced clipping.
 
 Refinement validation: Astro build passed. Numerical code is untouched; previous numerical test results are not represented as new layout verification. Browser preview remains blocked by the existing Cloud Browser URL policy, so visual QA of the refinement is outstanding.
+
+## Homepage / lab continuity
+
+Replaced the separate lab masthead with the same shared `SiteHeader` component used on the company pages. Lab tools retain a secondary navigation row. The application uses the homepage's charcoal surfaces, copper actions, restrained corners and type; body-scoped legacy blue variables are now overridden correctly. Simulation colors and numerical behavior are preserved.
+
+The homepage now has one orange Tether Lab entry. The second section leads to the architecture comparison, and the closing link leads to the engineering roadmap. This removes different names for buttons pointing to the same application. The lab's main heading is now Tether Lab.
+
+Validation: production build and lab TypeScript check passed. Browser visual verification remains outstanding because local preview URLs are blocked in this environment.
