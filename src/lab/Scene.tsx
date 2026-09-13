@@ -8,8 +8,7 @@ import { LAND } from './land.js';
 export type View = 'earth' | 'plane' | 'follow' | 'structure';
 type Props = {result:Result;clock:RefObject<number>;view:View;selectedObject:ObjectId;vectors?:boolean;onFailure:(message:string)=>void};
 // Display-plane inclination only. The integrator remains planar/spherical Earth.
-const inclination=28*Math.PI/180;
-const point=(p:number[])=>new T.Vector3(p[0]/EARTH,p[1]/EARTH*Math.sin(inclination),p[1]/EARTH*Math.cos(inclination));
+
 function earthTexture() {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;const g=canvas.getContext('2d')!;
   const ocean=g.createLinearGradient(0,0,0,1024);ocean.addColorStop(0,'#224859');ocean.addColorStop(.2,'#12344d');ocean.addColorStop(.5,'#0e2941');ocean.addColorStop(.8,'#12394d');ocean.addColorStop(1,'#294e5b');
@@ -32,6 +31,9 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
   const selectionRef=useRef(selectedObject),viewRef=useRef(view),current=useRef(result),vectorRef=useRef(vectors),api=useRef<{reset:()=>void;zoom:(factor:number)=>void}|null>(null);
   selectionRef.current=selectedObject;viewRef.current=view;current.current=result;vectorRef.current=vectors;
   useEffect(()=>{
+    // E0 is actually equatorial. The other modes retain their illustrative tilt.
+    const point=(p:number[])=>{const angle=current.current.design.recovery==='electrodynamic'?0:28*Math.PI/180;
+      return new T.Vector3(p[0]/EARTH,p[1]/EARTH*Math.sin(angle),p[1]/EARTH*Math.cos(angle)*(current.current.design.recovery==='electrodynamic'?-1:1));};
     const root=host.current!;let renderer:T.WebGLRenderer;
     try{renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});}catch{onFailure('WebGL 2 is unavailable. The orbital-plane view uses the same calculated flight.');return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x070d17,0);renderer.outputColorSpace=T.SRGBColorSpace;
@@ -64,6 +66,7 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
     const trail=line(0x76e9e8,.8),incomingTrail=line(0xffbd83,.6),outgoing=[line(colors[1]),line(colors[2])];
     const tether=new T.Mesh(new T.CylinderGeometry(.0016,.0016,1,8),new T.MeshBasicMaterial({color:0xbff5f3}));scene.add(tether);
     const marker=(color:number,radius:number,diamond=false)=>{const m=new T.Mesh(diamond?new T.OctahedronGeometry(radius*1.25):new T.SphereGeometry(radius,14,10),new T.MeshBasicMaterial({color}));m.userData.radius=radius*(diamond?1.25:1);scene.add(m);return m;};
+    const conductorMeshes=[0,1].map(()=>{const m=new T.Mesh(new T.CylinderGeometry(.0016,.0016,1,8),new T.MeshBasicMaterial({color:0x7cebc0,transparent:true,opacity:.5}));scene.add(m);return m;});
     const ends=[marker(0xbff5f3,.004),marker(0xbff5f3,.004)],hub=marker(0xffffff,.008),cargo=[marker(colors[1],.009),marker(colors[2],.009,true)];
     const plume=new T.Mesh(new T.ConeGeometry(.009,.06,12),new T.MeshBasicMaterial({color:0x80c5ff,transparent:true,opacity:.8}));scene.add(plume);
     const velocity=[new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(),.1,0x7de7ee,.02,.008),new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(),.1,0xffbd83,.02,.008)];velocity.forEach(a=>scene.add(a));
@@ -104,7 +107,15 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
         earth.rotation.y=t*7.292115e-5+.8;
         tether.position.copy(a).add(z).multiplyScalar(.5);tether.scale.y=a.distanceTo(z);tether.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),z.clone().sub(a).normalize());ends[0].position.copy(a);ends[1].position.copy(z);hub.position.copy(h);
         cargo.forEach((m,j)=>{const object=objects[j+1];m.visible=!!object.state;if(object.state)m.position.copy(point(object.state));});
-        plume.visible=f.burn;if(f.burn){const force=forces(f.state,compile(r.design,f.fuel,f.loaded,r.cells),r.design,true),behind=point([-force.tx,-force.ty]).normalize();plume.position.copy(h).addScaledVector(behind,.03);plume.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),behind);}
+        conductorMeshes.forEach((m,j)=>{
+          m.visible=r.design.recovery==='electrodynamic';if(!m.visible)return;
+          const fraction=r.design.edLengthKm/r.design.spanKm;
+          const start=j===0?a:z.clone().lerp(a,fraction),end=j===0?a.clone().lerp(z,fraction):z;
+          m.position.copy(start).add(end).multiplyScalar(.5);m.scale.y=start.distanceTo(end);
+          m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),end.clone().sub(start).normalize());
+          (m.material as T.MeshBasicMaterial).opacity=f.burn&&Math.abs(f.electrical?.circuits[j].current??0)>.01?1:.4;
+        });
+        plume.visible=f.burn&&r.design.recovery==='chemical';if(plume.visible){const force=forces(f.state,compile(r.design,f.fuel,f.loaded,r.cells),r.design,true),behind=point([-force.tx,-force.ty]).normalize();plume.position.copy(h).addScaledVector(behind,.03);plume.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),behind);}
         setPoints(trail,[...r.frames.filter(q=>q.t<=t&&q.t>=t-3200).map(q=>point(q.state)),point(f.state)]);
         (incomingTrail.material as T.LineBasicMaterial).color.set(colors[f.incomingId??1]);
         setPoints(incomingTrail,f.incoming?[...r.frames.filter(q=>q.t<=t&&q.incoming&&q.incomingId===f.incomingId).map(q=>point(q.incoming!)),point(f.incoming)]:[]);
@@ -126,6 +137,7 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       const perPixel=(position:T.Vector3)=>2*Math.tan(camera.fov*Math.PI/360)*camera.position.distanceTo(position)/Math.max(1,root.clientHeight);
       [...ends,hub,...cargo].forEach((m,i)=>m.scale.setScalar(perPixel(m.position)*(i<2?2:4)/m.userData.radius));
       tether.scale.x=tether.scale.z=perPixel(tether.position)*.85/.0016;
+      conductorMeshes.forEach(m=>{m.scale.x=m.scale.z=perPixel(m.position)*1.8/.0016;});
       renderer.render(scene,camera);occupied.length=0;
       const closeup=v==='follow'&&(active.phase==='approach'||active.phase==='attached');
       label(labelA.current,closeup?z:h,closeup?'WORKING TIP':'FACILITY',-28);
@@ -138,22 +150,22 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
     };draw();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();controls.removeEventListener('change',markDirty);controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);scene.traverse(o=>{const mesh=o as T.Mesh;mesh.geometry?.dispose();if(mesh.material)for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]){(material as T.MeshPhongMaterial).map?.dispose();material.dispose();}});renderer.dispose();renderer.domElement.remove();};
   },[]);
-  return <div className="scene-three" ref={host}><div ref={labelA} className="world-label" aria-hidden="true"/><div ref={labelB} className="world-label cargo-label" style={{color:OBJECTS[1].color,borderColor:OBJECTS[1].color}} aria-hidden="true"/><div ref={labelC} className="world-label cargo-label" style={{color:OBJECTS[2].color,borderColor:OBJECTS[2].color}} aria-hidden="true"/>
+  return <div className="scene-three" ref={host} data-recovery={result.design.recovery}><div ref={labelA} className="world-label" aria-hidden="true"/><div ref={labelB} className="world-label cargo-label" style={{color:OBJECTS[1].color,borderColor:OBJECTS[1].color}} aria-hidden="true"/><div ref={labelC} className="world-label cargo-label" style={{color:OBJECTS[2].color,borderColor:OBJECTS[2].color}} aria-hidden="true"/>
     <div className="camera-actions"><button onClick={()=>api.current?.zoom(.8)} aria-label="Zoom camera in">+</button><button onClick={()=>api.current?.zoom(1.25)} aria-label="Zoom camera out">−</button><button onClick={()=>api.current?.reset()}>Reset camera</button></div>
   </div>;
 }
 export function Plane({result,clock,selectedObject,vectors=false,follow=false}:Omit<Props,'view'|'onFailure'>&{follow?:boolean}) {
   const canvas=useRef<HTMLCanvasElement>(null),rref=useRef(result),zoom=useRef(1),vref=useRef(vectors),selectionRef=useRef(selectedObject),followRef=useRef(follow);rref.current=result;vref.current=vectors;selectionRef.current=selectedObject;followRef.current=follow;
   useEffect(()=>{
-    const c=canvas.current!,g=c.getContext('2d')!,parent=c.parentElement!;let request=0;
-    const resize=()=>{const w=Math.round(parent.clientWidth*Math.min(devicePixelRatio,2)),h=Math.round(parent.clientHeight*Math.min(devicePixelRatio,2));if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
+    const c=canvas.current!,g=c.getContext('2d')!,parent=c.parentElement!;let request=0,resized=true;
+    const resize=()=>{const w=Math.round(parent.clientWidth*Math.min(devicePixelRatio,2)),h=Math.round(parent.clientHeight*Math.min(devicePixelRatio,2));if(c.width!==w){c.width=w;resized=true;}if(c.height!==h){c.height=h;resized=true;}};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
     let previous=-1,previousR:Result|null=null,previousW=0,previousH=0,previousZoom=0,previousVectors=false,previousSelected:ObjectId|null=null,previousFollow=false;
     let focusOrigin:number[]|null=null,focusSpan=120000;
     let focusIdentity:ObjectId|null=null;
     const draw=()=>{
       request=requestAnimationFrame(draw);if(document.hidden||!c.width||!c.height)return;const r=rref.current,t=clock.current??0,show=vref.current,selected=selectionRef.current,following=followRef.current;
-      if(t===previous&&r===previousR&&previousW===c.width&&previousH===c.height&&previousZoom===zoom.current&&previousVectors===show&&previousSelected===selected&&previousFollow===following)return;
-      previous=t;previousR=r;previousW=c.width;previousH=c.height;previousZoom=zoom.current;previousVectors=show;previousSelected=selected;previousFollow=following;
+      if(!resized&&t===previous&&r===previousR&&previousW===c.width&&previousH===c.height&&previousZoom===zoom.current&&previousVectors===show&&previousSelected===selected&&previousFollow===following)return;
+      resized=false;previous=t;previousR=r;previousW=c.width;previousH=c.height;previousZoom=zoom.current;previousVectors=show;previousSelected=selected;previousFollow=following;
       const f=sample(r,t),p=positions(r,f),objects=flightObjects(r,f),active=trackedObject(r,f,selected);
       if(!following){focusOrigin=null;focusIdentity=null;}
       else if(active.state){
@@ -176,6 +188,10 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
       for(let j=0;j<2;j++)path(r.frames.filter(f=>f.t<=t&&f.payloads[j]).map(f=>f.payloads[j]),OBJECTS[j+1].color);
       if(f.incoming)path(r.frames.filter(q=>q.t<=t&&q.incoming&&q.incomingId===f.incomingId).map(q=>q.incoming!),OBJECTS[f.incomingId??1].color+'90');
       path([p.a,p.z],'#ccffff');
+      if(r.design.recovery==='electrodynamic') {
+        const lerp=(a:number[],b:number[],u:number)=>a.map((v,i)=>v+(b[i]-v)*u),q=r.design.edLengthKm/r.design.spanKm;
+        for(const [a,b] of [[p.a,lerp(p.a,p.z,q)],[lerp(p.z,p.a,q),p.z]])path([a,b],f.burn?'#7cebc0':'#497b6c');
+      }
       const dot=(v:number[],color:string,radius=4,diamond=false,highlight=false)=>{
         const [a,b]=xy(v),size=radius*dpr;g.beginPath();
         if(diamond){g.moveTo(a,b-size);g.lineTo(a+size,b);g.lineTo(a,b+size);g.lineTo(a-size,b);g.closePath();}
@@ -209,5 +225,5 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
       g.fillStyle='#7fa1ba';g.font=`${11*dpr}px monospace`;g.textAlign='center';g.fillText('EARTH',x,y+4*dpr);
     };draw();return()=>{cancelAnimationFrame(request);observer.disconnect();};
   },[]);
-  return <div className="scene-plane"><canvas ref={canvas} aria-label="Orbital-plane view of the calculated trajectory"/><div className="plane-zoom"><button onClick={()=>zoom.current=Math.min(4,zoom.current*1.25)} aria-label="Zoom in">+</button><button onClick={()=>zoom.current=Math.max(.3,zoom.current/1.25)} aria-label="Zoom out">−</button><button onClick={()=>zoom.current=1}>Fit</button></div></div>;
+  return <div className="scene-plane" data-recovery={result.design.recovery}><canvas ref={canvas} aria-label="Orbital-plane view of the calculated trajectory"/><div className="plane-zoom"><button onClick={()=>zoom.current=Math.min(4,zoom.current*1.25)} aria-label="Zoom in">+</button><button onClick={()=>zoom.current=Math.max(.3,zoom.current/1.25)} aria-label="Zoom out">−</button><button onClick={()=>zoom.current=1}>Fit</button></div></div>;
 }

@@ -203,7 +203,7 @@ def main():
             page.get_by_role('button', name='Run 3 variants →', exact=True).click()
             expect(page.locator('.study-status')).to_contain_text('Study complete', timeout=180000)
             expect(page.locator('.study-table tbody tr')).to_have_count(3)
-            assert all(page.locator('.study-table tbody tr').nth(i).locator('td').count()==5 for i in range(3))
+            assert all(page.locator('.study-table tbody tr').nth(i).locator('td').count()==6 for i in range(3))
             shot('trade-study')
             page.locator('.study-table tbody tr').first.get_by_role('button').click()
             expect(page.locator('.recorder-insight')).to_contain_text('no second operating window')

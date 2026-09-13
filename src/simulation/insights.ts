@@ -31,7 +31,8 @@ export interface Gate { label: string; value: string; pass: boolean }
 export function challengeGates(c: Challenge, r: Result): Gate[] {
   const good = deliveries(r);
   const fixed = (Object.keys(DEFAULT) as (keyof Design)[]).every(key => c.editable.includes(key) || r.design[key] === c.start[key]);
-  const materialAllowed = ['zylon', 'kevlar'].includes(r.design.material);
+  // Existing challenges predate E0 and do not qualify assumed electrical hardware.
+  const materialAllowed = ['zylon', 'kevlar'].includes(r.design.material) && r.design.recovery!=='electrodynamic';
   return [
     { label: 'Mission configuration', value: fixed && materialAllowed ? 'Within the stated rules' : 'Outside mission rules · still a valid sandbox experiment', pass: fixed && materialAllowed },
     { label: 'Two successful deliveries', value: `${good.length} / 2`, pass: good.length === 2 && r.outcome === 'complete' },
@@ -56,10 +57,11 @@ export function diagnose(r: Result): Diagnosis {
   if (r.outcome === 'delivery-failed')
     return { title: 'Release did not meet the delivery criterion.', explanation:r.reason, action:'Try another release phase. Use a release-phase study to compare actual resulting orbits.', tab:'mission', time };
   if (r.outcome === 'complete')
-    return { title: 'Two deliveries. One reusable facility.', explanation:`Both payloads reached higher-energy orbits above the cutoff. The controller used ${(r.fuelUsed/1000).toFixed(2)} t of propellant before the second release.`, action:'Pin this flight, then change one variable. A lighter facility or smaller fuel bill is only useful if the mission still passes.', tab:'structure', time };
+    return { title: 'Two deliveries. One reusable facility.', explanation:r.design.recovery==='electrodynamic'?`Two ideal transfers completed with ${(r.electricalEnergyJ/3.6e9).toFixed(3)} MWh of electrical input and no propellant. This is the E0 circuit experiment, not demonstrated plasma collection or a qualified power system.`:`Both payloads reached higher-energy orbits above the cutoff. The controller used ${(r.fuelUsed/1000).toFixed(2)} t of propellant before the second release.`, action:'Pin this flight, then change one variable. A lighter facility or smaller fuel bill is only useful if the mission still passes.', tab:'structure', time };
   const exhausted = r.events.find(e=>e.kind==='fuel');
   if (exhausted) return { title:'The recovery budget runs out.', explanation:`The thrusters consumed ${(r.fuelUsed/1000).toFixed(2)} t before the facility could complete a second delivery. Nothing refills the tank.`, action:'Try more propellant, different release timing, or a different thrust setting. More thrust is not always more fuel-efficient.', tab:'recovery', time:exhausted.t };
   if (r.design.recovery === 'none') return { title:'One delivery; no second operating window.', explanation:'The payload gained energy, but the coasting facility did not return to the required orbit and spin state within six simulated hours.', action:'Try Chemical recovery. Pin this Coast run first to compare fuel use, added fuel mass, and repeatability.', tab:'recovery', time };
+  if(r.design.recovery==='electrodynamic')return {title:'The electrical design has not restored the next handoff.',explanation:`${(r.electricalEnergyJ/3.6e9).toFixed(3)} MWh supplied within the six-hour window. Force depends on orientation, current and voltage as well as power; more bus power alone is not a guarantee.`,action:'Inspect the field-and-power recorder, then run an electrical-power study. Current collection and hardware sizing remain assumptions.',tab:'recovery',time};
   return { title:'The next handoff remains out of reach.', explanation:r.reason, action:'Inspect readiness below and compare controller settings or a less energetic release. This is not a fuel-optimal controller.', tab:'recovery', time };
 }
 export function readiness(r: Result) {
@@ -71,15 +73,16 @@ export function readiness(r: Result) {
     { label:'Spin error', value:Math.abs(y[5]/spinReference(y,r.design).omega-1)*100, limit:.5, unit:'%' },
   ];
 }
-export const FIELD_NAMES: Partial<Record<keyof Design,string>> = { material:'Material',spanKm:'Span',altitudeKm:'Initial altitude',tipSpeedKms:'Spin-tip speed',areaMm2:'Cable section',shape:'Taper',payloadT:'Payload',fuelT:'Fuel budget',recovery:'Recovery',releaseDeg:'Release phase',safetyFactor:'Safety factor',thrustN:'Thrust',isp:'Specific impulse',density:'Density',ultimateGPa:'Ultimate stress' };
+export const FIELD_NAMES: Partial<Record<keyof Design,string>> = { material:'Material',spanKm:'Span',altitudeKm:'Initial altitude',tipSpeedKms:'Spin-tip speed',areaMm2:'Cable section',shape:'Taper',payloadT:'Payload',fuelT:'Fuel budget',recovery:'Recovery',releaseDeg:'Release phase',safetyFactor:'Safety factor',thrustN:'Thrust',isp:'Specific impulse',density:'Density',ultimateGPa:'Ultimate stress',edLengthKm:'Conductor length / arm',edAreaMm2:'Conductor cross-section',edPowerKw:'Bus power cap',edCurrentA:'Circuit current cap',edVoltageKv:'Drive voltage cap',edHardwareT:'Electrical hardware mass' };
 export function designChanges(a:Design,b:Design) {
   return (Object.keys(FIELD_NAMES) as (keyof Design)[]).filter(key=>a[key]!==b[key]);
 }
-export type StudyKind = 'recovery'|'material'|'release'|'payload';
-export const STUDY_LABELS: Record<StudyKind,string> = { recovery:'Recovery strategy',material:'Material at fixed dimensions',release:'Release phase',payload:'Payload mass' };
+export type StudyKind = 'electrical'|'recovery'|'material'|'release'|'payload';
+export const STUDY_LABELS: Record<StudyKind,string> = { electrical:'Electrical power cap',recovery:'Recovery strategy',material:'Material at fixed dimensions',release:'Release phase',payload:'Payload mass' };
 export function studyDesigns(d:Design,kind:StudyKind):{label:string;design:Design}[] {
   switch(kind) {
-    case 'recovery': return [{label:'Coast · no fuel',design:{...d,recovery:'none',fuelT:0}}, {label:'Chemical · 10 t',design:{...d,recovery:'chemical',fuelT:10}}, {label:'Chemical · 20 t',design:{...d,recovery:'chemical',fuelT:20}}];
+    case 'electrical': return [100,250,500,1000].map(edPowerKw=>({label:`${edPowerKw} kW bus`,design:{...d,recovery:'electrodynamic',fuelT:0,edPowerKw}}));
+    case 'recovery': return [{label:'Coast · no fuel',design:{...d,recovery:'none',fuelT:0}}, {label:'Chemical · 20 t',design:{...d,recovery:'chemical',fuelT:20}}, {label:'Electrodynamic · E0',design:{...d,recovery:'electrodynamic',fuelT:0}}];
     case 'material': return ['kevlar','zylon','future'].map(material=>({label:material==='future'?'Hypothetical carbon':material==='kevlar'?'Kevlar 49':'Zylon HM',design:{...d,material}}));
     case 'release': return [120,150,180,210].map(releaseDeg=>({label:`${releaseDeg}° release`,design:{...d,releaseDeg}}));
     case 'payload': return [.5,1,1.5,2].map(f=>({label:`${Math.min(250,Math.max(.1,Math.round(d.payloadT*f*10)/10))} t`,design:{...d,payloadT:Math.min(250,Math.max(.1,Math.round(d.payloadT*f*10)/10))}})).filter((v,i,a)=>a.findIndex(x=>x.label===v.label)===i);

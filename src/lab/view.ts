@@ -1,4 +1,4 @@
-import { compile, pointState, type Result, type Frame } from '../simulation/engine.js';
+import { compile, pointState, forces, type Result, type Frame } from '../simulation/engine.js';
 
 /** Interpolate within a continuous physical state, never across an attachment
  * or the start of a different incoming shipment. Exact event frames take priority. */
@@ -11,11 +11,12 @@ export function sample(result: Result, t: number): Frame {
     if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
   }
   const f = frames[lo], next = frames[lo + 1];
-  if (!next || next.loaded !== f.loaded || next.deliveries !== f.deliveries || next.t === f.t) return f;
+  if (!next || next.burn !== f.burn || next.loaded !== f.loaded || next.deliveries !== f.deliveries || next.t === f.t) return f;
   const u = Math.max(0, Math.min(1, (t - f.t) / (next.t - f.t)));
   const mix = (a: number[], b: number[]) => a.map((v, i) => v + (b[i] - v) * u);
   return {
     ...f, t, state: mix(f.state, next.state),
+    ...(result.design.recovery==='electrodynamic'?{electrical:forces(mix(f.state,next.state),compile(result.design,f.fuel,f.loaded,result.cells),result.design,f.burn).electrical!}:{}),
     payloads: f.payloads.map((p, i) => next.payloads[i] ? mix(p, next.payloads[i]) : p),
     incoming: f.incoming && next.incoming && f.incomingId === next.incomingId ? mix(f.incoming, next.incoming) : f.incoming,
     clearance: f.clearance + (next.clearance - f.clearance) * u,

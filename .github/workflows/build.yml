@@ -40,6 +40,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Exercise native-origin Flight Studio and WebGL
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
+      - name: Exercise electrodynamic recovery and resource controls
+        run: python3 tests/lab-electrodynamic.browser.py --require-webgl
       - name: Upload browser regression evidence
         if: always()
         uses: actions/upload-artifact@v4

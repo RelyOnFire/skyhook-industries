@@ -8,7 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test:lab": "tsc -p tsconfig.engine.json && node --test tests/lab-engine.test.mjs",
+    "test:lab": "tsc -p tsconfig.engine.json && node --test tests/lab-*.test.mjs",
     "check:lab": "tsc -p tsconfig.lab.json"
   },
   "dependencies": {
