@@ -1,7 +1,8 @@
-/** Tether Lab D1p/0.3.0. Planar rigid extended-body educational model.
+import { ED_DEFAULTS, ED_DENSITY, conductorNodes, electrodynamicForces, type EDSettings, type EDReading } from './electrodynamic.js';
+/** Tether Lab D1p/0.4.0. Planar rigid extended-body educational model.
  * SI throughout. No atmosphere, elasticity, capture shock, or debris model.
  * Rendering is never an input to this module. */
-export const MODEL = 'D1p-0.3.0';
+export const MODEL = 'D1p-0.4.0';
 export const PAYLOAD_LIMIT_T = 250;
 export const STANDARD_PAYLOAD_T = 20;
 export const ACTIVE_ARCHITECTURE = 'single-stage-rotovator' as const;
@@ -16,13 +17,13 @@ export const MATERIALS: Material[] = [
   {id:'future', name:'Future carbon · hypothetical', density:1400, ultimate:20e9, basis:'Invented scenario properties, not a manufactured material', source:'', locator:'Exploration assumption; no material qualification claimed'},
   {id:'custom', name:'Custom material', density:1500, ultimate:6e9, basis:'User-defined hypothetical input', source:'', locator:'User assumption'},
 ];
-export interface Design {
+export interface Design extends EDSettings {
   schema: 2; model: typeof MODEL; architecture: typeof ACTIVE_ARCHITECTURE; material: string; spanKm: number; altitudeKm: number;
   tipSpeedKms: number; areaMm2: number; shape: 'uniform'|'tapered'; payloadT: number;
-  fuelT: number; recovery: 'none'|'chemical'; releaseDeg: number; safetyFactor: number;
+  fuelT: number; recovery: 'none'|'chemical'|'electrodynamic'; releaseDeg: number; safetyFactor: number;
   density: number; ultimateGPa: number; thrustN: number; isp: number;
 }
-export const DEFAULT: Design = {schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:'zylon',spanKm:600,altitudeKm:1600,
+export const DEFAULT: Design = {...ED_DEFAULTS,schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:'zylon',spanKm:600,altitudeKm:1600,
   tipSpeedKms:1.2,areaMm2:80,shape:'uniform',payloadT:3,fuelT:20,recovery:'chemical',releaseDeg:180,
   safetyFactor:2,density:1500,ultimateGPa:6,thrustN:5000,isp:320};
 export const PRESETS = [
@@ -31,7 +32,8 @@ export const PRESETS = [
   {id:'light',name:'The material challenge',description:'Less cross-section. Does this fiber carry the load?',design:{...DEFAULT,material:'kevlar',areaMm2:35,payloadT:5}},
   {id:'future',name:'A longer reach',description:'Hypothetical carbon, 1,200 km span, more demanding transfer.',design:{...DEFAULT,material:'future',spanKm:1200,altitudeKm:2400,tipSpeedKms:1.7,areaMm2:100,fuelT:15,payloadT:5}},
 ];
-const BOUNDS: Record<string,[number,number]> = {spanKm:[80,4000],altitudeKm:[400,8000],tipSpeedKms:[0.25,2.5],areaMm2:[5,2500],payloadT:[0.1,PAYLOAD_LIMIT_T],fuelT:[0,80],releaseDeg:[70,210],safetyFactor:[1.2,5],density:[500,12000],ultimateGPa:[0.1,100],thrustN:[100,10000],isp:[150,450]};
+export const EDT_PRESET: Design = {...DEFAULT,recovery:'electrodynamic',fuelT:0,spanKm:200,altitudeKm:700,tipSpeedKms:.8,areaMm2:70,payloadT:.5};
+const BOUNDS: Record<string,[number,number]> = {spanKm:[80,4000],altitudeKm:[400,8000],tipSpeedKms:[0.25,2.5],areaMm2:[5,2500],payloadT:[0.1,PAYLOAD_LIMIT_T],fuelT:[0,80],releaseDeg:[70,210],safetyFactor:[1.2,5],density:[500,12000],ultimateGPa:[0.1,100],thrustN:[100,10000],isp:[150,450],edLengthKm:[1,500],edAreaMm2:[1,200],edPowerKw:[0,5000],edCurrentA:[0,100],edVoltageKv:[0,200],edHardwareT:[.1,500]};
 export function validate(input: unknown): Design {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Design must be an object.');
   const d = input as Record<string,unknown>;
@@ -39,7 +41,7 @@ export function validate(input: unknown): Design {
   if (d.architecture !== ACTIVE_ARCHITECTURE) throw Error('This architecture has no simulation engine in this build. Open the architecture catalogue for its status.');
   if (!MATERIALS.some(m=>m.id===d.material)) throw Error('Unknown material profile.');
   if (!['uniform','tapered'].includes(String(d.shape))) throw Error('Unsupported structure.');
-  if (!['none','chemical'].includes(String(d.recovery))) throw Error('Unsupported recovery model.');
+  if (!['none','chemical','electrodynamic'].includes(String(d.recovery))) throw Error('Unsupported recovery model.');
   const clean: Record<string,unknown> = {schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:d.material,shape:d.shape,recovery:d.recovery};
   for (const [key,[lo,hi]] of Object.entries(BOUNDS)) {
     if (typeof d[key] !== 'number' || !Number.isFinite(d[key]) || (d[key] as number)<lo || (d[key] as number)>hi) throw Error(`${key} must be between ${lo} and ${hi}.`);
@@ -47,7 +49,8 @@ export function validate(input: unknown): Design {
   }
   // Coast is a no-propulsion scenario, not a tank of unused reaction mass.
   // Reject ambiguous imports rather than silently changing their mass.
-  if (d.recovery === 'none' && d.fuelT !== 0) throw Error('Coast uses no onboard propellant. Set fuelT to 0 or select chemical recovery.');
+  if (d.recovery !== 'chemical' && d.fuelT !== 0) throw Error('Coast and electrodynamic modes use no onboard propellant. Set fuelT to 0 or select chemical recovery.');
+  if(d.recovery === 'electrodynamic' && (d.edLengthKm as number) > (d.spanKm as number)/2) throw Error('Each conductor must fit within one arm. Reduce conductor length or increase tether span.');
   return clean as unknown as Design;
 }
 export function properties(d: Design) {
@@ -56,9 +59,9 @@ export function properties(d: Design) {
   const ultimate = d.material==='custom' ? d.ultimateGPa*1e9 : m.ultimate;
   return {density,ultimate,allowable:ultimate/d.safetyFactor};
 }
-export type State = number[]; // x,y,vx,vy,theta,omega,fuel,unwrapped polar angle
-export interface Sample {s:number;m:number;area:number}
-export interface Body {points:Sample[];mass:number;center:number;inertia:number;half:number;area:number;structural:number}
+export type State = number[]; // x,y,vx,vy,theta,omega,fuel,unwrapped polar angle,busJ,ED-workJ,ED-heatJ,environmentJ
+export interface Sample {s:number;m:number;area:number;electricalIndex?:number}
+export interface Body {points:Sample[];mass:number;center:number;inertia:number;half:number;area:number;structural:number;conductors:ReturnType<typeof conductorNodes>;conductorMass:number;electricalHardwareMass:number}
 const HUB = 30000, TIP = 2000;
 export function compile(d: Design, fuel: number, payload: boolean, cells=48): Body {
   const half=d.spanKm*500, ds=2*half/cells, area=d.areaMm2*1e-6, {density}=properties(d);
@@ -66,11 +69,15 @@ export function compile(d: Design, fuel: number, payload: boolean, cells=48): Bo
   const points:Sample[]=[];
   for(let i=0;i<cells;i++) {const s=-half+(i+0.5)*ds; points.push({s,m:density*area*profile(s)*ds,area:area*profile(s)});}
   const structural=points.reduce((a,p)=>a+p.m,0);
-  points.push({s:-half,m:TIP,area:area*profile(-half)},{s:0,m:HUB+Math.max(0,fuel),area},{s:half,m:TIP+(payload?d.payloadT*1000:0),area:area*profile(half)});
+  const conductors=d.recovery==='electrodynamic'?conductorNodes(half,d.edLengthKm*1000,Math.max(4,Math.round(cells/6))):[];
+  let conductorMass=0;const electricalHardwareMass=d.recovery==='electrodynamic'?d.edHardwareT*1000:0;
+  conductors.forEach((node,electricalIndex)=>{const m=ED_DENSITY*d.edAreaMm2*1e-6*node.length;conductorMass+=m;
+    points.push({s:node.s,m,area:area*profile(node.s),electricalIndex});});
+  points.push({s:-half,m:TIP,area:area*profile(-half)},{s:0,m:HUB+electricalHardwareMass+Math.max(0,fuel),area},{s:half,m:TIP+(payload?d.payloadT*1000:0),area:area*profile(half)});
   points.sort((a,b)=>a.s-b.s);
   const mass=points.reduce((a,p)=>a+p.m,0), center=points.reduce((a,p)=>a+p.s*p.m,0)/mass;
   const inertia=points.reduce((a,p)=>a+p.m*(p.s-center)**2,0);
-  return {points,mass,center,inertia,half,area,structural};
+  return {points,mass,center,inertia,half,area,structural,conductors,conductorMass,electricalHardwareMass};
 }
 export function pointState(y:State,b:Body,s:number):number[] {
   const q=s-b.center,c=Math.cos(y[4]),z=Math.sin(y[4]);
@@ -81,7 +88,7 @@ export function forces(y:State,b:Body,d:Design,burn=false) {
   const c=Math.cos(y[4]),s=Math.sin(y[4]);let fx=0,fy=0,torque=0;
   const grav=b.points.map(p=>{const q=p.s-b.center,[gx,gy]=gravity(y[0]+q*c,y[1]+q*s);fx+=p.m*gx;fy+=p.m*gy;torque+=p.m*q*(c*gy-s*gx);return [gx,gy];});
   let tx=0,ty=0,tt=0,flow=0;
-  if(burn && y[6]>1e-7 && d.recovery==='chemical') {
+  if(burn && ((y[6]>1e-7 && d.recovery==='chemical') || d.recovery==='electrodynamic')) {
     const r=Math.hypot(y[0],y[1]),ex=y[0]/r,ey=y[1]/r,vr=y[2]*ex+y[3]*ey,vt=-y[2]*ey+y[3]*ex;
     const targetR=EARTH+d.altitudeKm*1000,targetV=Math.sqrt(MU/targetR);
     // Feedback forces; the orbit and spin are never reset. Cancels only modeled gravity.
@@ -90,14 +97,21 @@ export function forces(y:State,b:Body,d:Design,burn=false) {
     tx=b.mass*(ar*ex-at*ey);ty=b.mass*(ar*ey+at*ex);
     const ref=spinReference(y,d);
     tt=b.inertia*((ref.omega-y[5])/350+ref.alpha)-torque;
+    if(d.recovery==='chemical') {
     const bill=Math.hypot(tx,ty)+Math.abs(tt)/b.half, scale=Math.min(1,d.thrustN/Math.max(1e-20,bill));
     tx*=scale;ty*=scale;tt*=scale;flow=(Math.hypot(tx,ty)+Math.abs(tt)/b.half)/(d.isp*G0);
   }
-  return {ax:(fx+tx)/b.mass,ay:(fy+ty)/b.mass,alpha:(torque+tt)/b.inertia,tx,ty,tt,flow,grav};
+  }
+  let electrical:EDReading|null=null;
+  if(d.recovery==='electrodynamic') {
+    electrical=electrodynamicForces({x:y[0],y:y[1],vx:y[2],vy:y[3],theta:y[4],omega:y[5],center:b.center},b.conductors,d,{fx:tx,fy:ty,torque:tt},burn);
+    tx=electrical.fx;ty=electrical.fy;tt=electrical.torque;
+  }
+  return {ax:(fx+tx)/b.mass,ay:(fy+ty)/b.mass,alpha:(torque+tt)/b.inertia,tx,ty,tt,flow,grav,electrical};
 }
 export function derivative(y:State,d:Design,loaded:boolean,burn:boolean,cells=48):State {
   const b=compile(d,y[6],loaded,cells),f=forces(y,b,d,burn);
-  return [y[2],y[3],f.ax,f.ay,y[5],f.alpha,-f.flow,(y[0]*y[3]-y[1]*y[2])/(y[0]**2+y[1]**2)];
+  return [y[2],y[3],f.ax,f.ay,y[5],f.alpha,-f.flow,(y[0]*y[3]-y[1]*y[2])/(y[0]**2+y[1]**2),f.electrical?.busW??0,f.electrical?.mechanicalW??0,f.electrical?.heatW??0,f.electrical?.environmentW??0];
 }
 export function rk4(y:State,h:number,d:Design,loaded=false,burn=false,cells=48):State {
   const k1=derivative(y,d,loaded,burn,cells),k2=derivative(y.map((v,i)=>v+h*k1[i]/2),d,loaded,burn,cells),k3=derivative(y.map((v,i)=>v+h*k2[i]/2),d,loaded,burn,cells),k4=derivative(y.map((v,i)=>v+h*k3[i]),d,loaded,burn,cells);
@@ -135,7 +149,8 @@ export function loadCheck(y:State,b:Body,d:Design,burn:boolean,cuts?:LoadCut[]) 
   let axial=0,maxStress=0,minTension=0,peak=0;
   for(let i=0;i<b.points.length-1;i++) {
     const p=b.points[i],q=p.s-b.center;
-    const tx=Math.abs(p.s)<1e-6?f.tx:0,ty=Math.abs(p.s)<1e-6?f.ty:0;
+    const external=f.electrical?(p.electricalIndex===undefined?[0,0]:f.electrical.nodeForces[p.electricalIndex]):Math.abs(p.s)<1e-6?[f.tx,f.ty]:[0,0];
+    const [tx,ty]=external;
     // The ideal tip couple is transverse, and does not contribute to axial load.
     const rx=p.m*(f.ax-y[5]**2*q*c-f.alpha*q*s-f.grav[i][0])-tx;
     const ry=p.m*(f.ay-y[5]**2*q*s+f.alpha*q*c-f.grav[i][1])-ty;
@@ -145,7 +160,7 @@ export function loadCheck(y:State,b:Body,d:Design,burn:boolean,cuts?:LoadCut[]) 
   }
   return {margin:maxStress>0?allow/maxStress:999,stress:maxStress,minTension,peak};
 }
-export function initial(d:Design):State {const r=EARTH+d.altitudeKm*1000;return [r,0,0,Math.sqrt(MU/r),Math.PI,d.tipSpeedKms*1000/(d.spanKm*500),d.fuelT*1000,0];}
+export function initial(d:Design):State {const r=EARTH+d.altitudeKm*1000;return [r,0,0,Math.sqrt(MU/r),Math.PI,d.tipSpeedKms*1000/(d.spanKm*500),d.fuelT*1000,0,0,0,0,0];}
 export function spinReference(y:State,d:Design) {
   // Circular short-rod gravity-gradient reference for the guidance law only.
   // The actual motion still uses distributed gravity. Do not fight the natural
@@ -160,7 +175,7 @@ export function ready(y:State,d:Design) {
   return Math.abs(r-target)<15000 && Math.abs(vr)<8 && Math.abs(vt-Math.sqrt(MU/target))<12 && Math.abs(y[5]/spinReference(y,d).omega-1)<0.005;
 }
 export type PayloadId = 1 | 2;
-export interface Frame {t:number;state:State;loaded:boolean;burn:boolean;payloads:number[][];incoming:number[]|null;incomingId:PayloadId|null;clearance:number;margin:number;deliveries:number;fuel:number}
+export interface Frame {t:number;state:State;loaded:boolean;burn:boolean;payloads:number[][];incoming:number[]|null;incomingId:PayloadId|null;clearance:number;margin:number;deliveries:number;fuel:number;electrical?:EDReading}
 export interface RendezvousCheck {payloadId:PayloadId;t:number;leadInSeconds:number;positionErrorM:number;velocityErrorMs:number;accepted:boolean}
 export interface Approach {payloadId:PayloadId;startTime:number;captureTime:number;initialState:number[]}
 export const APPROACH_SECONDS = 90;
@@ -212,8 +227,9 @@ export function planApproach(y:State, d:Design, targetPhase:number, now:number,
 }
 export interface MissionEvent {t:number;kind:string;title:string;detail:string;payloadId?:PayloadId}
 export interface Delivery {number:number;t:number;gain:number;perigee:number;apogee:number|null;energy:number}
-export interface Result {model:string;design:Design;frames:Frame[];events:MissionEvent[];deliveries:Delivery[];approaches:Approach[];rendezvous:RendezvousCheck[];outcome:string;reason:string;dryMass:number;structuralMass:number;minClearance:number;minMargin:number;fuelUsed:number;final:State;maxStep:number;cells:number}
+export interface Result {model:string;design:Design;frames:Frame[];events:MissionEvent[];deliveries:Delivery[];approaches:Approach[];rendezvous:RendezvousCheck[];outcome:string;reason:string;dryMass:number;structuralMass:number;minClearance:number;minMargin:number;fuelUsed:number;final:State;maxStep:number;cells:number;electricalEnergyJ:number;electricalWorkJ:number;electricalHeatJ:number;environmentEnergyJ:number;conductorMass:number;electricalHardwareMass:number}
 export function resize(d:Design):number {
+  if(d.recovery==='electrodynamic')throw Error('Automatic sizing does not yet include conductor mass. Set the strength-tether section explicitly and run the full load check.');
   const {density,allowable}=properties(d),h=d.spanKm*500,r=EARTH+d.altitudeKm*1000,w=d.tipSpeedKms*1000/h;
   const a=(s:number)=>MU/(r-s)**2-MU/r**2+w*w*s;
   if(r-h<=EARTH+120000) throw Error('Raise the orbit before sizing: a tip starts outside the modeled environment.');
@@ -247,7 +263,7 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
   for(let count=0;t<=Math.min(horizon,stopAt)+1e-8&&count<40000;count++) {
     let b=compile(d,y[6],loaded,cells),low=clearance(y,b),load=loadCheck(y,b,d,burn);
     minClearance=Math.min(minClearance,low);minMargin=Math.min(minMargin,load.margin);
-    const save=()=>frames.push({t,state:[...y],loaded,burn,payloads:payloads.map(p=>[...p]),incoming:incoming?[...incoming]:null,incomingId,clearance:low,margin:load.margin,deliveries:deliveries.length,fuel:Math.max(0,y[6])});
+    const save=()=>frames.push({t,state:[...y],loaded,burn,payloads:payloads.map(p=>[...p]),incoming:incoming?[...incoming]:null,incomingId,clearance:low,margin:load.margin,deliveries:deliveries.length,fuel:Math.max(0,y[6]),...(d.recovery==='electrodynamic'?{electrical:forces(y,b,d,burn).electrical!}:{})});
     if(low<120000||load.margin<1||load.minTension<-100) {
       outcome='limit';reason=low<120000?'A part of the tether crossed the 120 km model cutoff. Atmospheric flight is not modeled.':load.margin<1?'The axial stress exceeded the chosen fiber allowable. Elastic failure is not simulated.':'A cable section requires compression. A rigid tether is no longer a valid taut-cable approximation.';
       event('limit','Modeled limit reached',reason);save();break;
@@ -278,6 +294,7 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
       event('release',`Payload ${deliveries.length} released`,o.perigee>=120000?`Released orbit: ${Math.round(o.perigee/1000)} km perigee; ${o.apogee===null?'Earth escape':Math.round(o.apogee/1000)+' km apogee'}.`:'The released payload orbit intersects the 120 km cutoff; this is not a successful delivery.',deliveries.length as PayloadId);
       if(o.perigee<120000||o.energy<=capturedEnergy){outcome='delivery-failed';reason='The payload did not reach a higher-energy orbit with perigee above 120 km.';stopAt=t+120;}
       else if(deliveries.length===2){outcome='complete';reason='Two distinct payloads delivered to higher-energy orbits, with facility readiness and both incoming position/velocity matches checked.';stopAt=t+240;}
+      else if(d.recovery==='electrodynamic'){burn=true;event('recovery','Electrodynamic recovery begins','Two powered conductor segments apply limited Lorentz forces. Current collection is assumed, not predicted; power and heat are recorded.');}
       else if(d.recovery==='chemical'&&y[6]>0){burn=true;event('recovery','Facility reboost begins','The thrusters restore the facility’s orbit and spin, not the released payload. Payload 1 continues independently; propellant is consumed continuously.');}
       else event('coast','Coasting without reboost','The second rendezvous waits for radius, radial/tangential speed and spin to return within the defined tolerances.');
       checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
@@ -293,7 +310,7 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
         save();
       }
       if(awaitingPass && !pendingApproach && y[4]-y[7]>=passTarget-1e-8){
-        awaitingPass=false;stable=0;burn=d.recovery==='chemical'&&y[6]>0;
+        awaitingPass=false;stable=0;burn=(d.recovery==='chemical'&&y[6]>0)||d.recovery==='electrodynamic';
         event('wait','Next pickup deferred','Facility recovery resumes. Payload 1 is still independent; no new shipment was captured.');save();
       }
       if(pendingApproach && !incoming && t>=pendingApproach.startTime-1e-7){
@@ -301,7 +318,7 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
         event('approach','Payload 2 on approach',`A separate shipment now follows a calculated ${(pendingApproach.captureTime-pendingApproach.startTime).toFixed(0)}-second approach. Its position and velocity will be checked at the tip. Payload 1 is not returning.`,2);save();
       }
     }
-    if(burn&&y[6]<=1e-7){y[6]=0;burn=false;event('fuel','Propellant exhausted','No further recovery thrust is applied.');}
+    if(burn&&d.recovery==='chemical'&&y[6]<=1e-7){y[6]=0;burn=false;event('fuel','Propellant exhausted','No further recovery thrust is applied.');}
     if(t>=nextSample-1e-8){save();nextSample=t+10;}
     if(t>=Math.min(horizon,stopAt)-1e-7)break;
     let h=Math.min(step,nextCapture-t,Math.min(horizon,stopAt)-t);
@@ -309,7 +326,7 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
     // Split the step at a release/radial event; do not skip events at warp speed.
     let yn=rk4(y,h,d,loaded,burn,cells),target=loaded?phaseAtCapture+d.releaseDeg*Math.PI/180:awaitingPass?passTarget:Infinity;
     if(y[4]-y[7]<target&&yn[4]-yn[7]>=target){let lo=0,hi=h;for(let k=0;k<22;k++){const mid=(lo+hi)/2,v=rk4(y,mid,d,loaded,burn,cells);if(v[4]-v[7]>=target)hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
-    if(yn[6]<0&&burn){const flow=forces(y,b,d,true).flow;h=Math.min(h,y[6]/Math.max(flow,1e-20));yn=rk4(y,h,d,loaded,burn,cells);yn[6]=Math.max(0,yn[6]);}
+    if(yn[6]<0&&burn&&d.recovery==='chemical'){const flow=forces(y,b,d,true).flow;h=Math.min(h,y[6]/Math.max(flow,1e-20));yn=rk4(y,h,d,loaded,burn,cells);yn[6]=Math.max(0,yn[6]);}
     if(h<1e-10)throw Error('Numerical event step stalled.');
     const violates=(v:State)=>{const body=compile(d,v[6],loaded,cells),check=loadCheck(v,body,d,burn);return clearance(v,body)<120000||check.margin<1||check.minTension<-100;};
     if(violates(yn)){let lo=0,hi=h;for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(violates(rk4(y,mid,d,loaded,burn,cells)))hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
@@ -320,5 +337,5 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
   }
   if(outcome==='incomplete')event('end','Second delivery not achieved',reason);
   if(outcome==='complete')event('end','Two deliveries complete',reason);
-  return {model:MODEL,design:d,frames,events,deliveries,approaches,rendezvous,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells};
+  return {model:MODEL,design:d,frames,events,deliveries,approaches,rendezvous,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells,electricalEnergyJ:y[8],electricalWorkJ:y[9],electricalHeatJ:y[10],environmentEnergyJ:y[11],conductorMass:dry.conductorMass,electricalHardwareMass:dry.electricalHardwareMass};
 }

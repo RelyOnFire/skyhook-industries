@@ -8,12 +8,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test:lab": "tsc -p tsconfig.engine.json && node --test tests/lab-engine.test.mjs",
+    "test:lab": "tsc -p tsconfig.engine.json && node --test tests/lab-*.test.mjs",
     "check:lab": "tsc -p tsconfig.lab.json"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.3",
-    "astro": "7.2.2",
+    "astro": "7.2.8",
     "@astrojs/react": "6.0.5",
     "react": "19.2.7",
     "react-dom": "19.2.7",
