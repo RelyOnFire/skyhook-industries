@@ -1,11 +1,14 @@
 ---
 import ProductionLayout from '../layouts/ProductionLayout.astro';
 import OrbitalView from '../components/OrbitalView.astro';
+import TerminalExplainer from '../components/TerminalExplainer.astro';
+import '../styles/heritage.css';
 ---
 <ProductionLayout title="Skyhook Industries — A different way up" description="Explore rotating orbital tethers. Design a flight, capture a payload, and discover the engineering behind reusable momentum-exchange transportation.">
   <section class="new-hero" aria-labelledby="hero-title">
     <div class="hero-topline"><span><i></i> INDEPENDENT ORBITAL RESEARCH</span><span>EARTH / MOMENTUM EXCHANGE</span></div>
     <div class="hero-editorial">
+      <p class="heritage-line">A hook hanging from the clouds.</p>
       <h1 id="hero-title">A different<br />way <span>up.</span></h1>
       <div class="hero-intro"><p>Leave the infrastructure in orbit.<br />Send the next payload further.</p><a class="launch-link" href="/lab/">Enter the Tether Lab <span>↗</span></a><a class="quiet-link" href="#principle">Discover the idea ↓</a></div>
     </div>
@@ -22,6 +25,7 @@ import OrbitalView from '../components/OrbitalView.astro';
       <article><span>04</span><h3>Recover.</h3><p>Restore momentum before the next transfer.</p></article>
     </div>
   </section>
+  <TerminalExplainer />
   <section class="lab-invitation">
     <div class="section-index">02 / MAKE THE TRADEOFFS</div><div class="lab-invite-copy"><h2>Choose a concept.<br />Explore the tradeoffs.</h2><p>Explore rotating tethers, MXER, HASTOL, and T4. See which concepts you can simulate in the Tether Lab and which remain research references.</p><a class="text-link" href="/lab/architectures/">Compare tether concepts <span>↗</span></a><a class="text-link" href="/lab/operations/">Operate a cargo service <span>↗</span></a></div>
     <div class="lab-window" aria-label="Illustration of an orbital transfer"><div class="window-top"><span>FLIGHT STUDIO</span><span>INTERACTIVE SIMULATION ↗</span></div><div class="orbit-sketch"><i class="sketch-earth"></i><i class="sketch-orbit"></i><i class="sketch-tether"></i><span class="sketch-label">CAPTURE → SWING → RELEASE</span></div><div class="window-bottom"><span>CHEMICAL</span><span>COAST</span><span>ELECTRODYNAMIC</span></div></div>
