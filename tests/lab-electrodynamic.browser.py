@@ -81,7 +81,28 @@ def main():
             report['example']=e;shot('energy-debrief');page.keyboard.press('Escape');done('Actual powered flight produces two checked deliveries, zero propellant and a balanced exported energy ledger')
             before=rec.inner_text();tab('Recovery');num('Drive bus cap').fill('1000');expect(page.locator('.build-panel')).to_contain_text('UNRUN');panel('Results');assert rec.inner_text()==before,'Unrun input must not relabel accepted telemetry';tab('Recovery');num('Drive bus cap').fill('500')
             page.get_by_role('button',name='Trade study',exact=True).click();dialog=page.get_by_role('dialog');dialog.get_by_role('combobox',name='Study variable',exact=True).select_option('electrical');dialog.get_by_role('button',name='Run 4 variants →',exact=True).click()
-            expect(dialog.locator('tbody tr')).to_have_count(4,timeout=90000);expect(dialog.get_by_role('button',name='Cancel study')).to_have_count(0,timeout=90000);expect(dialog).to_contain_text('1000 kW');expect(dialog).to_contain_text('MWh');shot('power-study');page.keyboard.press('Escape')
+            expect(dialog.locator('tbody tr')).to_have_count(4,timeout=90000);expect(dialog.get_by_role('button',name='Cancel study')).to_have_count(0,timeout=90000);expect(dialog).to_contain_text('1000 kW');expect(dialog).to_contain_text('MWh')
+            # Identical/near-identical measurements keep their exact positions;
+            # their independently clickable numbered callouts must not overlap.
+            expect(dialog.locator('.study-label-box')).to_have_count(4)
+            assert dialog.locator('.study-result-number').all_text_contents()==['1','2','3','4']
+            for width,height in [(1440,1000),(320,800)]:
+                page.set_viewport_size({'width':width,'height':height})
+                dialog.locator('.study-plot').scroll_into_view_if_needed()
+                boxes=dialog.locator('.study-label-box').evaluate_all('els=>els.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})')
+                for i,a in enumerate(boxes):
+                    for b in boxes[i+1:]:
+                        assert not(a['x']<b['x']+b['w'] and a['x']+a['w']>b['x'] and a['y']<b['y']+b['h'] and a['y']+a['h']>b['y']),'Study labels overlap'
+                shot(f'power-study-{width}')
+            page.set_viewport_size({'width':1440,'height':1000})
+            for power in [250,1000,500]:
+                target=dialog.get_by_role('button',name=f'Inspect {power} kW bus',exact=True)
+                if power==1000:target.focus();page.keyboard.press('Space')
+                else:target.locator('.study-label-box').click()
+                expect(page.get_by_role('dialog')).to_have_count(0)
+                tab('Recovery');expect(num('Drive bus cap')).to_have_value(str(power))
+                if power!=500:page.get_by_role('button',name='Trade study',exact=True).click()
+            done('Overlapping power-study observations have separate pointer/keyboard callouts that restore the exact selected flight')
             done('Unrun edits preserve accepted telemetry and electrical study runs four real power variants')
             for width,height in [(1440,1000),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height});tab('Recovery');num('Drive bus cap').scroll_into_view_if_needed();shot(f'controls-{width}');panel('Flight');shot(f'flight-{width}');panel('Results');rec.scroll_into_view_if_needed();shot(f'recorder-{width}')

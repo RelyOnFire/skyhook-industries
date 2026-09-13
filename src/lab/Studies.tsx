@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { type Design, type Result } from '../simulation/engine.js';
 import { studyDesigns, STUDY_LABELS, deliveries, type StudyKind } from '../simulation/insights.js';
 import { Modal } from './Missions.js';
+import { layoutStudyLabels } from './study-plot.js';
 export interface StudyRow { label:string; basis?:string; result?:Result; error?:string }
 export default function Studies({design,rows,onRows,onClose,onSelect}:{design:Design;rows:StudyRow[];onRows:(r:StudyRow[])=>void;onClose:()=>void;onSelect:(r:Result)=>void}) {
   const [kind,setKind]=useState<StudyKind>('recovery'),[busy,setBusy]=useState(false),[progress,setProgress]=useState('');
@@ -26,19 +27,32 @@ export default function Studies({design,rows,onRows,onClose,onSelect}:{design:De
     }
     if(generation.current===id){setBusy(false);job.current=null;setProgress('Study complete. Select a row or a plotted point to inspect that calculated flight.');}
   }
-  const results=rows.filter((r):r is StudyRow&{result:Result}=>!!r.result);
+  const results=rows.flatMap((row,index)=>row.result?[{...row,result:row.result,number:index+1}]:[]);
   const maxX=Math.max(1,...results.map(r=>(r.result.frames.at(-1)?.t??0)/3600))*1.15;
   const maxY=Math.max(1,...results.map(r=>(r.result.deliveries[0]?.gain??0)/1e6))*1.15;
   const minY=Math.min(0,...results.map(r=>(r.result.deliveries[0]?.gain??0)/1e6));
+  const points=results.map(({result:r})=>({x:65+(r.frames.at(-1)?.t??0)/3600/maxX*490,y:235-(((r.deliveries[0]?.gain??0)/1e6)-minY)/(maxY-minY)*200}));
+  const labels=layoutStudyLabels(points);
   return <Modal title="One question. Several flights." onClose={()=>{stop();onClose();}} wide>
     <p className="modal-intro">Recovery strategies carry different hardware masses. Power sweeps keep the hardware budget fixed, not automatically resized. Run the actual mission for every candidate. Compare what it delivers, not just how it looks.</p>
     <div className="study-controls"><label>Study variable<select aria-label="Study variable" value={kind} onChange={e=>setKind(e.target.value as StudyKind)} disabled={busy}>{Object.entries(STUDY_LABELS).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><button className="primary" onClick={runStudy} disabled={busy}>Run {studyDesigns(design,kind).length} variants →</button>{busy&&<button onClick={stop}>Cancel study</button>}</div>
     <p className="study-disclosure">{kind==='material'?'Dimensions stay fixed. Density, mass and the strength assumption change. Future carbon is hypothetical.':kind==='recovery'?'Coast removes fuel and E0-specific electrical mass. The base hub and terminal budget stays in every mode. Chemical carries fuel; E0 carries conductors and an explicit electrical-hardware allowance. Different mass is part of this system comparison, not an isolated thrust test.':kind==='electrical'?'Only the continuous bus cap changes. Conductor geometry, assumed current ceiling and hardware mass stay fixed; this is not automatic solar-array sizing. More power may not help a current- or voltage-limited circuit.':kind==='release'?'Only Earth-relative release phase changes. Payload, cable geometry, material and recovery stay fixed.':'Only payload mass changes. The structure is not resized. Loads that exceed the chosen allowable stop the run.'}</p>
     <p className="study-status" role="status">{progress||'Results below, when present, belong to your last study. Running a new study replaces them.'}</p>
-    {!!results.length&&<div className="study-plot"><div><span className="micro">ELAPSED TIME × FIRST PAYLOAD ENERGY GAIN</span><h3>Every point is a calculated flight.</h3><p>Filled circles complete both deliveries. Open circles do not. Crosses have no release. This is not a ranking: delivered orbit, fuel, electrical energy and hardware mass also matter. Incomplete runs terminate at the six-hour budget.</p></div><svg viewBox="0 0 600 290" role="img" aria-label="Trade study: elapsed time versus first payload energy gain. Exact results are also in the table below.">
+    {!!results.length&&<div className="study-plot"><div><span className="micro">ELAPSED TIME × FIRST PAYLOAD ENERGY GAIN</span><h3>Every point is a calculated flight.</h3><p>Filled circles complete both deliveries. Open circles do not. Crosses have no release. This is not a ranking: delivered orbit, fuel, electrical energy and hardware mass also matter. Incomplete runs terminate at the six-hour budget. Numbered callouts identify overlapping results without moving their measured positions.</p></div><svg viewBox="0 0 600 290" role="group" aria-label="Trade study: elapsed time versus first payload energy gain. Select a numbered result or use the exact-value table below.">
       {[0,.25,.5,.75,1].map(u=><g key={u}><line x1="65" x2="555" y1={235-u*200} y2={235-u*200} className="study-gridline"/><text x="53" y={239-u*200} textAnchor="end">{(minY+u*(maxY-minY)).toFixed(0)}</text><text x={65+u*490} y="254" textAnchor="middle">{(maxX*u).toFixed(1)}</text></g>)}
       <text x="310" y="281" textAnchor="middle">Simulated duration (h)</text><text x="10" y="18">MJ/kg</text>
-      {results.map((row,i)=>{const r=row.result,x=65+(r.frames.at(-1)?.t??0)/3600/maxX*490,y=235-(((r.deliveries[0]?.gain??0)/1e6)-minY)/(maxY-minY)*200;return <g key={i} role="button" tabIndex={0} aria-label={`Inspect ${row.label}`} className={`study-point ${r.outcome==='complete'?'point-complete':''}`} aria-disabled={busy} onClick={()=>{if(!busy)onSelect(r);}} onKeyDown={e=>{if(!busy&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onSelect(r);}}}><title>{row.label}: {deliveries(r).length} deliveries, {(r.fuelUsed/1000).toFixed(2)} t propellant, {(r.electricalEnergyJ/3.6e9).toFixed(3)} MWh</title><circle cx={x} cy={y} r="20" fill="transparent" stroke="none"/>{r.deliveries.length?<circle cx={x} cy={y} r="7"/>:<path d={`M${x-6},${y-6}l12,12m-12,0l12,-12`} />}<text x={x+12} y={y-9}>{i+1}</text></g>;})}
+      {results.map((row,i)=>{
+        const r=row.result,{x,y}=points[i],box=labels[i];
+        return <g key={row.number} role="button" tabIndex={0} aria-label={`Inspect ${row.label}`} className={`study-point ${r.outcome==='complete'?'point-complete':''}`} aria-disabled={busy}
+          onClick={()=>{if(!busy)onSelect(r);}} onKeyDown={e=>{if(!busy&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onSelect(r);}}}>
+          <title>{row.label}: {deliveries(r).length} deliveries, {(r.fuelUsed/1000).toFixed(2)} t propellant, {(r.electricalEnergyJ/3.6e9).toFixed(3)} MWh</title>
+          {box&&<line className="study-label-leader" x1={x} y1={y} x2={Math.max(box.x,Math.min(box.x+box.width,x))} y2={Math.max(box.y,Math.min(box.y+box.height,y))}/>}
+          <circle cx={x} cy={y} r="20" fill="transparent" stroke="none"/>
+          {r.deliveries.length?<circle className="study-result-marker" cx={x} cy={y} r="7"/>:<path className="study-result-marker" d={`M${x-6},${y-6}l12,12m-12,0l12,-12`} />}
+          {box&&<><rect className="study-label-box" x={box.x} y={box.y} width={box.width} height={box.height} rx="4"/>
+            <text className="study-result-number" x={box.x+box.width/2} y={box.y+box.height/2} textAnchor="middle" dominantBaseline="central">{row.number}</text></>}
+        </g>;
+      })}
     </svg></div>}
     {!!rows.length&&<div className="study-table-scroll"><table className="study-table"><caption>{rows[0]?.basis??'Full-run results'} · last calculated study · select a row to restore its exact flight</caption><thead><tr><th>Variant</th><th>Delivered</th><th>Dry mass</th><th>Fuel used</th><th>Bus energy</th><th>Load margin</th><th>Outcome</th></tr></thead><tbody>{rows.map((row,i)=><tr key={i}><th>{row.result?<button onClick={()=>onSelect(row.result!)} disabled={busy}>{i+1}. {row.label} ↗</button>:row.label}</th>{row.result?<><td>{deliveries(row.result).length} / 2</td><td>{(row.result.dryMass/1000).toFixed(1)} t</td><td>{(row.result.fuelUsed/1000).toFixed(2)} t</td><td>{(row.result.electricalEnergyJ/3.6e9).toFixed(3)} MWh</td><td>{row.result.minMargin.toFixed(2)}×</td><td>{row.result.outcome==='complete'?'Two deliveries':row.result.outcome==='limit'?'Modeled limit':row.result.outcome==='delivery-failed'?'Bad release':'Incomplete'}</td></>:<td colSpan={6}>{row.error}</td>}</tr>)}</tbody></table></div>}
     {!rows.length&&!busy&&<div className="study-empty"><span aria-hidden="true">↗</span><h3>Let the tradeoff show itself.</h3><p>Start with recovery to see why a first delivery and a reusable service are different problems.</p></div>}
