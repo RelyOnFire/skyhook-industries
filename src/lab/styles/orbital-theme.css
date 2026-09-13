@@ -1,0 +1,50 @@
+/* Presentation only: the flight model, state, and numerical outputs are unchanged. */
+:root{--lab-bg:#090e12;--lab-panel:#111c23;--lab-raised:#192832;--lab-line:#354751;--lab-text:#f0f4f4;--lab-soft:#c0cdd3;--lab-muted:#a3b5bf;--lab-cyan:#f1ad84;--lab-amber:#ffd19c}.lab-chrome{background:#090e12;border-bottom-color:#42535b}.lab-logo b{letter-spacing:.09em}.lab-logo small{font-size:12px}.lab-chrome nav a{font-size:14px}.company-link{font-size:14px}.workbench-bar h1{font-weight:450;letter-spacing:-.045em}.guide-header h1{font-weight:400;max-width:20ch}.guide-header{padding-bottom:42px}.guide-section h2{font-weight:450;font-size:32px}.guide-section p,.guide-section li{font-size:16px;color:#c5d1d6}.guide-nav{font-size:14px}.scope-box,.architecture-card,.guide-details,.catalogue-note{border-radius:2px}.guide-meta,.source-record>a,.architecture-content .source-link{font-size:12px}.architecture-content p{font-size:15px}.architecture-content dl{font-size:13px}.scope-box li,.guide-details p{font-size:14px}.guide-note p{color:#eed2ba}.guide-note{background:#29231f}.button-link.primary,button.primary{background:#f1ad84;border-color:#f1ad84;color:#10191e}.button-link.primary:hover,button.primary:hover:not(:disabled){background:#ffccac;border-color:#ffccac}.guide-section strong{color:#f3f6f6}.lab-chrome nav a:hover,.lab-chrome nav a[aria-current]{color:#f1ad84;border-color:#f1ad84}@media(max-width:600px){.lab-chrome nav a{font-size:13px}.guide-section h2{font-size:27px}}
+
+/* Shared Skyhook identity; imported after all application styles. */
+.lab-body {
+  --lab-bg: #080b0d;
+  --lab-panel: #101619;
+  --lab-raised: #1b242a;
+  --lab-line: #35434b;
+  --lab-text: #e4ebed;
+  --lab-soft: #bcc9d0;
+  --lab-muted: #a3b4bd;
+  --lab-cyan: #efa477;
+  --lab-sans: Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background: var(--lab-bg);
+  font-family: var(--lab-sans);
+}
+.lab-section-nav {display:flex;align-items:center;gap:28px;padding:0 4vw;min-height:48px;border-bottom:1px solid var(--lab-line);background:#080b0d;font-size:14px}
+.lab-section-nav>span {color:var(--lab-muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:12px}
+.lab-section-nav a {padding:13px 0;color:var(--lab-soft);text-decoration:none;border-bottom:2px solid transparent}
+.lab-section-nav a[aria-current],.lab-section-nav a:hover {color:var(--lab-cyan);border-color:var(--lab-cyan)}
+.lab-app {padding-top:28px;}
+.workbench-bar h1 {font-size:32px;font-weight:400;letter-spacing:-.035em;line-height:1.15}
+.lab-panel,.lab-modal,.mission-choice,.flight-invitation,.mission-banner,.workspace-mobile-tabs {border-radius:3px;border-color:var(--lab-line)}
+.flight-invitation,.mission-banner,.mission-choice {background:linear-gradient(110deg,#172025,#101619)}
+.lab-modal,.flight-console,.mission-narration,.design-summary,.scene-toolbar {background:#101619}
+.scene-box {background:radial-gradient(ellipse at 45% 45%,#26343b55,transparent 65%),#080b0d}
+.material-card,.extended-switch,.guided-replay,.brief-hint {background:#1b252a}
+select,input[type=number],input[readonly],.segmented,.recovery-options button {background:#0c1216;border-color:#43535c}
+.control-tabs button[aria-pressed=true],.segmented button[aria-pressed=true],.workspace-mobile-tabs button[aria-pressed=true],.recovery-options button[aria-pressed=true] {background:#30271f;color:var(--lab-cyan)}
+.lab-body button {border-radius:3px}
+.lab-body button:hover:not(:disabled) {background:#29353b;border-color:#798a92}
+.lab-body button.primary,.lab-body button.run-design,.lab-body .play-button {background:var(--lab-cyan);color:#13191c;border-color:var(--lab-cyan)}
+.lab-body button.primary:hover:not(:disabled),.lab-body button.run-design:hover:not(:disabled),.lab-body .play-button:hover:not(:disabled) {background:#ffd1b3;border-color:#ffd1b3}
+.workbench-actions .open-missions,.workbench-actions .share-design {color:var(--lab-cyan);border-color:#85684f;background:transparent}
+.workbench-actions .open-study {background:var(--lab-raised)}
+.scene-tools button,.camera-actions button,.camera-reset,.plane-zoom button {background:#101619ed;border-color:#485963}
+.world-label {background:#101619e6;border-color:#b7c6cd;color:#e4ebed}
+.cargo-label {border-color:var(--lab-amber);color:var(--lab-amber)}
+.replay-actions button {border-color:var(--lab-line);color:var(--lab-soft)}
+.flight-invitation p,.mission-choice>p,.debrief-lead p,.modal-intro,.study-disclosure {color:var(--lab-soft)}
+.modal-heading .micro,.brief-rules dt,.receipt span,.modal-footnote,.debrief-boundary {color:var(--lab-muted)}
+.receipt strong,.brief-rules dd {color:var(--lab-text)}
+.field-heading,.lab-select,.lab-select select,.control-tabs button,.recovery-options b,.panel-heading h2 {font-size:14px}
+.control-hint,.material-card p,.control-intro p,.mission-narration p {font-size:13px;line-height:1.65}
+.workbench-bar .micro,.model-tag,.scene-caption,.replay-actions span {font-size:12px}
+.lab-body :focus-visible {outline-color:#efa477}
+/* Accommodate the shared header without adding another screenful of empty space. */
+@media(min-width:1180px){.lab-workspace{height:calc(100svh - 380px);min-height:620px;max-height:1100px}}
+@media(max-width:800px){.lab-app{padding-top:20px}.lab-section-nav{gap:18px;padding:0 16px;overflow-x:auto;white-space:nowrap}.lab-section-nav>span{display:none}.workbench-bar h1{font-size:26px}.lab-section-nav a{font-size:14px}.workbench-bar .micro{font-size:11px}}

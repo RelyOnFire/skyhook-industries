@@ -215,7 +215,7 @@ export default function Lab() {
   }, [focusScene]);
   const diagnosis=result?diagnose(result):null;
   return <main className={`lab-app mobile-${mobile}${focusScene?' focus-scene':''}`} id="lab-content">
-    <div className="workbench-bar"><div><p className="micro">EARTH / SINGLE-STAGE ROTOVATOR</p><h1>Flight studio<span className="model-tag">{MODEL}</span></h1></div>
+    <div className="workbench-bar"><div><p className="micro">EARTH / SINGLE-STAGE ROTOVATOR</p><h1>Tether Lab<span className="model-tag">{MODEL}</span></h1></div>
       <div className="workbench-actions"><button className="open-missions" onClick={()=>setModal('missions')}>Flight school</button><button className="open-study" onClick={()=>{setPlaying(false);setModal('study');}} disabled={busy||hasInvalidInput}>Trade study</button><button onClick={save}>Save</button><button onClick={load}>Load</button><button className="share-design" onClick={share}>Share design <span aria-hidden="true">↗</span></button></div>
     </div>
     <div className="experiment-strip" aria-label="Experiment presets"><span>START WITH</span>{PRESETS.map((p, i) => <button key={p.id} onClick={() => { setChallenge(null);challengeRef.current=null;setGuide(null);adopt({ ...p.design }); setMobile('fly'); }} title={p.description}>
