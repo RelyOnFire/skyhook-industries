@@ -23,3 +23,16 @@ Based on `lab-electrodynamic-recovery`, preserving Flight Studio and its numeric
 - Localhost and file previews are blocked by Cloud Browser policy. No visual QA of the finished site is claimed. Review desktop/mobile layouts locally before merging.
 
 This branch is a review version, not a production deployment.
+
+## Science reference refinement
+
+Following feedback on oversized headings, screen proportions, and the abrupt white-to-black transition, searched Dribbble for `science website` and inspected:
+
+- Tomasz Mazurczak, **Nicescale — Science Website concept**: https://dribbble.com/shots/15343607-Nicescale-Science-Website-concept — continuous dark surfaces and bounded composition.
+- Tomasz Mazurczak, **Brand Designer — Portfolio & Science website**: https://dribbble.com/shots/15358440-Brand-Designer-Portfolio-Science-website — title and planet share the composition rather than competing for the full screen.
+- Zajno, **Website Design for a Biopharmaceutical Research Company**: https://dribbble.com/shots/27398479-Website-Design-for-a-Biopharmaceutical-Research-Company — editorial type hierarchy, aligned research details and restrained rules.
+- Zajno, **Educational Website on Space Pollution**: https://dribbble.com/shots/25860515-Educational-Website-on-Space-Pollution — technical information grid; the captured animation frame is a loading/interface sequence, not the full finished page.
+
+Applied: 72 px maximum homepage title (previously 168 px), 48 px maximum section headings, a real two-column hero with natural text flow, mobile stacking, viewport-aware hero height without fixed 780–930 px minimums, a consistent 1240 px content measure, smaller section spacing, and a continuous dark lower page with subtle tonal transitions. Mobile content can exceed one viewport when necessary to remain readable; no scroll snapping or forced clipping.
+
+Refinement validation: Astro build passed. Numerical code is untouched; previous numerical test results are not represented as new layout verification. Browser preview remains blocked by the existing Cloud Browser URL policy, so visual QA of the refinement is outstanding.
