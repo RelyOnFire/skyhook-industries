@@ -2,7 +2,7 @@ name: Brand source review
 on:
   push:
     branches: [brand-heritage-motion]
-    paths: [.github/workflows/brand-source-review.yml, tools/brand-source-review.py]
+    paths: [.github/workflows/brand-source-review.yml, tools/brand-source-review.py, tools/brand-browser-reference.py]
 permissions:
   contents: read
 jobs:
@@ -11,8 +11,11 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m pip install requests beautifulsoup4
+      - run: |
+          python3 -m pip install requests beautifulsoup4 playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
       - run: python3 tools/brand-source-review.py
+      - run: python3 tools/brand-browser-reference.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
