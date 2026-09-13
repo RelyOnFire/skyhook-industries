@@ -1,0 +1,21 @@
+name: Brand source review
+on:
+  push:
+    branches: [brand-heritage-motion]
+    paths: [.github/workflows/brand-source-review.yml, tools/brand-source-review.py]
+permissions:
+  contents: read
+jobs:
+  sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install requests beautifulsoup4
+      - run: python3 tools/brand-source-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brand-source-review
+          path: qa/brand-source-review/
+          retention-days: 7
