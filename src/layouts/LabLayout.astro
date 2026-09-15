@@ -3,9 +3,9 @@ import Favicons from '../components/Favicons.astro';
 import '../lab/lab.css';
 import '../lab/styles/orbital-theme.css';
 import SiteHeader from '../components/SiteHeader.astro';
-interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'operations'; }
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'operations' | 'designer'; }
 const { title, description, active = 'lab' } = Astro.props;
-const links = [ ['lab', 'Flight studio', '/lab/'], ['operations', 'Operations', '/lab/operations/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
+const links = [ ['lab', 'Flight studio', '/lab/'], ['operations', 'Operations', '/lab/operations/'], ['designer', 'Designer', '/lab/designer/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
 ---
 <!doctype html>
 <html lang="en">
