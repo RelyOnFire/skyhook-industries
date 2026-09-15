@@ -1,0 +1,10 @@
+---
+// Restored from the owner's original site. Real raster artwork, not a fake SVG.
+interface Props { class?: string; }
+const { class: className = '' } = Astro.props;
+---
+<img class:list={['comet-brand-mark', className]} src="/brand/comet-mark.png" width="44" height="44" alt="" aria-hidden="true" decoding="async" />
+<style>
+  .comet-brand-mark{display:block;width:44px;height:44px;object-fit:contain;flex:none}
+  @media(max-width:700px){.comet-brand-mark{width:36px;height:36px}}
+</style>

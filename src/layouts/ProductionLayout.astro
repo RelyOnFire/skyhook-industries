@@ -1,4 +1,6 @@
 ---
+import BrandMark from '../components/BrandMark.astro';
+import Favicons from '../components/Favicons.astro';
 import '../styles/production.css';
 import '../styles/polish.css';
 import '../styles/architecture.css';
@@ -28,7 +30,7 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
     <meta name="description" content={description} />
     <meta name="theme-color" content={effectiveTheme === 'paper' ? '#e8e4da' : '#030506'} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <Favicons />
     {noindex && <meta name="robots" content="noindex,follow" />}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Skyhook Industries" />
@@ -54,7 +56,7 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
     <footer class="site-footer">
       <div class="footer-top">
         <div>
-          <a class="wordmark" href="/"><span class="wordmark-mark" aria-hidden="true"><i></i></span><span>Skyhook Industries</span></a>
+          <a class="wordmark" href="/"><BrandMark /><span>Skyhook Industries</span></a>
           <p>Rotating orbital transportation and momentum-exchange infrastructure.</p>
         </div>
         <div class="footer-nav">
