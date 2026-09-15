@@ -4,7 +4,7 @@ No screenshots from the reference are served by the website. Actual Three.js
 geometry, ordinary module loading and normal HTTP are exercised here.
 """
 from __future__ import annotations
-import argparse,json,threading
+import argparse,json,threading,hashlib
 from pathlib import Path
 from functools import partial
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
@@ -50,21 +50,50 @@ def main():
                 report['webgl']=True
                 expect(root.locator('[data-terminal-action="rotate"]')).to_be_disabled()
                 expect(root.locator('[data-terminal-mode="assembled"]')).to_have_attribute('aria-pressed','true')
+                expect(root).to_have_attribute('data-visible-parts','0,1,2')
+                expect(root).to_have_attribute('data-part','-1')
+                canvas=root.locator('canvas')
+                initial_camera=root.get_attribute('data-camera')
+                initial_pixels=canvas.screenshot()
                 shot(f'terminal-assembled-{width}',root)
                 root.locator('[data-terminal-mode="exploded"]').click()
                 expect(root).to_have_attribute('data-spread','1.0000')
-                root.locator('[data-part-button="2"]').click();expect(root).to_have_attribute('data-part','2')
-                expect(root.locator('#terminal-part-2')).to_be_visible();expect(root.locator('#terminal-part-0')).not_to_be_visible()
-                assert root.locator('[data-terminal-caption]').inner_text()=='03 / CAPTURE INTERFACE'
                 shot(f'terminal-exploded-{width}',root)
-                root.locator('[data-part-button="1"]').focus();page.keyboard.press('Space')
-                expect(root).to_have_attribute('data-part','1')
-                root.locator('[data-terminal-mode="assembled"]').click();expect(root).to_have_attribute('data-spread','0.0000')
+                distinct=[]
+                for part in range(3):
+                    control=root.locator(f'[data-part-button="{part}"]')
+                    control.focus();page.keyboard.press('Space')
+                    expect(root).to_have_attribute('data-part',str(part))
+                    expect(root).to_have_attribute('data-visible-parts',str(part))
+                    expect(root.locator(f'#terminal-part-{part}')).to_be_visible()
+                    assert root.locator('[data-part-copy]:visible').count()==1
+                    distinct.append(hashlib.sha256(canvas.screenshot()).hexdigest())
+                    shot(f'terminal-part-{part}-{width}',root)
+                assert len(set(distinct))==3,'Component selection displays the same rendered model'
+                # A real pointer orbit must change the camera, not just a label.
+                box=canvas.bounding_box();before=root.get_attribute('data-camera')
+                page.mouse.move(box['x']+box['width']*.5,box['y']+box['height']*.5)
+                page.mouse.down();page.mouse.move(box['x']+box['width']*.7,box['y']+box['height']*.6,steps=8);page.mouse.up()
+                expect(root).not_to_have_attribute('data-camera',before)
                 root.locator('[data-terminal-action="reset"]').click()
-            done('Assemble/explode, numbered component selection, keyboard controls and instant reduced-motion state at five widths')
+                expect(root).to_have_attribute('data-part','-1')
+                expect(root).to_have_attribute('data-spread','0.0000')
+                expect(root).to_have_attribute('data-visible-parts','0,1,2')
+                expect(root).to_have_attribute('data-rotating','false')
+                expect(root.locator('[data-terminal-overview]')).to_have_attribute('aria-pressed','true')
+                expect(root).to_have_attribute('data-camera',initial_camera)
+                assert canvas.screenshot()==initial_pixels,'Reset did not restore the original rendered view'
+                root.locator('[data-terminal-action="reset"]').click()
+                expect(root).to_have_attribute('data-camera',initial_camera)
+                assert canvas.screenshot()==initial_pixels,'Repeated reset is not idempotent'
+            done('Each component isolates and reframes distinct geometry; Reset restores exact assembled pixels and camera after explosion, selection and dragging at five widths')
             # Check actual animated geometry, not only changed button text.
             page.set_viewport_size({'width':1440,'height':1000});page.emulate_media(reduced_motion='no-preference')
             root.scroll_into_view_if_needed();canvas=root.locator('canvas')
+            root.locator('[data-terminal-action="reset"]').click()
+            expect(root).to_have_attribute('data-spread','0.0000')
+            page.evaluate('()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
+            canonical=root.get_attribute('data-camera')
             before=canvas.screenshot();root.locator('[data-terminal-mode="exploded"]').click()
             expect(root).to_have_attribute('data-spread','1.0000',timeout=10000)
             assert canvas.screenshot()!=before
@@ -75,6 +104,20 @@ def main():
             root.locator('[data-terminal-action="rotate"]').click();page.evaluate('window.scrollTo(0,0)');expect(root).to_have_attribute('data-visible','false')
             page.wait_for_timeout(100);count=root.get_attribute('data-render-count');page.wait_for_timeout(400);assert root.get_attribute('data-render-count')==count,'Offscreen scene keeps rendering'
             root.scroll_into_view_if_needed();page.emulate_media(reduced_motion='reduce');expect(root).to_have_attribute('data-rotating','false');expect(root.locator('[data-terminal-action="rotate"]')).to_be_disabled()
+            # Reset must also stop active animation and an unfinished explosion.
+            page.emulate_media(reduced_motion='no-preference')
+            root.locator('[data-terminal-action="rotate"]').click()
+            expect(root).to_have_attribute('data-rotating','true')
+            page.wait_for_timeout(150)
+            root.locator('[data-terminal-action="reset"]').click()
+            expect(root).to_have_attribute('data-camera',canonical)
+            expect(root).to_have_attribute('data-rotating','false')
+            root.locator('[data-terminal-mode="exploded"]').click()
+            page.wait_for_timeout(75)
+            root.locator('[data-terminal-action="reset"]').click()
+            expect(root).to_have_attribute('data-camera',canonical)
+            expect(root).to_have_attribute('data-spread','0.0000')
+            done('Reset stops auto-rotation and an in-progress explosion; restores camera and assembled state')
             done('Exploded geometry really moves; rotation pauses; offscreen rendering stops; runtime reduced-motion changes stop rotation')
             # A unavailable graphics context retains all essential content.
             fallback=context.new_page();fallback.on('pageerror',lambda e:report['errors'].append(str(e)))
@@ -82,6 +125,13 @@ def main():
             fallback.goto(origin+'/',wait_until='networkidle');fr=fallback.locator('#capture-terminal');fr.scroll_into_view_if_needed();expect(fr).to_have_attribute('data-renderer','fallback')
             expect(fr.locator('.terminal-fallback')).to_be_visible();fr.locator('[data-terminal-mode="exploded"]').click();expect(fr).to_have_attribute('data-exploded','true')
             fr.locator('[data-part-button="2"]').click();expect(fr.locator('#terminal-part-2')).to_be_visible()
+            expect(fr.locator('.terminal-diagram-base')).to_be_visible()
+            expect(fr.locator('.terminal-diagram-top')).not_to_be_visible()
+            fr.locator('[data-terminal-action="reset"]').click()
+            expect(fr).to_have_attribute('data-part','-1')
+            expect(fr).to_have_attribute('data-exploded','false')
+            expect(fr.locator('.terminal-fallback')).to_have_attribute('viewBox','0 0 520 560')
+            assert fr.locator('.terminal-diagram-top:visible,.terminal-diagram-core:visible,.terminal-diagram-base:visible').count()==3
             fallback.screenshot(path=str(out/'static-fallback.png'),full_page=True);fallback.close()
             static_context=browser.new_context(java_script_enabled=False,viewport={'width':390,'height':844});static=static_context.new_page();static.goto(origin+'/')
             expect(static.locator('.terminal-fallback')).to_be_visible();assert static.locator('.terminal-part-copy:visible').count()==3

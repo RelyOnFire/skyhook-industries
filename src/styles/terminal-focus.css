@@ -1,0 +1,10 @@
+
+/* Component selection means isolation, not merely a different label. */
+.terminal-story .terminal-overview{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 12px;margin:0 0 12px;border:1px solid #586363;color:#dfcfba;background:#171d20;font-size:13px}
+.terminal-story .terminal-overview[aria-pressed=true]{border-color:#b78861;color:#ffd4b0}
+.terminal-story .terminal-overview-copy{font-size:12px;line-height:1.65;color:#bbc8c9;margin:0 0 16px}
+.terminal-story[data-enhanced=true][data-part="0"] .terminal-diagram-core,.terminal-story[data-enhanced=true][data-part="0"] .terminal-diagram-base,
+.terminal-story[data-enhanced=true][data-part="1"] .terminal-diagram-top,.terminal-story[data-enhanced=true][data-part="1"] .terminal-diagram-base,
+.terminal-story[data-enhanced=true][data-part="2"] .terminal-diagram-top,.terminal-story[data-enhanced=true][data-part="2"] .terminal-diagram-core{display:none}
+
+.terminal-story[data-enhanced=true]:not([data-part="-1"]) :is(.terminal-diagram-top,.terminal-diagram-core,.terminal-diagram-base){transform:none}

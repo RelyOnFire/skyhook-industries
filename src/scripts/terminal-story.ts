@@ -4,25 +4,30 @@ import type { TerminalRenderer } from './terminal-scene';
 export function initTerminalStory(root: HTMLElement) {
   const media=matchMedia('(prefers-reduced-motion: reduce)');
   let renderer:TerminalRenderer|null=null, requested=false, disposed=false;
-  let exploded=false, part=0, rotating=false;
+  let exploded=false, part=-1, rotating=false;
   const names=['TETHER INTERFACE','GUIDANCE & POWER','CAPTURE INTERFACE'];
   const rotation=root.querySelector<HTMLButtonElement>('[data-terminal-action="rotate"]')!;
   root.dataset.enhanced='true';
+  const schematic=root.querySelector<SVGSVGElement>('.terminal-fallback')!;
   function sync() {
+    schematic.setAttribute('viewBox',part<0?'0 0 520 560':['120 15 280 250','120 170 280 215','110 340 300 125'][part]);
     root.dataset.exploded=String(exploded); root.dataset.part=String(part);
     root.dataset.rotating=String(rotating);root.dataset.reducedMotion=String(media.matches);
     root.querySelectorAll<HTMLButtonElement>('[data-part-button]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===part)));
     root.querySelectorAll<HTMLElement>('[data-part-copy]').forEach((p,i)=>p.hidden=i!==part);
     root.querySelectorAll<HTMLButtonElement>('[data-terminal-mode]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.terminalMode==='exploded')===exploded)));
-    root.querySelector('[data-terminal-caption]')!.textContent=`0${part+1} / ${names[part]}`;
+    root.querySelector('[data-terminal-caption]')!.textContent=part<0?'WHOLE ASSEMBLY':`0${part+1} / ${names[part]}`;
+    root.querySelector('[data-terminal-overview]')!.setAttribute('aria-pressed',String(part<0));
+    root.querySelector<HTMLElement>('[data-terminal-overview-copy]')!.hidden=part>=0;
     rotation.textContent=rotating?'Pause model':'Rotate model';rotation.setAttribute('aria-pressed',String(rotating));
     rotation.disabled=media.matches || root.dataset.renderer==='fallback';
     renderer?.update({exploded,part,rotating,reduced:media.matches});
   }
-  root.querySelectorAll<HTMLButtonElement>('[data-part-button]').forEach((b,i)=>b.addEventListener('click',()=>{part=i;sync();}));
-  root.querySelectorAll<HTMLButtonElement>('[data-terminal-mode]').forEach(b=>b.addEventListener('click',()=>{exploded=b.dataset.terminalMode==='exploded';sync();}));
+  root.querySelectorAll<HTMLButtonElement>('[data-part-button]').forEach((b,i)=>b.addEventListener('click',()=>{part=i;rotating=false;sync();}));
+  root.querySelector('[data-terminal-overview]')!.addEventListener('click',()=>{part=-1;rotating=false;sync();});
+  root.querySelectorAll<HTMLButtonElement>('[data-terminal-mode]').forEach(b=>b.addEventListener('click',()=>{exploded=b.dataset.terminalMode==='exploded';part=-1;rotating=false;sync();}));
   rotation.addEventListener('click',()=>{rotating=!rotating;sync();});
-  root.querySelector('[data-terminal-action="reset"]')!.addEventListener('click',()=>{rotating=false;renderer?.reset();sync();});
+  root.querySelector('[data-terminal-action="reset"]')!.addEventListener('click',()=>{exploded=false;part=-1;rotating=false;sync();renderer?.reset();});
   const reduce=()=>{if(media.matches)rotating=false;sync();};media.addEventListener('change',reduce);
   async function load(){
     if(requested||disposed)return;requested=true;

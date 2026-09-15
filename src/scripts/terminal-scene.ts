@@ -89,40 +89,72 @@ export function mountTerminal(root:HTMLElement, onManualOrbit:()=>void):Terminal
   const guideGeometry=new T.BufferGeometry().setFromPoints([new T.Vector3(0,1.9,0),new T.Vector3(0,-2.4,0)]);
   geometries.add(guideGeometry);const guideMaterial=new T.LineDashedMaterial({color:0x678e94,dashSize:.045,gapSize:.065,transparent:true,opacity:.3});materials.add(guideMaterial);
   const guide=new T.Line(guideGeometry,guideMaterial);guide.computeLineDistances();assembly.add(guide);
-  let state:TerminalState={exploded:false,part:0,rotating:false,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
-  let spread=0,targetSpread=0,dirty=true,visible=false,disposed=false,frame=0,last=0,viewLocked=false;
-  const request=()=>{dirty=true;if(!frame&&visible&&!document.hidden&&!disposed)frame=requestAnimationFrame(draw);};
-  function reset(){
-    const size=host.getBoundingClientRect(),aspect=Math.max(.3,size.width/Math.max(1,size.height));
-    const distance=Math.max(7.5,5.8/aspect);
-    camera.position.copy(new T.Vector3(3.1,2.0,5.7).normalize().multiplyScalar(distance));controls.target.set(0,-.25,0);controls.update();viewLocked=false;request();
+  let state:TerminalState={exploded:false,part:-1,rotating:false,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
+  let spread=0,targetSpread=0,visible=false,disposed=false,frame=0,last=0,viewLocked=false,fitPending=true,drawing=false;
+  function request(){if(!frame&&visible&&!document.hidden&&!disposed&&!drawing)frame=requestAnimationFrame(draw);}
+  function pose(){
+    groups[0].position.y=spread*.88;groups[2].position.y=-spread*.82;
+    electronics.forEach((g,i)=>g.position.y=.035-i*.25+spread*(.20-i*.16));
+    groups.forEach((g,i)=>g.visible=state.part<0||state.part===i);
+    guide.visible=state.part<0&&spread>.02;
+    assembly.updateMatrixWorld(true);
+  }
+  function fitCamera(){
+    pose();
+    const bounds=new T.Box3();
+    groups.forEach(g=>{if(g.visible)bounds.union(new T.Box3().setFromObject(g));});
+    const sphere=bounds.getBoundingSphere(new T.Sphere());
+    const vfov=camera.fov*Math.PI/360,hfov=Math.atan(Math.tan(vfov)*camera.aspect);
+    const distance=sphere.radius/Math.sin(Math.min(vfov,hfov))*1.15;
+    controls.target.copy(sphere.center);
+    const direction=state.part===1?new T.Vector3(3.6,1.7,5.7):new T.Vector3(3.1,2.0,5.7);
+    camera.position.copy(sphere.center).addScaledVector(direction.normalize(),distance);
+    camera.near=Math.max(.01,distance/1000);camera.far=Math.max(100,distance*4);camera.updateProjectionMatrix();
+    controls.update();controls.saveState();viewLocked=false;fitPending=false;
   }
   const onChange=()=>request(),onStart=()=>{viewLocked=true;onManualOrbit();};
   controls.addEventListener('change',onChange);controls.addEventListener('start',onStart);
-  const resize=new ResizeObserver(()=>{const b=host.getBoundingClientRect();if(!b.width||!b.height)return;renderer.setSize(b.width,b.height);camera.aspect=b.width/b.height;camera.updateProjectionMatrix();if(!viewLocked)reset();request();});resize.observe(host);
+  const resize=new ResizeObserver(()=>{const b=host.getBoundingClientRect();if(!b.width||!b.height)return;renderer.setSize(b.width,b.height);camera.aspect=b.width/b.height;camera.updateProjectionMatrix();if(!viewLocked)fitPending=true;request();});resize.observe(host);
   function draw(now:number){
-    frame=0;if(disposed||!visible||document.hidden)return;
+    frame=0;if(disposed||!visible||document.hidden)return;drawing=true;
     const dt=last?Math.min(.05,(now-last)/1000):0;last=now;
     if(state.reduced)spread=targetSpread;else spread+=(targetSpread-spread)*Math.min(1,dt*7.5);
     if(Math.abs(spread-targetSpread)<.0005)spread=targetSpread;
-    groups[0].position.y=spread*.88;groups[2].position.y=-spread*.82;
-    electronics.forEach((g,i)=>g.position.y=.035-i*.25+spread*(.20-i*.16));
-    guide.visible=spread>.02;root.dataset.spread=spread.toFixed(4);
     if(state.rotating&&!state.reduced)assembly.rotation.y+=dt*.16;
+    pose();
+    if(fitPending||(!viewLocked&&spread!==targetSpread))fitCamera();
     accents.forEach((m,i)=>{m.emissive.setHex(i===state.part?0x7a461f:0x000000);m.emissiveIntensity=.22;});
-    controls.update();renderer.render(scene,camera);dirty=false;
+    controls.update();renderer.render(scene,camera);
+    root.dataset.spread=spread.toFixed(4);
+    root.dataset.visibleParts=groups.map((g,i)=>g.visible?String(i):'').filter(Boolean).join(',');
+    root.dataset.camera=[...camera.position.toArray(),...controls.target.toArray(),assembly.rotation.y].map(n=>n.toFixed(5)).join(',');
     root.dataset.renderCount=String(Number(root.dataset.renderCount||0)+1);
-    if(spread!==targetSpread||(state.rotating&&!state.reduced))frame=requestAnimationFrame(draw);
+    drawing=false;
+    if(spread!==targetSpread||(state.rotating&&!state.reduced))request();
   }
   const observe=new IntersectionObserver(entries=>{visible=entries.some(e=>e.isIntersecting);root.dataset.visible=String(visible);last=0;if(visible)request();else if(frame){cancelAnimationFrame(frame);frame=0;}},{threshold:0});observe.observe(host);
   const visibility=()=>{last=0;if(document.hidden){cancelAnimationFrame(frame);frame=0;}else request();};document.addEventListener('visibilitychange',visibility);
-  const lost=(e:Event)=>{e.preventDefault();root.dataset.renderer='fallback';root.querySelector('[data-terminal-render-status]')!.textContent='Schematic view · graphics unavailable';host.hidden=true;state.rotating=false;onManualOrbit();};
+  function dispose(){
+    if(disposed)return;disposed=true;cancelAnimationFrame(frame);frame=0;resize.disconnect();observe.disconnect();document.removeEventListener('visibilitychange',visibility);
+    controls.removeEventListener('change',onChange);controls.removeEventListener('start',onStart);controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);
+    geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());environment.dispose();renderer.dispose();renderer.domElement.remove();
+  }
+  const lost=(e:Event)=>{e.preventDefault();root.dataset.renderer='fallback';root.querySelector('[data-terminal-render-status]')!.textContent='Schematic view · graphics unavailable';state.rotating=false;onManualOrbit();dispose();};
   renderer.domElement.addEventListener('webglcontextlost',lost);
-  root.dataset.renderer='webgl';root.querySelector('[data-terminal-render-status]')!.textContent='Drag to inspect · illustrative 3D';reset();
+  root.dataset.renderer='webgl';root.querySelector('[data-terminal-render-status]')!.textContent='Drag to inspect · select a part to isolate';
   return {
-    update(next){state=next;targetSpread=next.exploded?1:0;if(next.reduced)spread=targetSpread;request();},
-    reset(){assembly.rotation.y=.24;reset();},
+    update(next){
+      const focusChanged=next.part!==state.part,poseChanged=next.exploded!==state.exploded;
+      state=next;targetSpread=next.exploded?1:0;
+      if(next.reduced||focusChanged)spread=targetSpread;
+      if(focusChanged||poseChanged){fitPending=true;viewLocked=false;assembly.rotation.y=.24;}
+      request();
+    },
+    reset(){
+      state={...state,exploded:false,part:-1,rotating:false};spread=targetSpread=0;
+      assembly.rotation.set(0,.24,-.17);fitPending=true;viewLocked=false;last=0;request();
+    },
     setVisible(value){visible=value;last=0;if(value)request();else{cancelAnimationFrame(frame);frame=0;}},
-    dispose(){disposed=true;cancelAnimationFrame(frame);resize.disconnect();observe.disconnect();document.removeEventListener('visibilitychange',visibility);controls.removeEventListener('change',onChange);controls.removeEventListener('start',onStart);controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());environment.dispose();renderer.dispose();renderer.domElement.remove();}
+    dispose
   };
 }

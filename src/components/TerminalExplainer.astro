@@ -1,18 +1,21 @@
 ---
+import '../styles/terminal-focus.css';
 const parts = [
   { label: 'Tether interface', question: 'Where does the load go?', text: 'The cable and the payload need a continuous load path between them. This collar and frame illustrate that connection; the joint design and its strength are not solved here.' },
   { label: 'Guidance & power', question: 'How do two moving objects meet?', text: 'Relative navigation, communications and electrical power would support the encounter. The lab constructs an ideal matched approach; this illustrative equipment is not a simulated guidance system.' },
   { label: 'Capture interface', question: 'What actually makes the handoff?', text: 'A payload needs an attachment and a controlled release. These guide jaws illustrate the idea, not qualified capture hardware. Impact, cable waves and latch reliability remain engineering problems.' },
 ];
 ---
-<section class="terminal-story" id="capture-terminal" aria-labelledby="terminal-title" data-renderer="static" data-exploded="false" data-part="0">
+<section class="terminal-story" id="capture-terminal" aria-labelledby="terminal-title" data-renderer="static" data-exploded="false" data-part="-1">
   <div class="terminal-editorial">
     <p class="section-index">CLOSER / THE HANDOFF</p>
     <h2 id="terminal-title">An orbit is only<br />half the story.</h2>
-    <p class="terminal-intro">At the end of the tether, a moving machine must meet another moving machine. Take this illustrative terminal apart to explore the questions behind the handoff.</p>
+    <p class="terminal-intro">At the end of the tether, a moving machine must meet another moving machine. Take this illustrative terminal apart, then select a component to inspect it on its own.</p>
+    <button type="button" class="terminal-overview" data-terminal-overview aria-pressed="true">Whole assembly <span aria-hidden="true">↗</span></button>
+    <p data-terminal-overview-copy class="terminal-overview-copy">Select a part below to isolate it. Assembled and Exploded view return to the whole machine.</p>
     <div class="terminal-part-list" role="group" aria-label="Capture terminal components">
       {parts.map((part, index) => <div class="terminal-part">
-        <button type="button" data-part-button={index} aria-pressed={index === 0 ? 'true' : 'false'} aria-controls={`terminal-part-${index}`}><span>0{index + 1}</span>{part.label}<i aria-hidden="true">↗</i></button>
+        <button type="button" data-part-button={index} aria-pressed="false" aria-controls={`terminal-part-${index}`}><span>0{index + 1}</span>{part.label}<i aria-hidden="true">↗</i></button>
         <div id={`terminal-part-${index}`} class="terminal-part-copy" data-part-copy={index}><h3>{part.question}</h3><p>{part.text}</p></div>
       </div>)}
     </div>
@@ -32,7 +35,7 @@ const parts = [
         <g class="terminal-diagram-core"><path d="M180 228L220 205H300L340 228V323L300 345H220L180 323Z" fill="#102c30" stroke="#9caeac" stroke-width="3"/><path d="M180 228L220 250H300L340 228M220 250V345M300 250V345" fill="none" stroke="#bdc4ba" stroke-width="3"/><path d="M231 268H289V305H231Z" fill="#8c613d"/><path d="M239 278H280M239 285H280M239 292H263" stroke="#dcbda0"/><circle cx="319" cy="264" r="12" fill="#74a7b0"/></g>
         <g class="terminal-diagram-base"><ellipse cx="260" cy="385" rx="95" ry="30" fill="#30494c" stroke="#b6c5c3" stroke-width="5"/><ellipse cx="260" cy="385" rx="58" ry="16" fill="#080b0d" stroke="#deaa76" stroke-width="3"/><path d="M178 387L201 426L222 411M342 387L319 426L298 411M256 411V440H269V411" fill="none" stroke="#d49358" stroke-width="12"/></g>
       </svg>
-      <div class="terminal-view-label" aria-live="off"><span class="terminal-live-dot" aria-hidden="true"></span><span data-terminal-caption>01 / TETHER INTERFACE</span></div>
+      <div class="terminal-view-label" aria-live="off"><span class="terminal-live-dot" aria-hidden="true"></span><span data-terminal-caption>WHOLE ASSEMBLY</span></div>
     </div>
     <div class="terminal-camera" role="group" aria-label="Capture terminal camera">
       <span data-terminal-render-status>Interactive illustration</span>
