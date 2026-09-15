@@ -1,0 +1,7 @@
+---
+import LabLayout from '../../../layouts/LabLayout.astro';
+import Designer from '../../../lab/designer/Designer';
+---
+<LabLayout title="Tether Designer · Skyhook Industries" description="Explore unequal tether arms, hardware mass distribution and elliptical orbits in a bounded, freely coasting rigid-body experiment." active="designer">
+  <Designer client:only="react"><main slot="fallback" id="lab-content" class="guide"><h1>Preparing the Tether Designer…</h1><p>Move the mass. Change the machine.</p><noscript><p>The interactive analysis requires JavaScript. The <a href="/lab/designer/method/">Designer model guide</a> remains readable without it.</p></noscript></main></Designer>
+</LabLayout>

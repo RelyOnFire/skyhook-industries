@@ -4,7 +4,7 @@ No screenshots from the reference are served by the website. Actual Three.js
 geometry, ordinary module loading and normal HTTP are exercised here.
 """
 from __future__ import annotations
-import argparse,json,threading
+import argparse,json,threading,time
 from browser_pixels import assert_restored, difference
 from pathlib import Path
 from functools import partial
@@ -31,6 +31,22 @@ def main():
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Horizontal overflow'
             if element:element.screenshot(path=str(out/(name+'.png')))
             else:page.screenshot(path=str(out/(name+'.png')),full_page=True)
+        def expect_idle(root,label):
+            # A software renderer may still owe the final requested frame after
+            # the DOM says paused. Require actual quiescence, not a 200 ms guess.
+            # A continuously rendering scene cannot pass this bounded check.
+            trace=[];report.setdefault('idleTraces',{})[label]=trace
+            start=time.monotonic();stable_since=start;last=root.get_attribute('data-render-count')
+            while time.monotonic()-start<5:
+                page.wait_for_timeout(100);now=time.monotonic();count=root.get_attribute('data-render-count')
+                trace.append({'ms':round((now-start)*1000),'count':count,'rotating':root.get_attribute('data-rotating'),'spread':root.get_attribute('data-spread')})
+                if count!=last:last=count;stable_since=now
+                if now-stable_since>=.6:
+                    page.wait_for_timeout(500)
+                    final=root.get_attribute('data-render-count');trace.append({'afterQuietInterval':final})
+                    assert final==last,f'{label} resumed rendering after settling: {trace}'
+                    return
+            raise AssertionError(f'{label} never became idle within five seconds: {trace}')
         try:
             for route in ['/','/research/','/lab/','/lab/operations/','/lab/method/']:
                 page.goto(origin+route,wait_until='networkidle')
@@ -74,7 +90,6 @@ def main():
                 for a in range(3):
                     for b in range(a):
                         assert difference(page,distinct[a],distinct[b])['mean']>1,'Component selection displays the same rendered model'
-                # A real pointer orbit must change the camera, not just a label.
                 canvas.scroll_into_view_if_needed()
                 box=canvas.bounding_box();before=root.get_attribute('data-camera')
                 page.mouse.move(box['x']+box['width']*.5,box['y']+box['height']*.5)
@@ -93,7 +108,6 @@ def main():
                 expect(root).to_have_attribute('data-camera',initial_camera)
                 assert_restored(page,initial_pixels,canvas.screenshot())
             done('Each component isolates and reframes distinct geometry; Reset restores assembled pixels (clip-rounding tolerance) and exact camera after explosion, selection and dragging at five widths')
-            # Check actual animated geometry, not only changed button text.
             page.set_viewport_size({'width':1440,'height':1000});page.emulate_media(reduced_motion='no-preference')
             root.scroll_into_view_if_needed();canvas=root.locator('canvas')
             root.locator('[data-terminal-action="reset"]').click()
@@ -106,11 +120,10 @@ def main():
             root.locator('[data-terminal-action="rotate"]').click();expect(root).to_have_attribute('data-rotating','true')
             before=canvas.screenshot();page.wait_for_timeout(600);assert canvas.screenshot()!=before
             root.locator('[data-terminal-action="rotate"]').click();expect(root).to_have_attribute('data-rotating','false')
-            page.wait_for_timeout(200);count=root.get_attribute('data-render-count');page.wait_for_timeout(200);assert root.get_attribute('data-render-count')==count,'Paused scene keeps rendering'
+            expect_idle(root,'Paused scene')
             root.locator('[data-terminal-action="rotate"]').click();page.evaluate('window.scrollTo(0,0)');expect(root).to_have_attribute('data-visible','false')
-            page.wait_for_timeout(100);count=root.get_attribute('data-render-count');page.wait_for_timeout(400);assert root.get_attribute('data-render-count')==count,'Offscreen scene keeps rendering'
+            expect_idle(root,'Offscreen scene')
             root.scroll_into_view_if_needed();page.emulate_media(reduced_motion='reduce');expect(root).to_have_attribute('data-rotating','false');expect(root.locator('[data-terminal-action="rotate"]')).to_be_disabled()
-            # Reset must also stop active animation and an unfinished explosion.
             page.emulate_media(reduced_motion='no-preference')
             root.locator('[data-terminal-action="rotate"]').click()
             expect(root).to_have_attribute('data-rotating','true')
@@ -125,7 +138,6 @@ def main():
             expect(root).to_have_attribute('data-spread','0.0000')
             done('Reset stops auto-rotation and an in-progress explosion; restores camera and assembled state')
             done('Exploded geometry really moves; rotation pauses; offscreen rendering stops; runtime reduced-motion changes stop rotation')
-            # A unavailable graphics context retains all essential content.
             fallback=context.new_page();fallback.on('pageerror',lambda e:report['errors'].append(str(e)))
             fallback.add_init_script("""(()=>{const native=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/.test(type)?null:native.call(this,type,...args)}})()""")
             fallback.goto(origin+'/',wait_until='networkidle');fr=fallback.locator('#capture-terminal');fr.scroll_into_view_if_needed();expect(fr).to_have_attribute('data-renderer','fallback')
