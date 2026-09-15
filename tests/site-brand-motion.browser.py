@@ -4,7 +4,8 @@ No screenshots from the reference are served by the website. Actual Three.js
 geometry, ordinary module loading and normal HTTP are exercised here.
 """
 from __future__ import annotations
-import argparse,json,threading,hashlib
+import argparse,json,threading
+from browser_pixels import assert_restored, difference
 from pathlib import Path
 from functools import partial
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
@@ -55,6 +56,7 @@ def main():
                 canvas=root.locator('canvas')
                 initial_camera=root.get_attribute('data-camera')
                 initial_pixels=canvas.screenshot()
+                (out/f'baseline-canvas-{width}.png').write_bytes(initial_pixels)
                 shot(f'terminal-assembled-{width}',root)
                 root.locator('[data-terminal-mode="exploded"]').click()
                 expect(root).to_have_attribute('data-spread','1.0000')
@@ -67,10 +69,13 @@ def main():
                     expect(root).to_have_attribute('data-visible-parts',str(part))
                     expect(root.locator(f'#terminal-part-{part}')).to_be_visible()
                     assert root.locator('[data-part-copy]:visible').count()==1
-                    distinct.append(hashlib.sha256(canvas.screenshot()).hexdigest())
+                    distinct.append(canvas.screenshot())
                     shot(f'terminal-part-{part}-{width}',root)
-                assert len(set(distinct))==3,'Component selection displays the same rendered model'
+                for a in range(3):
+                    for b in range(a):
+                        assert difference(page,distinct[a],distinct[b])['mean']>1,'Component selection displays the same rendered model'
                 # A real pointer orbit must change the camera, not just a label.
+                canvas.scroll_into_view_if_needed()
                 box=canvas.bounding_box();before=root.get_attribute('data-camera')
                 page.mouse.move(box['x']+box['width']*.5,box['y']+box['height']*.5)
                 page.mouse.down();page.mouse.move(box['x']+box['width']*.7,box['y']+box['height']*.6,steps=8);page.mouse.up()
@@ -82,11 +87,12 @@ def main():
                 expect(root).to_have_attribute('data-rotating','false')
                 expect(root.locator('[data-terminal-overview]')).to_have_attribute('aria-pressed','true')
                 expect(root).to_have_attribute('data-camera',initial_camera)
-                assert canvas.screenshot()==initial_pixels,'Reset did not restore the original rendered view'
+                reset_pixels=canvas.screenshot();(out/f'reset-canvas-{width}.png').write_bytes(reset_pixels)
+                report.setdefault('resetPixels',{})[str(width)]=assert_restored(page,initial_pixels,reset_pixels)
                 root.locator('[data-terminal-action="reset"]').click()
                 expect(root).to_have_attribute('data-camera',initial_camera)
-                assert canvas.screenshot()==initial_pixels,'Repeated reset is not idempotent'
-            done('Each component isolates and reframes distinct geometry; Reset restores exact assembled pixels and camera after explosion, selection and dragging at five widths')
+                assert_restored(page,initial_pixels,canvas.screenshot())
+            done('Each component isolates and reframes distinct geometry; Reset restores assembled pixels (clip-rounding tolerance) and exact camera after explosion, selection and dragging at five widths')
             # Check actual animated geometry, not only changed button text.
             page.set_viewport_size({'width':1440,'height':1000});page.emulate_media(reduced_motion='no-preference')
             root.scroll_into_view_if_needed();canvas=root.locator('canvas')

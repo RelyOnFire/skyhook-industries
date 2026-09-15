@@ -34,7 +34,10 @@ the behaviors the owner reasonably expected.
 
 The native brand/motion suite now compares all three component canvas images,
 not only the labels. At 320, 390, 768, 1280 and 1440 pixels it tests component
-isolation, real pointer orbit and exact camera/pixel restoration after Reset.
+isolation, real pointer orbit, exact camera restoration and rendered-pixel
+restoration after Reset. Pixel checks decode PNGs and allow one pixel of element
+clip rounding; they retain strict image-difference limits. Initial and reset
+canvas images are saved for review.
 It also tests active rotation and mid-transition Reset, repeated Reset, and the
 no-WebGL fallback. The existing four application/site suites remain unchanged.
 
@@ -43,3 +46,9 @@ The repository retains pinned Astro 7.2.8; GitHub's clean install/build and nati
 browser run are authoritative for that dependency set. Local native browser
 navigation is blocked in this environment, so it is not reported as passing.
 Final commit and CI evidence are recorded in PR #12 after the run completes.
+
+The first native run passed the 1440/1280/768 px resets but rejected a 390 px
+PNG-byte comparison although the exact camera check passed. Comparing the saved
+full-section images showed zero canvas-pixel difference. The assertion now
+checks decoded image pixels rather than PNG encoding/clip boundaries, without
+weakening the exact camera or visible-component assertions.
