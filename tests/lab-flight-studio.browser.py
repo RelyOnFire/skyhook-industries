@@ -263,7 +263,8 @@ def main():
                 for width in [1440,390,320]:
                     page.set_viewport_size({'width':width,'height':900});open_page(path);no_overflow()
                     if path.endswith('method/'):
-                        page.locator('summary').first.click();expect(page.locator('details').first).to_have_attribute('open','')
+                        disclosure=page.locator('#lab-content details.guide-details').first
+                        disclosure.locator('summary').click();expect(disclosure).to_have_attribute('open','')
                     shot(f'{path.split("/")[2]}-{width}')
             done('Method and architecture catalogue responsive routes and disclosures')
             assert not findings['errors'], findings['errors']

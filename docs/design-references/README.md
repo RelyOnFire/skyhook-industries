@@ -44,3 +44,11 @@ Replaced the separate lab masthead with the same shared `SiteHeader` component u
 The homepage now has one orange Tether Lab entry. The second section leads to the architecture comparison, and the closing link leads to the engineering roadmap. This removes different names for buttons pointing to the same application. The lab's main heading is now Tether Lab.
 
 Validation: production build and lab TypeScript check passed. Browser visual verification remains outstanding because local preview URLs are blocked in this environment.
+
+## 16 September continuation
+
+Completed the shared visual treatment in the Method guide, architecture catalogue, mission/debrief dialogs, object tracker and electrical recorder. Electrical and object colors remain semantic signals, while panel surfaces follow the site palette. The scene legend now reads the same `OBJECTS` color registry as the renderers rather than inheriting the copper action color.
+
+The workspace now lets the scene, replay controls and narration determine its height, with bounded scrolling in desktop instrument panels and natural flow on mobile. This avoids cutting off lower content to force the entire instrument into a fixed-height box.
+
+The prior-head Actions run `34760304639` passed its numerical, type, build and six-width lab interaction checks, then failed when a broad `summary` selector found the hidden mobile navigation menu. The Method disclosure check is now scoped to `#lab-content details.guide-details`; the original behavior assertion remains. Local build, type check, generated local-link check (12 pages), and Python syntax check pass. Complete browser regression verification is delegated to the repository's existing Actions workflow; Cloud Browser local preview remains blocked.

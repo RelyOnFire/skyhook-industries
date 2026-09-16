@@ -3,7 +3,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Scene, { Plane, type View } from './Scene.js';
 import Trace from './Trace.js';
 import ObjectTracker from './ObjectTracker.js';
-import { type ObjectId } from './objects.js';
+import { OBJECTS, type ObjectId } from './objects.js';
 import Structure from './Structure.js';
 import Debrief from './Debrief.js';
 import Studies, { type StudyRow } from './Studies.js';
@@ -311,7 +311,7 @@ export default function Lab() {
           {busy && <div className="scene-pending">Calculating mission <button onClick={cancel}>Cancel</button></div>}
           {dirty && !busy && <div className="stale-notice">Unrun changes · scene and telemetry show the last calculation</div>}
           <div className="scene-tools">{view!=='structure'&&<button aria-pressed={vectors} onClick={()=>setVectors(v=>!v)} title="Velocity arrows share a display scale">Velocity vectors</button>}<button onClick={()=>setFocusScene(v=>!v)} aria-label={focusScene?'Exit expanded flight view':'Expand flight view'}>{focusScene?'Exit expanded view':'Expand view'}</button></div>
-          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" />Tether / facility</span><span><i className="legend-line payload" />Payload 1</span><span><i className="legend-line payload-two" />Payload 2</span><span><i className="legend-line dashed" />Initial orbit</span>{result?.design.recovery==='electrodynamic'&&<span><i className="legend-line conductor" />Powered conductors · equatorial E0</span>}</div>}
+          {view!=='structure'&&<div className="scene-legend"><span><i className="legend-line" style={{ borderColor: OBJECTS[0].color }} />Tether / facility</span><span><i className="legend-line payload" style={{ borderColor: OBJECTS[1].color }} />Payload 1</span><span><i className="legend-line payload-two" style={{ borderColor: OBJECTS[2].color }} />Payload 2</span><span><i className="legend-line dashed" />Initial orbit</span>{result?.design.recovery==='electrodynamic'&&<span><i className="legend-line conductor" />Powered conductors · equatorial E0</span>}</div>}
         </div>
         <div className="flight-console">
           {result && frame && <ObjectTracker result={result} frame={frame} selected={selectedObject} following={view==='follow'} onSelect={setSelectedObject} onSeek={t=>{setGuide(null);seek(t);}}/>}

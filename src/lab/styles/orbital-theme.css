@@ -1,6 +1,3 @@
-/* Presentation only: the flight model, state, and numerical outputs are unchanged. */
-:root{--lab-bg:#090e12;--lab-panel:#111c23;--lab-raised:#192832;--lab-line:#354751;--lab-text:#f0f4f4;--lab-soft:#c0cdd3;--lab-muted:#a3b5bf;--lab-cyan:#f1ad84;--lab-amber:#ffd19c}.lab-chrome{background:#090e12;border-bottom-color:#42535b}.lab-logo b{letter-spacing:.09em}.lab-logo small{font-size:12px}.lab-chrome nav a{font-size:14px}.company-link{font-size:14px}.workbench-bar h1{font-weight:450;letter-spacing:-.045em}.guide-header h1{font-weight:400;max-width:20ch}.guide-header{padding-bottom:42px}.guide-section h2{font-weight:450;font-size:32px}.guide-section p,.guide-section li{font-size:16px;color:#c5d1d6}.guide-nav{font-size:14px}.scope-box,.architecture-card,.guide-details,.catalogue-note{border-radius:2px}.guide-meta,.source-record>a,.architecture-content .source-link{font-size:12px}.architecture-content p{font-size:15px}.architecture-content dl{font-size:13px}.scope-box li,.guide-details p{font-size:14px}.guide-note p{color:#eed2ba}.guide-note{background:#29231f}.button-link.primary,button.primary{background:#f1ad84;border-color:#f1ad84;color:#10191e}.button-link.primary:hover,button.primary:hover:not(:disabled){background:#ffccac;border-color:#ffccac}.guide-section strong{color:#f3f6f6}.lab-chrome nav a:hover,.lab-chrome nav a[aria-current]{color:#f1ad84;border-color:#f1ad84}@media(max-width:600px){.lab-chrome nav a{font-size:13px}.guide-section h2{font-size:27px}}
-
 /* Shared Skyhook identity; imported after all application styles. */
 .lab-body {
   --lab-bg: #080b0d;
@@ -46,5 +43,64 @@ select,input[type=number],input[readonly],.segmented,.recovery-options button {b
 .workbench-bar .micro,.model-tag,.scene-caption,.replay-actions span {font-size:12px}
 .lab-body :focus-visible {outline-color:#efa477}
 /* Accommodate the shared header without adding another screenful of empty space. */
-@media(min-width:1180px){.lab-workspace{height:calc(100svh - 380px);min-height:620px;max-height:1100px}}
+
 @media(max-width:800px){.lab-app{padding-top:20px}.lab-section-nav{gap:18px;padding:0 16px;overflow-x:auto;white-space:nowrap}.lab-section-nav>span{display:none}.workbench-bar h1{font-size:26px}.lab-section-nav a{font-size:14px}.workbench-bar .micro{font-size:11px}}
+
+/* Documentation and secondary surfaces use the same neutral palette. */
+.guide {width:min(1240px,calc(100% - 8vw));padding-top:clamp(32px,5svh,56px)}
+.guide-header h1 {font-size:clamp(32px,3.8vw,52px);font-weight:400;line-height:1.15;max-width:20ch}
+.guide-section h2 {font-size:clamp(27px,2.4vw,32px);font-weight:400;line-height:1.2}
+.guide-section p,.guide-section li {font-size:16px;color:var(--lab-soft)}
+.guide-section strong {color:var(--lab-text)}
+.guide-nav {font-size:14px}
+.guide-nav a:hover {background:var(--lab-raised)}
+.guide-meta,.source-record>a,.architecture-content .source-link {font-size:12px}
+.scope-box,.architecture-card,.guide-details,.catalogue-note,.equation-panel {border-radius:3px;border-color:var(--lab-line)}
+.architecture-art {background:radial-gradient(ellipse at 40% 60%,#2b393e77,transparent 65%),#0c1216}
+.catalogue-note,.study-empty {background:var(--lab-panel);border-color:var(--lab-line)}
+.equation-panel {background:#0c1216;color:var(--lab-text)}
+.guide-note {background:#29231f}
+.guide-note p {color:#eed2ba}
+.architecture-content p {font-size:15px}
+.architecture-content dl {font-size:13px}
+.scope-box li,.guide-details p {font-size:14px}
+.button-link {border-color:#85684f;border-radius:3px}
+a.button-link.primary {background:var(--lab-cyan);border-color:var(--lab-cyan);color:#13191c}
+a.button-link.primary:hover {background:#ffd1b3;border-color:#ffd1b3}
+.lab-modal {scrollbar-color:#65747c transparent}
+.lab-modal::backdrop {background:#080b0dce}
+.mission-choice:hover:not(:disabled) {background:#202b30;border-color:var(--lab-cyan)}
+.mission-spec,.brief-rules>div,.receipt,.receipt>div,.debrief-footer,.debrief-comparison,.recorder-insight,.rendezvous-checks>div {border-color:var(--lab-line)}
+.mission-index small,.modal-footnote,.objective-list small,.rendezvous-checks small {color:var(--lab-muted)}
+.rendezvous-checks b,.delivered-orbits b {color:var(--lab-text)}
+.section-selector,.tracking-detail {color:var(--lab-soft)}
+.section-readout dt,.section-readout small,.inspector-note {color:var(--lab-muted)}
+.structure-inspector svg text,.study-plot svg text {fill:var(--lab-soft)}
+.study-gridline,.trace-grid {stroke:var(--lab-line)}
+.study-point .study-label-box {fill:#1b242a;stroke:var(--lab-cyan)}
+.study-point:hover .study-label-box,.study-point:focus-visible .study-label-box {fill:#30271f;stroke:#fff}
+.object-choices button {background:#0c1216;border-color:var(--lab-line)}
+.object-choices button[aria-pressed=true] {background:#202b30;border-color:var(--object-color)}
+.object-choices button small {color:var(--lab-soft)}
+.tracking-detail b {color:var(--lab-text)}
+/* Keep the green electrical signal, but remove separate green panel surfaces. */
+.electrical-recorder,.electrical-ledger {background:var(--lab-panel);border-radius:3px;border-color:var(--lab-line);border-left-color:#82c9a2}
+.electrical-recorder dl>div,.electrical-ledger dl>div {border-color:var(--lab-line)}
+.electrical-boundary,.electrical-limits,.electrical-recorder dt,.electrical-recorder small,.electrical-ledger p {color:var(--lab-soft);font-size:12px}
+.electrical-example {background:#172522;border-radius:3px}
+/* Let scene, replay controls and narration contribute their natural height.
+   A short monitor must scroll the page rather than cut off the last grid row. */
+.lab-workspace {height:auto;min-height:0;max-height:none;align-items:start}
+.flight-panel {height:auto;background:var(--lab-bg);border-radius:3px;grid-template-rows:auto clamp(300px,42svh,540px) auto auto}
+.build-panel,.results-panel {height:auto;max-height:max(620px,calc(100svh - 190px))}
+.lab-app.focus-scene .flight-panel {grid-template-rows:auto minmax(200px,1fr) auto auto;overflow-y:auto;border-color:var(--lab-line);box-shadow:0 0 0 100vmax #080b0de8}
+@media(max-width:1179px) and (min-width:801px){.results-panel{max-height:none}.build-panel{max-height:900px}}
+@media(max-width:800px){
+  .guide{width:calc(100% - 36px)}
+  .build-panel,.results-panel{max-height:none}
+  .flight-panel{grid-template-rows:auto minmax(300px,48svh) auto auto}
+  .lab-modal,.lab-modal.modal-wide{border-radius:3px}
+  .scene-caption{flex-wrap:wrap;gap:6px}
+  .scene-caption>span:last-child{max-width:none;text-align:left}
+  .guide-header{padding-bottom:24px}
+}
