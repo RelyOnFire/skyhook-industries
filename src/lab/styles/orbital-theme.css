@@ -21,6 +21,7 @@
 .lab-panel,.lab-modal,.mission-choice,.flight-invitation,.mission-banner,.workspace-mobile-tabs {border-radius:3px;border-color:var(--lab-line)}
 .flight-invitation,.mission-banner,.mission-choice {background:linear-gradient(110deg,#172025,#101619)}
 .lab-modal,.flight-console,.mission-narration,.design-summary,.scene-toolbar {background:#101619}
+.lab-feedback:not(.is-error),.share-output,.import-review {background:var(--lab-panel);border-color:var(--lab-line);border-radius:3px}
 .scene-box {background:radial-gradient(ellipse at 45% 45%,#26343b55,transparent 65%),#080b0d}
 .material-card,.extended-switch,.guided-replay,.brief-hint {background:#1b252a}
 select,input[type=number],input[readonly],.segmented,.recovery-options button {background:#0c1216;border-color:#43535c}
@@ -103,4 +104,10 @@ a.button-link.primary:hover {background:#ffd1b3;border-color:#ffd1b3}
   .scene-caption{flex-wrap:wrap;gap:6px}
   .scene-caption>span:last-child{max-width:none;text-align:left}
   .guide-header{padding-bottom:24px}
+}
+/* Give narrow-screen replay controls room without clipping the speed select. */
+@media(max-width:380px){
+  .transport{flex-wrap:wrap}
+  .transport>button{flex-shrink:0}
+  .speed-label{flex-basis:100%;justify-content:space-between;font-size:11px;margin-top:4px}
 }

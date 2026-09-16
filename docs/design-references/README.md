@@ -52,3 +52,11 @@ Completed the shared visual treatment in the Method guide, architecture catalogu
 The workspace now lets the scene, replay controls and narration determine its height, with bounded scrolling in desktop instrument panels and natural flow on mobile. This avoids cutting off lower content to force the entire instrument into a fixed-height box.
 
 The prior-head Actions run `34760304639` passed its numerical, type, build and six-width lab interaction checks, then failed when a broad `summary` selector found the hidden mobile navigation menu. The Method disclosure check is now scoped to `#lab-content details.guide-details`; the original behavior assertion remains. Local build, type check, generated local-link check (12 pages), and Python syntax check pass. Complete browser regression verification is delegated to the repository's existing Actions workflow; Cloud Browser local preview remains blocked.
+
+## 16 September screenshot review
+
+Live PR #10 still pointed to `4787628616d49bbb63259d19efd761afc46f364f`, with the same electrodynamic base and successful Actions run `35129576778`. The current `browser-qa` artifact was successfully downloaded through GitHub and inspected. This resolves the earlier inability to inspect CI screenshots; the Cloud Browser restriction on local previews remains in place.
+
+Reviewed desktop/mobile lab views, Method and architecture pages, mission selection, debrief and electrical panels. Their main surfaces and typography retain the approved science direction. Two observed presentation defects receive targeted fixes: notification/share surfaces still used the legacy blue palette, and the playback-speed selector extended outside the flight console at 320 px. Neutral feedback now follows the lab panel palette while error styling stays distinct; narrow replay controls wrap the speed selector onto a labelled row.
+
+The existing browser suite now checks replay-control bounds and captures the homepage at six sizes, including viewport and complete-page images, mobile navigation, and fresh homepage-to-lab visits. This fills the missing homepage evidence without introducing a preview deployment. Debrief and Method captures start at the top so intentional test scrolling does not obscure their headings. New images must be inspected after CI; passing checks alone do not establish visual approval.
