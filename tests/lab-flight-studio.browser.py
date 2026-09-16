@@ -81,6 +81,10 @@ def main():
                     return r.left>=panel.left && r.right<=panel.right && r.top>=panel.top && r.bottom<=panel.bottom;
                 });
             }'''), f'Replay controls are clipped at {page.viewport_size}'
+        def initial_objects_visible():
+            if findings['webgl']:
+                expect(page.locator('.scene-three > .world-label:not(.cargo-label)')).to_be_visible()
+                expect(page.locator('.scene-three > .cargo-label').first).to_be_visible()
         def shot(name, full=True):
             # Flush the canvas/compositor after React updates; a DOM assertion
             # alone can succeed before the requested replay frame is painted.
@@ -261,7 +265,7 @@ def main():
                 expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_visible()
                 page.locator('.view-switch').get_by_role('button', name='Orbit plane', exact=True).click()
                 if findings['webgl']: page.locator('.view-switch').get_by_role('button', name='Globe', exact=True).click()
-                playback_fits();page.wait_for_timeout(120);shot(f'studio-{width}')
+                playback_fits();initial_objects_visible();page.wait_for_timeout(120);shot(f'studio-{width}')
                 page.get_by_role('button', name='Flight school', exact=True).click();no_overflow()
                 page.keyboard.press('Tab');assert page.evaluate("!!document.activeElement?.closest('dialog')")
                 shot(f'missions-{width}');page.keyboard.press('Escape')
@@ -300,8 +304,11 @@ def main():
                 for width,height in [(1440,1000),(390,844),(320,800)]:
                     page.set_viewport_size({'width':width,'height':height});open_page('/')
                     page.locator('.hero-intro .launch-link').click();ready();fly();no_overflow();playback_fits()
+                    initial_objects_visible()
+                    if findings['webgl']:
+                        page.get_by_role('button',name='Reset camera',exact=True).click();initial_objects_visible()
                     shot(f'homepage-to-lab-{width}')
-                done('homepage-to-lab navigation and unclipped replay controls on fresh desktop/mobile visits')
+                done('homepage-to-lab navigation, visible initial tether/payload and unclipped replay controls on fresh desktop/mobile visits')
             for path in ['/lab/method/','/lab/architectures/']:
                 for width in [1440,390,320]:
                     page.set_viewport_size({'width':width,'height':900});open_page(path);no_overflow()

@@ -71,7 +71,15 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
     const plume=new T.Mesh(new T.ConeGeometry(.009,.06,12),new T.MeshBasicMaterial({color:0x80c5ff,transparent:true,opacity:.8}));scene.add(plume);
     const velocity=[new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(),.1,0x7de7ee,.02,.008),new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(),.1,0xffbd83,.02,.008)];velocity.forEach(a=>scene.add(a));
     const setPoints=(l:T.Line,pts:T.Vector3[])=>{l.geometry.dispose();l.geometry=new T.BufferGeometry().setFromPoints(pts);if(l===reference)l.computeLineDistances();};
-    const observer=new ResizeObserver(()=>{const box=root.getBoundingClientRect();if(!box.width||!box.height)return;renderer.setSize(box.width,box.height);camera.aspect=box.width/box.height;camera.updateProjectionMatrix();dirty=true;});observer.observe(root);
+    const observer=new ResizeObserver(()=>{
+      const box=root.getBoundingClientRect();if(!box.width||!box.height)return;
+      renderer.setSize(box.width,box.height);camera.aspect=box.width/box.height;
+      // Preserve a minimum horizontal field of view on narrow canvases. The
+      // initial tether and payload need room beside Earth, including labels.
+      // Adjust projection only: keep the user's orbit, zoom and follow target.
+      camera.fov=2*Math.atan(Math.tan(36*Math.PI/360)*Math.max(1,1.2/camera.aspect))*180/Math.PI;
+      camera.updateProjectionMatrix();dirty=true;
+    });observer.observe(root);
     const lost=(e:Event)=>{e.preventDefault();onFailure('The graphics context was lost. Your calculation is intact; the 2D view remains available.');};renderer.domElement.addEventListener('webglcontextlost',lost);
     const occupied:{x:number;y:number;w:number;h:number}[]=[];
     function label(el:HTMLDivElement|null,world:T.Vector3,text:string,offset:number) {
