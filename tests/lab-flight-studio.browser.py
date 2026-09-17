@@ -85,6 +85,14 @@ def main():
             if findings['webgl']:
                 expect(page.locator('.scene-three > .world-label:not(.cargo-label)')).to_be_visible()
                 expect(page.locator('.scene-three > .cargo-label').first).to_be_visible()
+        def drag_globe():
+            canvas=page.locator('#orbital-canvas')
+            before=canvas.screenshot()
+            box=canvas.bounding_box()
+            page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2)
+            page.mouse.down();page.mouse.move(box['x']+box['width']/2+80,box['y']+box['height']/2,steps=8);page.mouse.up()
+            page.evaluate('()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
+            assert canvas.screenshot()!=before, 'Dragging must visibly rotate the conceptual globe'
         def shot(name, full=True):
             # Flush the canvas/compositor after React updates; a DOM assertion
             # alone can succeed before the requested replay frame is painted.
@@ -290,15 +298,17 @@ def main():
                         no_overflow();shot('homepage-mobile-menu',full=False)
                         menu.locator('summary').click()
                     if width==1440:
-                        canvas=page.locator('#orbital-canvas');box=canvas.bounding_box()
-                        before=canvas.screenshot()
-                        page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2)
-                        page.mouse.down();page.mouse.move(box['x']+box['width']/2+80,box['y']+box['height']/2,steps=8);page.mouse.up()
-                        page.evaluate('()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
-                        assert canvas.screenshot()!=before, 'Dragging must visibly rotate the conceptual globe'
+                        drag_globe()
                         page.get_by_role('button',name='Reset view',exact=True).click()
+                        # Browser cache eligibility varies by runner. Dispatch its
+                        # lifecycle explicitly as well as using real Back below.
+                        for _ in range(2):
+                            page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide', {persisted:true}))")
+                            page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
+                            expect(pause).to_have_attribute('aria-pressed','true')
+                            drag_globe()
                         pause.click();expect(page.get_by_role('button',name='Pause rotation',exact=True)).to_have_attribute('aria-pressed','false')
-                done('homepage screenshots at six sizes, distinct destinations, mobile menu and conceptual globe controls')
+                done('homepage screenshots at six sizes, destinations, mobile menu and globe controls after repeated cached-page restores')
                 # Fresh first-visit views avoid carrying camera or share-panel state
                 # from the regression scenarios into the visual continuity comparison.
                 for width,height in [(1440,1000),(390,844),(320,800)]:
@@ -308,7 +318,12 @@ def main():
                     if findings['webgl']:
                         page.get_by_role('button',name='Reset camera',exact=True).click();initial_objects_visible()
                     shot(f'homepage-to-lab-{width}')
+                    page.go_back(wait_until='networkidle')
+                    expect(page.locator('#orbital-canvas')).to_be_visible()
+                    expect(page.get_by_role('button',name='Resume rotation',exact=True)).to_have_attribute('aria-pressed','true')
+                    drag_globe();no_overflow()
                 done('homepage-to-lab navigation, visible initial tether/payload and unclipped replay controls on fresh desktop/mobile visits')
+                done('browser Back from the lab returns to a responsive homepage globe')
             for path in ['/lab/method/','/lab/architectures/']:
                 for width in [1440,390,320]:
                     page.set_viewport_size({'width':width,'height':900});open_page(path);no_overflow()

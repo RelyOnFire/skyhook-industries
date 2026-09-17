@@ -7,7 +7,7 @@ if (canvas) {
  const pause=document.querySelector<HTMLButtonElement>('#orbit-pause')!;
  const sync=()=>{pause.textContent=paused?'Resume rotation':'Pause rotation';pause.setAttribute('aria-pressed',String(paused));};sync();
  const resize=()=>{const r=canvas.getBoundingClientRect();w=r.width;h=r.height;const d=Math.min(devicePixelRatio,2);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);};
- const observer=new ResizeObserver(resize);observer.observe(canvas);
+ const observer=new ResizeObserver(resize);
  const project=(lon:number,lat:number,r:number,cx:number,cy:number)=>{const a=lon*Math.PI/180+angle,b=lat*Math.PI/180;return [cx+r*Math.cos(b)*Math.sin(a),cy-r*Math.sin(b),Math.cos(b)*Math.cos(a)];};
  const render=(time:number)=>{
  const dt=Math.min((time-lastTime)/1000,.05);lastTime=time;if(!paused&&!drag&&!document.hidden){angle+=dt*.045;phase+=dt*.10;}
@@ -34,6 +34,11 @@ if (canvas) {
  canvas.addEventListener('pointermove',e=>{if(drag){angle+=(e.clientX-lastX)*.006;lastX=e.clientX;}});
  canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
  pause.addEventListener('click',()=>{paused=!paused;sync();});document.querySelector('#orbit-reset')?.addEventListener('click',()=>{angle=.35;phase=-.7;});
- window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);observer.disconnect();},{once:true});resize();frame=requestAnimationFrame(render);
+ // A back/forward-cache restore keeps this module's state but does not rerun it.
+ // Restart rendering and size observation without resetting the user's view.
+ const start=()=>{cancelAnimationFrame(frame);observer.observe(canvas);resize();lastTime=0;frame=requestAnimationFrame(render);};
+ window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);observer.disconnect();drag=false;});
+ window.addEventListener('pageshow',event=>{if(event.persisted) start();});
+ start();
  }
 }

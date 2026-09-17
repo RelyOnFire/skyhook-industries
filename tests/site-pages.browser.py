@@ -26,7 +26,7 @@ def main():
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT / 'dist')))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     origin = f'http://127.0.0.1:{server.server_port}'
-    report = {'pages': [], 'errors': []}
+    report = {'pages': [], 'navigation': [], 'errors': []}
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chromium', headless=True)
         page = browser.new_page(reduced_motion='reduce')
@@ -48,9 +48,67 @@ def main():
                     if overflow:
                         report['errors'].append(f'Horizontal page overflow: {route} at {width}px')
                     report['pages'].append({'route': path, 'width': width, 'overflow': overflow})
+            # Exercise the shared header in both layout families, with real
+            # keyboard movement so closing a menu cannot strand keyboard focus.
+            for path in ['/', '/research/', '/lab/method/']:
+                page.set_viewport_size({'width': 390, 'height': 844})
+                page.goto(origin + path, wait_until='networkidle')
+                page.keyboard.press('Tab')
+                expect(page.get_by_role('link', name='Skip to content', exact=True)).to_be_focused()
+                page.keyboard.press('Enter')
+                page.keyboard.press('Tab')
+                assert page.evaluate("!!document.activeElement?.closest('main')"), f'Skip link failed: {path}'
+
+                menu = page.locator('.brand-mobile')
+                trigger = menu.locator('summary')
+                trigger.focus(); page.keyboard.press('Enter')
+                expect(menu).to_have_attribute('open', '')
+                page.keyboard.press('Tab')
+                expect(menu.get_by_role('link', name='Tether Lab', exact=True)).to_be_focused()
+                page.screenshot(path=str(out / f'navigation-{path.strip("/").replace("/", "-") or "home"}.png'))
+                page.keyboard.press('Escape')
+                expect(menu).not_to_have_attribute('open', '')
+                expect(trigger).to_be_focused()
+
+                page.keyboard.press('Space')
+                expect(menu).to_have_attribute('open', '')
+                page.keyboard.press('Shift+Tab')
+                expect(page.locator('.brand-wordmark')).to_be_focused()
+                expect(menu).not_to_have_attribute('open', '')
+
+                trigger.click(); page.locator('main h1').click()
+                expect(menu).not_to_have_attribute('open', '')
+                trigger.click()
+                menu.get_by_role('link', name='Contact', exact=True).focus()
+                page.keyboard.press('Tab')
+                assert page.evaluate("!!document.activeElement?.closest('main')"), f'Menu exit lost focus: {path}'
+                expect(menu).not_to_have_attribute('open', '')
+
+                trigger.click()
+                menu.get_by_role('link', name='Research', exact=True).focus()
+                page.set_viewport_size({'width': 1001, 'height': 844})
+                expect(page.locator('.brand-links').get_by_role('link', name='Research', exact=True)).to_be_focused()
+                expect(menu).not_to_have_attribute('open', '')
+                page.set_viewport_size({'width': 390, 'height': 844})
+                expect(trigger).to_be_focused()
+                expect(menu).not_to_have_attribute('open', '')
+                page.keyboard.press('Enter')
+                menu.get_by_role('link', name='Contact', exact=True).click()
+                expect(page).to_have_url(origin + '/contact/')
+                expect(page.locator('main h1')).to_have_text('Bring a real problem.')
+                report['navigation'].append(path)
+
+            # Enhancing dismissal must not make navigation depend on JavaScript.
+            native = browser.new_page(java_script_enabled=False, viewport={'width': 320, 'height': 800})
+            native.goto(origin + '/research/', wait_until='networkidle')
+            native.locator('.brand-mobile summary').click()
+            native.locator('.brand-mobile').get_by_role('link', name='Contact', exact=True).click()
+            expect(native).to_have_url(origin + '/contact/')
+            native.close()
+            report['navigation'].append('native disclosure without JavaScript')
             report['status'] = 'failed' if report['errors'] else 'passed'
             assert not report['errors'], report['errors']
-            print('PASS company pages at four widths; review screenshots in qa/browser/company', flush=True)
+            print('PASS company pages at four widths; keyboard, dismissal, resize and native navigation; review qa/browser/company', flush=True)
         except Exception as e:
             report['status'] = 'failed'
             report['failure'] = str(e)
