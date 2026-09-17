@@ -101,12 +101,12 @@ def main():
             other.close();done('stale tabs cannot overwrite a newer save')
             # Force a real IndexedDB transaction failure to prove the UI does
             # not announce success and the existing record remains atomic.
-            page.evaluate("""window.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('test full','QuotaExceededError')}""")
+            page.evaluate("""()=>{window.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('test full','QuotaExceededError')};}""")
             action_button=page.get_by_role('button',name='+1 day',exact=True);action_button.click()
             expect(page.get_by_role('alert')).to_contain_text('Could not save')
             expect(page.get_by_text('Not saved — download a backup',exact=True)).to_be_visible()
             assert next(r for r in records() if r['id']==recovered['id'])==newest
-            page.evaluate('IDBObjectStore.prototype.put=window.originalPut')
+            page.evaluate('()=>{IDBObjectStore.prototype.put=window.originalPut;}')
             action('Save now');done('failed saves preserve the last committed world and support retry')
             # The injected quota error is expected and may surface as pageerror.
             report['errors']=[e for e in report['errors'] if 'test full' not in e]
