@@ -76,12 +76,19 @@ def main():
                 expect(page.locator('.brand-wordmark')).to_be_focused()
                 expect(menu).not_to_have_attribute('open', '')
 
-                trigger.click(); page.locator('main h1').click()
+                trigger.click()
+                # Use the page gutter, outside the overlaid menu. The homepage
+                # title is deliberately pointer-transparent over its illustration.
+                header_box = page.locator('.brand-header').bounding_box()
+                page.mouse.click(8, header_box['y'] + header_box['height'] + 24)
                 expect(menu).not_to_have_attribute('open', '')
                 trigger.click()
                 menu.get_by_role('link', name='Contact', exact=True).focus()
                 page.keyboard.press('Tab')
-                assert page.evaluate("!!document.activeElement?.closest('main')"), f'Menu exit lost focus: {path}'
+                if path.startswith('/lab/'):
+                    expect(page.locator('.lab-section-nav a').first).to_be_focused()
+                else:
+                    assert page.evaluate("!!document.activeElement?.closest('main')"), f'Menu exit lost focus: {path}'
                 expect(menu).not_to_have_attribute('open', '')
 
                 trigger.click()
