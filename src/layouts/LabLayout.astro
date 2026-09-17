@@ -2,9 +2,9 @@
 import '../lab/lab.css';
 import '../lab/styles/orbital-theme.css';
 import SiteHeader from '../components/SiteHeader.astro';
-interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures'; }
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'campaign'; }
 const { title, description, active = 'lab' } = Astro.props;
-const links = [ ['lab', 'Flight studio', '/lab/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
+const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '/lab/campaign/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
 ---
 <!doctype html>
 <html lang="en">
