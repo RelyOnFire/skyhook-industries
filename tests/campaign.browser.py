@@ -178,7 +178,7 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==2 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==3 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
             assert migrated['checkpoints'][0]==legacy
             page.locator('.campaign-slot-list li').filter(has=page.get_by_text('CURRENT',exact=True)).get_by_role('button',name='Recover checkpoint').click();saved()
@@ -226,9 +226,75 @@ def main():
                 supply.locator('.campaign-dispatch').screenshot(path=str(out/f'equipment-depot-{width}.png'))
             supply_context.close()
             done('empty Earth equipment replenishes through time controls and can be shipped again')
+            # Continue a real v2 network into Mercury using only ordinary game controls.
+            solar_context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce',accept_downloads=True)
+            solar=solar_context.new_page();solar.set_default_timeout(12000)
+            solar.on('pageerror',lambda e:report['errors'].append(str(e)))
+            solar.goto(origin+'/lab/campaign/',wait_until='networkidle')
+            expect(solar.get_by_role('button',name='Start new network',exact=True)).to_be_enabled()
+            previous=json.loads((ROOT/'tests/fixtures/campaign-v2.json').read_text())['state']
+            previous['id']='mercury-browser-fixture';previous['name']='Mercury expedition'
+            previous_record={'id':previous['id'],'state':previous,'savedAt':'2099-01-01T00:00:00.000Z','checkpoints':[]}
+            solar.evaluate("""async record=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{let t=db.transaction('worlds','readwrite');t.objectStore('worlds').put(record);t.oncomplete=ok;t.onerror=()=>no(t.error)});db.close()}""",previous_record)
+            solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
+            assert records(solar)[0]==previous_record
+            action('Save now',solar);migrated=records(solar)[0]
+            assert migrated['state']['schema']==3 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['checkpoints'][0]==previous
+            for key in ['flights','services','day','fuelT','marsOperations']:
+                assert migrated['state'][key]==previous[key]
+            for site in ['earth','moon','phobos']:
+                assert migrated['state']['ports'][site]==previous['ports'][site]
+            done('v2 native save upgrades without altering industry, stocks, scheduled services or in-flight cargo')
+            action('Request supply allocation',solar);action('Open Mercury expedition',solar)
+            solar.get_by_label('From',exact=True).select_option('moon');solar.get_by_label('To',exact=True).select_option('mercury')
+            solar.get_by_role('radio',name='Bootstrap tug').check()
+            for _ in range(5):action('Dispatch cargo',solar)
+            solar.get_by_label('From',exact=True).select_option('earth');solar.get_by_label('Cargo type',exact=True).select_option('equipment')
+            for _ in range(5):action('Dispatch cargo',solar)
+            for _ in range(4):action('+30 days',solar)
+            solar.get_by_role('button',name='Mercury Awaiting construction',exact=True).click()
+            action('Commission rotovator · 30 t',solar);action('Install mercury refinery',solar)
+            action('+30 days',solar);action('Install mirror works',solar)
+            action('+30 days',solar);action('Install mirror launch array',solar)
+            solar.get_by_role('radio',name='Tether corridor').check()
+            solar.get_by_label('Repeat every (simulation days)',exact=True).fill('60');action('Schedule service',solar)
+            action('Launch 10 t mirrors',solar);launched=records(solar)[0]['state']
+            assert launched['solar']['deployedT']==0 and len(launched['solar']['deployments'])==1
+            solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
+            assert records(solar)[0]['state']==launched
+            action('Enable automatic launches',solar)
+            for _ in range(20):action('+30 days',solar)
+            established=records(solar)[0]['state']
+            assert established['solar']['deployedT']>=100
+            assert solar.locator('.solar-goals li.complete').count()==4
+            assert solar.locator('.solar-drawing rect').count()>0
+            expect(solar.get_by_text('Your first solar swarm is established.',exact=True)).to_be_visible()
+            done('Mercury supply, refinery, mirror manufacture and automatic launches complete all four new milestones')
+            action('Pause automatic launches',solar);last_id=records(solar)[0]['state']['solar']['nextDeployment']
+            action('+30 days',solar);assert records(solar)[0]['state']['solar']['nextDeployment']==last_id
+            action('Enable automatic launches',solar);action('+30 days',solar)
+            assert records(solar)[0]['state']['solar']['nextDeployment']>last_id
+            before=records(solar)[0]['state']
+            with solar.expect_download() as event:solar.get_by_role('button',name='Download backup',exact=True).click()
+            solar_backup=out/'solar-backup.json';event.value.save_as(solar_backup)
+            assert json.loads(solar_backup.read_text())['state']==before
+            solar.locator('input[type=file]').set_input_files(str(solar_backup));saved(solar)
+            restored=next(r['state'] for r in records(solar) if r['id']!=before['id'])
+            assert restored['solar']==before['solar'] and restored['ports']==before['ports']
+            done('mirror deployments survive reload and backup import; launch pause and resume retain flights already sent')
+            for width,height in [(1440,1000),(1000,900),(768,1024),(390,844),(320,800)]:
+                solar.set_viewport_size({'width':width,'height':height});solar.evaluate('document.activeElement?.blur()')
+                assert not solar.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Solar overflow at {width}'
+                solar.locator('.campaign-solar').screenshot(path=str(out/f'solar-{width}.png'))
+                if width in [1440,320]:solar.locator('.network-map').screenshot(path=str(out/f'solar-map-{width}.png'))
+            solar_context.close()
+            done('solar chapter and four-body map fit desktop, tablet and narrow phone viewports')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
-            report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True);raise
+            report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True)
+            if 'solar' in locals() and not solar.is_closed():solar.screenshot(path=str(out/'solar-failure.png'),full_page=True)
+            raise
         finally:
             (out/'report.json').write_text(json.dumps(report,indent=2));browser.close();server.shutdown()
 

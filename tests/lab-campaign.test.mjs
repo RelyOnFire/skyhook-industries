@@ -87,7 +87,7 @@ test('network: real first-chapter backup migrates without changing progress or r
   assert.equal(w.ports.earth.equipmentT,20);assert.equal(w.ports.moon.equipmentT,0);
   assert.equal(w.ports.earth.industry,true);assert.deepEqual(w.services,[]);
   assert.deepEqual(validateCampaign(w),w);assert.deepEqual(backup,original);
-  assert.equal(importCampaign(JSON.stringify(backup),'new').schema,2);
+  assert.equal(importCampaign(JSON.stringify(backup),'new').schema,3);
   const aged=advance(w,2);nearly(aged.ports.earth.equipmentT,21);nearly(aged.fuelT,old.fuelT+2);
 });
 test('network: legacy active flights preserve cargo, timing and one-time arrival',()=>{

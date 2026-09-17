@@ -1,9 +1,9 @@
-# Expeditions: a working network
+# Expeditions: from first corridors to first light
 
 Routes: /lab/campaign/ and the public guide /lab/campaign/method/.
 
-The Earth–Moon–Phobos campaign has two linked objectives: establish the tethers,
-then sustain industry and scheduled deliveries. The Moon's lunavator remains a
+The campaign has three linked chapters: establish Earth–Moon–Phobos tethers,
+sustain industry and scheduled deliveries, then develop Mercury and a solar swarm. The Moon's lunavator remains a
 free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
 ## Economy and scheduling
@@ -54,11 +54,11 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 2 / network-0.2.0 exports in a skyhook-campaign
-version-2 envelope. The validator explicitly accepts and migrates schema 1 /
-network-0.1.0, including original version-one backup envelopes.
+store. Current state schema 3 / network-0.3.0 exports in a skyhook-campaign
+version-3 envelope. The validator explicitly accepts and migrates schemas 1 and 2
+(network-0.1.0 and network-0.2.0), including their original backup envelopes.
 
-Migration preserves ID, name, simulation day, revision, all old depot fields,
+Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
 fuel, objectives, logs, flight IDs and arrival dates. Flights become construction
 cargo with no recurring-service ID. Earth gains manufacturing and 20 t equipment,
 the remote industries start unbuilt, and schedules/progress start empty. No
@@ -66,6 +66,14 @@ retroactive production. Reading does not rewrite IndexedDB. The first save
 atomically retains the old head in its checkpoint history. A schema-only Save now
 also increments revision so an old cached app cannot overwrite the migrated head
 with its previously valid revision. Normal gameplay increments it as before.
+
+Version-two migration retains every old port field, fuel, time, revision, logs,
+objectives, industry, schedules and flights exactly. Mercury starts empty and
+unbuilt, the expedition locked, with no extra Earth allocation or past production.
+Schema-three validation checks solar clocks and deployment durations, unique
+IDs, facility dependencies, stock bounds and the mirror mass identity:
+manufactured = ready + in transit + deployed. Cargo and solar flights share
+the 32-flight bound. Old-schema files cannot contain Mercury routes.
 
 Atomic writes compare the stored revision with the writer token; failed writes
 preserve committed state. The UI retains unsaved state for retry/export and
@@ -84,19 +92,72 @@ reload mid-schedule, shared recovery contention, arrival-before-dispatch,
 pause/remove semantics, incoming storage reservation, traffic/service/horizon
 limits, and malformed schedule rejection.
 
-tests/campaign.browser.py plays both chapters, including producing material,
+tests/campaign.browser.py plays all three chapters, including producing material,
 delivering equipment, installing both industries, scheduling three complementary
 routes, flight tracking and arrivals, pause/resume, accelerated play and reload.
 It also covers portable backup/import, checkpoint branches, competing tabs,
 automatic-clock stop on an injected write failure and successful retry, and
-migration of a native version-one IndexedDB record with checkpoint preservation.
+migration of native version-one and version-two IndexedDB records with checkpoint
+preservation. A real completed v2 network is supplied and built out through
+Mercury, automatic deployment, all new milestones and a solar backup round-trip.
 Responsive captures cover 1440, 1000, 768, 390 and 320 px; the method guide works
 without JavaScript. CI also runs existing Flight Studio/electrodynamic/navigation
 regressions and verifies reference outputs.
 
-## Later chapters and sources
+## Mercury and solar deployment
 
-Mercury mining, mirror manufacture and a solar swarm remain future chapters.
+Unlock at 100 Mars operations points by spending 60 t construction and 20 t
+Earth equipment on survey/ground support; this does not deliver Mercury cargo.
+All three previous destinations have bidirectional Mercury corridors. Mercury's
+frozen radius is 0.38709927 AU (JPL approximate elements, table one). Earth/Moon
+use 1 AU and Phobos uses the existing 1.523679 AU approximation. Add four, five
+and six handling days respectively; tug fuel allocations are 1.8, 1.8 and
+2.2 t per cargo tonne, reduced to 40% for tether service. Earlier routes stay
+unchanged. These are ideal coast times, not launch windows or solved encounters.
+
+Mercury needs the usual 30 t tether plus 20 t construction/5 t equipment refinery.
+The 100,000 t local deposit is a finite game allocation, not a planetary reserve
+estimate. Each daily cycle refines up to 2 t deposit into construction, using
+0.05 t equipment per tonne. Mirror works cost 40 t construction/10 t equipment;
+a cycle then turns up to 1 t construction plus 0.05 t equipment into 1 t mirrors.
+Coupled Mercury production uses discrete daily cycles beginning installation +1
+so large and small time steps cannot change which inputs the works can consume.
+Inputs and reserved storage constrain output; no production catch-up is queued.
+
+The launch array costs another 40 t construction/10 t equipment and requires
+mirror works. A 10 t mirror batch uses 1 t pooled fuel and reserves Mercury
+recovery for 2/tier days. Launch support is a scenario budget. Ideal transfer to
+0.5 AU plus two handling days takes about 56 days. Stock is spent at departure;
+deployed mass increases once on arrival. The scenario's assumed 10 g/m² gives
+0.1 km²/tonne; this is not demonstrated hardware performance. No energy or power
+is calculated. Drawn symbols denote batches rather than individual mirrors.
+
+Automatic launch first attempts tomorrow; successful 10 t attempts repeat every
+10 days, blocked attempts retry daily without backlog. Pause preserves transit.
+At a shared instant: cargo/solar arrivals, Mercury refinery then works, cargo
+services by ID, automatic solar launch. Earlier industry remains continuous
+between events. Next-event time includes production and solar events.
+
+After initial cargo, an Earth–Mercury 10 t equipment service every 60 days can
+support the 0.15 t/day maximum maintenance demand. Extra stock is needed for
+construction and to cover transfer lead time. Four milestones: refinery,
+works+array, first 10 t deployed, then 100 t deployed (10 km² scenario area).
+
+tests/lab-campaign-solar.test.mjs verifies exact real-v2 migration, gates and
+costs, route estimates, complete gameplay, single deployment credit, reload
+in transit, 600-day vs half-day-step equivalence, finite-deposit and equipment
+starvation, incoming storage reservation, auto pause/resume, recovery/traffic
+contention, horizon limits and malformed solar save rejection.
+
+Mirror composition, including hematite, remains provisional. Mercury's bulk
+iron-rich core does not establish an accessible surface hematite supply;
+MESSENGER-derived surface composition is iron-poor and strongly reduced.
+The recipes do not claim validated extraction, coating, optics or thermal
+survival. See Nittler et al. below and the public Mercury guide.
+
+## Further work and sources
+
+More destinations and swarm energy systems remain future work.
 Detailed lunavator geometry, Phobos loads, targeting/launch windows and integration
 with tested Flight Studio designs require separate numerical work.
 
@@ -104,6 +165,8 @@ with tested Flight Studio designs require separate numerical work.
   https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf
 - Weinstein, Space Colonization Using Space-Elevators from Phobos, 2003:
   https://ntrs.nasa.gov/citations/20030065879
+- Nittler et al., The Chemical Composition of Mercury (2017):
+  https://arxiv.org/abs/1712.02187
 - https://ssd.jpl.nasa.gov/astro_par.html
 - https://ssd.jpl.nasa.gov/planets/approx_pos.html
 - https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
