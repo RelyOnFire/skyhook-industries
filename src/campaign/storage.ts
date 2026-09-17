@@ -47,18 +47,21 @@ export async function loadSave(id: string, checkpoint=false): Promise<Campaign> 
 }
 /** Head and recovery copies are committed in one IndexedDB transaction.
  * Compare-and-swap prevents an older tab overwriting newer progress. */
-export async function saveCampaign(input: Campaign, expectedRevision: number | null): Promise<void> {
+export async function saveCampaign(input: Campaign, expectedRevision: number | null): Promise<number> {
   const state=validateCampaign(input), db=await database();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction('worlds','readwrite'), store=tx.objectStore('worlds');
     let error='Could not save in this browser. Download a backup or retry.';
-    tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(Error(error)); tx.onabort=()=>reject(Error(error));
+    tx.oncomplete=()=>resolve(state.revision); tx.onerror=()=>reject(Error(error)); tx.onabort=()=>reject(Error(error));
     const request=store.get(state.id);
     request.onsuccess=()=>{
       const previous=request.result as SaveRecord | undefined;
       if ((expectedRevision===null && previous) || (expectedRevision!==null && (!previous || previous.state.revision!==expectedRevision))) {
         error='Another tab changed this campaign. Download your current world or load the latest saved version before continuing.'; tx.abort(); return;
       }
+      // An older cached app also checks revisions. A schema-only save must
+      // invalidate its writer token even when no gameplay action occurred.
+      if(previous && previous.state.schema!==state.schema && previous.state.revision===state.revision)state.revision++;
       // Repeated manual saves of an unchanged world must not push meaningful
       // recovery points out of the three-checkpoint history.
       if(previous && JSON.stringify(previous.state)===JSON.stringify(state)) return;

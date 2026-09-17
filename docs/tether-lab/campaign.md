@@ -1,92 +1,110 @@
-# Expeditions: first persistent campaign
+# Expeditions: a working network
 
-Route: `/lab/campaign/`. Public method: `/lab/campaign/method/`.
+Routes: /lab/campaign/ and the public guide /lab/campaign/method/.
 
-## Playable scope
+The Earth–Moon–Phobos campaign has two linked objectives: establish the tethers,
+then sustain industry and scheduled deliveries. The Moon's lunavator remains a
+free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
-The first chapter is an individual, locally saved Earth–Moon–Phobos logistics
-campaign. Supply construction cargo by tug, commission a lunar lunavator and a
-Phobos-anchored hub, open return routes, then upgrade a remote facility. Tether
-capacity is limited by both endpoints. Resources and active cargo persist across
-reloads; cargo arrives once. Supply allocations prevent economic dead ends.
+## Economy and scheduling
 
-The Moon is a first-class destination. Its lunavator is a free lunar rotor, not
-a surface anchor. Phobos is the central anchor for inward and outward tethers,
-not a reskinned free rotor. Both are distinct from the Earth workbench solver.
+Construction material remains the original cargo stock. Equipment is a second
+resource, carried with the same finite payload, fuel and recovery rules.
+Earth begins with manufacturing and 20 t equipment, contributing 0.5 t equipment
+and 1 t pooled propellant per day. Surface resources and access are abstracted.
 
-## Model boundary
+A remote industry requires a tether and consumes 20 t construction plus 5 t
+equipment. The lunar processor produces 1 t construction/day using 0.05 t
+equipment/day. Phobos staging consumes 0.5 t construction and 0.02 t
+equipment/day for one Mars operations point. These are game recipes and abstract
+activity points, not engineering estimates or modeled surface missions.
+Industry stops at missing inputs or full storage; only completed output consumes
+inputs. Incoming flights reserve depot storage (one million tonnes/resource).
 
-`src/campaign/model.ts` is pure simulation state and commands. Coast durations
-use ideal circular Hohmann half-ellipse periods. Earth–Moon uses an Earth-centered
-departure at 1,600 km altitude and lunar mean distance; Earth–Phobos uses an
-Earth–Mars heliocentric transfer with a separate handling allowance. This does
-not solve launch windows, Phobos interception, capture, surface pickup, elastic
-dynamics, or loads. Reverse corridors use the same ideal coast duration.
+The direct Moon–Phobos corridor works in both directions. Its ideal solar coast
+time approximates the Moon at Earth's heliocentric radius; four handling days
+replace the Earth–Phobos allowance of three. Existing route durations are
+unchanged. No launch windows, ephemerides, lunar escape, Phobos interception,
+capture loads, surface pickup or flexible dynamics are solved. Tether ratings,
+instant construction, fuel allocations and endpoint recovery remain game rules.
+The detailed Earth Flight Studio is separate and unchanged.
 
-Construction costs, immediate build, 10/20/30 t capacity tiers, per-tonne support
-fuel allocations, a 60% tether-service allocation discount, handling days and
-2/tier-day endpoint reservations are explicit game assumptions. Support fuel is
-a pooled service budget, not an integrated propellant prediction. The game does
-not import a successful Earth design and pretend it proves a lunar/Mars route.
-The existing 50 physics tests and architecture catalogue remain authoritative
-for what the detailed Flight Studio can simulate.
+Each of up to twelve recurring services uses the manual dispatch checks. First
+attempt is tomorrow. After success, next attempt is departure + chosen interval
+(1–3,650 days). Blocked service retries in one day; no catch-up queue accumulates.
+Arrivals precede bookings at the same instant, then ascending service ID controls
+shared endpoint priority. Pause/remove leaves active flights intact. Resume
+cannot create overdue attempts. Traffic remains limited to 32 active flights.
 
-The map is a schematic network, not an orbital plot. Cargo marker position is
-elapsed fraction along a diagram edge. Time advances on user commands only;
-there is no interval, idle production or requirement to keep a tab open.
+advance() processes every arrival and service attempt chronologically. Production
+integrates between events, so large jumps and small steps give equivalent stock,
+flights, service history and progress (within floating-point tolerance). The
+manual +1/+30/next-event controls and Play share this engine. Play performs one
+saved step per second at 1, 10 or 30 days/step; it waits for saves before ticking
+again. Hidden tabs, reload, world changes, errors and the 100,000-day horizon stop
+play. No offline or wall-clock catch-up. Marker movement is schematic elapsed
+fraction; tracked flight and arrival panels explain status. Reduced motion
+disables marker transitions.
 
-## Saves
+A sustainable scenario tested for 1,000 days sends 5 t Earth–Moon equipment every
+90 days, 3 t Earth–Phobos equipment every 100 days, and 10 t Moon–Phobos material
+every 20 days. The player first commissions both tethers and supplies the
+20 t/5 t installation requirements plus working equipment.
 
-IndexedDB `skyhook-campaigns`, database version 1; `worlds` object store, keyed
-by campaign UUID. Save envelope `skyhook-campaign` version 1; campaign schema 1,
-model `network-0.1.0`. The pure validator constructs clean state from bounded
-fields, validates routes and flight timing, and rejects unknown versions.
+## Saves and compatibility
 
-Each atomic transaction writes the new head plus three preceding checkpoints.
-Writes compare the persisted revision with the writer's expected revision, so
-a stale tab cannot overwrite newer progress. New slots require a missing ID.
-Imports and checkpoint recovery use a fresh ID and revision zero. Up to twelve
-slots are supported. Failed writes leave the previous committed world intact;
-the UI retains the unsaved in-memory world for retry or export and reports the
-failure. Local storage is not advertised as a cloud backup. Saves on different
-preview/production origins are separate; portable JSON is the bridge.
+IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
+store. Current state schema 2 / network-0.2.0 exports in a skyhook-campaign
+version-2 envelope. The validator explicitly accepts and migrates schema 1 /
+network-0.1.0, including original version-one backup envelopes.
 
-Data retained: named campaign, simulation day, revision, depot cargo, facility
-tiers/recovery, support fuel, next supply availability, active shipments, received
-and sent totals, lunar return progress, and the last sixty event-log entries.
+Migration preserves ID, name, simulation day, revision, all old depot fields,
+fuel, objectives, logs, flight IDs and arrival dates. Flights become construction
+cargo with no recurring-service ID. Earth gains manufacturing and 20 t equipment,
+the remote industries start unbuilt, and schedules/progress start empty. No
+retroactive production. Reading does not rewrite IndexedDB. The first save
+atomically retains the old head in its checkpoint history. A schema-only Save now
+also increments revision so an old cached app cannot overwrite the migrated head
+with its previously valid revision. Normal gameplay increments it as before.
+
+Atomic writes compare the stored revision with the writer token; failed writes
+preserve committed state. The UI retains unsaved state for retry/export and
+stops automatic time. Three previous checkpoints and up to twelve named slots
+remain. Unchanged saves are no-ops. Import and recovery create separate IDs.
+Unknown versions and malformed inputs are rejected before changing the world.
+Local saves belong to their origin/browser; portable JSON moves between origins
+or devices. No account/cloud sync.
 
 ## Verification
 
-`tests/lab-campaign.test.mjs`: complete construction/return/Phobos progression,
-cargo conservation and one-time credit, independent step size, expected physical
-time scales, invalid actions, capacity/recovery, empty-economy recovery, hostile
-save bounds and versions, and distinguishing lunar from Phobos return progress.
+tests/lab-campaign.test.mjs tests legacy progression, exact one-time cargo
+delivery, v1 backup migration (a real prior QA export), active-flight migration,
+recipe starvation, direct lunar/Phobos supply, large/small step equivalence,
+reload mid-schedule, shared recovery contention, arrival-before-dispatch,
+pause/remove semantics, incoming storage reservation, traffic/service/horizon
+limits, and malformed schedule rejection.
 
-`tests/campaign.browser.py`: native-origin IndexedDB, reload during a flight,
-all four objectives, portable export/import, failed-version nonmutation, checkpoint
-branching, competing tabs, injected write failure and retry, five viewport sizes,
-and a JavaScript-independent method guide. Runs after the existing browser suites
-in GitHub Actions; output is included in `browser-qa/campaign`.
+tests/campaign.browser.py plays both chapters, including producing material,
+delivering equipment, installing both industries, scheduling three complementary
+routes, flight tracking and arrivals, pause/resume, accelerated play and reload.
+It also covers portable backup/import, checkpoint branches, competing tabs,
+automatic-clock stop on an injected write failure and successful retry, and
+migration of a native version-one IndexedDB record with checkpoint preservation.
+Responsive captures cover 1440, 1000, 768, 390 and 320 px; the method guide works
+without JavaScript. CI also runs existing Flight Studio/electrodynamic/navigation
+regressions and verifies reference outputs.
 
-## Later chapters
+## Later chapters and sources
 
-Mercury mining, material processing, launching mirror/collector populations and
-solar swarm expansion are recorded as future chapters, not enabled features.
-Detailed lunavator geometry, Phobos anchor/tether loads, ephemeris-based windows,
-route targeting, and integration of tested Flight Studio designs are separate
-follow-on simulation work. Cloud saves require a later account/synchronisation
-layer; the portable world format does not depend on it.
+Mercury mining, mirror manufacture and a solar swarm remain future chapters.
+Detailed lunavator geometry, Phobos loads, targeting/launch windows and integration
+with tested Flight Studio designs require separate numerical work.
 
-## Sources
-
-- Hoyt, *Cislunar Tether Transport System*, 1999 NIAC Phase I final report,
-  section III.A.3 and Appendix B:
+- Hoyt, Cislunar Tether Transport System, NIAC 1999, summary, III.A.3 and Appendix B:
   https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf
-- Weinstein, *Space Colonization Using Space-Elevators from Phobos*, 2003:
+- Weinstein, Space Colonization Using Space-Elevators from Phobos, 2003:
   https://ntrs.nasa.gov/citations/20030065879
-- JPL astrodynamic constants and approximate elements:
-  https://ssd.jpl.nasa.gov/astro_par.html
-  https://ssd.jpl.nasa.gov/planets/approx_pos.html
-- Browser database/persistence:
-  https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
-  https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
+- https://ssd.jpl.nasa.gov/astro_par.html
+- https://ssd.jpl.nasa.gov/planets/approx_pos.html
+- https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+- https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria

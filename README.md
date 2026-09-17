@@ -27,8 +27,9 @@ Cloudflare deployment is configured in `wrangler.jsonc` and builds from GitHub.
 ## Expeditions
 
 `/lab/campaign/` is the first persistent Earth–Moon–Phobos logistics campaign:
-build a lunar lunavator and Phobos anchor hub, dispatch cargo, advance time,
-and resume named saves. `/lab/campaign/method/` documents the calculations,
+build a lunar lunavator and Phobos anchor hub, produce material and equipment,
+schedule direct Moon–Phobos deliveries, run the clock, and resume named saves.
+First-chapter saves migrate without resetting progress. `/lab/campaign/method/` documents the calculations,
 game assumptions and save behavior. See `docs/tether-lab/campaign.md` for the
 model, persistence format and validation. The detailed Earth Flight Studio
 remains available at `/lab/`.

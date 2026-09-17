@@ -69,6 +69,66 @@ def main():
             action('Upgrade lunavator · 60 t')
             expect(page.get_by_text('The first network is established.',exact=True)).to_be_visible()
             done('all four objectives complete through gameplay')
+            # Extend that same world into a productive, automatically supplied network.
+            page.get_by_label('From',exact=True).select_option('earth')
+            page.get_by_label('To',exact=True).select_option('moon')
+            for _ in range(2):action('Dispatch cargo')
+            page.get_by_label('Cargo type',exact=True).select_option('equipment');action('Dispatch cargo')
+            action('+30 days');action('Install lunar processor')
+            page.get_by_label('To',exact=True).select_option('phobos')
+            action('Dispatch cargo')
+            page.get_by_label('Cargo type',exact=True).select_option('materials')
+            for _ in range(2):action('Dispatch cargo')
+            for _ in range(9):action('+30 days')
+            page.get_by_role('button',name='Phobos Tier 1').click()
+            action('Install mars staging depot')
+            # Equipment services keep both industries supplied; lunar output goes direct.
+            page.get_by_label('To',exact=True).select_option('moon')
+            page.get_by_label('Cargo type',exact=True).select_option('equipment')
+            page.get_by_role('radio',name='Tether corridor').check()
+            page.get_by_label('Cargo (t)',exact=True).fill('5')
+            page.get_by_label('Repeat every (simulation days)',exact=True).fill('90')
+            action('Schedule service')
+            page.get_by_label('To',exact=True).select_option('phobos')
+            page.get_by_label('Cargo (t)',exact=True).fill('3')
+            page.get_by_label('Repeat every (simulation days)',exact=True).fill('100')
+            action('Schedule service')
+            page.get_by_label('From',exact=True).select_option('moon')
+            page.get_by_label('Cargo type',exact=True).select_option('materials')
+            page.get_by_label('Cargo (t)',exact=True).fill('10')
+            page.get_by_label('Repeat every (simulation days)',exact=True).fill('20')
+            action('Schedule service');action('+30 days')
+            live=records()[0]['state'];flight=next(f for f in live['flights'] if f['from']=='moon' and f['to']=='phobos')
+            action('Track flight '+str(flight['id']))
+            expect(page.locator('.map-flight.tracked')).to_have_count(1)
+            for _ in range(19):action('+30 days')
+            live=records()[0]['state']
+            assert live['marsOperations']>100 and live['lunarPhobosDeliveredT']>=100
+            assert live['services'][2]['dispatched']>=20 and live['services'][2]['deliveredT']>0
+            expect(page.get_by_label('Tracked flight')).to_contain_text('Delivery complete')
+            expect(page.get_by_label('Recent arrivals')).to_contain_text('Deliveries received')
+            assert page.locator('.campaign-network-goals li.complete').count()==4
+            action('Pause service 3');paused=records()[0]['state']['services'][2]['dispatched']
+            action('+30 days');assert records()[0]['state']['services'][2]['dispatched']==paused
+            action('Resume service 3');action('+30 days')
+            assert records()[0]['state']['services'][2]['dispatched']>paused
+            done('equipment, lunar production and direct recurring Phobos deliveries sustain Mars operations')
+            frozen=records()[0]['state']
+            page.reload(wait_until='networkidle')
+            page.get_by_role('button',name='Continue Lunar bridge').click();saved()
+            assert records()[0]['state']==frozen
+            page.get_by_label('Simulation speed',exact=True).select_option('30')
+            page.get_by_role('button',name='Play simulation',exact=True).click()
+            expect(page.get_by_test_id('campaign-day')).not_to_have_text('Day '+format(frozen['day'],',.1f'))
+            page.wait_for_function("prior=>document.querySelector('[data-testid=campaign-day]').textContent!==prior",arg='Day '+format(frozen['day'],',.1f'))
+            page.get_by_role('button',name='Pause simulation',exact=True).click();saved()
+            paused_day=records()[0]['state']['day'];assert paused_day>=frozen['day']+30
+            page.wait_for_timeout(1150);assert records()[0]['state']['day']==paused_day
+            page.reload(wait_until='networkidle')
+            page.get_by_role('button',name='Continue Lunar bridge').click();saved()
+            expect(page.get_by_role('button',name='Play simulation',exact=True)).to_be_visible()
+            assert records()[0]['state']['day']==paused_day
+            done('scheduled worlds reload exactly; accelerated play advances, pause and reload stop time')
             # Exported JSON is a portable world, including all facilities/resources.
             before=records()[0]['state']
             with page.expect_download() as event: page.get_by_role('button',name='Download backup',exact=True).click()
@@ -102,7 +162,7 @@ def main():
             # Force a real IndexedDB transaction failure to prove the UI does
             # not announce success and the existing record remains atomic.
             page.evaluate("""()=>{window.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('test full','QuotaExceededError')};}""")
-            action_button=page.get_by_role('button',name='+1 day',exact=True);action_button.click()
+            page.get_by_role('button',name='Play simulation',exact=True).click()
             expect(page.get_by_role('alert')).to_contain_text('Could not save')
             expect(page.get_by_text('Not saved — download a backup',exact=True)).to_be_visible()
             assert next(r for r in records() if r['id']==recovered['id'])==newest
@@ -110,6 +170,25 @@ def main():
             action('Save now');done('failed saves preserve the last committed world and support retry')
             # The injected quota error is expected and may surface as pageerror.
             report['errors']=[e for e in report['errors'] if 'test full' not in e]
+            legacy=json.loads((ROOT/'tests/fixtures/campaign-v1.json').read_text())['state']
+            legacy['id']='legacy-browser-fixture';legacy['name']='Legacy network'
+            legacy_record={'id':legacy['id'],'state':legacy,'savedAt':'2099-01-01T00:00:00.000Z','checkpoints':[]}
+            page.evaluate("""async record=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{let t=db.transaction('worlds','readwrite');t.objectStore('worlds').put(record);t.oncomplete=ok;t.onerror=()=>no(t.error)});db.close()}""",legacy_record)
+            page.reload(wait_until='networkidle');page.get_by_role('button',name='Continue Legacy network').click();saved()
+            assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
+            action('Save now')
+            migrated=next(r for r in records() if r['id']==legacy['id'])
+            assert migrated['state']['schema']==2 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
+            assert migrated['checkpoints'][0]==legacy
+            page.locator('.campaign-slot-list li').filter(has=page.get_by_text('CURRENT',exact=True)).get_by_role('button',name='Recover checkpoint').click();saved()
+            legacy_recovery=next(r['state'] for r in records() if r['state']['name']=='Legacy network · recovery')
+            assert legacy_recovery['day']==legacy['day'] and legacy_recovery['ports']['earth']['equipmentT']==20
+            page.get_by_role('button',name='Load Legacy network',exact=True).click();saved()
+            action('+1 day')
+            assert next(r for r in records() if r['id']==legacy['id'])['state']['ports']['earth']['equipmentT']==20.5
+            page.get_by_role('button',name='Load Lunar bridge · recovery',exact=True).click();saved()
+            done('real first-chapter browser save migrates atomically, retains recovery and increments the stale-tab token')
             for width,height in [(1440,1000),(1000,900),(768,1024),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height});page.evaluate('document.activeElement?.blur()');page.evaluate('scrollTo(0,0)')
                 assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Overflow at {width}'
