@@ -30,6 +30,9 @@ def main():
         page.on('pageerror',lambda e:report['errors'].append(str(e)))
         def saved(target=page): expect(target.get_by_text('Saved in this browser',exact=True)).to_be_visible()
         def action(name,target=page): target.get_by_role('button',name=name,exact=True).click();saved(target)
+        def no_overflow(target,width):
+            result=target.evaluate('''()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,offenders:[...document.querySelectorAll('body *')].filter(e=>{let r=e.getBoundingClientRect();return r.width&&r.right>innerWidth+1}).slice(0,12).map(e=>({tag:e.tagName,cls:String(e.className),right:e.getBoundingClientRect().right}))})''')
+            assert not result['overflow'],f'Overflow at {width}: {result["offenders"]}'
         def records(target=page):
             return target.evaluate("""async()=>{const db=await new Promise((ok,no)=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});return await new Promise((ok,no)=>{let r=db.transaction('worlds').objectStore('worlds').getAll();r.onsuccess=()=>{db.close();ok(r.result)};r.onerror=()=>no(r.error)})}""")
         try:
@@ -196,7 +199,7 @@ def main():
             if page.locator('.campaign-save-manager').get_attribute('open') is not None:page.locator('.campaign-save-manager>summary').click()
             for width,height in [(1440,1000),(1000,900),(768,1024),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height});page.evaluate('document.activeElement?.blur()');page.evaluate('scrollTo(0,0)')
-                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Overflow at {width}'
+                no_overflow(page,width)
                 page.screenshot(path=str(out/f'campaign-{width}.png'),full_page=True)
                 expect(page.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_visible()
             done('campaign is usable without horizontal page overflow at five viewport sizes')
@@ -304,13 +307,16 @@ def main():
                 expect(solar.get_by_test_id(site+'-equipment')).to_be_visible()
                 expect(solar.get_by_test_id(site+'-materials')).to_be_visible()
             assert records(solar)==before_ui
+            for service in restored['services']:
+                if service['enabled'] and service['nextDay']>restored['day']+1:
+                    expect(solar.get_by_label('Service '+str(service['id']),exact=True).locator('.traffic-state')).to_have_text('Scheduled')
             times=solar.locator('.flight-row').evaluate_all('(rows)=>rows.map(r=>Number(r.dataset.arrival))')
             assert times==sorted(times)
             assert solar.locator('.mirror-tag').count()>0
             done('all outpost stocks stay exposed; supply shortcuts and keyboard map selection preserve the save; cargo and mirrors share an arrival-ordered queue')
             for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 solar.set_viewport_size({'width':width,'height':height});solar.evaluate('document.activeElement?.blur()')
-                assert not solar.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Solar overflow at {width}'
+                no_overflow(solar,width)
                 solar.evaluate('scrollTo(0,0)')
                 solar.screenshot(path=str(out/f'operations-{width}.png'),full_page=True)
                 solar.screenshot(path=str(out/f'operations-viewport-{width}.png'))
