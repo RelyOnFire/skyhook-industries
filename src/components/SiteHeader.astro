@@ -22,8 +22,11 @@ const active = (href: string) => current(href) || (href === '/lab/' && path.star
   const header = document.querySelector<HTMLElement>('.brand-header');
   const menu = header?.querySelector<HTMLDetailsElement>('.brand-mobile');
   const trigger = menu?.querySelector<HTMLElement>('summary');
+  const desktop = header?.querySelector<HTMLElement>('.brand-links');
 
-  if (header && menu && trigger) {
+  if (header && menu && trigger && desktop) {
+    let navigationFocus: HTMLElement | null = null;
+    const inNavigation = (node: Node) => menu.contains(node) || desktop.contains(node);
     // Keep the native disclosure and its no-JavaScript navigation behavior.
     menu.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape' || !menu.open) return;
@@ -37,15 +40,30 @@ const active = (href: string) => current(href) || (href === '/lab/' && path.star
         menu.open = false;
       }
     };
-    document.addEventListener('pointerdown', closeOutside);
-    document.addEventListener('focusin', closeOutside);
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target instanceof Node && !inNavigation(event.target)) navigationFocus = null;
+      closeOutside(event);
+    });
+    document.addEventListener('focusin', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        if (inNavigation(target)) navigationFocus = target;
+        else if (target !== document.body || !navigationFocus || navigationFocus.getClientRects().length) {
+          navigationFocus = null;
+        }
+      }
+      closeOutside(event);
+    });
 
     const mobileWidth = matchMedia('(max-width: 1000px)');
     mobileWidth.addEventListener('change', () => {
-      const focused = document.activeElement;
+      // CSS can clear focus to body before the media-query event runs. Retain
+      // only navigation focus hidden by that transition, not outside focus.
+      const focused = document.activeElement === document.body && navigationFocus?.getClientRects().length === 0
+        ? navigationFocus : document.activeElement;
       menu.open = false;
       if (mobileWidth.matches) {
-        if (focused && header.querySelector('.brand-links')?.contains(focused)) trigger.focus();
+        if (focused && desktop.contains(focused)) trigger.focus();
         return;
       }
       if (focused && menu.contains(focused)) {

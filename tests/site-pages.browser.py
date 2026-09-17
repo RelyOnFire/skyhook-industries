@@ -99,7 +99,13 @@ def main():
                 page.set_viewport_size({'width': 390, 'height': 844})
                 expect(trigger).to_be_focused()
                 expect(menu).not_to_have_attribute('open', '')
-                page.keyboard.press('Enter')
+                outside = page.locator('main a, main button, main summary').first
+                outside.focus()
+                page.set_viewport_size({'width': 1001, 'height': 844})
+                expect(outside).to_be_focused()
+                page.set_viewport_size({'width': 390, 'height': 844})
+                expect(outside).to_be_focused()
+                trigger.click()
                 menu.get_by_role('link', name='Contact', exact=True).click()
                 expect(page).to_have_url(origin + '/contact/')
                 expect(page.locator('main h1')).to_have_text('Bring a real problem.')
@@ -119,6 +125,8 @@ def main():
         except Exception as e:
             report['status'] = 'failed'
             report['failure'] = str(e)
+            report['focused_element'] = page.evaluate('document.activeElement?.outerHTML')
+            page.screenshot(path=str(out / 'navigation-failure.png'))
             raise
         finally:
             (out / 'report.json').write_text(json.dumps(report, indent=2))
