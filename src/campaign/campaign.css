@@ -47,3 +47,8 @@
 @media(max-width:800px){.campaign-time-controls{justify-content:flex-start}.campaign-network-goals{grid-template-columns:1fr;gap:20px}.campaign-service-list article{flex-direction:column;gap:12px}.campaign-arrivals,.campaign-tracking{align-items:start;flex-direction:column;gap:10px}}
 @media(max-width:400px){.campaign-network-goals ol{grid-template-columns:1fr}.campaign .campaign-time-controls .primary{flex-basis:auto}.campaign-speed{width:100%}.campaign-schedule-form>div{flex-wrap:wrap}.campaign-schedule-form input{width:75px}.campaign-service-list article>div:last-child{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.running .map-flight circle{transition:none}}
+
+.campaign-origin-stock{padding:15px 16px;margin-top:16px;border:1px solid var(--lab-line);background:#121b20}
+.campaign-origin-stock dl{display:flex;flex-wrap:wrap;gap:12px 28px;margin:10px 0}
+.campaign-origin-stock dt{font-size:11px;color:var(--lab-muted)}.campaign-origin-stock dd{margin:2px 0 0;font-size:19px}
+.campaign-origin-stock>p:last-child{font-size:12px;line-height:1.65}.campaign-origin-stock b{font-weight:500;color:var(--lab-text)}

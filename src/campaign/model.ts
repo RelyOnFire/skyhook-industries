@@ -9,6 +9,7 @@ export const SITE = {
   phobos: { name: 'Phobos', facility: 'Phobos anchor hub', description: 'Phobos is the central anchor, with an inward Mars-facing tether and an outward transfer arm.', color: '#e3a782' },
 } as const;
 export const DAY = 86400;
+export const EARTH_EQUIPMENT_PER_DAY = .5;
 const AU = 149597870700, SUN_GM = 1.32712440018e20, EARTH_GM = 3.986004418e14;
 const EPS = 1e-8;
 /** Ideal half-ellipse between circular radii, SI. No ephemerides or targeting. */
@@ -70,7 +71,10 @@ export function flightPlan(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
   else if (!Number.isFinite(cargoT) || cargoT < 1 || !Number.isInteger(cargoT)) reason = 'Cargo must be a whole number of tonnes, at least 1.';
   else if (mode === 'tether' && (!origin.level || !destination.level)) reason = 'Commission a tether at both ends first. Use a bootstrap tug to deliver construction cargo.';
   else if (cargoT > capacity) reason = 'This service carries up to '+capacity+' t per flight.';
-  else if (stock(world,from,kind) + EPS < cargoT) reason = 'Not enough '+CARGO[kind].toLowerCase()+' at '+SITE[from].name+'.';
+  else if (stock(world,from,kind) + EPS < cargoT) {
+    reason = 'Not enough '+CARGO[kind].toLowerCase()+' at '+SITE[from].name+'.';
+    if(from==='earth'&&kind==='equipment'&&origin.industry) reason += ' Earth manufactures '+EARTH_EQUIPMENT_PER_DAY+' t per simulation day. Press Play or advance time to replenish it.';
+  }
   else if (room(world,to,kind) + EPS < cargoT) reason = 'The destination has no storage space after incoming deliveries.';
   else if (world.fuelT + EPS < fuelT) reason = 'Support propellant is low. Request an Earth supply allocation.';
   else if (mode === 'tether' && Math.max(origin.readyDay,destination.readyDay) > world.day + EPS) reason = 'The tether service is recovering. Advance time before booking another slot.';
@@ -96,7 +100,7 @@ export function dispatch(world: Campaign, from: SiteId, to: SiteId, cargoT: numb
  * storage; a full producer pauses without consuming maintenance. */
 function produce(w: Campaign, days: number) {
   if (w.ports.earth.industry) {
-    w.ports.earth.equipmentT += Math.min(days * .5,room(w,'earth','equipment'));
+    w.ports.earth.equipmentT += Math.min(days * EARTH_EQUIPMENT_PER_DAY,room(w,'earth','equipment'));
     w.fuelT = Math.min(LIMITS.stock,w.fuelT+days);
   }
   const moon=w.ports.moon;

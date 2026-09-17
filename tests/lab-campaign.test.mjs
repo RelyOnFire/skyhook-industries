@@ -191,3 +191,18 @@ test('network: service save validation rejects malformed schedules before they r
   }
   assert.deepEqual(importCampaign(exportCampaign(w),'world-one').services,w.services);
 });
+
+test('network: Earth equipment recovers after one full-stock shipment, including across a save',()=>{
+  let w=fresh();w.ports.earth.level=2;w.ports.moon.level=2;
+  w=dispatch(w,'earth','moon',20,'tether','equipment');
+  assert.equal(w.ports.earth.equipmentT,0);
+  assert.match(flightPlan(w,'earth','moon',10,'tether','equipment').reason,/manufactures 0.5 t per simulation day/);
+  const supplied=resupply(w);assert.equal(supplied.ports.earth.equipmentT,0);
+  w=importCampaign(exportCampaign(w),'reloaded-empty-depot');
+  w=advance(w,30);
+  nearly(w.ports.earth.equipmentT,15);assert.equal(w.ports.moon.equipmentT,20);
+  assert.equal(flightPlan(w,'earth','moon',10,'tether','equipment').reason,'');
+  w=dispatch(w,'earth','moon',10,'tether','equipment');
+  nearly(w.ports.earth.equipmentT,5);
+  assert.doesNotThrow(()=>validateCampaign(w));
+});

@@ -28,8 +28,8 @@ def main():
         context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce',accept_downloads=True)
         page=context.new_page();page.set_default_timeout(12000)
         page.on('pageerror',lambda e:report['errors'].append(str(e)))
-        def saved(): expect(page.get_by_text('Saved in this browser',exact=True)).to_be_visible()
-        def action(name): page.get_by_role('button',name=name,exact=True).click();saved()
+        def saved(target=page): expect(target.get_by_text('Saved in this browser',exact=True)).to_be_visible()
+        def action(name,target=page): target.get_by_role('button',name=name,exact=True).click();saved(target)
         def records(target=page):
             return target.evaluate("""async()=>{const db=await new Promise((ok,no)=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});return await new Promise((ok,no)=>{let r=db.transaction('worlds').objectStore('worlds').getAll();r.onsuccess=()=>{db.close();ok(r.result)};r.onerror=()=>no(r.error)})}""")
         try:
@@ -203,6 +203,29 @@ def main():
             native.goto(origin+'/lab/campaign/method/',wait_until='networkidle')
             expect(native.get_by_role('heading',name='Phobos is the central anchor.',exact=True)).to_be_visible();native.close()
             done('model guide and research remain readable without JavaScript')
+            # Reproduce equipment depletion using real controls in a separate browser save.
+            supply_context=browser.new_context(viewport={'width':390,'height':844},reduced_motion='reduce')
+            supply=supply_context.new_page()
+            supply.on('pageerror',lambda e:report['errors'].append(str(e)))
+            supply.goto(origin+'/lab/campaign/',wait_until='networkidle')
+            action('Start new network',supply)
+            supply.get_by_label('Cargo type',exact=True).select_option('equipment')
+            action('Dispatch cargo',supply);action('Dispatch cargo',supply)
+            expect(supply.get_by_test_id('origin-equipment')).to_have_text('0 t')
+            expect(supply.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_disabled()
+            expect(supply.locator('#flight-reason')).to_contain_text('Earth manufactures 0.5 t per simulation day')
+            expect(supply.get_by_label('Departure depot stock')).to_contain_text('+30 days produces 15 t')
+            action('+30 days',supply)
+            expect(supply.get_by_test_id('origin-equipment')).to_have_text('15 t')
+            assert records(supply)[0]['state']['ports']['moon']['equipmentT']==20
+            action('Dispatch cargo',supply)
+            expect(supply.get_by_test_id('origin-equipment')).to_have_text('5 t')
+            for width in [390,320]:
+                supply.set_viewport_size({'width':width,'height':844})
+                assert not supply.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+                supply.locator('.campaign-dispatch').screenshot(path=str(out/f'equipment-depot-{width}.png'))
+            supply_context.close()
+            done('empty Earth equipment replenishes through time controls and can be shipped again')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True);raise
