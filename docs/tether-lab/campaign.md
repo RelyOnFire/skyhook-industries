@@ -6,6 +6,28 @@ The campaign has three linked chapters: establish Earth–Moon–Phobos tethers,
 sustain industry and scheduled deliveries, then develop Mercury and a solar swarm. The Moon's lunavator remains a
 free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
+## Operations interface
+
+The campaign is one operations workspace: all outposts and their local stocks,
+inbound cargo, industry rates and tether availability stay exposed. Choosing a
+destination highlights it without hiding other depots. Each outpost has supply
+shortcuts that prepare the cargo form, choose tug/tether based on commissioned
+endpoints, and suggest a maintenance interval; they never dispatch automatically.
+
+The map highlights the planned corridor, supports keyboard destination selection,
+and shows the swarm around the same Sun. Cargo and mirror deployments share an
+arrival-ordered traffic queue. Scheduled services, blockers and pause controls
+sit beside the map, with bounded keyboard-scrollable lists for busy networks.
+The simulation clock stays available while scrolling. At smaller widths the
+workspace reflows, with anchor links to Outposts, Map, Traffic and Send cargo.
+
+One next-milestone prompt guides progression. Completed objectives, architecture
+explanations and saved-network management use secondary disclosures. Primary
+stock, production and traffic information does not require opening a tab.
+Mirror production, launch controls and deployed totals sit in the same workspace.
+This redesign changes presentation only: model 0.3.0, schema 3, numerical rules,
+service schedules, migration and saved-world values are unchanged.
+
 ## Economy and scheduling
 
 Construction material remains the original cargo stock. Equipment is a second

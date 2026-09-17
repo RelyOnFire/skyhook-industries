@@ -67,7 +67,9 @@ def main():
             action('+30 days')
             page.get_by_role('button',name='Moon Tier 1').click()
             action('Upgrade lunavator · 60 t')
+            page.locator('.campaign-milestones>summary').click()
             expect(page.get_by_text('The first network is established.',exact=True)).to_be_visible()
+            page.locator('.campaign-milestones>summary').click()
             done('all four objectives complete through gameplay')
             # Extend that same world into a productive, automatically supplied network.
             page.get_by_label('From',exact=True).select_option('earth')
@@ -144,6 +146,7 @@ def main():
             done('backup round-trip creates a separate slot; invalid versions preserve current state')
             action('+1 day')
             active=next(r for r in records() if r['state']['id']!=before['id'])
+            page.get_by_role('button',name='Your saves',exact=True).click()
             page.locator('.campaign-slot-list li').filter(has=page.get_by_text('CURRENT',exact=True)).get_by_role('button',name='Recover checkpoint').click();saved()
             expect(page.get_by_text('Recovered into a new save slot. The original campaign is unchanged.',exact=True)).to_be_visible()
             assert len(records())==3
@@ -181,6 +184,7 @@ def main():
             assert migrated['state']['schema']==3 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
             assert migrated['checkpoints'][0]==legacy
+            page.get_by_role('button',name='Your saves',exact=True).click()
             page.locator('.campaign-slot-list li').filter(has=page.get_by_text('CURRENT',exact=True)).get_by_role('button',name='Recover checkpoint').click();saved()
             legacy_recovery=next(r['state'] for r in records() if r['state']['name']=='Legacy network · recovery')
             assert legacy_recovery['day']==legacy['day'] and legacy_recovery['ports']['earth']['equipmentT']==20
@@ -189,6 +193,7 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])['state']['ports']['earth']['equipmentT']==20.5
             page.get_by_role('button',name='Load Lunar bridge · recovery',exact=True).click();saved()
             done('real first-chapter browser save migrates atomically, retains recovery and increments the stale-tab token')
+            if page.locator('.campaign-save-manager').get_attribute('open') is not None:page.locator('.campaign-save-manager>summary').click()
             for width,height in [(1440,1000),(1000,900),(768,1024),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height});page.evaluate('document.activeElement?.blur()');page.evaluate('scrollTo(0,0)')
                 assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Overflow at {width}'
@@ -268,7 +273,7 @@ def main():
             established=records(solar)[0]['state']
             assert established['solar']['deployedT']>=100
             assert solar.locator('.solar-goals li.complete').count()==4
-            assert solar.locator('.solar-drawing rect').count()>0
+            assert solar.locator('.map-swarm rect').count()>0
             expect(solar.get_by_text('Your first solar swarm is established.',exact=True)).to_be_visible()
             done('Mercury supply, refinery, mirror manufacture and automatic launches complete all four new milestones')
             action('Pause automatic launches',solar);last_id=records(solar)[0]['state']['solar']['nextDeployment']
@@ -283,13 +288,42 @@ def main():
             restored=next(r['state'] for r in records(solar) if r['id']!=before['id'])
             assert restored['solar']==before['solar'] and restored['ports']==before['ports']
             done('mirror deployments survive reload and backup import; launch pause and resume retain flights already sent')
-            for width,height in [(1440,1000),(1000,900),(768,1024),(390,844),(320,800)]:
+            # Selection and order preparation are presentation only; every depot remains visible.
+            before_ui=records(solar)
+            solar.get_by_role('button',name='Supply Mercury with equipment',exact=True).click()
+            expect(solar.get_by_label('From',exact=True)).to_have_value('earth')
+            expect(solar.get_by_label('To',exact=True)).to_have_value('mercury')
+            expect(solar.get_by_label('Cargo type',exact=True)).to_have_value('equipment')
+            expect(solar.get_by_role('radio',name='Tether corridor')).to_be_checked()
+            expect(solar.get_by_label('Repeat every (simulation days)',exact=True)).to_have_value('60')
+            expect(solar.locator('.route-planned')).to_have_count(1)
+            solar.get_by_role('button',name='Locate Phobos',exact=True).focus()
+            solar.keyboard.press('Enter')
+            expect(solar.locator('#outpost-phobos')).to_have_class('outpost selected')
+            for site in ['earth','moon','phobos','mercury']:
+                expect(solar.get_by_test_id(site+'-equipment')).to_be_visible()
+                expect(solar.get_by_test_id(site+'-materials')).to_be_visible()
+            assert records(solar)==before_ui
+            times=solar.locator('.flight-row').evaluate_all('(rows)=>rows.map(r=>Number(r.dataset.arrival))')
+            assert times==sorted(times)
+            assert solar.locator('.mirror-tag').count()>0
+            done('all outpost stocks stay exposed; supply shortcuts and keyboard map selection preserve the save; cargo and mirrors share an arrival-ordered queue')
+            for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 solar.set_viewport_size({'width':width,'height':height});solar.evaluate('document.activeElement?.blur()')
                 assert not solar.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Solar overflow at {width}'
+                solar.evaluate('scrollTo(0,0)')
+                solar.screenshot(path=str(out/f'operations-{width}.png'),full_page=True)
+                solar.screenshot(path=str(out/f'operations-viewport-{width}.png'))
+                if width>=1280:
+                    positions=solar.locator('#outposts-heading,#schedules-heading,#traffic-heading,#network').evaluate_all('(els)=>els.map(e=>({id:e.id,y:e.getBoundingClientRect().top,x:e.getBoundingClientRect().left}))')
+                    by_id={p['id']:p for p in positions}
+                    assert abs(by_id['outposts-heading']['y']-by_id['schedules-heading']['y'])<5
+                    assert by_id['traffic-heading']['y']-by_id['outposts-heading']['y']<500
+                    assert by_id['outposts-heading']['x']<by_id['network']['x']<by_id['schedules-heading']['x']
                 solar.locator('.campaign-solar').screenshot(path=str(out/f'solar-{width}.png'))
                 if width in [1440,320]:solar.locator('.network-map').screenshot(path=str(out/f'solar-map-{width}.png'))
             solar_context.close()
-            done('solar chapter and four-body map fit desktop, tablet and narrow phone viewports')
+            done('operations layout fits six widths; outposts, map and scheduled services align on desktop with active flights directly below services')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True)

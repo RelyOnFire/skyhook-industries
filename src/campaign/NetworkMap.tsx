@@ -2,7 +2,7 @@ import type { Campaign, SiteId } from './model.js';
 import { ROUTES, SITE, SITES } from './model.js';
 
 const POINTS = { earth:[430,230], moon:[530,115], phobos:[825,260], mercury:[170,310] } as const;
-export default function NetworkMap({world,selected,onSelect,tracked,playing}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:number|null;playing:boolean}) {
+export default function NetworkMap({world,selected,onSelect,tracked,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:number|null;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
   return <div className={playing?'network-map running':'network-map'}>
     <div className="map-heading"><span>INNER SYSTEM / TRANSPORT NETWORK</span><span>SCHEMATIC · NOT TO SCALE</span></div>
     <svg viewBox="0 0 1000 440" role="img" aria-label="Transport network connecting Earth, the Moon and Phobos, with Mercury routes available through the solar swarm expedition.">
@@ -12,8 +12,9 @@ export default function NetworkMap({world,selected,onSelect,tracked,playing}:{wo
       <ellipse cx="430" cy="230" rx="165" ry="125" className="map-orbit"/>
       <ellipse cx="100" cy="165" rx="120" ry="180" className="map-orbit"/>
       <ellipse cx="815" cy="310" rx="85" ry="52" className="map-orbit"/>
-      {ROUTES.filter(r=>r.b!=='mercury'||world?.solar.unlocked).map(r=><line key={r.id} x1={POINTS[r.a][0]} y1={POINTS[r.a][1]} x2={POINTS[r.b][0]} y2={POINTS[r.b][1]} className="map-route"/>)}
+      {ROUTES.filter(r=>r.b!=='mercury'||world?.solar.unlocked).map(r=><line key={r.id} x1={POINTS[r.a][0]} y1={POINTS[r.a][1]} x2={POINTS[r.b][0]} y2={POINTS[r.b][1]} className={route&&((route.from===r.a&&route.to===r.b)||(route.from===r.b&&route.to===r.a))?'map-route route-planned':'map-route'}/>)}
       <text x="640" y="152" className="map-route-label">LUNAR–PHOBOS</text><text x="564" y="283" className="map-route-label">MARS TRANSFER</text>
+      <g className="map-swarm" aria-label={'Solar swarm: '+(world?.solar.deployedT||0)+' tonnes deployed'}>{Array.from({length:Math.min(60,Math.ceil((world?.solar.deployedT||0)/10))},(_,i)=>{const a=i*2.399963,x=100+Math.cos(a)*(i%2?72:55),y=165+Math.sin(a)*(i%2?95:68);return <rect key={i} x={x-2} y={y-2} width="4" height="4" fill="#efc995"/>;})}</g>
       <circle cx="100" cy="165" r="31" fill="url(#map-sun)"/><text x="100" y="216" textAnchor="middle" className="map-body-label">SOL</text>
       <circle cx="170" cy="310" r="18" fill={world?.solar.unlocked?'#a49782':'#524e45'}/><circle cx="163" cy="302" r="4" fill="#756d60"/><circle cx="176" cy="314" r="3" fill="#6d665b"/>
       <circle cx="430" cy="230" r="36" fill="url(#earth-light)"/>
@@ -24,12 +25,12 @@ export default function NetworkMap({world,selected,onSelect,tracked,playing}:{wo
       <path d="M819 235L834 289" stroke="#efa477" strokeWidth="2"/>
       <path d="M516 94l29 16" stroke="#d7d1bf" strokeWidth="2"/><path d="M401 182l25 15" stroke="#8ebbc6" strokeWidth="2"/>
       {!!world?.ports.mercury.level&&<path d="M142 278l28 14" stroke="#c6b69a" strokeWidth="2"/>}
-      {SITES.map(id=><g key={id}><circle cx={POINTS[id][0]} cy={POINTS[id][1]} r={id==='earth'?47:29} className={selected===id?'map-selected':'map-ring'} stroke={SITE[id].color}/><text x={POINTS[id][0]} y={POINTS[id][1]+(id==='earth'?68:-43)} textAnchor="middle" className="map-label">{SITE[id].name.toUpperCase()}</text></g>)}
+      {SITES.map(id=><g key={id} role="button" tabIndex={0} aria-label={'Locate '+SITE[id].name} onClick={()=>onSelect(id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(id);}}}><circle cx={POINTS[id][0]} cy={POINTS[id][1]} r={id==='earth'?47:29} className={selected===id?'map-selected':'map-ring'} stroke={SITE[id].color}/><text x={POINTS[id][0]} y={POINTS[id][1]+(id==='earth'?68:-43)} textAnchor="middle" className="map-label">{SITE[id].name.toUpperCase()}</text></g>)}
       {world?.flights.map(f=>{const t=Math.min(1,Math.max(0,(world.day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=POINTS[f.to];return <g key={f.id} className={tracked===f.id?'map-flight tracked':'map-flight'}><circle cx={a[0]+(b[0]-a[0])*t} cy={a[1]+(b[1]-a[1])*t} r={tracked===f.id?9:5} fill={tracked===f.id?'#fff1cf':'#efa477'} stroke="#080b0d" strokeWidth="2"/><title>{'Flight '+f.id+': '+f.cargoT+' t to '+SITE[f.to].name}</title></g>;})}
       {world?.solar.deployments.map(d=>{const t=Math.min(1,Math.max(0,(world.day-d.departed)/(d.arrival-d.departed)));return <g key={d.id} className="map-flight"><circle cx={170-70*t} cy={310-55*t} r="4" fill="#ffe9af"/><title>{'Mirror launch '+d.id+': '+d.massT+' t toward the swarm'}</title></g>;})}
       <text x="36" y="409" className="map-route-label">{world?.solar.unlocked?'MERCURY EXPEDITION / CORRIDORS OPEN':'MERCURY EXPEDITION / CHAPTER 03'}</text>
     </svg>
-    <div className="map-site-buttons" aria-label="Select a destination">{SITES.map(id=><button key={id} aria-pressed={selected===id} onClick={()=>onSelect(id)}><i style={{background:SITE[id].color}}/><span>{SITE[id].name}<small>{id==='mercury'&&!world?.solar.unlocked?'Chapter 03':world?.ports[id].level?'Tier '+world.ports[id].level+' · '+world.ports[id].materialsT.toLocaleString('en-US',{maximumFractionDigits:1})+' t in depot':'Awaiting construction'}</small></span><span aria-hidden="true">↗</span></button>)}</div>
+    <div className="map-caption"><span><i/> {playing?'NETWORK RUNNING':'NETWORK PAUSED'}</span><span>{world?.solar.unlocked?'Swarm symbols represent batches':'Select an outpost to locate it'}</span></div>
   </div>;
 }
 
