@@ -166,6 +166,7 @@
 }
 .company-page .cta:hover,
 .company-page .cta.light:hover { color: #13191c; background: #ffd1b3; border-color: #ffd1b3; }
+.company-page .page-hero .cta { align-self: flex-start; }
 .company-page .closing {
   height: auto;
   min-height: 0;
@@ -180,6 +181,7 @@
 .company-page .closing p { max-width: 64ch; margin: 0 0 22px; font: 17px/1.7 var(--sans); }
 .company-page .site-footer > * { max-width: 1240px; margin-left: auto; margin-right: auto; }
 .company-page .footer-top p { font-family: var(--sans); }
+.company-page .site-footer .wordmark > span:last-child { max-width: none; }
 
 @media (max-width: 1000px) {
   .company-page :is(.paper-section, .dark-section) .section-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
