@@ -1,5 +1,6 @@
 import { build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
+import { trafficItems, type TrafficId } from './traffic.js';
 
 export const n = (v:number,digits=1) => v.toLocaleString('en-US',{maximumFractionDigits:digits});
 export const date = (v:number) => 'Day '+n(v);
@@ -51,9 +52,8 @@ export function Milestones({world}:{world:Campaign}) {
   </div>;
 }
 
-export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}:{world:Campaign;busy:boolean;act:Act;tracked:number|null;onTrack:(id:number|null)=>void;arrivals:string[];onDismiss:()=>void}) {
-  const flights=[...world.flights.map(f=>({id:'cargo-'+f.id,shipment:f.id,from:SITE[f.from].name,to:SITE[f.to].name,mass:f.cargoT,kind:CARGO[f.kind],departed:f.departed,arrival:f.arrival})),...world.solar.deployments.map(d=>({id:'mirror-'+d.id,shipment:null,from:'Mercury',to:'Solar swarm',mass:d.massT,kind:'Mirrors · launch '+d.id,departed:d.departed,arrival:d.arrival}))].sort((a,b)=>a.arrival-b.arrival||a.id.localeCompare(b.id));
-  const followed=world.flights.find(f=>f.id===tracked);
+export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}:{world:Campaign;busy:boolean;act:Act;tracked:TrafficId|null;onTrack:(id:TrafficId|null)=>void;arrivals:string[];onDismiss:()=>void}) {
+  const flights=trafficItems(world);
   const services=<section className="campaign-schedules" aria-labelledby="schedules-heading"><header className="panel-title"><h2 id="schedules-heading">Scheduled services</h2><span>{world.services.length} / 12</span></header>
       <div className="traffic-scroll service-scroll" tabIndex={0} role="region" aria-label="Scheduled service list">{!world.services.length?<p className="campaign-empty">Start a regular supply line using the cargo controls. Your services and any shortages will appear here.</p>:world.services.map(s=>{
         const currentReason=flightPlan(world,s.from,s.to,s.cargoT,s.mode,s.kind).reason;
@@ -65,8 +65,7 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
   return <aside className="ops-traffic" id="traffic" aria-label="Live logistics">
     <section className="campaign-traffic" aria-labelledby="traffic-heading"><header className="panel-title"><h2 id="traffic-heading">In flight</h2><span>{flights.length} / 32</span></header>
       <div className="traffic-total"><b>{n(flights.reduce((a,f)=>a+f.mass,0))} t</b> in transit <span>Next arrivals first</span></div>
-      {tracked!==null&&<div className="campaign-tracking" aria-label="Tracked flight"><p>{followed?'Following flight '+tracked+' · '+SITE[followed.from].name+' → '+SITE[followed.to].name:'Delivery complete. Cargo has reached its destination.'}</p><button onClick={()=>onTrack(null)}>Stop tracking</button></div>}
-      <div className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!flights.length?<p className="campaign-empty">No cargo in transit. Send a shipment and watch it cross the map.</p>:flights.map(f=><article className={'flight-row'+(f.shipment!==null&&tracked===f.shipment?' tracked':'')} key={f.id} data-arrival={f.arrival}><div className="traffic-row-title"><h3>{f.from} <span>→</span> {f.to}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><b>{f.mass} t</b> {f.kind.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={(f.shipment!==null?'Flight '+f.shipment:'Mirror '+f.id)+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.shipment!==null?<button aria-pressed={tracked===f.shipment} aria-label={(tracked===f.shipment?'Tracking flight ':'Track flight ')+f.shipment} onClick={()=>onTrack(tracked===f.shipment?null:f.shipment)}>{tracked===f.shipment?'Tracking':'Track'}</button>:<span className="mirror-tag">DEPLOYMENT</span>}</div></article>)}</div>
+      <div className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!flights.length?<p className="campaign-empty">No cargo in transit. Send a shipment and watch it cross the map.</p>:flights.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-arrival={f.arrival} data-kind={f.kind}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
     </section>
     {services}
     {!!arrivals.length&&<section className="campaign-arrivals" aria-label="Recent arrivals"><header><b>Deliveries received</b><button aria-label="Dismiss arrival notifications" onClick={onDismiss}>Dismiss</button></header><div role="status">{arrivals.map((text,i)=><p key={i}>{text}</p>)}</div></section>}

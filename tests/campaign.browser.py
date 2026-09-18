@@ -339,8 +339,59 @@ def main():
                     assert solar.locator('#network').bounding_box()['width']>width*.49
                 solar.locator('.campaign-solar').screenshot(path=str(out/f'solar-{width}.png'))
                 if width in [1440,320]:solar.locator('.network-map').screenshot(path=str(out/f'solar-map-{width}.png'))
-            solar_context.close()
             done('operations layout fits six widths; the map is the largest panel and both arrivals and services start within the desktop viewport')
+            # Cargo and mirror counters are independent: the same numeric ID is valid in both.
+            collision=json.loads(solar_backup.read_text())
+            overlap_id=max([f['id'] for f in collision['state']['flights']]+[d['id'] for d in collision['state']['solar']['deployments']])+1
+            collision['state']['flights'][0]['id']=overlap_id
+            collision['state']['solar']['deployments'][0]['id']=overlap_id
+            collision['state']['nextShipment']=collision['state']['solar']['nextDeployment']=overlap_id+1
+            solar.locator('input[type=file]').set_input_files({'name':'traffic-identity.json','mimeType':'application/json','buffer':json.dumps(collision).encode()});saved(solar)
+            action('Dismiss message',solar)
+            expect(solar.get_by_test_id('map-power')).to_have_text('0 GW')
+            expect(solar.get_by_role('link',name='Connect swarm power to Mercury',exact=True)).to_have_attribute('href','#swarm-power')
+            def tracking_geometry():
+                return solar.evaluate('''()=>({
+                    map:document.querySelector('.network-map').getBoundingClientRect().height,
+                    inspector:document.querySelector('#flight-inspector').getBoundingClientRect().height,
+                    traffic:document.querySelector('.campaign-traffic').getBoundingClientRect().height,
+                    services:document.querySelector('.campaign-schedules').getBoundingClientRect().top-document.querySelector('.ops-traffic').getBoundingClientRect().top,
+                    depots:[...document.querySelectorAll('.outpost')].map(e=>e.getBoundingClientRect().height)
+                })''')
+            untouched=records(solar)
+            for width in [1440,768,320]:
+                solar.set_viewport_size({'width':width,'height':1000 if width>800 else 844})
+                geometry=tracking_geometry()
+                action('Track flight '+str(overlap_id),solar)
+                expect(solar.locator('.map-flight.tracked')).to_have_attribute('data-traffic-id','cargo-'+str(overlap_id))
+                expect(solar.get_by_label('Tracked flight',exact=True)).to_contain_text('Flight '+str(overlap_id))
+                assert tracking_geometry()==geometry, f'Cargo tracking shifted layout at {width}'
+                action('Track mirror launch '+str(overlap_id),solar)
+                expect(solar.locator('.map-flight.tracked')).to_have_attribute('data-traffic-id','mirror-'+str(overlap_id))
+                expect(solar.get_by_label('Tracked flight',exact=True)).to_contain_text('Mercury → Solar swarm')
+                expect(solar.locator('.map-tracked-route')).to_have_class('map-tracked-route mirrors')
+                assert tracking_geometry()==geometry, f'Mirror tracking shifted layout at {width}'
+                no_overflow(solar,width)
+                if width==320:
+                    assert solar.evaluate('document.activeElement.id')=='flight-inspector'
+                    bounds=solar.locator('#flight-inspector').bounding_box()
+                    assert bounds['y']+bounds['height']<=844
+                solar.locator('.network-map').screenshot(path=str(out/f'tracked-mirror-map-{width}.png'))
+                solar.get_by_role('button',name='Stop tracking',exact=True).focus();solar.keyboard.press('Enter')
+                expect(solar.locator('.map-flight.tracked')).to_have_count(0)
+                expect(solar.get_by_label('Planned route',exact=True)).to_contain_text('Planned corridor')
+                assert tracking_geometry()==geometry and records(solar)==untouched
+            done('cargo and mirror flights with overlapping IDs track independently without changing saves or panel geometry at three widths')
+            done('phone tracking reveals and focuses the map inspector; keyboard clearing restores the planned route')
+            action('Track mirror launch '+str(overlap_id),solar)
+            map_height=tracking_geometry()['map']
+            action('+30 days',solar)
+            expect(solar.get_by_label('Tracked flight',exact=True)).to_contain_text('Deployment complete')
+            expect(solar.locator('.map-flight.tracked')).to_have_count(0)
+            assert tracking_geometry()['map']==map_height
+            action('Stop tracking',solar)
+            solar_context.close()
+            done('a tracked mirror launch reports completed deployment without resizing the map')
             # A manual dispatch must share the save lock with Play, without pausing it.
             live_context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce')
             live=live_context.new_page();live.set_default_timeout(12000)
@@ -457,6 +508,7 @@ def main():
             assert connected['solar']['deployments']==before['solar']['deployments']
             assert connected['solar']['nextLaunchDay']==before['solar']['nextLaunchDay']
             expect(motion.get_by_test_id('swarm-power')).not_to_have_text('0 GW')
+            expect(motion.get_by_test_id('map-power')).to_have_text(motion.get_by_test_id('swarm-power').inner_text())
             expect(motion.locator('.map-power-link')).to_have_count(1)
             # Animations move the actual SVG geometry, then retain the pose on Pause.
             motion.locator('#network').scroll_into_view_if_needed()
@@ -489,6 +541,7 @@ def main():
             assert grown['solar']['deployedT']>=2000 and grown['solar']['manufacturedT']>initial['solar']['manufacturedT']+1000
             assert grown['ports']['mercury']['equipmentT']>0
             expect(motion.get_by_test_id('swarm-power')).not_to_have_text(initial_power)
+            expect(motion.get_by_test_id('map-power')).to_have_text(motion.get_by_test_id('swarm-power').inner_text())
             assert motion.locator('.power-goals li.complete').count()==4
             expect(motion.get_by_role('heading',name='Your swarm is powering its own expansion.',exact=True)).to_be_visible()
             show_saves(motion)

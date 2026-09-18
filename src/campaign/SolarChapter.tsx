@@ -18,7 +18,7 @@ export default function SolarChapter({world,busy,act}:{world:Campaign;busy:boole
         {s.powerLink?<>
           <div className="power-loop" aria-label="Feedback: more deployed mirrors return more power, accelerating Mercury production and the next mirror launches"><span>More mirrors</span><i>→</i><span>More power</span><i>→</i><span>Faster Mercury works</span><i>↻</i></div>
           <div className="power-production"><span>Next cycle <b data-testid="mirror-output">{n(production.madeT)} t mirrors</b> / {n(production.mirrorCapacity)} t capacity</span><span>Refinery <b>{n(production.minedT)} t</b> · local equipment <b>{n(production.toolingT)} t</b></span></div>
-          <p className={'power-condition'+(limited?' limited':'')}>{limited?restriction:'Power drives expansion; local tooling replaces equipment used each cycle.'} {!s.autoLaunch?'Enable automatic launches to keep the loop growing.':s.mirrorsT>=automatic.massT&&launch.reason?launch.reason:''}</p>
+          <p className={'power-condition'+(limited?' limited':'')}>{limited?restriction:'Power drives expansion; local tooling replaces equipment used each cycle.'} {!s.autoLaunch&&'Enable automatic launches to keep the loop growing.'}</p>
           <div className="power-deposit"><label htmlFor="mercury-deposit">Local mining tract <span>{n(SOLAR.depositT-s.depositT)} / {n(SOLAR.depositT)} t processed</span></label><progress id="mercury-deposit" value={SOLAR.depositT-s.depositT} max={SOLAR.depositT}/></div>
         </>:<>
           <p>Connect the swarm once. Returned power then expands refining, mirror production and local equipment fabrication automatically.</p>

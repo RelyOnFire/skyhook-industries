@@ -1,7 +1,10 @@
 import type { Campaign, SiteId } from './model.js';
 import { ROUTES, SITE, SITES, swarmPower } from './model.js';
+import { trafficItems, type TrafficId } from './traffic.js';
 
 const POINTS = { earth:[460,290], moon:[595,130], phobos:[840,320], mercury:[180,420] } as const;
+const SWARM = [95,310] as const;
+const number = (value:number) => value.toLocaleString('en-US',{maximumFractionDigits:1});
 function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site:SiteId;cx:number;cy:number;radius:number;seconds:number;phase:number;commissioned?:boolean}) {
   return <g transform={`translate(${cx} ${cy})`} className="map-tether" data-site={site} aria-label={site==='phobos'?(commissioned?'Phobos and its anchored tethers orbit Mars':'Phobos orbits Mars'):SITE[site].facility+' in free orbit'}>
     <circle r={radius} className="map-tether-track"/>
@@ -21,10 +24,14 @@ function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site
     </g></g>
   </g>;
 }
-export default function NetworkMap({world,selected,onSelect,tracked,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:number|null;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
+export default function NetworkMap({world,selected,onSelect,tracked,onTrack,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:TrafficId|null;onTrack?:(id:TrafficId|null)=>void;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
   const swarmCount=Math.min(80,Math.ceil((world?.solar.deployedT||0)/10));
-  return <div className={playing?'network-map running':'network-map'}>
-    <div className="map-heading"><div><p className="campaign-eyebrow">TRANSPORT NETWORK</p><h2>The inner system</h2></div><span className="map-live"><i/>{playing?'LIVE':'STANDBY'}</span></div>
+  const traffic=world?trafficItems(world):[],followed=traffic.find(f=>f.id===tracked),power=world?swarmPower(world):null;
+  const destination=followed&&(followed.to==='swarm'?SWARM:POINTS[followed.to]);
+  const complete=tracked!==null&&!followed;
+  const detail=followed?`${followed.label} · ${followed.mass} t ${followed.cargo.toLowerCase()} · Day ${number(followed.arrival)}`:complete?(tracked.startsWith('mirror-')?'Mirrors are now part of the solar swarm.':'Cargo has reached its destination.'):route?'Planned corridor · prepare a shipment below':'Select an outpost to explore';
+  return <div className={'network-map'+(playing?' running':'')+(followed?' following':'')}>
+    <div className="map-heading"><div><p className="campaign-eyebrow">TRANSPORT NETWORK</p><h2>The inner system</h2></div><div className="map-readouts">{world?.solar.unlocked&&power&&<a className="map-power-readout" href="#swarm-power" aria-label={world.solar.powerLink?`${number(power.returnedGW)} GW returned to Mercury, ${number(power.multiplier)} times production capacity. View power loop.`:'Connect swarm power to Mercury'}><span>POWER TO MERCURY</span><strong data-testid="map-power">{number(power.returnedGW)} <small>GW</small></strong><span>{world.solar.powerLink?number(power.multiplier)+'× capacity':'Connect power'} <b>↗</b></span></a>}<span className="map-live"><i/>{playing?'LIVE':'STANDBY'}</span></div></div>
     <svg key={world?.id??'preview'} viewBox="0 0 1000 550" role="group" aria-label="Transport network connecting Earth, the Moon and Phobos, with Mercury routes available through the solar swarm expedition. Orbital motion is illustrative and follows Play and Pause.">
       <defs>
         <radialGradient id="earth-light" cx="28%" cy="28%" r="75%"><stop stopColor="#93b9bf"/><stop offset=".42" stopColor="#426e7b"/><stop offset=".78" stopColor="#173540"/><stop offset="1" stopColor="#081218"/></radialGradient>
@@ -44,6 +51,7 @@ export default function NetworkMap({world,selected,onSelect,tracked,playing,rout
       <ellipse cx="460" cy="290" rx="212" ry="155" transform="rotate(-27 460 290)" className="map-orbit"/>
       <ellipse cx="95" cy="215" rx="140" ry="217" transform="rotate(-24 95 215)" className="map-orbit"/>
       {ROUTES.filter(r=>r.b!=='mercury'||world?.solar.unlocked).map(r=><line key={r.id} x1={POINTS[r.a][0]} y1={POINTS[r.a][1]} x2={POINTS[r.b][0]} y2={POINTS[r.b][1]} className={route&&((route.from===r.a&&route.to===r.b)||(route.from===r.b&&route.to===r.a))?'map-route route-planned':'map-route'}/>)}
+      {followed&&destination&&<line x1={POINTS[followed.from][0]} y1={POINTS[followed.from][1]} x2={destination[0]} y2={destination[1]} className={'map-tracked-route '+followed.kind}/>}
       {world?.solar.powerLink&&<g className="map-power-link"><path d="M111 274Q119 342 174 391"/><text x="101" y="335">POWER RETURN</text></g>}
       <g className="map-swarm" aria-label={'Solar swarm: '+(world?.solar.deployedT||0)+' tonnes deployed'} transform="translate(95 215)">
         {[0,1].map(ring=><g key={ring} transform="scale(.75 1)">
@@ -65,10 +73,16 @@ export default function NetworkMap({world,selected,onSelect,tracked,playing,rout
       <OrbitalTether site="phobos" cx={855} cy={403} radius={88} seconds={42} phase={-10} commissioned={!!world?.ports.phobos.level}/>
       {!!world?.ports.mercury.level&&<OrbitalTether site="mercury" cx={180} cy={420} radius={54} seconds={26} phase={-30}/>}
       {SITES.map(id=><g key={id} role="button" tabIndex={0} aria-label={'Locate '+SITE[id].name} aria-pressed={selected===id} onClick={()=>onSelect(id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(id);}}}><rect x={POINTS[id][0]-75} y={POINTS[id][1]-75} width="150" height={id==='phobos'?260:150} fill="transparent"/><circle cx={id==='phobos'?855:POINTS[id][0]} cy={id==='phobos'?403:POINTS[id][1]} r={id==='phobos'?112:id==='earth'?69:36} className={selected===id?'map-selected':'map-ring'} stroke={SITE[id].color}/><text x={POINTS[id][0]} y={id==='moon'?30:id==='mercury'?516:POINTS[id][1]+(id==='earth'?114:-68)} textAnchor="middle" className="map-label">{SITE[id].name.toUpperCase()}</text><text x={POINTS[id][0]} y={id==='moon'?47:id==='mercury'?535:POINTS[id][1]+(id==='earth'?134:-49)} textAnchor="middle" className="map-site-state">{id==='mercury'&&!world?.solar.unlocked?'CHAPTER 03':world?.ports[id].level?'TIER '+world.ports[id].level+' / '+SITE[id].facility.toUpperCase():'AWAITING CONSTRUCTION'}</text></g>)}
-      {world?.flights.map(f=>{const t=Math.min(1,Math.max(0,(world.day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=POINTS[f.to];return <g key={f.id} className={tracked===f.id?'map-flight tracked':'map-flight'}><circle cx={a[0]+(b[0]-a[0])*t} cy={a[1]+(b[1]-a[1])*t} r={tracked===f.id?9:5} fill={tracked===f.id?'#fff1cf':'#efa477'} stroke="#080b0d" strokeWidth="2"/><title>{'Flight '+f.id+': '+f.cargoT+' t to '+SITE[f.to].name}</title></g>;})}
-      {world?.solar.deployments.map(d=>{const t=Math.min(1,Math.max(0,(world.day-d.departed)/(d.arrival-d.departed)));return <g key={d.id} className="map-flight"><circle cx={180-85*t} cy={420-110*t} r="4" fill="#ffe9af"/><title>{'Mirror launch '+d.id+': '+d.massT+' t toward the swarm'}</title></g>;})}
+      {world&&[...traffic.filter(f=>f.id!==tracked),...(followed?[followed]:[])].map(f=>{const t=Math.min(1,Math.max(0,(world.day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=f.to==='swarm'?SWARM:POINTS[f.to],angle=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;return <g key={f.id} className={'map-flight '+f.kind+(tracked===f.id?' tracked':'')} data-traffic-id={f.id} style={{transform:`translate(${a[0]+(b[0]-a[0])*t}px,${a[1]+(b[1]-a[1])*t}px)`}}>
+        {tracked===f.id&&<circle r="14" className="map-flight-halo"/>}<path transform={`rotate(${angle})`} d={f.kind==='mirrors'?'M0-5L7 0 0 5-7 0Z':f.kind==='equipment'?'M7 0L-1-5-6-3-6 3-1 5Z':'M8 0L-6-5-3 0-6 5Z'}/><title>{f.label+': '+f.mass+' t '+f.cargo.toLowerCase()+' to '+f.toName}</title>
+      </g>;})}
     </svg>
-    <div className="map-caption"><span>{route?<><i/> {SITE[route.from].name} <b>→</b> {SITE[route.to].name}</>:'Select an outpost to explore'}</span>{world?.solar.powerLink&&<a href="#swarm-power">{swarmPower(world).returnedGW.toLocaleString('en-US',{maximumFractionDigits:1})} GW to Mercury ↗</a>}<span>Illustrative motion · not to scale</span></div>
+    <div className={'map-inspector'+(tracked?' tracking':'')} id="flight-inspector" role="region" aria-label={tracked?'Tracked flight':'Planned route'} tabIndex={-1}>
+      <div className="map-inspector-detail"><b>{followed?<>{followed.fromName} <span>→</span> {followed.toName}</>:complete?(tracked.startsWith('mirror-')?'Deployment complete':'Delivery complete'):route?<>{SITE[route.from].name} <span>→</span> {SITE[route.to].name}</>:'Your transport network'}</b><p title={detail}>{detail}</p></div>
+      {followed&&world&&<div className="map-eta"><strong>{number(followed.arrival-world.day)}<small> d</small></strong><span>TO ARRIVAL</span></div>}
+      {tracked&&<button className="map-stop-tracking" aria-label="Stop tracking" title="Stop tracking" onClick={()=>onTrack?.(null)}>×</button>}
+    </div>
+    <div className="map-key" aria-label="Map legend"><span><i className="cargo-swatch materials"/>Materials</span><span><i className="cargo-swatch equipment"/>Equipment</span><span><i className="cargo-swatch mirrors"/>Mirrors</span><span>Illustrative · not to scale</span></div>
   </div>;
 }
 

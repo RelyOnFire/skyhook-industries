@@ -19,6 +19,14 @@ keyboard destination selection, and shows the swarm around the same Sun. Cargo
 and mirror deployments share an arrival-ordered traffic queue above scheduled
 services, so arrivals take precedence and recurring supply follows immediately.
 Both lists have bounded keyboard scrolling that tightens on shorter desktops.
+Construction, equipment and mirrors have distinct map glyphs and matching queue
+colors. Track any cargo flight or mirror launch to highlight its corridor and
+inspect its payload, destination and arrival in the fixed map footer. Tracking,
+clearing and completion never expand this footer or move the traffic controls.
+Cargo and mirror identities remain separate even when their numeric IDs match.
+On phones, tracking brings the map into view and focuses the inspector. Returned
+power and Mercury's production multiplier appear in the map header, linked to
+the full power controls; an unconnected swarm reports zero returned power.
 The delivery composer sits directly under
 the map; mirror operations follow it. The clock and pooled totals share a sticky
 bar. At smaller widths the workspace reflows, with anchor links to Outposts, Map,
@@ -142,6 +150,8 @@ It also covers portable backup/import, checkpoint branches, competing tabs,
 automatic-clock stop on an injected write failure and successful retry, and
 migration of native version-one, version-two and version-three IndexedDB records with checkpoint
 preservation. It also checks arrival row geometry, animated Play/Pause poses,
+independent cargo/mirror tracking with colliding IDs, fixed tracking geometry,
+phone focus and keyboard clearing, mirror completion and map power readings,
 reduced-motion behavior, increasing power after deployment, and the power-link
 upgrade and backup round-trip. A delayed manual-dispatch save verifies that Play waits, resumes,
 and retains exactly one shipment. Service edits and Save now preserve Play;

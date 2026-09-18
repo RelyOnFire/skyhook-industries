@@ -4,6 +4,7 @@ import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from 
 import SolarChapter from './SolarChapter.js';
 import NetworkMap from './NetworkMap.js';
 import { Milestones, NextMove, Outposts, TrafficBoard } from './Operations.js';
+import type { TrafficId } from './traffic.js';
 import './campaign.css';
 
 const number = (n:number) => n.toLocaleString('en-US',{maximumFractionDigits:1});
@@ -16,7 +17,7 @@ export default function Campaign() {
   const [selected,setSelected]=useState<SiteId>('moon'), [from,setFrom]=useState<SiteId>('earth'), [to,setTo]=useState<SiteId>('moon');
   const [cargo,setCargo]=useState('10'), [mode,setMode]=useState<Shipment['mode']>('tug'), [name,setName]=useState('First light');
   const [kind,setKind]=useState<CargoKind>('materials'), [intervalDays,setIntervalDays]=useState('30');
-  const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<number|null>(null);
+  const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<TrafficId|null>(null);
   const [arrivals,setArrivals]=useState<string[]>([]);
   const milestonePanel=useRef<HTMLDetailsElement>(null), savePanel=useRef<HTMLDetailsElement>(null);
   const revision=useRef<number|null>(null), upload=useRef<HTMLInputElement>(null), main=useRef<HTMLElement>(null);
@@ -77,6 +78,17 @@ export default function Campaign() {
   const chooseFrom=(id:SiteId)=>{setFrom(id);if(id===to)setTo(SITES.find(s=>s!==id&&!(s==='mercury'&&!world?.solar.unlocked))!);};
   const reveal=(element:HTMLElement|null)=>{if(element instanceof HTMLDetailsElement)element.open=true;element?.scrollIntoView({block:'nearest'});};
   const focusSite=(id:SiteId)=>{setSelected(id);reveal(document.getElementById('outpost-'+id));};
+  const trackFlight=(id:TrafficId|null)=>{
+    setTracked(id);
+    if(id)requestAnimationFrame(()=>{
+      const network=document.getElementById('network'),bounds=network?.getBoundingClientRect();
+      const clockBottom=document.querySelector('.campaign-clock')?.getBoundingClientRect().bottom??0;
+      if(bounds&&(bounds.top<clockBottom+8||bounds.bottom>window.innerHeight-16)){
+        network?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+        document.getElementById('flight-inspector')?.focus({preventScroll:true});
+      }
+    });
+  };
   const prepare=(origin:SiteId,destination:SiteId,resource:CargoKind)=>{
     setFrom(origin);setTo(destination);setKind(resource);setCargo('10');setSelected(destination);
     setMode(world?.ports[origin].level&&world?.ports[destination].level?'tether':'tug');
@@ -104,7 +116,7 @@ export default function Campaign() {
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#dispatch">Send cargo</a></nav>
       <div className="ops-grid">
         <Outposts world={world} busy={busy} selected={selected} onSelect={setSelected} act={act} prepare={prepare}/>
-        <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} playing={playing} route={{from,to}}/></section>
+        <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} onTrack={trackFlight} playing={playing} route={{from,to}}/></section>
           <section className="campaign-dispatch" id="dispatch" aria-labelledby="dispatch-heading"><header className="panel-title"><h2 id="dispatch-heading">Send cargo</h2><span>{SITE[from].name} → {SITE[to].name}</span></header>
         <form onSubmit={e=>{e.preventDefault();act(w=>dispatch(w,from,to,Number(cargo),mode,kind));}}>
           <div className="campaign-fields"><div><label htmlFor="campaign-origin">From</label><select id="campaign-origin" value={from} onChange={e=>chooseFrom(e.target.value as SiteId)}>{SITES.map(s=><option key={s} value={s} disabled={s==='mercury'&&!world.solar.unlocked}>{SITE[s].name}{s==='mercury'&&!world.solar.unlocked?' · Chapter 03':''}</option>)}</select></div><div><label htmlFor="campaign-destination">To</label><select id="campaign-destination" value={to} onChange={e=>setTo(e.target.value as SiteId)}>{SITES.filter(s=>s!==from).map(s=><option key={s} value={s} disabled={s==='mercury'&&!world.solar.unlocked}>{SITE[s].name}{s==='mercury'&&!world.solar.unlocked?' · Chapter 03':''}</option>)}</select></div><div><label htmlFor="campaign-kind">Cargo type</label><select id="campaign-kind" value={kind} onChange={e=>setKind(e.target.value as CargoKind)}><option value="materials">Construction material</option><option value="equipment">Equipment</option></select></div><div><label htmlFor="campaign-cargo">Cargo (t)</label><input id="campaign-cargo" type="number" min="1" max="30" step="1" required value={cargo} onChange={e=>setCargo(e.target.value)}/></div></div>
@@ -120,7 +132,7 @@ export default function Campaign() {
           </section>
           <SolarChapter world={world} busy={busy} act={act}/>
         </div>
-        <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={setTracked} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
+        <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
       <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop</span></summary><Milestones world={world}/></details>
     </>}
