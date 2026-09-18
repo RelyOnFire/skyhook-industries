@@ -27,7 +27,7 @@ test('solar: a real v2 network migrates all stocks, schedules and active flights
   assert.equal(w.solar.unlocked,false);assert.equal(w.ports.mercury.level,0);
   assert.equal(w.solar.manufacturedT,0);assert.deepEqual(w.solar.deployments,[]);
   assert.deepEqual(validateCampaign(w),w);assert.deepEqual(fixture,before);
-  assert.equal(importCampaign(JSON.stringify(fixture),'new').schema,3);
+  assert.equal(importCampaign(JSON.stringify(fixture),'new').schema,4);
 });
 test('solar: expedition costs and lock apply equally to direct commands and scheduled routes',()=>{
   const w=fresh(),before=structuredClone(w);

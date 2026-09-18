@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, SITE, SITES, type Campaign as World, type Shipment, type SiteId } from './model.js';
+import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, SITE, SITES, swarmPower, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
 import SolarChapter from './SolarChapter.js';
 import NetworkMap from './NetworkMap.js';
@@ -98,7 +98,7 @@ export default function Campaign() {
         <button className="primary" disabled={!playing&&(busy||world.day>=LIMITS.days||saveStatus.startsWith('Not saved'))} aria-label={playing?'Pause simulation':'Play simulation'} onClick={()=>setPlaying(p=>!p)}><span aria-hidden="true">{playing?'Ⅱ':'▶'}</span> {playing?'Pause':'Play'}</button>
         <label className="campaign-speed"><span className="sr-only">Speed</span><select aria-label="Simulation speed" value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={1}>1 day / sec</option><option value={10}>10 days / sec</option><option value={30}>30 days / sec</option></select></label>
         <button disabled={busy||world.day+1>LIMITS.days} onClick={()=>act(w=>advance(w,1),true)}>+1 day</button><button disabled={busy||world.day+30>LIMITS.days} onClick={()=>act(w=>advance(w,30),true)}>+30 days</button><button aria-label="Advance to next event" title={event===null?'No future event':day(event)} disabled={busy||event===null} onClick={()=>event!==null&&act(w=>advance(w,Math.max(1e-7,event-w.day)),true)}>Next event →</button></div>
-      <div className="ops-status" aria-label="Network status"><span><b data-testid="campaign-fuel">{number(world.fuelT)} t</b> support fuel</span><span><b>{number(world.marsOperations)}</b> Mars points</span><span><b>{world.flights.length+world.solar.deployments.length}</b> flights</span><span><b>{world.services.filter(s=>s.enabled).length}</b> active services</span>{world.solar.unlocked&&<span><b>{number(world.solar.deployedT)} t</b> swarm deployed</span>}</div>
+      <div className="ops-status" aria-label="Network status"><span><b data-testid="campaign-fuel">{number(world.fuelT)} t</b> support fuel</span><span><b>{number(world.marsOperations)}</b> Mars points</span><span><b>{world.flights.length+world.solar.deployments.length}</b> flights</span><span><b>{world.services.filter(s=>s.enabled).length}</b> active services</span>{world.solar.unlocked&&<span><b>{number(world.solar.deployedT)} t</b> swarm deployed</span>}{world.solar.unlocked&&<span><b>{number(swarmPower(world).returnedGW)} GW</b> to Mercury</span>}</div>
       </section>
       <NextMove world={world} onSelect={focusSite} onMilestones={()=>reveal(milestonePanel.current)}/>
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#dispatch">Send cargo</a></nav>
@@ -122,7 +122,7 @@ export default function Campaign() {
         </div>
         <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={setTracked} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
-      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light</span></summary><Milestones world={world}/></details>
+      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop</span></summary><Milestones world={world}/></details>
     </>}
     <details ref={savePanel} className="campaign-save-manager" open={!world}><summary>Saved networks & backups</summary>
     <section className="campaign-saves" id="campaign-saves" aria-labelledby="save-heading"><div className="campaign-panel-heading"><div><p className="campaign-eyebrow">YOUR CAMPAIGNS</p><h2 id="save-heading">Saved networks</h2></div><button disabled={busy} onClick={()=>upload.current?.click()}>Import backup</button></div>

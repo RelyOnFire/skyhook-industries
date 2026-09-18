@@ -86,3 +86,34 @@
 @media(prefers-reduced-motion:reduce){
   .campaign button,.running .map-flight circle{transition:none}
 }
+
+/* Stable telemetry slots keep deliveries and recovery from moving depot actions. */
+.outpost-inbound{display:grid;grid-template-columns:1fr auto;gap:2px 8px;height:36px;align-content:start;margin:0 0 7px;color:#cdb79b;font-size:10px}
+.outpost-inbound b{font-weight:500}.outpost-inbound small{grid-column:1/-1;font-size:9px;white-space:nowrap;color:var(--ops-muted)}
+.outpost-industry{min-height:15px;color:#abc4b4!important}.outpost-industry.needs-supply{margin-bottom:0}
+.outpost-rate{min-height:3.2em}.outpost-rating{min-height:15px}
+
+/* Power has one continuous readout and a compact, visible feedback path. */
+#swarm-power{scroll-margin-top:140px}.next-power{font-size:11px;text-decoration:none;padding:8px 0}
+.outpost-rate>span{display:block}.milestone-columns{grid-template-columns:repeat(4,minmax(0,1fr))}
+.solar-power{padding:16px;margin-top:13px;border-top:1px solid #bd955b30;background:radial-gradient(ellipse at 18% 0,#b98a4320,transparent 75%)}
+.solar-power>header{display:flex;justify-content:space-between;gap:10px;align-items:center}.solar-power>header>span{font-size:9px;color:var(--ops-muted)}.solar-power.connected>header>span{color:#aecbb7}
+.power-readings{display:grid;grid-template-columns:1fr 1fr .8fr;gap:12px;margin:14px 0}.power-readings>div>span{display:block;font-size:9px;color:var(--ops-muted)}.power-readings b{display:block;font-size:clamp(21px,2vw,32px);font-weight:400;letter-spacing:-.03em;color:#e8cca0;white-space:nowrap}.power-readings small{font-size:11px;color:#b6a88f;letter-spacing:0}
+.solar-power>p{font-size:11px;line-height:1.6}.power-connect{display:flex;align-items:center;gap:12px;margin:14px 0 8px}.power-connect button{flex-shrink:0;font-size:11px}.power-connect span{font-size:10px;color:var(--ops-muted)}
+.power-loop{display:grid;grid-template-columns:1fr auto 1fr auto 1.5fr auto;align-items:center;gap:8px;padding:10px 0;border-block:1px solid #bd955b25;font-size:10px;color:#d9c5a3}.power-loop i{font-style:normal;color:#e6b77b;font-size:14px}
+.power-production{display:flex;flex-direction:column;gap:3px;font-size:11px;margin-top:12px;color:var(--ops-muted)}.power-production b{font-weight:500;color:#d6e0d6}.solar-power .power-condition{font-size:10px;min-height:3.2em;margin-top:6px;color:#a8bdb1}.solar-power .power-condition.limited{color:#e8b27d}
+.power-deposit{margin-top:12px}.power-deposit label{display:flex;justify-content:space-between;gap:8px;font-size:9px;color:var(--ops-muted)}.power-deposit progress{display:block;width:100%;height:3px;margin-top:7px;appearance:none;border:0;background:#333731;accent-color:#d1a672}.power-deposit progress::-webkit-progress-bar{background:#333731}.power-deposit progress::-webkit-progress-value{background:#d1a672}.power-deposit progress::-moz-progress-bar{background:#d1a672}
+.solar-power .power-assumption{font-size:9px;line-height:1.6;margin-top:14px;color:var(--ops-muted)}.power-assumption a{white-space:nowrap}
+@media(max-width:1199px){.milestone-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.power-connect{flex-wrap:wrap}.power-readings{gap:7px}.power-readings>div>span{min-height:2.8em}.outpost-inbound small{white-space:normal;font-size:8px}.outpost-inbound{height:43px}}
+@media(max-width:800px){.milestone-columns{grid-template-columns:1fr}.power-readings{grid-template-columns:1fr 1fr}.power-readings>div:last-child{grid-column:1/-1;display:flex;align-items:baseline;gap:12px}.power-readings>div>span{min-height:0}.power-loop{flex-wrap:wrap;justify-content:flex-start}}
+@media(max-width:600px){#swarm-power{scroll-margin-top:220px}.outpost-inbound{height:36px}.outpost-inbound small{font-size:9px}.power-connect button{min-height:42px}.power-readings{grid-template-columns:1fr 1fr .8fr}.power-readings>div:last-child{display:block;grid-column:auto}.power-readings>div>span{min-height:2.8em}.power-readings b{font-size:24px}.power-loop{gap:6px;font-size:9px}.power-deposit label{flex-wrap:wrap}}
+@media(max-width:359px){.power-readings b{font-size:22px}.power-readings small{font-size:10px}.power-readings{grid-template-columns:1fr 1fr;gap:8px}.power-readings>div:last-child{grid-column:1/-1;display:flex;align-items:baseline;gap:12px}.power-readings>div>span{min-height:0}}
+
+/* Visual orbital periods are illustrative. Pause holds the current pose. */
+.map-tether-track{fill:none;stroke:#97bbc1;stroke-width:.7;stroke-dasharray:2 6;opacity:.25}.map-swarm-track{fill:none;stroke:#e3b777;stroke-width:.65;opacity:.15}
+.map-orbital-motion,.map-rotor-motion,.map-swarm-motion{animation:campaign-orbit 8s linear infinite;animation-play-state:paused;transform-origin:0 0}
+.running :is(.map-orbital-motion,.map-rotor-motion,.map-swarm-motion){animation-play-state:running}
+.map-power-link path{fill:none;stroke:#e7bc76;stroke-width:1.5;stroke-dasharray:5 8;opacity:.65;animation:campaign-power 3s linear infinite;animation-play-state:paused}.running .map-power-link path{animation-play-state:running}.map-power-link text{fill:#d6b787;font-size:8px;letter-spacing:.12em}.map-caption a{font-size:10px;text-decoration:none}
+@keyframes campaign-orbit{to{transform:rotate(360deg)}}
+@keyframes campaign-power{to{stroke-dashoffset:-39}}
+@media(prefers-reduced-motion:reduce){.map-orbital-motion,.map-rotor-motion,.map-swarm-motion,.map-power-link path{animation:none!important}}

@@ -190,7 +190,7 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==3 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==4 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
             assert migrated['checkpoints'][0]==legacy
             page.get_by_role('button',name='Your saves',exact=True).click()
@@ -253,7 +253,7 @@ def main():
             solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
             assert records(solar)[0]==previous_record
             action('Save now',solar);migrated=records(solar)[0]
-            assert migrated['state']['schema']==3 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['state']['schema']==4 and migrated['state']['revision']==previous['revision']+1
             assert migrated['checkpoints'][0]==previous
             for key in ['flights','services','day','fuelT','marsOperations']:
                 assert migrated['state'][key]==previous[key]
@@ -283,7 +283,7 @@ def main():
             assert established['solar']['deployedT']>=100
             assert solar.locator('.solar-goals li.complete').count()==4
             assert solar.locator('.map-swarm rect').count()>0
-            expect(solar.get_by_text('Your first solar swarm is established.',exact=True)).to_be_visible()
+            expect(solar.get_by_role('heading',name='Close the power loop',exact=True)).to_be_visible()
             done('Mercury supply, refinery, mirror manufacture and automatic launches complete all four new milestones')
             action('Pause automatic launches',solar);last_id=records(solar)[0]['state']['solar']['nextDeployment']
             action('+30 days',solar);assert records(solar)[0]['state']['solar']['nextDeployment']==last_id
@@ -408,10 +408,112 @@ def main():
             report['errors']=[e for e in report['errors'] if 'test full' not in e]
             live_context.close()
             done('service edits and Save now preserve Play; explicit time steps, world changes and failed manual saves stop it safely')
+            # Fixed telemetry slots must not move depot controls when cargo appears or arrives.
+            motion_context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='no-preference',accept_downloads=True)
+            motion=motion_context.new_page();motion.set_default_timeout(12000)
+            motion.on('pageerror',lambda e:report['errors'].append(str(e)))
+            motion.goto(origin+'/lab/campaign/',wait_until='networkidle');action('Start new network',motion)
+            def depot_geometry():
+                return motion.locator('.outpost').evaluate_all("els=>els.map(e=>({height:e.getBoundingClientRect().height,actions:e.querySelector('.outpost-supply')?e.querySelector('.outpost-supply').getBoundingClientRect().top-e.getBoundingClientRect().top:null}))")
+            for width in [1440,768,320]:
+                motion.set_viewport_size({'width':width,'height':1000})
+                before=depot_geometry()
+                action('Dispatch cargo',motion)
+                assert depot_geometry()==before, f'Outposts moved on dispatch at {width}: {before} vs {depot_geometry()}'
+                expect(motion.locator('#outpost-moon .outpost-inbound')).to_contain_text('10 t material')
+                action('+30 days',motion)
+                assert depot_geometry()==before, f'Outposts moved on arrival at {width}: {before} vs {depot_geometry()}'
+                expect(motion.locator('#outpost-moon .outpost-inbound')).to_contain_text('No cargo in transit')
+            done('arrival telemetry keeps outpost heights and action positions fixed across dispatch and delivery at desktop, tablet and phone widths')
+            # Load a real native v3 record without rewriting it, then verify migration and CAS.
+            old=json.loads((ROOT/'tests/fixtures/campaign-v3.json').read_text())['state']
+            old['id']='power-browser-fixture';old['name']='Power loop'
+            old_record={'id':old['id'],'state':old,'savedAt':'2099-01-01T00:00:00.000Z','checkpoints':[]}
+            motion.evaluate("""async record=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{let t=db.transaction('worlds','readwrite');t.objectStore('worlds').put(record);t.oncomplete=ok;t.onerror=()=>no(t.error)});db.close()}""",old_record)
+            motion.set_viewport_size({'width':1440,'height':1000})
+            motion.reload(wait_until='networkidle');motion.get_by_role('button',name='Continue Power loop').click();saved(motion)
+            assert next(r for r in records(motion) if r['id']==old['id'])==old_record
+            stale=motion_context.new_page();stale.goto(origin+'/lab/campaign/',wait_until='networkidle')
+            stale.get_by_role('button',name='Continue Power loop').click();saved(stale)
+            action('Save now',motion)
+            migrated=next(r for r in records(motion) if r['id']==old['id'])
+            assert migrated['state']['schema']==4 and migrated['state']['revision']==old['revision']+1
+            assert migrated['checkpoints'][0]==old and migrated['state']['solar']['powerLink'] is False
+            for key in old:
+                if key not in ['schema','model','revision','solar']:assert migrated['state'][key]==old[key]
+            for key in old['solar']:assert migrated['state']['solar'][key]==old['solar'][key]
+            stale.get_by_role('button',name='+1 day',exact=True).click()
+            expect(stale.get_by_role('alert')).to_contain_text('Another tab changed this campaign')
+            assert next(r for r in records(motion) if r['id']==old['id'])==migrated
+            stale.close()
+            done('real v3 native save preserves all progress, checkpoints the old head, and rejects a stale writer after migration')
+            expect(motion.get_by_test_id('swarm-power')).to_have_text('0 GW')
+            before=migrated['state'];action('Connect swarm power',motion)
+            def power_state():return next(r['state'] for r in records(motion) if r['id']==old['id'])
+            connected=power_state()
+            assert connected['solar']['powerLink'] is True
+            assert connected['ports']['mercury']['materialsT']==before['ports']['mercury']['materialsT']-60
+            assert connected['ports']['mercury']['equipmentT']==before['ports']['mercury']['equipmentT']-10
+            assert connected['solar']['deployments']==before['solar']['deployments']
+            assert connected['solar']['nextLaunchDay']==before['solar']['nextLaunchDay']
+            expect(motion.get_by_test_id('swarm-power')).not_to_have_text('0 GW')
+            expect(motion.locator('.map-power-link')).to_have_count(1)
+            # Animations move the actual SVG geometry, then retain the pose on Pause.
+            motion.locator('#network').scroll_into_view_if_needed()
+            def pose(selector):
+                return motion.locator(selector).evaluate_all("els=>els.map(e=>{const m=e.getCTM();return [m.a,m.b,m.c,m.d,m.e,m.f]})")
+            moving='.map-orbital-motion,.map-rotor-motion,.map-swarm-motion'
+            before_pose=pose(moving);assert len(before_pose)==9
+            motion.get_by_role('button',name='Play simulation',exact=True).click()
+            motion.wait_for_timeout(450)
+            during_pose=pose(moving)
+            assert all(a!=b for a,b in zip(before_pose,during_pose)), 'An orbital element did not move'
+            motion.get_by_role('button',name='Pause simulation',exact=True).click()
+            motion.wait_for_timeout(100);paused_pose=pose(moving)
+            motion.wait_for_timeout(300);assert pose(moving)==paused_pose
+            before_day=power_state()['day']
+            motion.emulate_media(reduced_motion='reduce')
+            names=motion.locator(moving+',.map-power-link path').evaluate_all('els=>els.map(e=>getComputedStyle(e).animationName)')
+            assert all(name=='none' for name in names)
+            motion.get_by_role('button',name='Play simulation',exact=True).click()
+            motion.wait_for_function('d=>Number(document.querySelector("[data-testid=campaign-day]").textContent.replace(/[^0-9.]/g,""))>d',arg=before_day+.1)
+            motion.get_by_role('button',name='Pause simulation',exact=True).click();saved(motion)
+            assert power_state()['day']>before_day
+            done('orbiting rotors, Phobos anchor and swarm rings move on Play, hold on Pause, and respect reduced motion without stopping simulation')
+            for cost in [60,90]:
+                motion.locator('#outpost-mercury').get_by_role('button',name=f'Upgrade rotovator · {cost} t',exact=True).click();saved(motion)
+            action('Pause service 4',motion)
+            initial=power_state();initial_power=motion.get_by_test_id('swarm-power').inner_text()
+            for _ in range(12):action('+30 days',motion)
+            grown=power_state()
+            assert grown['solar']['deployedT']>=2000 and grown['solar']['manufacturedT']>initial['solar']['manufacturedT']+1000
+            assert grown['ports']['mercury']['equipmentT']>0
+            expect(motion.get_by_test_id('swarm-power')).not_to_have_text(initial_power)
+            assert motion.locator('.power-goals li.complete').count()==4
+            expect(motion.get_by_role('heading',name='Your swarm is powering its own expansion.',exact=True)).to_be_visible()
+            show_saves(motion)
+            with motion.expect_download() as event:motion.get_by_role('button',name='Download backup',exact=True).click()
+            power_backup=out/'power-backup.json';event.value.save_as(power_backup)
+            assert json.loads(power_backup.read_text())['state']==grown
+            motion.locator('input[type=file]').set_input_files(str(power_backup));saved(motion)
+            copy=next(r['state'] for r in records(motion) if r['state']['name']=='Power loop' and r['id']!=old['id'])
+            assert copy['solar']==grown['solar'] and copy['ports']==grown['ports']
+            done('power-link upgrade automatically compounds mirror production, maintains equipment, completes new milestones and survives backup import')
+            if motion.locator('.campaign-save-manager').get_attribute('open') is not None:motion.locator('.campaign-save-manager>summary').click()
+            if motion.get_by_role('button',name='Dismiss message',exact=True).count():motion.get_by_role('button',name='Dismiss message',exact=True).click()
+            for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
+                motion.set_viewport_size({'width':width,'height':height});motion.evaluate('document.activeElement?.blur();scrollTo(0,0)')
+                no_overflow(motion,width)
+                motion.screenshot(path=str(out/f'power-{width}.png'),full_page=True)
+                motion.locator('.campaign-solar').screenshot(path=str(out/f'power-panel-{width}.png'))
+                if width in [1440,320]:motion.locator('.network-map').screenshot(path=str(out/f'power-map-{width}.png'))
+            motion_context.close()
+            done('connected power readings, feedback path and expanded swarm fit all six responsive widths')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True)
             if 'solar' in locals() and not solar.is_closed():solar.screenshot(path=str(out/'solar-failure.png'),full_page=True)
+            if 'motion' in locals() and not motion.is_closed():motion.screenshot(path=str(out/'power-failure.png'),full_page=True)
             raise
         finally:
             (out/'report.json').write_text(json.dumps(report,indent=2));browser.close();server.shutdown()

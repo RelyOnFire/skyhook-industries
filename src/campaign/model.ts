@@ -1,6 +1,6 @@
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.3.0';
+export const CAMPAIGN_MODEL = 'network-0.4.0';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -35,6 +35,11 @@ export const SOLAR = {
   launchT: 10, intervalDays: 10, fuelPerT: .1, radiusAU: .5, areaKm2PerT: .1,
   deploymentDays: hohmannDays(SUN_GM, AU * MERCURY_AU, AU * .5) + 2,
 } as const;
+/** Flux has a physical reference; conversion, recipes and capacity are game assumptions. */
+export const POWER = {
+  linkMaterialsT: 60, linkEquipmentT: 10, minDeployedT: 100,
+  irradianceWm2: 1361, returnedFraction: .2, capacityGW: 20,
+} as const;
 export type CargoKind = 'materials' | 'equipment';
 export const CARGO = { materials: 'Construction material', equipment: 'Equipment' } as const;
 export const INDUSTRY = {
@@ -49,17 +54,17 @@ export interface Service { id: number; from: SiteId; to: SiteId; cargoT: number;
 export interface Deployment { id: number; massT: number; departed: number; arrival: number }
 export interface SolarIndustry {
   unlocked: boolean; depositT: number; nextCycleDay: number | null; mirrorWorks: boolean;
-  launchArray: boolean; mirrorsT: number; manufacturedT: number; deployedT: number;
+  launchArray: boolean; powerLink: boolean; mirrorsT: number; manufacturedT: number; deployedT: number;
   autoLaunch: boolean; nextLaunchDay: number | null; nextDeployment: number; deployments: Deployment[];
 }
 function freshSolar(): SolarIndustry {
-  return {unlocked:false,depositT:SOLAR.depositT,nextCycleDay:null,mirrorWorks:false,launchArray:false,
+  return {unlocked:false,depositT:SOLAR.depositT,nextCycleDay:null,mirrorWorks:false,launchArray:false,powerLink:false,
     mirrorsT:0,manufacturedT:0,deployedT:0,autoLaunch:false,nextLaunchDay:null,nextDeployment:1,deployments:[]};
 }
 function emptyPort(): Port {return {materialsT:0,equipmentT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 3; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 4; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
   solar: SolarIndustry; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
@@ -67,7 +72,7 @@ export interface Campaign {
 export const LIMITS = { days: 100000, stock: 1000000, flights: 32, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 3, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  return { schema: 4, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
     ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort() }, flights: [],
     solar:freshSolar(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
@@ -140,15 +145,31 @@ function produce(w: Campaign, days: number) {
     phobos.equipmentT = Math.max(0,phobos.equipmentT-work*.02); w.marsOperations += work;
   }
 }
+export function swarmPower(w: Campaign) {
+  const areaKm2=w.solar.deployedT*SOLAR.areaKm2PerT;
+  const sunlightGW=areaKm2*1e6*POWER.irradianceWm2/(SOLAR.radiusAU**2)/1e9;
+  const returnedGW=w.solar.powerLink?sunlightGW*POWER.returnedFraction:0;
+  return {areaKm2,sunlightGW,returnedGW,multiplier:1+returnedGW/POWER.capacityGW};
+}
+/** Preview and execute the same daily recipe: local tooling, refinery, mirrors.
+ * Tooling consumes existing construction, never tomorrow's production. */
+export function mercuryProduction(w: Campaign) {
+  const p=w.ports.mercury,s=w.solar,{multiplier}=swarmPower(w);
+  const mineCapacity=p.industry?SOLAR.mineTPerDay*multiplier:0;
+  const mirrorCapacity=s.mirrorWorks?SOLAR.mirrorsTPerDay*multiplier:0;
+  const equipmentDemand=mineCapacity*SOLAR.mineEquipmentPerT+mirrorCapacity*SOLAR.mirrorEquipmentPerT;
+  // Replenish a two-cycle working buffer; do not accumulate unwanted tooling.
+  const toolingT=s.powerLink?Math.max(0,Math.min(equipmentDemand,equipmentDemand*2-p.equipmentT,p.materialsT,room(w,'mercury','equipment'))):0;
+  const equipment=p.equipmentT+toolingT,materials=p.materialsT-toolingT;
+  const minedT=Math.max(0,Math.min(mineCapacity,s.depositT,equipment/SOLAR.mineEquipmentPerT,room(w,'mercury','materials')+toolingT));
+  const madeT=Math.max(0,Math.min(mirrorCapacity,materials+minedT,(equipment-minedT*SOLAR.mineEquipmentPerT)/SOLAR.mirrorEquipmentPerT,LIMITS.stock-s.mirrorsT));
+  return {multiplier,mineCapacity,mirrorCapacity,equipmentDemand,toolingT,minedT,madeT};
+}
 function mercuryCycle(w: Campaign) {
-  const p=w.ports.mercury, s=w.solar;
-  const mined=Math.max(0,Math.min(SOLAR.mineTPerDay,s.depositT,p.equipmentT/SOLAR.mineEquipmentPerT,room(w,'mercury','materials')));
-  s.depositT=Math.max(0,s.depositT-mined); p.materialsT+=mined; p.equipmentT=Math.max(0,p.equipmentT-mined*SOLAR.mineEquipmentPerT);
-  if(s.mirrorWorks) {
-    const made=Math.max(0,Math.min(SOLAR.mirrorsTPerDay,p.materialsT,p.equipmentT/SOLAR.mirrorEquipmentPerT,LIMITS.stock-s.mirrorsT));
-    p.materialsT=Math.max(0,p.materialsT-made);p.equipmentT=Math.max(0,p.equipmentT-made*SOLAR.mirrorEquipmentPerT);
-    s.mirrorsT+=made;s.manufacturedT+=made;
-  }
+  const p=w.ports.mercury,s=w.solar,{toolingT,minedT,madeT}=mercuryProduction(w);
+  p.materialsT=Math.max(0,p.materialsT-toolingT+minedT-madeT);
+  p.equipmentT=Math.max(0,p.equipmentT+toolingT-minedT*SOLAR.mineEquipmentPerT-madeT*SOLAR.mirrorEquipmentPerT);
+  s.depositT=Math.max(0,s.depositT-minedT);s.mirrorsT+=madeT;s.manufacturedT+=madeT;
   s.nextCycleDay=w.day+1;
 }
 function deploy(w: Campaign) {
@@ -190,8 +211,9 @@ export function advance(world: Campaign, days: number): Campaign {
       } else service.nextDay=at+1; // No backlog or log spam: retry tomorrow.
     }
     if(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null&&next.solar.nextLaunchDay<=at+EPS) {
-      if(!mirrorLaunchPlan(next,SOLAR.launchT).reason) {
-        launchMirrorsInto(next,SOLAR.launchT); next.solar.nextLaunchDay=at+SOLAR.intervalDays;
+      const launch=automaticMirrorPlan(next);
+      if(!mirrorLaunchPlan(next,launch.massT).reason) {
+        launchMirrorsInto(next,launch.massT); next.solar.nextLaunchDay=at+launch.intervalDays;
       } else next.solar.nextLaunchDay=at+1;
     }
   }
@@ -229,6 +251,7 @@ export function industryStatus(w: Campaign, site: SiteId) {
   if(!p.industry) return 'Not installed';
   if(site==='earth') return 'Manufacturing and support allocation active';
   if(site==='mercury'&&w.solar.depositT<EPS)return 'Local deposit exhausted';
+  if(site==='mercury'&&mercuryProduction(w).minedT>EPS)return 'Refining local material each simulation day';
   if(site==='mercury'&&room(w,site,'materials')<EPS)return 'Construction storage full';
   if(site==='mercury'&&p.equipmentT>=EPS)return 'Refining local material each simulation day';
   if(p.equipmentT<EPS) return 'Waiting for equipment';
@@ -307,6 +330,24 @@ export function buildSolar(w: Campaign, facility: 'mirrorWorks'|'launchArray'): 
   const next=edit(w);next.ports.mercury.materialsT-=40;next.ports.mercury.equipmentT-=10;next.solar[facility]=true;
   note(next,(facility==='mirrorWorks'?'Mirror works':'Mirror launch array')+' installed at Mercury.');return next;
 }
+export function powerLinkReason(w: Campaign) {
+  if(w.solar.powerLink)return 'Swarm power is already connected.';
+  if(!w.solar.launchArray||w.solar.deployedT+EPS<POWER.minDeployedT)return 'Deploy 100 t of mirrors to connect swarm power.';
+  if(w.ports.mercury.materialsT+EPS<POWER.linkMaterialsT||w.ports.mercury.equipmentT+EPS<POWER.linkEquipmentT)
+    return 'The power link needs 60 t material and 10 t equipment at Mercury.';
+  return '';
+}
+export function connectSwarmPower(w: Campaign): Campaign {
+  const reason=powerLinkReason(w);if(reason)throw Error(reason);
+  const next=edit(w);next.ports.mercury.materialsT=Math.max(0,next.ports.mercury.materialsT-POWER.linkMaterialsT);
+  next.ports.mercury.equipmentT=Math.max(0,next.ports.mercury.equipmentT-POWER.linkEquipmentT);next.solar.powerLink=true;
+  note(next,'Swarm power connected to Mercury. Automatic reinvestment scales refining, mirror works and local equipment fabrication from the next daily cycle.');return next;
+}
+export function automaticMirrorPlan(w: Campaign) {
+  const massT=w.solar.powerLink?Math.max(1,w.ports.mercury.level)*10:SOLAR.launchT;
+  const intervalDays=w.solar.powerLink?Math.max(2/Math.max(1,w.ports.mercury.level),massT/(SOLAR.mirrorsTPerDay*swarmPower(w).multiplier)):SOLAR.intervalDays;
+  return {massT,intervalDays};
+}
 export function mirrorLaunchPlan(w: Campaign, massT: number) {
   const fuelT=massT*SOLAR.fuelPerT,p=w.ports.mercury;
   let reason='';
@@ -327,13 +368,13 @@ function launchMirrorsInto(w: Campaign, massT: number) {
   w.solar.deployments.push({id,massT,departed:w.day,arrival:w.day+plan.duration});
   note(w,'Mirror launch '+id+': '+massT+' t departed Mercury for the solar swarm.');
 }
-export function launchMirrors(w: Campaign, massT=SOLAR.launchT): Campaign {
+export function launchMirrors(w: Campaign, massT:number=SOLAR.launchT): Campaign {
   const next=edit(w);launchMirrorsInto(next,massT);return next;
 }
 export function toggleMirrorLaunches(w: Campaign): Campaign {
   if(!w.solar.launchArray)throw Error('Install the mirror launch array first.');
   const next=edit(w);next.solar.autoLaunch=!next.solar.autoLaunch;next.solar.nextLaunchDay=next.solar.autoLaunch?next.day+1:null;
-  note(next,'Automatic mirror launches '+(next.solar.autoLaunch?'enabled: 10 t every 10 days, retrying tomorrow when blocked.':'paused. Existing deployments continue.'));return next;
+  note(next,'Automatic mirror launches '+(next.solar.autoLaunch?(w.solar.powerLink?'enabled at the power-driven production rate, retrying tomorrow when blocked.':'enabled: 10 t every 10 days, retrying tomorrow when blocked.'):'paused. Existing deployments continue.'));return next;
 }
 export function solarObjectives(w: Campaign) {
   return [
@@ -343,8 +384,17 @@ export function solarObjectives(w: Campaign) {
     {name:'A growing solar swarm',detail:'Deploy 100 t of mirrors: 10 km² under the scenario area assumption.',done:w.solar.deployedT>=100-EPS},
   ];
 }
+export function powerObjectives(w: Campaign) {
+  const power=swarmPower(w);
+  return [
+    {name:'Close the power loop',detail:'Connect swarm power at Mercury: 60 t local material + 10 t equipment. Your existing swarm becomes the starting capacity.',done:w.solar.powerLink},
+    {name:'Double the Mercury works',detail:'Return 20 GW to Mercury for at least 2× refinery, tooling and mirror capacity.',done:power.multiplier>=2-EPS},
+    {name:'A hundred gigawatts',detail:'Return 100 GW to Mercury. New deployments automatically expand production.',done:power.returnedGW>=100-EPS},
+    {name:'A self-expanding swarm',detail:'Reach 2,000 t deployed with the power link online. Keep launches and the wider network supplied.',done:w.solar.powerLink&&w.solar.deployedT>=2000-EPS},
+  ];
+}
 
-/** Construct clean bounded state, migrating only the known first-chapter save.
+/** Construct clean bounded state, migrating known previous campaign schemas.
  * No catch-up production: the new economy starts at the saved simulation day. */
 export function validateCampaign(value: unknown): Campaign {
   const object = (v: unknown): Record<string,unknown> => { if (!v || typeof v !== 'object' || Array.isArray(v)) throw Error('Invalid campaign object.'); return v as Record<string,unknown>; };
@@ -354,7 +404,8 @@ export function validateCampaign(value: unknown): Campaign {
   const bool=(v: unknown): boolean=>{if(typeof v!=='boolean')throw Error('Invalid campaign flag.');return v;};
   const kind=(v: unknown): CargoKind=>{if(v!=='materials'&&v!=='equipment')throw Error('Invalid cargo type.');return v;};
   const raw = object(value), legacy=raw.schema===1 && raw.model==='network-0.1.0', previous=raw.schema===2 && raw.model==='network-0.2.0', migrate=legacy||previous;
-  if (!migrate && (raw.schema !== 3 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const firstLight=raw.schema===3&&raw.model==='network-0.3.0';
+  if (!migrate && !firstLight && (raw.schema !== 4 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   const day = num(raw.day,0,LIMITS.days), rawPorts = object(raw.ports), ports = {} as Record<SiteId,Port>;
   for (const id of SITES) {
     if(id==='mercury'&&migrate){ports.mercury=emptyPort();continue;}
@@ -408,27 +459,28 @@ export function validateCampaign(value: unknown): Campaign {
     });
     solar={unlocked:bool(r.unlocked),depositT:num(r.depositT,0,SOLAR.depositT),
       nextCycleDay:r.nextCycleDay===null?null:num(r.nextCycleDay,day+1e-9,LIMITS.days+1),
-      mirrorWorks:bool(r.mirrorWorks),launchArray:bool(r.launchArray),mirrorsT:num(r.mirrorsT,0,LIMITS.stock),
+      mirrorWorks:bool(r.mirrorWorks),launchArray:bool(r.launchArray),powerLink:firstLight?false:bool(r.powerLink),mirrorsT:num(r.mirrorsT,0,LIMITS.stock),
       manufacturedT:num(r.manufacturedT,0,1e9),deployedT:num(r.deployedT,0,1e9),autoLaunch:bool(r.autoLaunch),
-      nextLaunchDay:r.nextLaunchDay===null?null:num(r.nextLaunchDay,day+1e-9,LIMITS.days+SOLAR.intervalDays),
+      nextLaunchDay:r.nextLaunchDay===null?null:num(r.nextLaunchDay,day+1e-9,LIMITS.days+(firstLight?SOLAR.intervalDays:30)),
       nextDeployment,deployments};
     if(ports.mercury.industry!==(solar.nextCycleDay!==null)||solar.autoLaunch!==(solar.nextLaunchDay!==null))throw Error('Invalid Mercury production clock.');
     if(solar.mirrorWorks&&!ports.mercury.industry||solar.launchArray&&!solar.mirrorWorks||solar.autoLaunch&&!solar.launchArray)throw Error('Invalid solar facility progression.');
+    if(solar.powerLink&&(!solar.launchArray||solar.deployedT+EPS<POWER.minDeployedT))throw Error('Invalid swarm power progression.');
     if((solar.manufacturedT>0&&!solar.mirrorWorks)||(solar.nextDeployment>1&&!solar.launchArray))throw Error('Solar progress requires installed facilities.');
     if(Math.abs(solar.manufacturedT-solar.mirrorsT-solar.deployedT-solar.deployments.reduce((n,d)=>n+d.massT,0))>1e-5)throw Error('Mirror mass ledger does not balance.');
     if(!solar.unlocked&&(ports.mercury.level||ports.mercury.materialsT||ports.mercury.equipmentT||solar.depositT!==SOLAR.depositT||
       services.some(s=>s.from==='mercury'||s.to==='mercury')||flights.some(f=>f.from==='mercury'||f.to==='mercury')))throw Error('Mercury requires an open expedition.');
   }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  return { schema:3, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  return { schema:4, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
     solar,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:3, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:4, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

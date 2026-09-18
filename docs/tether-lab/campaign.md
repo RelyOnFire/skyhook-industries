@@ -1,9 +1,9 @@
-# Expeditions: from first corridors to first light
+# Expeditions: from first corridors to a self-expanding swarm
 
 Routes: /lab/campaign/ and the public guide /lab/campaign/method/.
 
-The campaign has three linked chapters: establish Earth–Moon–Phobos tethers,
-sustain industry and scheduled deliveries, then develop Mercury and a solar swarm. The Moon's lunavator remains a
+The campaign has four linked chapters: establish Earth–Moon–Phobos tethers,
+sustain industry and scheduled deliveries, then develop Mercury and a solar swarm, and connect its power back to Mercury. The Moon's lunavator remains a
 free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
 ## Operations interface
@@ -30,8 +30,10 @@ opens save, backup, import and recovery controls. A save failure also exposes
 Retry save and Export unsaved progress directly in the error message. Primary
 stock, production and traffic information does not require opening a tab.
 Mirror production, launch controls and deployed totals sit in the same workspace.
-Model 0.3.0, schema 3, numerical rules, service schedules, migration and saved-world
-values are unchanged. Live operations preserve Play as described below.
+Model 0.4.0 / schema 4 adds an opt-in power loop. Earlier recipes and pending
+events remain unchanged until the player connects swarm power. Live operations
+preserve Play as described below. Arrival telemetry has a permanent, bounded
+slot in every open outpost; changing inbound cargo does not move depot controls.
 
 ## Economy and scheduling
 
@@ -74,8 +76,13 @@ tick waits for persistence to finish. Explicit +1/+30/next-event steps pause Pla
 before advancing. Pause remains available during a pending save. Hidden tabs,
 reload, world changes, errors and the 100,000-day horizon also stop play.
 No offline or wall-clock catch-up. Marker movement is schematic elapsed
-fraction; tracked flight and arrival panels explain status. Reduced motion
-disables marker transitions.
+fraction; tracked flight and arrival panels explain status. Orbital animations are illustrative: free rotors travel around Earth, the Moon
+and Mercury; Phobos and its attached inward/outward arms orbit Mars together.
+Swarm rings circulate around the Sun. Visual periods are fixed for readability,
+not physical orbital periods or positions. Corridor endpoints denote schematic
+outposts, not intercepts. Play runs motion, Pause holds its pose, and changing
+worlds resets the pose. Reduced motion disables orbital animations, power-link
+flow and cargo transitions without changing simulation time or outcomes.
 
 A sustainable scenario tested for 1,000 days sends 5 t Earth–Moon equipment every
 90 days, 3 t Earth–Phobos equipment every 100 days, and 10 t Moon–Phobos material
@@ -85,9 +92,9 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 3 / network-0.3.0 exports in a skyhook-campaign
-version-3 envelope. The validator explicitly accepts and migrates schemas 1 and 2
-(network-0.1.0 and network-0.2.0), including their original backup envelopes.
+store. Current state schema 4 / network-0.4.0 exports in a skyhook-campaign
+version-4 envelope. The validator accepts schemas 1, 2 and 3 with their matching
+models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
 fuel, objectives, logs, flight IDs and arrival dates. Flights become construction
@@ -101,10 +108,15 @@ with its previously valid revision. Normal gameplay increments it as before.
 Version-two migration retains every old port field, fuel, time, revision, logs,
 objectives, industry, schedules and flights exactly. Mercury starts empty and
 unbuilt, the expedition locked, with no extra Earth allocation or past production.
-Schema-three validation checks solar clocks and deployment durations, unique
+Version-three migration preserves every existing field, including solar stocks,
+deposit, facilities, launch schedules and in-flight deployments. Only powerLink
+is added, initially false. It grants no resources, output or past power; existing
+players can continue completed worlds. The same schema-only revision/checkpoint
+protection applies. Current validation checks solar clocks and deployment durations, unique
 IDs, facility dependencies, stock bounds and the mirror mass identity:
 manufactured = ready + in transit + deployed. Cargo and solar flights share
-the 32-flight bound. Old-schema files cannot contain Mercury routes.
+the 32-flight bound. Schema-one/two files cannot contain Mercury routes. A power link requires an
+installed launch array and at least 100 t deployed. Old schemas cannot activate it.
 
 Atomic writes compare the stored revision with the writer token; failed writes
 preserve committed state. The UI retains unsaved state for retry/export and
@@ -123,13 +135,15 @@ reload mid-schedule, shared recovery contention, arrival-before-dispatch,
 pause/remove semantics, incoming storage reservation, traffic/service/horizon
 limits, and malformed schedule rejection.
 
-tests/campaign.browser.py plays all three chapters, including producing material,
+tests/campaign.browser.py plays all four chapters, including producing material,
 delivering equipment, installing both industries, scheduling three complementary
 routes, flight tracking and arrivals, pause/resume, accelerated play and reload.
 It also covers portable backup/import, checkpoint branches, competing tabs,
 automatic-clock stop on an injected write failure and successful retry, and
-migration of native version-one and version-two IndexedDB records with checkpoint
-preservation. A delayed manual-dispatch save verifies that Play waits, resumes,
+migration of native version-one, version-two and version-three IndexedDB records with checkpoint
+preservation. It also checks arrival row geometry, animated Play/Pause poses,
+reduced-motion behavior, increasing power after deployment, and the power-link
+upgrade and backup round-trip. A delayed manual-dispatch save verifies that Play waits, resumes,
 and retains exactly one shipment. Service edits and Save now preserve Play;
 explicit time steps, world changes and failed manual dispatch saves stop it.
 A real completed v2 network is supplied and built out through
@@ -163,12 +177,13 @@ mirror works. A 10 t mirror batch uses 1 t pooled fuel and reserves Mercury
 recovery for 2/tier days. Launch support is a scenario budget. Ideal transfer to
 0.5 AU plus two handling days takes about 56 days. Stock is spent at departure;
 deployed mass increases once on arrival. The scenario's assumed 10 g/m² gives
-0.1 km²/tonne; this is not demonstrated hardware performance. No energy or power
-is calculated. Drawn symbols denote batches rather than individual mirrors.
+0.1 km²/tonne; this is not demonstrated hardware performance. Intercepted sunlight and power returned by the optional link are calculated as
+scenario quantities below. Drawn symbols denote batches rather than individual mirrors.
 
-Automatic launch first attempts tomorrow; successful 10 t attempts repeat every
-10 days, blocked attempts retry daily without backlog. Pause preserves transit.
-At a shared instant: cargo/solar arrivals, Mercury refinery then works, cargo
+Before the power link, automatic launch first attempts tomorrow; successful
+10 t attempts repeat every 10 days, blocked attempts retry daily without backlog. Pause preserves transit.
+At a shared instant: cargo/solar arrivals, Mercury tooling (when connected),
+refinery then works, cargo
 services by ID, automatic solar launch. Earlier industry remains continuous
 between events. Next-event time includes production and solar events.
 
@@ -189,9 +204,62 @@ MESSENGER-derived surface composition is iron-poor and strongly reduced.
 The recipes do not claim validated extraction, coating, optics or thermal
 survival. See Nittler et al. below and the public Mercury guide.
 
+## The power loop (Chapter 04)
+
+Continue a completed First light save. At 100 t deployed, a one-time power-link
+upgrade costs 60 t material and 10 t equipment at Mercury. It adds the abstract
+receiver/relay and local tooling facilities together. Activation does not advance
+time, reschedule existing attempts, alter flights, or produce an immediate batch.
+Keep working material or equipment after construction; a completely empty depot
+needs a delivery to start the first cycle.
+
+For deployed mirror area A in km², intercepted sunlight is
+A × 10⁶ × 1361 / 0.5² / 10⁹ GW. The frozen reference is 1361 W/m² at 1 AU;
+flux follows inverse-square distance. The model assumes illuminated projected
+area equals the scenario mirror area; it does not solve orientation or shadowing.
+Without a link, returned power is zero. With a link, the combined capture,
+conversion and return fraction is 20%. Thus 100 t (10 km²) intercepts 54.44 GW
+and returns 10.888 GW. These are instantaneous scenario power ratings, not
+accumulated energy or a validated mirror/power-beaming design.
+
+All returned power is automatically reinvested in production capacity:
+F = 1 + returned GW / 20. Daily refinery capacity becomes 2F t and mirror
+capacity F t. The power-to-capacity rule, conversion efficiency and recipes
+are explicit gameplay assumptions. More deployed mirrors increase power, which
+increases production and subsequent deployment: a compounding feedback loop.
+Transfer delay, finite inputs, storage, launch recovery, fuel and traffic prevent
+unlimited exponential growth. Capacity and next-cycle actual output are shown
+separately, with shortages exposed.
+
+Before the refinery, local tooling can convert 1 t construction into 1 t equipment.
+Its daily capacity is 0.15F t, the full refinery-plus-works maintenance demand.
+It replenishes at most a two-cycle equipment buffer (0.3F t), subtracting equipment
+already in stock and honoring inbound storage reservations. It uses material
+available at the start of the cycle; the refinery and works then use the existing
+ordered recipes. This sustains maintenance locally without free equipment or
+retroactive output. Only completed production consumes inputs. Depleted mines
+can still use imported construction in the works. The initial 100,000 t deposit
+remains a local mining tract, not a model of disassembling the entire planet.
+
+When connected, automatic batches use Mercury's tier capacity (10/20/30 t).
+After a successful launch, the next interval is max(2/tier, batch mass/F) days.
+An already scheduled attempt keeps its date; new power changes the interval at
+its next success. Blocked attempts still retry tomorrow. Upgrading Mercury's
+tether increases batch size and throughput per traffic slot. All fuel, recovery,
+32-flight and horizon checks remain active; existing batches retain their mass
+and original deployment time. Enabling the link does not enable paused launches.
+
+Four additional milestones: connect power, double Mercury capacity (20 GW),
+return 100 GW, and deploy 2,000 t with the link online. No reset is needed.
+
+Tests in lab-campaign-power.test.mjs cover real-v3 migration, units, opt-in cost,
+unchanged event clocks, one-time deployment credit, self-sustaining maintenance,
+increasing output, all four goals, scarce inputs, finite deposit and storage,
+launch constraints, large/small/reloaded time steps, and corrupt power saves.
+
 ## Further work and sources
 
-More destinations and swarm energy systems remain future work.
+More destinations, larger extraction tracts and detailed swarm engineering remain future work.
 Detailed lunavator geometry, Phobos loads, targeting/launch windows and integration
 with tested Flight Studio designs require separate numerical work.
 
@@ -205,3 +273,6 @@ with tested Flight Studio designs require separate numerical work.
 - https://ssd.jpl.nasa.gov/planets/approx_pos.html
 - https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
 - https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
+
+- NASA solar irradiance reference: https://earth.gsfc.nasa.gov/climate/projects/solar-irradiance/science
+- NASA/JPL inverse-square solar power context: https://www.jpl.nasa.gov/edu/resources/lesson-plan/calculating-solar-power-in-space/

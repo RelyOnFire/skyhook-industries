@@ -1,7 +1,7 @@
-import { build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, networkObjectives, objectives, removeService, resupply, SITE, SITES, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
+import { build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
 
-export const n = (v:number) => v.toLocaleString('en-US',{maximumFractionDigits:1});
+export const n = (v:number,digits=1) => v.toLocaleString('en-US',{maximumFractionDigits:digits});
 export const date = (v:number) => 'Day '+n(v);
 export type Act = (fn:(w:Campaign)=>Campaign)=>void;
 export type Prepare = (from:SiteId,to:SiteId,kind:CargoKind)=>void;
@@ -14,16 +14,17 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
       const incoming=world.flights.filter(f=>f.to===id).sort((a,b)=>a.arrival-b.arrival);
       const material=incoming.filter(f=>f.kind==='materials').reduce((a,f)=>a+f.cargoT,0),equipment=incoming.filter(f=>f.kind==='equipment').reduce((a,f)=>a+f.cargoT,0);
       const status=industryStatus(world,id),waiting=status.startsWith('Waiting')||status.includes('exhausted')||status.includes('full');
-      const rate=id==='earth'?'+0.5 t equipment · +1 t fuel / day':id==='moon'?'+1 t material · −0.05 t equipment / day':id==='phobos'?'+1 Mars point · −0.5 t material · −0.02 t equipment / day':world.solar.mirrorWorks?'Refinery 2 t/day · mirrors 1 t/day · ≤0.15 t equipment/day':'Up to +2 t material · −0.1 t equipment / day';
+      const production=mercuryProduction(world);
+      const rate=id==='earth'?'+0.5 t equipment · +1 t fuel / day':id==='moon'?'+1 t material · −0.05 t equipment / day':id==='phobos'?'+1 Mars point · −0.5 t material · −0.02 t equipment / day':'Refinery '+n(production.mineCapacity)+' t/d · mirrors '+n(production.mirrorCapacity)+' t/d';
       const machine=id==='moon'?'lunavator':id==='phobos'?'anchor hub':'rotovator';
       return <article key={id} id={'outpost-'+id} className={'outpost'+(selected===id?' selected':'')+(locked?' locked':'')} aria-label={SITE[id].name+' outpost'}>
         <div className="outpost-title"><button className="outpost-select" aria-pressed={selected===id} onClick={()=>onSelect(id)}><i style={{background:SITE[id].color}}/>{SITE[id].name}<span className="sr-only"> {locked?'Chapter 03':p.level?'Tier '+p.level:'Awaiting construction'}</span></button><span>{locked?'EXPEDITION':p.level?'T'+p.level+' · '+p.level*10+' t':'UNBUILT'}</span>{!locked&&p.level>0&&p.level<3&&<button className="outpost-upgrade" disabled={busy||p.materialsT<cost} aria-label={'Upgrade '+machine+' · '+cost+' t'} title={'Upgrade '+machine+' · '+cost+' t material'} onClick={()=>act(w=>build(w,id))}>↑ {cost} t</button>}</div>
         {locked?<div className="outpost-locked"><p><b>{n(world.marsOperations)} / 100</b> Mars points to unlock</p><a href="#solar-heading">Mercury expedition ↗</a></div>:<>
           <dl className="outpost-stock"><div><dt>Material</dt><dd data-testid={id+'-materials'}>{n(p.materialsT)} <small>t</small></dd></div><div><dt>Equipment</dt><dd data-testid={id+'-equipment'}>{n(p.equipmentT)} <small>t</small></dd></div><div><dt>Inbound</dt><dd>{n(material+equipment)} <small>t</small></dd></div></dl>
-          {incoming.length>0&&<p className="outpost-inbound">{n(material)} t material · {n(equipment)} t equipment · Next arrival in {n(incoming[0].arrival-world.day)} days</p>}
-          {waiting&&<p className="outpost-industry needs-supply"><span className="status-dot"/>{status}</p>}
-          {p.industry&&<p className="outpost-rate"><span className="status-dot"/>{rate}{id==='mercury'&&world.solar.mirrorWorks&&world.solar.depositT===0?' · local deposit exhausted':''}</p>}
-          {p.readyDay>world.day&&<p className="outpost-rating">Tether ready in {n(p.readyDay-world.day)} days</p>}
+          <div className="outpost-inbound"><span>Next arrival</span><b>{incoming.length?n(incoming[0].arrival-world.day)+' d':'—'}</b><small>{incoming.length?n(material)+' t material · '+n(equipment)+' t equipment':'No cargo in transit'}</small></div>
+          {p.industry&&<p className={'outpost-industry'+(waiting?' needs-supply':'')}><span className="status-dot"/>{waiting?status:'Industry active'}</p>}
+          {p.industry&&<p className="outpost-rate">{rate}{id==='mercury'&&<span>{world.solar.powerLink?'Local tooling replaces maintenance':'Up to '+n(production.equipmentDemand,2)+' t equipment / day'}</span>}</p>}
+          <p className="outpost-rating">{!p.level?'Tether not commissioned':p.readyDay>world.day?'Tether ready in '+n(p.readyDay-world.day)+' days':'Tether ready for departure'}</p>
           <div className="outpost-supply"><span>{id==='earth'?'Ship':'Supply'}</span><button aria-label={(id==='earth'?'Ship Earth material to Moon':'Supply '+SITE[id].name+' with material')} onClick={()=>prepare('earth',id==='earth'?'moon':id,'materials')}>Material ↗</button><button aria-label={id==='earth'?'Ship Earth equipment to Moon':'Supply '+SITE[id].name+' with equipment'} onClick={()=>prepare('earth',id==='earth'?'moon':id,'equipment')}>Equipment ↗</button></div>
           {p.level===0&&<button className="outpost-build" disabled={busy||p.materialsT<cost} onClick={()=>act(w=>build(w,id))}>{p.level?'Upgrade':'Commission'} {machine} · {cost} t</button>}
           {p.level>0&&!p.industry&&<><button className="outpost-build" disabled={busy||p.materialsT<20||p.equipmentT<5} onClick={()=>act(w=>installIndustry(w,id))}>Install {INDUSTRY[id].name.toLowerCase()}</button><p className="tiny">20 t material + 5 t equipment</p></>}
@@ -36,16 +37,16 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
 }
 
 export function NextMove({world,onSelect,onMilestones}:{world:Campaign;onSelect:(site:SiteId)=>void;onMilestones:()=>void}) {
-  const chapters=[objectives(world),networkObjectives(world),solarObjectives(world)], all=chapters.flat(), done=all.filter(g=>g.done).length;
+  const chapters=[objectives(world),networkObjectives(world),solarObjectives(world),powerObjectives(world)], all=chapters.flat(), done=all.filter(g=>g.done).length;
   const chapter=chapters.findIndex(gs=>gs.some(g=>!g.done)), next=all.find(g=>!g.done);
-  const targets:SiteId[]=['moon','moon','phobos','moon','moon','phobos','phobos','phobos','mercury','mercury','mercury','mercury'];
-  return <section className="ops-next" aria-label="Next milestone"><div className="next-index">{chapter<0?'✓':String(chapter+1).padStart(2,'0')}</div><div><p className="campaign-eyebrow">{next?'NEXT MILESTONE':'NETWORK ESTABLISHED'}</p><h2>{next?.name||'Your first solar swarm is established.'}</h2><p>{next?.detail||n(world.solar.deployedT)+' t deployed. Keep your industries supplied and the swarm growing.'}</p></div><div className="next-actions">{next&&<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>}<button className="text-button" onClick={onMilestones}>{done} / 12 milestones</button></div></section>;
+  const targets:SiteId[]=['moon','moon','phobos','moon','moon','phobos','phobos','phobos','mercury','mercury','mercury','mercury','mercury','mercury','mercury','mercury'];
+  return <section className="ops-next" aria-label="Next milestone"><div className="next-index">{chapter<0?'✓':String(chapter+1).padStart(2,'0')}</div><div><p className="campaign-eyebrow">{next?'NEXT MILESTONE':'NETWORK ESTABLISHED'}</p><h2>{next?.name||'Your swarm is powering its own expansion.'}</h2><p>{next?.detail||n(world.solar.deployedT)+' t deployed. Keep your launch corridors supplied and the swarm growing.'}</p></div><div className="next-actions">{next&&(chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>)}<button className="text-button" onClick={onMilestones}>{done} / {all.length} milestones</button></div></section>;
 }
 
 export function Milestones({world}:{world:Campaign}) {
-  const first=objectives(world),network=networkObjectives(world),solar=solarObjectives(world);
+  const first=objectives(world),network=networkObjectives(world),solar=solarObjectives(world),power=powerObjectives(world);
   return <div className="milestone-columns">
-    {[{title:'First corridors',goals:first,cls:'campaign-progress'},{title:'Working network',goals:network,cls:'campaign-network-goals'},{title:'First light',goals:solar,cls:'solar-goals'}].map(({title,goals,cls},i)=><section className={cls} key={title}><p className="campaign-eyebrow">CHAPTER 0{i+1}</p><h3>{title}</h3><ol>{goals.map(g=><li key={g.name} className={g.done?'complete':''}><b>{g.done?'✓ ':''}{g.name}</b><p>{g.detail}</p></li>)}</ol></section>)}
+    {[{title:'First corridors',goals:first,cls:'campaign-progress'},{title:'Working network',goals:network,cls:'campaign-network-goals'},{title:'First light',goals:solar,cls:'solar-goals'},{title:'The power loop',goals:power,cls:'power-goals'}].map(({title,goals,cls},i)=><section className={cls} key={title}><p className="campaign-eyebrow">CHAPTER 0{i+1}</p><h3>{title}</h3><ol>{goals.map(g=><li key={g.name} className={g.done?'complete':''}><b>{g.done?'✓ ':''}{g.name}</b><p>{g.detail}</p></li>)}</ol></section>)}
     {first.every(g=>g.done)&&<p className="milestone-achievement">The first network is established.</p>}
   </div>;
 }
