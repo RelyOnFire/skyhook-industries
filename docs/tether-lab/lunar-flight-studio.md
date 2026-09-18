@@ -20,7 +20,7 @@ Historical context: [Hoyt, Cislunar Tether Transport System (1999)](https://www.
 
 - Earth/Moon selector, body-specific presets, lunar mission, guided replay, WebGL Moon, orbital-plane view, object tracking, structural inspector, actual worker trade studies and pinned comparisons.
 - Moon imagery is a deterministic procedural canvas illustration, not topography. Body radius supplies the rendering scale; the image never enters the solver.
-- Model and architecture must agree during imports and shares. Cross-world adoption clears stale results and comparisons before calculation. Share URLs use the corresponding route.
+- Model and architecture must agree during imports and shares. Cross-world adoption clears stale results and comparisons before calculation. Changing environments also updates the route and removes the previous world's shared fragment, so refresh stays in the selected experiment. Share URLs use the corresponding route.
 - Earth Save/Load retains `skyhook-lab-design-v2` and the existing legacy fallback. Moon uses `skyhook-lab-lunar-design-v1`. Saving one world cannot overwrite the other. Earlier Earth models retain explicit import confirmation.
 - Flight reports include the environment constants and limitations. Mission progress retains the existing browser key with a new `lunar-relay` ID.
 - The campaign Moon outpost opens “Explore this tether” in a separate tab. No campaign economy, model, schema, time or persistence changes are introduced.

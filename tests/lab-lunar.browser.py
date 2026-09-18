@@ -47,6 +47,7 @@ def main():
             if mobile.is_visible(): mobile.get_by_role('button',name='Flight',exact=True).click()
         def world(name):
             page.get_by_role('group',name='Flight environment',exact=True).get_by_role('button',name=re.compile('^'+name)).click();ready()
+            assert page.url==origin+('/lab/lunar/' if name=='Moon' else '/lab/')
         def no_overflow(): assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),page.viewport_size
         def download_report():
             page.get_by_role('button',name='Full-run debrief',exact=True).click()
@@ -148,8 +149,11 @@ def main():
             assert dl.value.suggested_filename=='skyhook-lunar-design.json'
             exported=Path(dl.value.path()).read_bytes();assert json.loads(exported)['model']=='L1p-0.1.0'
             world('Earth')
+            page.reload(wait_until='networkidle');ready()
+            expect(page.locator('.workbench-bar')).to_contain_text('EARTH / SINGLE-STAGE ROTOVATOR')
             page.locator('input[type=file]').set_input_files({'name':'moon.json','mimeType':'application/json','buffer':exported});ready()
             expect(page.locator('.workbench-bar')).to_contain_text('MOON / LUNAR ROTOVATOR')
+            assert page.url==origin+'/lab/lunar/'
             bad=json.loads(exported);bad['recovery']='electrodynamic';bad['fuelT']=0
             page.locator('input[type=file]').set_input_files({'name':'wrong-world.json','mimeType':'application/json','buffer':json.dumps(bad).encode()})
             expect(page.locator('.lab-feedback.is-error')).to_contain_text('Earth E0')

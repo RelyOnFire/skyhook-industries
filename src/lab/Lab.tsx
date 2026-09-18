@@ -116,7 +116,12 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     } catch (e) { setBusy(false); setError(`Could not start the worker: ${(e as Error).message}`); }
   };
   const adopt = (d: Design, fly = false) => {
-    if(d.architecture!==design.architecture){setResult(null);resultRef.current=null;setPrevious(null);setBaseline(null);setStudyRows([]);setShareUrl('');chemicalBudget.current=d.architecture==='lunar-rotovator'?LUNAR_DEFAULT.fuelT:DEFAULT.fuelT;}
+    if(d.architecture!==design.architecture){
+      setResult(null);resultRef.current=null;setPrevious(null);setBaseline(null);setStudyRows([]);setShareUrl('');
+      chemicalBudget.current=d.architecture==='lunar-rotovator'?LUNAR_DEFAULT.fuelT:DEFAULT.fuelT;
+      // A shared URL from the previous world must not reopen that world on refresh.
+      history.replaceState(null,'',d.architecture==='lunar-rotovator'?'/lab/lunar/':'/lab/');
+    }
     if(challengeRef.current&&challengeRef.current.start.architecture!==d.architecture){setChallenge(null);challengeRef.current=null;}
     setDesign(d); setExtended(d.payloadT > STANDARD_PAYLOAD_T); setInvalidFields([]);
     if (d.recovery === 'chemical') chemicalBudget.current = d.fuelT;
