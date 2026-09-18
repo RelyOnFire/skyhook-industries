@@ -27,6 +27,13 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     source: { title: 'Cislunar Tether Transport System', url: cislunar, locator: '1999 · III.A.3 and Appendix B: lunar tether concepts' },
   },
   {
+    id: 'phobos-anchored', name: 'Phobos anchored tethers', category: 'Mechanical configuration', availability: 'runnable',
+    summary: 'Phobos anchors an inward arm toward Mars and an outward arm toward higher orbits. Release from either terminal and inspect the trajectory, cable loads and ideal transfer work.',
+    topology: 'Inward terminal → Phobos surface anchors → outward terminal',
+    missing: 'Available: circular Mars–Phobos gravity, static uniform cables and a prepositioned payload release. Climbing, incoming capture, flexible dynamics, anchor geology and Phobos orbit recovery are not modeled.',
+    source: { title: 'Space Colonization Using Space-Elevators from Phobos', url: 'https://ntrs.nasa.gov/citations/20030065879', locator: 'Weinstein, 2003 · inward and outward Phobos-anchored concepts' },
+  },
+  {
     id: 't4', name: 'Tillotson Two-Tier Tether', category: 'Mechanical configuration', availability: 'reference-only',
     summary: 'T4 couples a smaller spinning tether to the end of a larger spinning tether through a pivot. The secondary stage has two balanced arms.',
     topology: 'Primary arm → pivot → two-arm secondary rotor',

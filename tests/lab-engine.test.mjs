@@ -113,8 +113,9 @@ test('imports reject malformed data, unsupported models and unimplemented archit
 test('architecture catalogue never marks an unsupported solver as runnable', async () => {
   const { ARCHITECTURES } = await import('../.lab-test/simulation/catalogue.js');
   const runnable = ARCHITECTURES.filter(a => a.availability === 'runnable');
-  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture]);
-  for(const record of runnable) validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
+  const { PHOBOS_DEFAULT, validatePhobos } = await import('../.lab-test/simulation/phobos.js');
+  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture,PHOBOS_DEFAULT.architecture]);
+  for(const record of runnable) record.id===PHOBOS_DEFAULT.architecture?validatePhobos(PHOBOS_DEFAULT):validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
   assert.match(ARCHITECTURES.find(a => a.id === 't4').topology, /pivot/);
   assert.equal(ARCHITECTURES.find(a => a.id === 'hoytether').category, 'Structural construction');
   assert.equal(new Set(ARCHITECTURES.map(a => a.id)).size, ARCHITECTURES.length);

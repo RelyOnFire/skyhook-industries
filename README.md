@@ -33,9 +33,10 @@ mirrors into a growing solar swarm. Run the clock and resume named saves.
 First-chapter and working-network saves migrate without resetting progress. `/lab/campaign/method/` documents the calculations,
 game assumptions and save behavior. See `docs/tether-lab/campaign.md` for the
 model, persistence format and validation. Flight Studio offers separate Earth
-(`/lab/`) and lunar (`/lab/lunar/`) orbital experiments. The Moon outpost links
-to the lunar experiment without changing campaign progress. See
-`docs/tether-lab/lunar-flight-studio.md` for its model, tests and limits.
+(`/lab/`), lunar (`/lab/lunar/`) and Phobos anchored (`/lab/phobos/`) experiments.
+The Moon and Phobos outposts link to their experiments without changing campaign
+progress. See `docs/tether-lab/lunar-flight-studio.md` and
+`docs/tether-lab/phobos-flight-studio.md` for the models, tests and limits.
 
 ## Editorial rule
 

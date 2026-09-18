@@ -37,7 +37,7 @@ An optional `--isolated --executable /usr/bin/chromium` mode is provided for off
 
 ## Still outside this model
 
-Earth E0 electrodynamic recovery and a separate spherical-Moon orbital experiment are implemented. Independently planned return traffic, asymmetric/multi-tier dynamics (including T4), eccentric initial orbits, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation, lunar surface pickup/reeling and Earth–Moon/solar-system targeting remain outside these experiments. The other catalogue configurations remain reference-only.
+Earth E0 electrodynamic recovery, a separate spherical-Moon orbital experiment and the bounded P1 Phobos anchored experiment are implemented. See `phobos-flight-studio.md` for the separate solver and limitations. Independently planned return traffic, asymmetric/multi-tier dynamics (including T4), eccentric initial orbits, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation, lunar surface pickup/reeling and Earth–Moon/solar-system targeting remain outside these experiments. The other catalogue configurations remain reference-only.
 
 ## Maintenance
 

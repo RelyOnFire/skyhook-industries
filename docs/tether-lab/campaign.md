@@ -270,8 +270,11 @@ launch constraints, large/small/reloaded time steps, and corrupt power saves.
 ## Further work and sources
 
 More destinations, larger extraction tracts and detailed swarm engineering remain future work.
-Detailed lunavator geometry, Phobos loads, targeting/launch windows and integration
-with tested Flight Studio designs require separate numerical work.
+The separate lunar and Phobos Flight Studio experiments now expose orbital
+rotovator dynamics and static anchored-cable loads/local releases respectively.
+Lunar surface pickup, Phobos capture/recovery, real targeting/launch windows and
+integration of tested Studio designs into campaign ratings remain future work.
+Moon and Phobos outpost links open those experiments without mutating the world.
 
 - Hoyt, Cislunar Tether Transport System, NIAC 1999, summary, III.A.3 and Appendix B:
   https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf

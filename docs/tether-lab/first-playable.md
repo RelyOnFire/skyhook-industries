@@ -28,7 +28,7 @@ Coast hides budget, thrust and specific-impulse controls. Switching back to Chem
 
 ## Architecture catalogue
 
-`src/simulation/catalogue.ts` separates reference records from executable Design values. Only `single-stage-rotovator` is currently runnable. The validator rejects unimplemented architecture IDs.
+`src/simulation/catalogue.ts` separates reference records from executable Design values. The initial release supported only `single-stage-rotovator`. The current catalogue also runs `lunar-rotovator` and, through a separate P1 solver, `phobos-anchored`. Each validator rejects architectures it does not implement.
 
 The other entries are Tillotson Two-Tier Tether (T4), CardioRotovator, HyperSkyhook, LIFTether, MXER, Earth–Moon relay and Hoytether construction. Each identifies missing model work and a primary source. Mechanical configurations, mission systems and structural construction are distinct categories.
 

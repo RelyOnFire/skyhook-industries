@@ -17,16 +17,21 @@
 .lab-section-nav a {padding:13px 0;color:var(--lab-soft);text-decoration:none;border-bottom:2px solid transparent}
 .lab-section-nav a[aria-current],.lab-section-nav a:hover {color:var(--lab-cyan);border-color:var(--lab-cyan)}
 .lab-app {padding-top:28px;}
-.studio-worlds {display:flex;align-items:center;gap:8px;margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--lab-line)}
+.studio-worlds {display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--lab-line)}
 .studio-worlds>span {font-size:10px;letter-spacing:.12em;color:var(--lab-muted);margin-right:12px}
 .studio-worlds button {display:flex;align-items:baseline;gap:12px;min-height:44px;padding:10px 14px;background:transparent;border:1px solid transparent;color:var(--lab-soft);font-size:14px}
 .studio-worlds button small {font-size:11px;color:var(--lab-muted)}
 .studio-worlds button[aria-pressed=true] {border-color:#85684f;background:#30271f;color:var(--lab-cyan)}
 .studio-worlds>a {font-size:12px;margin-left:auto;color:var(--lab-muted);text-underline-offset:4px}
+.studio-worlds>a.studio-world-link{display:flex;align-items:baseline;gap:12px;min-height:44px;box-sizing:border-box;padding:10px 14px;margin-left:0;background:transparent;border:1px solid transparent;color:var(--lab-soft);font-size:14px;text-decoration:none;border-radius:3px}
+.studio-worlds>a.studio-world-link small{font-size:11px;color:var(--lab-muted)}
+.studio-worlds>a.studio-world-link[aria-current=page]{border-color:#85684f;background:#30271f;color:var(--lab-cyan)}
+.studio-worlds>a.studio-world-link:hover{border-color:#798a92;background:#29353b}
 .mission-choices:has(>.mission-choice:only-child) {grid-template-columns:1fr}
 .mission-choices>.mission-choice:only-child {max-width:680px}
 .mission-choices>.mission-choice:only-child>strong {min-height:0}
 @media(max-width:600px){.studio-worlds{flex-wrap:wrap;gap:6px}.studio-worlds>span{width:100%;margin-bottom:2px}.studio-worlds button{flex:1;display:block;text-align:left;padding:9px 11px}.studio-worlds button small{display:block;margin-top:4px}.studio-worlds>a{flex-basis:100%;margin:8px 0 0}}
+@media(max-width:600px){.studio-worlds>a.studio-world-link{flex:1;display:block;padding:9px 11px;margin:0}.studio-worlds>a.studio-world-link small{display:block;margin-top:4px}.studio-worlds button,.studio-worlds>a.studio-world-link{min-width:85px}}
 .workbench-bar h1 {font-size:32px;font-weight:400;letter-spacing:-.035em;line-height:1.15}
 .lab-panel,.lab-modal,.mission-choice,.flight-invitation,.mission-banner,.workspace-mobile-tabs {border-radius:3px;border-color:var(--lab-line)}
 .flight-invitation,.mission-banner,.mission-choice {background:linear-gradient(110deg,#172025,#101619)}
