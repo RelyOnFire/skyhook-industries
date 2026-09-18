@@ -29,7 +29,12 @@ def main():
         page=context.new_page();page.set_default_timeout(12000)
         page.on('pageerror',lambda e:report['errors'].append(str(e)))
         def saved(target=page): expect(target.get_by_text('Saved in this browser',exact=True)).to_be_visible()
-        def action(name,target=page): target.get_by_role('button',name=name,exact=True).click();saved(target)
+        def show_saves(target=page):
+            if target.locator('.campaign-save-manager').get_attribute('open') is None:
+                target.get_by_role('button',name='Your saves',exact=True).click()
+        def action(name,target=page):
+            if name=='Save now': show_saves(target)
+            target.get_by_role('button',name=name,exact=True).click();saved(target)
         def no_overflow(target,width):
             result=target.evaluate('''()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,offenders:[...document.querySelectorAll('body *')].filter(e=>{let r=e.getBoundingClientRect();return r.width&&r.right>innerWidth+1}).slice(0,12).map(e=>({tag:e.tagName,cls:String(e.className),right:e.getBoundingClientRect().right}))})''')
             assert not result['overflow'],f'Overflow at {width}: {result["offenders"]}'
@@ -136,6 +141,7 @@ def main():
             done('scheduled worlds reload exactly; accelerated play advances, pause and reload stop time')
             # Exported JSON is a portable world, including all facilities/resources.
             before=records()[0]['state']
+            show_saves()
             with page.expect_download() as event: page.get_by_role('button',name='Download backup',exact=True).click()
             backup=out/'campaign-backup.json';event.value.save_as(backup)
             data=json.loads(backup.read_text());assert data['state']==before
@@ -173,7 +179,7 @@ def main():
             expect(page.get_by_text('Not saved — download a backup',exact=True)).to_be_visible()
             assert next(r for r in records() if r['id']==recovered['id'])==newest
             page.evaluate('()=>{IDBObjectStore.prototype.put=window.originalPut;}')
-            action('Save now');done('failed saves preserve the last committed world and support retry')
+            action('Retry save');done('failed saves preserve the last committed world and support retry')
             # The injected quota error is expected and may surface as pageerror.
             report['errors']=[e for e in report['errors'] if 'test full' not in e]
             legacy=json.loads((ROOT/'tests/fixtures/campaign-v1.json').read_text())['state']
@@ -284,6 +290,7 @@ def main():
             action('Enable automatic launches',solar);action('+30 days',solar)
             assert records(solar)[0]['state']['solar']['nextDeployment']>last_id
             before=records(solar)[0]['state']
+            show_saves(solar)
             with solar.expect_download() as event:solar.get_by_role('button',name='Download backup',exact=True).click()
             solar_backup=out/'solar-backup.json';event.value.save_as(solar_backup)
             assert json.loads(solar_backup.read_text())['state']==before
@@ -314,6 +321,8 @@ def main():
             assert times==sorted(times)
             assert solar.locator('.mirror-tag').count()>0
             done('all outpost stocks stay exposed; supply shortcuts and keyboard map selection preserve the save; cargo and mirrors share an arrival-ordered queue')
+            if solar.locator('.campaign-save-manager').get_attribute('open') is not None:solar.locator('.campaign-save-manager>summary').click()
+            if solar.get_by_role('button',name='Dismiss message',exact=True).count():solar.get_by_role('button',name='Dismiss message',exact=True).click()
             for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 solar.set_viewport_size({'width':width,'height':height});solar.evaluate('document.activeElement?.blur()')
                 no_overflow(solar,width)
@@ -323,13 +332,82 @@ def main():
                 if width>=1280:
                     positions=solar.locator('#outposts-heading,#schedules-heading,#traffic-heading,#network').evaluate_all('(els)=>els.map(e=>({id:e.id,y:e.getBoundingClientRect().top,x:e.getBoundingClientRect().left}))')
                     by_id={p['id']:p for p in positions}
-                    assert abs(by_id['outposts-heading']['y']-by_id['schedules-heading']['y'])<5
-                    assert by_id['traffic-heading']['y']-by_id['outposts-heading']['y']<500
+                    assert abs(by_id['outposts-heading']['y']-by_id['traffic-heading']['y'])<5
+                    assert 0<by_id['schedules-heading']['y']-by_id['traffic-heading']['y']<450
                     assert by_id['outposts-heading']['x']<by_id['network']['x']<by_id['schedules-heading']['x']
+                    assert by_id['schedules-heading']['y']<height
+                    assert solar.locator('#network').bounding_box()['width']>width*.49
                 solar.locator('.campaign-solar').screenshot(path=str(out/f'solar-{width}.png'))
                 if width in [1440,320]:solar.locator('.network-map').screenshot(path=str(out/f'solar-map-{width}.png'))
             solar_context.close()
-            done('operations layout fits six widths; outposts, map and scheduled services align on desktop with active flights directly below services')
+            done('operations layout fits six widths; the map is the largest panel and both arrivals and services start within the desktop viewport')
+            # A manual dispatch must share the save lock with Play, without pausing it.
+            live_context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce')
+            live=live_context.new_page();live.set_default_timeout(12000)
+            live.on('pageerror',lambda e:report['errors'].append(str(e)))
+            live.goto(origin+'/lab/campaign/',wait_until='networkidle');action('Start new network',live)
+            live.evaluate('''()=>{
+                const original=IDBDatabase.prototype.transaction;
+                IDBDatabase.prototype.transaction=function(...args){
+                    const tx=original.apply(this,args);
+                    if(args[1]==='readwrite'){
+                        IDBDatabase.prototype.transaction=original;
+                        Object.defineProperty(tx,'oncomplete',{set(fn){
+                            tx.addEventListener('complete',event=>{window.releaseSave=()=>fn.call(tx,event);});
+                        }});
+                    }
+                    return tx;
+                };
+            }''')
+            live.get_by_role('button',name='Play simulation',exact=True).click()
+            live.get_by_role('button',name='Dispatch cargo',exact=True).click()
+            expect(live.get_by_text('Saving…',exact=True)).to_be_visible()
+            live.wait_for_function('()=>typeof window.releaseSave==="function"')
+            held=records(live)[0]['state']
+            assert len(held['flights'])==1 and held['ports']['earth']['materialsT']==150
+            expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
+            live.wait_for_timeout(1200)
+            assert records(live)[0]['state']==held, 'Play advanced before the manual save finished'
+            live.evaluate('()=>window.releaseSave()');saved(live)
+            expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_visible()
+            live.wait_for_function('prior=>Number(document.querySelector("[data-testid=campaign-day]").textContent.replace(/[^0-9.]/g,""))>prior',arg=held['day'])
+            saved(live)
+            live.get_by_role('button',name='Pause simulation',exact=True).click()
+            after=records(live)[0]['state']
+            assert after['day']>held['day'] and after['nextShipment']==held['nextShipment']
+            assert after['ports']['earth']['materialsT']==150
+            assert after['flights'][0]==held['flights'][0]
+            done('dispatch during Play saves exactly one shipment, waits for persistence, then resumes automatic time')
+            live.get_by_role('button',name='Play simulation',exact=True).click()
+            action('Schedule service',live);action('Pause service 1',live)
+            action('Save now',live)
+            expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_visible()
+            action('+1 day',live)
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_visible()
+            live.get_by_role('button',name='Play simulation',exact=True).click()
+            live.get_by_label('New network name',exact=True).fill('Clock isolation')
+            action('Create separate network',live)
+            fresh=next(r['state'] for r in records(live) if r['state']['name']=='Clock isolation')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_visible()
+            live.wait_for_timeout(1150)
+            assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==fresh
+            assert fresh['day']==0
+            # A failed manual dispatch stops Play and preserves the committed head.
+            live.evaluate("""()=>{window.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('test full','QuotaExceededError')};}""")
+            live.get_by_role('button',name='Play simulation',exact=True).click()
+            live.get_by_role('button',name='Dispatch cargo',exact=True).click()
+            expect(live.get_by_role('alert')).to_contain_text('Could not save')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
+            expect(live.get_by_role('button',name='Export unsaved progress',exact=True)).to_be_visible()
+            assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==fresh
+            live.evaluate('()=>{IDBObjectStore.prototype.put=window.originalPut;}');action('Retry save',live)
+            retried=next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])
+            assert retried['day']==0 and len(retried['flights'])==1 and retried['ports']['earth']['materialsT']==150
+            live.wait_for_timeout(1150)
+            assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==retried
+            report['errors']=[e for e in report['errors'] if 'test full' not in e]
+            live_context.close()
+            done('service edits and Save now preserve Play; explicit time steps, world changes and failed manual saves stop it safely')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);page.screenshot(path=str(out/'failure.png'),full_page=True)

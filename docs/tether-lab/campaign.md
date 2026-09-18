@@ -14,19 +14,24 @@ destination highlights it without hiding other depots. Each outpost has supply
 shortcuts that prepare the cargo form, choose tug/tether based on commissioned
 endpoints, and suggest a maintenance interval; they never dispatch automatically.
 
-The map highlights the planned corridor, supports keyboard destination selection,
-and shows the swarm around the same Sun. Cargo and mirror deployments share an
-arrival-ordered traffic queue. Scheduled services, blockers and pause controls
-sit beside the map, with bounded keyboard-scrollable lists for busy networks.
-The simulation clock stays available while scrolling. At smaller widths the
-workspace reflows, with anchor links to Outposts, Map, Traffic and Send cargo.
+The map is the largest desktop panel, highlights the planned corridor, supports
+keyboard destination selection, and shows the swarm around the same Sun. Cargo
+and mirror deployments share an arrival-ordered traffic queue above scheduled
+services, so arrivals take precedence and recurring supply follows immediately.
+Both lists have bounded keyboard scrolling that tightens on shorter desktops.
+The delivery composer sits directly under
+the map; mirror operations follow it. The clock and pooled totals share a sticky
+bar. At smaller widths the workspace reflows, with anchor links to Outposts, Map,
+Traffic and Send cargo. Tablet depots form a grid beneath the map; phones stack.
 
 One next-milestone prompt guides progression. Completed objectives, architecture
-explanations and saved-network management use secondary disclosures. Primary
+explanations and saved-network management use secondary disclosures. Your saves
+opens save, backup, import and recovery controls. A save failure also exposes
+Retry save and Export unsaved progress directly in the error message. Primary
 stock, production and traffic information does not require opening a tab.
 Mirror production, launch controls and deployed totals sit in the same workspace.
-This redesign changes presentation only: model 0.3.0, schema 3, numerical rules,
-service schedules, migration and saved-world values are unchanged.
+Model 0.3.0, schema 3, numerical rules, service schedules, migration and saved-world
+values are unchanged. Live operations preserve Play as described below.
 
 ## Economy and scheduling
 
@@ -63,8 +68,12 @@ integrates between events, so large jumps and small steps give equivalent stock,
 flights, service history and progress (within floating-point tolerance). The
 manual +1/+30/next-event controls and Play share this engine. Play performs one
 saved step per second at 1, 10 or 30 days/step; it waits for saves before ticking
-again. Hidden tabs, reload, world changes, errors and the 100,000-day horizon stop
-play. No offline or wall-clock catch-up. Marker movement is schematic elapsed
+again. Dispatching cargo, building, editing services, launching mirrors and Save
+now keep Play active. Their saves use the same lock as automatic ticks; the next
+tick waits for persistence to finish. Explicit +1/+30/next-event steps pause Play
+before advancing. Pause remains available during a pending save. Hidden tabs,
+reload, world changes, errors and the 100,000-day horizon also stop play.
+No offline or wall-clock catch-up. Marker movement is schematic elapsed
 fraction; tracked flight and arrival panels explain status. Reduced motion
 disables marker transitions.
 
@@ -120,7 +129,10 @@ routes, flight tracking and arrivals, pause/resume, accelerated play and reload.
 It also covers portable backup/import, checkpoint branches, competing tabs,
 automatic-clock stop on an injected write failure and successful retry, and
 migration of native version-one and version-two IndexedDB records with checkpoint
-preservation. A real completed v2 network is supplied and built out through
+preservation. A delayed manual-dispatch save verifies that Play waits, resumes,
+and retains exactly one shipment. Service edits and Save now preserve Play;
+explicit time steps, world changes and failed manual dispatch saves stop it.
+A real completed v2 network is supplied and built out through
 Mercury, automatic deployment, all new milestones and a solar backup round-trip.
 Responsive captures cover 1440, 1000, 768, 390 and 320 px; the method guide works
 without JavaScript. CI also runs existing Flight Studio/electrodynamic/navigation
