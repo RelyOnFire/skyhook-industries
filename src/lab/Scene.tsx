@@ -1,13 +1,13 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EARTH, compile, forces, type Result } from '../simulation/engine.js';
+import { environment, compile, forces, type Result } from '../simulation/engine.js';
 import { sample, positions } from './view.js';
 import { flightObjects, trackedObject, OBJECTS, type ObjectId } from './objects.js';
 import { LAND } from './land.js';
 export type View = 'earth' | 'plane' | 'follow' | 'structure';
 type Props = {result:Result;clock:RefObject<number>;view:View;selectedObject:ObjectId;vectors?:boolean;onFailure:(message:string)=>void};
-// Display-plane inclination only. The integrator remains planar/spherical Earth.
+// Display-plane inclination only. The integrator uses the selected spherical body.
 
 function earthTexture() {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;const g=canvas.getContext('2d')!;
@@ -26,18 +26,37 @@ function earthTexture() {
   for(let y=0;y<1024;y+=1024/12){g.beginPath();g.moveTo(0,y);g.lineTo(2048,y);g.stroke();}
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;return texture;
 }
+/** Procedural, illustrative maria/craters; not a terrain map or height model. */
+function moonTexture() {
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
+  const g=canvas.getContext('2d')!;g.fillStyle='#a4a19a';g.fillRect(0,0,2048,1024);
+  let seed=17374;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  for(let i=0;i<26;i++){
+    const x=random()*2048,y=170+random()*650,rx=45+random()*115,ry=40+random()*75;
+    const shade=g.createRadialGradient(x,y,0,x,y,rx);shade.addColorStop(0,'#515b5d66');shade.addColorStop(.7,'#5c64644a');shade.addColorStop(1,'#777b7800');
+    g.save();g.translate(x,y);g.scale(1,ry/rx);g.translate(-x,-y);g.fillStyle=shade;g.fillRect(x-rx,y-rx,rx*2,rx*2);g.restore();
+  }
+  for(let i=0;i<850;i++){
+    const x=random()*2048,y=25+random()*974,r=2+Math.pow(random(),3)*24,stretch=1/Math.max(.2,Math.sin(y/1024*Math.PI));
+    g.save();g.translate(x,y);g.scale(stretch,1);
+    const shade=g.createRadialGradient(-r*.3,-r*.25,r*.1,0,0,r);shade.addColorStop(0,'#e1dcd23a');shade.addColorStop(.7,'#444b4c4a');shade.addColorStop(.85,'#696d6960');shade.addColorStop(1,'#d6d2c24a');
+    g.fillStyle=shade;g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fill();g.restore();
+  }
+  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;return texture;
+}
 export default function Scene({result,clock,view,selectedObject,vectors=false,onFailure}:Props) {
   const host=useRef<HTMLDivElement>(null),labelA=useRef<HTMLDivElement>(null),labelB=useRef<HTMLDivElement>(null),labelC=useRef<HTMLDivElement>(null);
   const selectionRef=useRef(selectedObject),viewRef=useRef(view),current=useRef(result),vectorRef=useRef(vectors),api=useRef<{reset:()=>void;zoom:(factor:number)=>void}|null>(null);
   selectionRef.current=selectedObject;viewRef.current=view;current.current=result;vectorRef.current=vectors;
   useEffect(()=>{
+    const env=environment(result.design);
     // E0 is actually equatorial. The other modes retain their illustrative tilt.
     const point=(p:number[])=>{const angle=current.current.design.recovery==='electrodynamic'?0:28*Math.PI/180;
-      return new T.Vector3(p[0]/EARTH,p[1]/EARTH*Math.sin(angle),p[1]/EARTH*Math.cos(angle)*(current.current.design.recovery==='electrodynamic'?-1:1));};
+      return new T.Vector3(p[0]/env.radius,p[1]/env.radius*Math.sin(angle),p[1]/env.radius*Math.cos(angle)*(current.current.design.recovery==='electrodynamic'?-1:1));};
     const root=host.current!;let renderer:T.WebGLRenderer;
     try{renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});}catch{onFailure('WebGL 2 is unavailable. The orbital-plane view uses the same calculated flight.');return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x070d17,0);renderer.outputColorSpace=T.SRGBColorSpace;
-    renderer.domElement.setAttribute('aria-label','3D Earth and tether flight. Drag to rotate; keyboard-accessible zoom, reset and alternative views are provided.');root.appendChild(renderer.domElement);
+    renderer.domElement.setAttribute('aria-label',`3D ${env.name} and tether flight. Drag to rotate; keyboard-accessible zoom, reset and alternative views are provided.`);root.appendChild(renderer.domElement);
     const colors=OBJECTS.map(o=>new T.Color(o.color).getHex());
     const scene=new T.Scene(),camera=new T.PerspectiveCamera(36,1,.003,250);let dirty=true;
     const markDirty=()=>{dirty=true;};const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=false;controls.maxDistance=100;controls.addEventListener('change',markDirty);
@@ -48,16 +67,16 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       if(focus){
         const f=sample(r,clock.current??0),object=trackedObject(r,f,selectionRef.current),tip=positions(r,f).z;
         const separation=object.state?Math.hypot(object.state[0]-tip[0],object.state[1]-tip[1]):0;
-        const distance=object.phase==='approach'||object.phase==='attached'?Math.max(120000,separation*8)/EARTH:.7;
+        const distance=object.phase==='approach'||object.phase==='attached'?Math.max(120000,separation*8)/env.radius:.7;
         controls.target.copy(focus);camera.position.copy(focus).addScaledVector(new T.Vector3(.35,.25,.55).normalize(),distance);controls.minDistance=.002;camera.near=.00001;
       }
-      else {const radius=1+r.design.altitudeKm*1000/EARTH;controls.target.set(0,0,0);camera.position.set(.9,1.8,3.5).multiplyScalar(radius/1.25);controls.minDistance=1.06;camera.near=.003;}
+      else {const radius=1+r.design.altitudeKm*1000/env.radius;controls.target.set(0,0,0);camera.position.set(.9,1.8,3.5).multiplyScalar(radius/1.25);controls.minDistance=1.06;camera.near=.003;}
       camera.updateProjectionMatrix();controls.update();dirty=true;
     };
     api.current={reset,zoom:factor=>{camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);controls.update();dirty=true;}};reset();
-    const earth=new T.Mesh(new T.SphereGeometry(1,96,64),new T.MeshPhongMaterial({map:earthTexture(),specular:0x244c66,shininess:14}));scene.add(earth);
+    const earth=new T.Mesh(new T.SphereGeometry(1,96,64),new T.MeshPhongMaterial({map:env.id==='moon'?moonTexture():earthTexture(),specular:env.id==='moon'?0x252525:0x244c66,shininess:env.id==='moon'?2:14}));scene.add(earth);
     const sun=new T.DirectionalLight(0xe8f2ff,2.1);sun.position.set(-3,4,5);scene.add(sun,new T.AmbientLight(0x8299c2,.62));
-    const atmosphere=new T.Mesh(new T.SphereGeometry(1.018,64,48),new T.ShaderMaterial({transparent:true,side:T.BackSide,depthWrite:false,vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 n;varying vec3 v;void main(){float rim=pow(1.-abs(dot(normalize(n),normalize(v))),4.);gl_FragColor=vec4(.22,.55,.94,rim*.7);}'}));scene.add(atmosphere);
+    const atmosphere=new T.Mesh(new T.SphereGeometry(1.018,64,48),new T.ShaderMaterial({transparent:true,side:T.BackSide,depthWrite:false,vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 n;varying vec3 v;void main(){float rim=pow(1.-abs(dot(normalize(n),normalize(v))),4.);gl_FragColor=vec4(.22,.55,.94,rim*.7);}'}));atmosphere.visible=env.id==='earth';scene.add(atmosphere);
     let seed=742;const rng=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const stars=[];
     for(let k=0;k<500;k++){const z=rng()*2-1,a=rng()*Math.PI*2,r=28;stars.push(r*Math.sqrt(1-z*z)*Math.cos(a),r*z,r*Math.sqrt(1-z*z)*Math.sin(a));}
     const starGeo=new T.BufferGeometry();starGeo.setAttribute('position',new T.Float32BufferAttribute(stars,3));scene.add(new T.Points(starGeo,new T.PointsMaterial({color:0xb4c9df,size:.018,transparent:true,opacity:.4,sizeAttenuation:true})));
@@ -105,14 +124,14 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       frame=requestAnimationFrame(draw);if(document.hidden||!root.clientWidth||!root.clientHeight)return;
       const r=current.current,t=clock.current??0,v=viewRef.current,show=vectorRef.current,selected=selectionRef.current;
       if(!dirty&&lastResult===r&&lastTime===t&&lastView===v&&lastVectors===show&&lastSelected===selected)return;
-      if(lastResult!==r){const radius=EARTH+r.design.altitudeKm*1000;setPoints(reference,Array.from({length:241},(_,j)=>point([Math.cos(j*Math.PI/120)*radius,Math.sin(j*Math.PI/120)*radius])));lastResult=r;lastTime=-1;reset();}
+      if(lastResult!==r){const radius=env.radius+r.design.altitudeKm*1000;setPoints(reference,Array.from({length:241},(_,j)=>point([Math.cos(j*Math.PI/120)*radius,Math.sin(j*Math.PI/120)*radius])));lastResult=r;lastTime=-1;reset();}
       if(lastView!==v||(lastSelected!==selected&&v==='follow')){reset();lastView=v;}
       const f=sample(r,t),p=positions(r,f),objects=flightObjects(r,f),active=trackedObject(r,f,selected),a=point(p.a),z=point(p.z),h=point(p.hub);
       root.dataset.followTarget=v==='follow'&&active.state?selected:'none';
       if(v==='follow'&&active.state&&!lastFollowAvailable)reset();
       if(v==='follow'&&t!==lastTime){const focus=focalPoint();if(focus){const shift=focus.clone().sub(controls.target);camera.position.add(shift);controls.target.copy(focus);}}
       if(t!==lastTime){
-        earth.rotation.y=t*7.292115e-5+.8;
+        earth.rotation.y=t*env.rotationRate+.8;
         tether.position.copy(a).add(z).multiplyScalar(.5);tether.scale.y=a.distanceTo(z);tether.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),z.clone().sub(a).normalize());ends[0].position.copy(a);ends[1].position.copy(z);hub.position.copy(h);
         cargo.forEach((m,j)=>{const object=objects[j+1];m.visible=!!object.state;if(object.state)m.position.copy(point(object.state));});
         conductorMeshes.forEach((m,j)=>{
@@ -139,7 +158,7 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
         arrow.setDirection(direction.clone().normalize());arrow.setLength(Math.max(1e-6,Math.hypot(state[2],state[3])/1000*vectorPixel*12),vectorPixel*7,vectorPixel*3);
       });
       controls.update();
-      root.dataset.followErrorKm=v==='follow'&&active.state?String(controls.target.distanceTo(point(active.state))*EARTH/1000):'';
+      root.dataset.followErrorKm=v==='follow'&&active.state?String(controls.target.distanceTo(point(active.state))*env.radius/1000):'';
       // Keep symbolic markers legible without turning them into 50 km objects
       // in a close-up. Scale is display-only and never enters the integrator.
       const perPixel=(position:T.Vector3)=>2*Math.tan(camera.fov*Math.PI/360)*camera.position.distanceTo(position)/Math.max(1,root.clientHeight);
@@ -157,8 +176,8 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       dirty=false;lastTime=t;lastVectors=show;lastSelected=selected;lastFollowAvailable=v==='follow'&&!!active.state;
     };draw();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();controls.removeEventListener('change',markDirty);controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);scene.traverse(o=>{const mesh=o as T.Mesh;mesh.geometry?.dispose();if(mesh.material)for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]){(material as T.MeshPhongMaterial).map?.dispose();material.dispose();}});renderer.dispose();renderer.domElement.remove();};
-  },[]);
-  return <div className="scene-three" ref={host} data-recovery={result.design.recovery}><div ref={labelA} className="world-label" aria-hidden="true"/><div ref={labelB} className="world-label cargo-label" style={{color:OBJECTS[1].color,borderColor:OBJECTS[1].color}} aria-hidden="true"/><div ref={labelC} className="world-label cargo-label" style={{color:OBJECTS[2].color,borderColor:OBJECTS[2].color}} aria-hidden="true"/>
+  },[result.design.architecture,onFailure]);
+  return <div className="scene-three" ref={host} data-body={environment(result.design).id} data-recovery={result.design.recovery}><div ref={labelA} className="world-label" aria-hidden="true"/><div ref={labelB} className="world-label cargo-label" style={{color:OBJECTS[1].color,borderColor:OBJECTS[1].color}} aria-hidden="true"/><div ref={labelC} className="world-label cargo-label" style={{color:OBJECTS[2].color,borderColor:OBJECTS[2].color}} aria-hidden="true"/>
     <div className="camera-actions"><button onClick={()=>api.current?.zoom(.8)} aria-label="Zoom camera in">+</button><button onClick={()=>api.current?.zoom(1.25)} aria-label="Zoom camera out">−</button><button onClick={()=>api.current?.reset()}>Reset camera</button></div>
   </div>;
 }
@@ -171,7 +190,7 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
     let focusOrigin:number[]|null=null,focusSpan=120000;
     let focusIdentity:ObjectId|null=null;
     const draw=()=>{
-      request=requestAnimationFrame(draw);if(document.hidden||!c.width||!c.height)return;const r=rref.current,t=clock.current??0,show=vref.current,selected=selectionRef.current,following=followRef.current;
+      request=requestAnimationFrame(draw);if(document.hidden||!c.width||!c.height)return;const r=rref.current,env=environment(r.design),t=clock.current??0,show=vref.current,selected=selectionRef.current,following=followRef.current;
       if(!resized&&t===previous&&r===previousR&&previousW===c.width&&previousH===c.height&&previousZoom===zoom.current&&previousVectors===show&&previousSelected===selected&&previousFollow===following)return;
       resized=false;previous=t;previousR=r;previousW=c.width;previousH=c.height;previousZoom=zoom.current;previousVectors=show;previousSelected=selected;previousFollow=following;
       const f=sample(r,t),p=positions(r,f),objects=flightObjects(r,f),active=trackedObject(r,f,selected);
@@ -180,17 +199,17 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
         focusOrigin=active.state;
         if(focusIdentity!==selected){
           const separation=Math.hypot(active.state[0]-p.z[0],active.state[1]-p.z[1]);
-          focusSpan=active.phase==='approach'||active.phase==='attached'?Math.max(120000,separation*8):EARTH*.7;focusIdentity=selected;
+          focusSpan=active.phase==='approach'||active.phase==='attached'?Math.max(120000,separation*8):env.radius*.7;focusIdentity=selected;
         }
       } else if(focusIdentity!==selected){focusOrigin=null;focusIdentity=selected;}
       parent.dataset.followTarget=following&&active.state?selected:'none';
       const dpr=Math.min(devicePixelRatio,2),w=c.width,h=c.height;
-      const extent=following&&focusOrigin?focusSpan:2.7*(EARTH+r.design.altitudeKm*1000+r.design.spanKm*500);
+      const extent=following&&focusOrigin?focusSpan:2.7*(env.radius+r.design.altitudeKm*1000+r.design.spanKm*500);
       const s=Math.min(w,h)/extent*zoom.current,x=w/2-(focusOrigin?.[0]??0)*s,y=h/2+(focusOrigin?.[1]??0)*s;
       const xy=(p:number[])=>[x+p[0]*s,y-p[1]*s];g.clearRect(0,0,w,h);
-      const glow=g.createRadialGradient(x-EARTH*s*.35,y-EARTH*s*.4,0,x,y,EARTH*s);glow.addColorStop(0,'#285168');glow.addColorStop(.65,'#122f47');glow.addColorStop(1,'#081925');g.fillStyle=glow;g.beginPath();g.arc(x,y,EARTH*s,0,Math.PI*2);g.fill();g.strokeStyle='#6ca7c5';g.lineWidth=1.2*dpr;g.stroke();
-      g.strokeStyle='#355369';g.lineWidth=.5*dpr;for(let j=1;j<=3;j++){g.beginPath();g.ellipse(x,y,EARTH*s*j/4,EARTH*s,0,0,Math.PI*2);g.stroke();}
-      g.strokeStyle='#69849d';g.setLineDash([4*dpr,6*dpr]);g.beginPath();g.arc(x,y,(EARTH+r.design.altitudeKm*1000)*s,0,Math.PI*2);g.stroke();g.setLineDash([]);
+      const glow=g.createRadialGradient(x-env.radius*s*.35,y-env.radius*s*.4,0,x,y,env.radius*s);glow.addColorStop(0,env.id==='moon'?'#a4a29b':'#285168');glow.addColorStop(.65,env.id==='moon'?'#53595b':'#122f47');glow.addColorStop(1,env.id==='moon'?'#21272a':'#081925');g.fillStyle=glow;g.beginPath();g.arc(x,y,env.radius*s,0,Math.PI*2);g.fill();g.strokeStyle='#6ca7c5';g.lineWidth=1.2*dpr;g.stroke();
+      g.strokeStyle='#355369';g.lineWidth=.5*dpr;for(let j=1;j<=3;j++){g.beginPath();g.ellipse(x,y,env.radius*s*j/4,env.radius*s,0,0,Math.PI*2);g.stroke();}
+      g.strokeStyle='#69849d';g.setLineDash([4*dpr,6*dpr]);g.beginPath();g.arc(x,y,(env.radius+r.design.altitudeKm*1000)*s,0,Math.PI*2);g.stroke();g.setLineDash([]);
       const path=(pts:number[][],color:string)=>{g.strokeStyle=color;g.lineWidth=1.5*dpr;g.beginPath();pts.forEach((p,i)=>{const [a,b]=xy(p);i?g.lineTo(a,b):g.moveTo(a,b);});g.stroke();};
       path(r.frames.filter(f=>f.t<=t&&f.t>t-3200).map(f=>f.state),'#7de7ee');
       for(let j=0;j<2;j++)path(r.frames.filter(f=>f.t<=t&&f.payloads[j]).map(f=>f.payloads[j]),OBJECTS[j+1].color);
@@ -230,8 +249,8 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
       if(show){for(const [v,color] of [[p.hub,OBJECTS[0].color],[selected==='facility'?null:active.state,active.color]] as [number[]|null,string][]){
         if(!v)continue;const [a,b]=xy(v),vx=v[2]/1000*10*dpr,vy=-v[3]/1000*10*dpr,angle=Math.atan2(vy,vx);g.strokeStyle=color;g.lineWidth=1.5*dpr;g.beginPath();g.moveTo(a,b);g.lineTo(a+vx,b+vy);g.moveTo(a+vx-7*dpr*Math.cos(angle-.4),b+vy-7*dpr*Math.sin(angle-.4));g.lineTo(a+vx,b+vy);g.lineTo(a+vx-7*dpr*Math.cos(angle+.4),b+vy-7*dpr*Math.sin(angle+.4));g.stroke();
       }}
-      g.fillStyle='#7fa1ba';g.font=`${11*dpr}px monospace`;g.textAlign='center';g.fillText('EARTH',x,y+4*dpr);
+      g.fillStyle='#7fa1ba';g.font=`${11*dpr}px monospace`;g.textAlign='center';g.fillText(env.name.toUpperCase(),x,y+4*dpr);
     };draw();return()=>{cancelAnimationFrame(request);observer.disconnect();};
   },[]);
-  return <div className="scene-plane" data-recovery={result.design.recovery}><canvas ref={canvas} aria-label="Orbital-plane view of the calculated trajectory"/><div className="plane-zoom"><button onClick={()=>zoom.current=Math.min(4,zoom.current*1.25)} aria-label="Zoom in">+</button><button onClick={()=>zoom.current=Math.max(.3,zoom.current/1.25)} aria-label="Zoom out">−</button><button onClick={()=>zoom.current=1}>Fit</button></div></div>;
+  return <div className="scene-plane" data-body={environment(result.design).id} data-recovery={result.design.recovery}><canvas ref={canvas} aria-label="Orbital-plane view of the calculated trajectory"/><div className="plane-zoom"><button onClick={()=>zoom.current=Math.min(4,zoom.current*1.25)} aria-label="Zoom in">+</button><button onClick={()=>zoom.current=Math.max(.3,zoom.current/1.25)} aria-label="Zoom out">−</button><button onClick={()=>zoom.current=1}>Fit</button></div></div>;
 }

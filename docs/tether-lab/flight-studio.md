@@ -1,7 +1,7 @@
 # Flight Studio experience pass
 
 Status: draft PR review; existing Cloudflare main and GoDaddy websites remain unchanged.
-Numerical model: D1p-0.2.0 / schema 2. This pass does not add a second, simplified arcade solver.
+Current numerical models: Earth D1p-0.4.0 and lunar L1p-0.1.0 / design schema 2. Both use the shared rigid-body solver. This document describes the original Earth experience; see [lunar-flight-studio.md](lunar-flight-studio.md) for the Moon experiment and its separate scope.
 
 ## Experience
 
@@ -37,7 +37,7 @@ An optional `--isolated --executable /usr/bin/chromium` mode is provided for off
 
 ## Still outside this model
 
-Electrodynamic recovery, independently planned return traffic, asymmetric/multi-tier dynamics (including T4), eccentric initial orbits, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation and lunar/solar-system targeting are not implemented. Catalogue sketches remain reference-only. Adding cosmetic dropdown entries would misrepresent the model.
+Earth E0 electrodynamic recovery and a separate spherical-Moon orbital experiment are implemented. Independently planned return traffic, asymmetric/multi-tier dynamics (including T4), eccentric initial orbits, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation, lunar surface pickup/reeling and Earth–Moon/solar-system targeting remain outside these experiments. The other catalogue configurations remain reference-only.
 
 ## Maintenance
 

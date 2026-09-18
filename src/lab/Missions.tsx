@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { CHALLENGES, challengeGates, type Challenge } from '../simulation/insights.js';
-import type { Result } from '../simulation/engine.js';
+import { environment, type Result } from '../simulation/engine.js';
 
 export function Modal({ title, onClose, children, wide=false }: { title:string;onClose:()=>void;children:ReactNode;wide?:boolean }) {
   const ref=useRef<HTMLDialogElement>(null);
@@ -11,10 +11,10 @@ export function Modal({ title, onClose, children, wide=false }: { title:string;o
     <h2>{title}</h2>{children}
   </dialog>;
 }
-export function MissionSelect({ onSelect,onClose,completed }: {onSelect:(c:Challenge)=>void;onClose:()=>void;completed:string[]}) {
+export function MissionSelect({ onSelect,onClose,completed,choices=CHALLENGES }: {choices?:Challenge[];onSelect:(c:Challenge)=>void;onClose:()=>void;completed:string[]}) {
   return <Modal title="Learn by flying." onClose={onClose} wide>
-    <p className="modal-intro">Three missions. The same physics as the sandbox. No upgrades, magic fuel, or hidden score.</p>
-    <div className="mission-choices">{CHALLENGES.map(c=><button key={c.id} onClick={()=>onSelect(c)} className="mission-choice">
+    <p className="modal-intro">{choices.length===1?'A lunar flight challenge.':'Three Earth missions.'} The same physics as the sandbox. Measured outcomes, finite resources.</p>
+    <div className="mission-choices">{choices.map(c=><button key={c.id} onClick={()=>onSelect(c)} className="mission-choice">
       <span className="mission-index">{c.number}<small>{completed.includes(c.id)?'COMPLETED LOCALLY':'FLIGHT CHALLENGE'}</small></span>
       <strong>{c.title}</strong><p>{c.question}</p>
       <div className="mission-spec"><span>{c.payload} t × 2 deliveries</span><span>≤ {c.maxFuelT} t propellant</span></div>
@@ -26,9 +26,9 @@ export function MissionSelect({ onSelect,onClose,completed }: {onSelect:(c:Chall
 export function MissionBrief({ challenge:c, onStart,onClose }: {challenge:Challenge;onStart:()=>void;onClose:()=>void}) {
   return <Modal title={c.title} onClose={onClose}>
     <p className="brief-number">MISSION {c.number}</p><p className="modal-intro">{c.brief}</p>
-    <dl className="brief-rules"><div><dt>Deliver</dt><dd>Two {c.payload} t payloads</dd></div><div><dt>Reach</dt><dd>At least {c.minApogeeKm.toLocaleString('en-US')} km apogee; perigee above 120 km</dd></div><div><dt>Keep dry mass below</dt><dd>{c.maxDryT} t</dd></div><div><dt>Load no more than</dt><dd>{c.maxFuelT} t of propellant</dd></div><div><dt>Keep fixed</dt><dd>600 km span · 1,600 km initial altitude · 1.2 km/s spin-tip speed · safety factor 2</dd></div></dl>
+    <dl className="brief-rules"><div><dt>Deliver</dt><dd>Two {c.payload} t payloads</dd></div><div><dt>Reach</dt><dd>At least {c.minApogeeKm.toLocaleString('en-US')} km apogee; perigee above {environment(c.start).cutoff/1000} km</dd></div><div><dt>Keep dry mass below</dt><dd>{c.maxDryT} t</dd></div><div><dt>Load no more than</dt><dd>{c.maxFuelT} t of propellant</dd></div><div><dt>Keep fixed</dt><dd>{c.start.spanKm.toLocaleString('en-US')} km span · {c.start.altitudeKm.toLocaleString('en-US')} km initial altitude · {c.start.tipSpeedKms} km/s spin-tip speed · safety factor {c.start.safetyFactor}</dd></div></dl>
     <p className="brief-hint">{c.lesson}</p>
-    <p className="modal-footnote">Material choices for these challenges: Kevlar 49 or Zylon HM with the stated fiber assumptions. Challenge 01 only permits recovery settings; later missions also allow section/profile changes, and 03 allows release timing. All other design settings stay at the supplied baseline.</p>
+    <p className="modal-footnote">{c.id==='lunar-relay'?'This challenge permits recovery settings only. The supplied lunar geometry, Zylon HM fiber assumption and payload stay fixed. Explore other dimensions outside the challenge.':'Material choices for these challenges: Kevlar 49 or Zylon HM with the stated fiber assumptions. Challenge 01 only permits recovery settings; later missions also allow section/profile changes, and 03 allows release timing. All other design settings stay at the supplied baseline.'}</p>
     <button className="primary launch-mission" onClick={onStart}>Start this mission <span aria-hidden="true">→</span></button>
   </Modal>;
 }
@@ -52,6 +52,6 @@ export function checkpoints(r:Result) {
   return selected.filter((e,i)=>selected.findIndex(x=>x.t===e.t)===i);
 }
 export function GuidedReplay({ result,index,onStep,onClose }: {result:Result;index:number;onStep:(i:number)=>void;onClose:()=>void}) {
-  const points=checkpoints(result),e=points[Math.min(index,points.length-1)];const note=NOTES[e.kind]??{heading:e.title,text:e.detail};
+  const points=checkpoints(result),e=points[Math.min(index,points.length-1)];const note=e.kind==='start'&&environment(result.design).id==='moon'?{heading:'A rotating facility above the Moon.',text:'Lunar gravity drives this flight. An independent payload approaches the moving tip, then leaves on its own calculated lunar trajectory. This is the orbital-transfer part of a lunavator concept; surface pickup and Earth–Moon targeting are not modeled.'}:NOTES[e.kind]??{heading:e.title,text:e.detail};
   return <section className="guided-replay" aria-label="Guided replay"><div className="guided-number">{String(index+1).padStart(2,'0')}<small>/ {points.length}</small></div><div><span className="micro">GUIDED REPLAY / PAUSED CHECKPOINT</span><h3>{note.heading}</h3><p>{note.text}</p><div className="guided-buttons"><button onClick={()=>onStep(index-1)} disabled={index===0}>Back</button>{index<points.length-1?<button className="primary" onClick={()=>onStep(index+1)}>Next checkpoint →</button>:<button className="primary" onClick={onClose}>Explore this design →</button>}<button onClick={onClose}>End guide</button></div></div></section>;
 }

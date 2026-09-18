@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DEFAULT,MODEL,MU,EARTH,validate,compile,initial,rk4,simulate,pointState,reframe,invariants,orbit,resize,clearance} from '../.lab-test/simulation/engine.js';
+import {DEFAULT,LUNAR_DEFAULT,MODEL,MU,EARTH,validate,compile,initial,rk4,simulate,pointState,reframe,invariants,orbit,resize,clearance} from '../.lab-test/simulation/engine.js';
 const near=(a,b,tol)=>assert.ok(Math.abs(a-b)<=tol,`${a} != ${b}, tolerance ${tol}`);
 test('untrusted designs: finite bounds, enums, version; never silently migrate',()=>{
   assert.deepEqual(validate(DEFAULT),DEFAULT);
@@ -113,8 +113,8 @@ test('imports reject malformed data, unsupported models and unimplemented archit
 test('architecture catalogue never marks an unsupported solver as runnable', async () => {
   const { ARCHITECTURES } = await import('../.lab-test/simulation/catalogue.js');
   const runnable = ARCHITECTURES.filter(a => a.availability === 'runnable');
-  assert.equal(runnable.length, 1);
-  assert.equal(runnable[0].id, DEFAULT.architecture);
+  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture]);
+  for(const record of runnable) validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
   assert.match(ARCHITECTURES.find(a => a.id === 't4').topology, /pivot/);
   assert.equal(ARCHITECTURES.find(a => a.id === 'hoytether').category, 'Structural construction');
   assert.equal(new Set(ARCHITECTURES.map(a => a.id)).size, ARCHITECTURES.length);
@@ -125,7 +125,7 @@ const { CHALLENGES, challengeGates, diagnose, deliveries: goodDeliveries, studyD
   designChanges, readiness } = await import('../.lab-test/simulation/insights.js');
 const { loadProfile, loadCheck, properties } = await import('../.lab-test/simulation/engine.js');
 test('each mission has a failing starting state and a reachable passing solution',()=>{
-  const solutions=[DEFAULT,{...DEFAULT,payloadT:5,areaMm2:45},{...DEFAULT,fuelT:12,areaMm2:45,releaseDeg:210}];
+  const solutions=[DEFAULT,{...DEFAULT,payloadT:5,areaMm2:45},{...DEFAULT,fuelT:12,areaMm2:45,releaseDeg:210},LUNAR_DEFAULT];
   CHALLENGES.forEach((c,i)=>{
     const start=simulate(c.start),solution=simulate(solutions[i]);
     assert.ok(challengeGates(c,start).some(g=>!g.pass),`${c.id} starting state must teach a trade`);

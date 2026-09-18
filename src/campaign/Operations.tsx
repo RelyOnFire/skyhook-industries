@@ -30,6 +30,7 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
           {p.level===0&&<button className="outpost-build" disabled={busy||p.materialsT<cost} onClick={()=>act(w=>build(w,id))}>{p.level?'Upgrade':'Commission'} {machine} · {cost} t</button>}
           {p.level>0&&!p.industry&&<><button className="outpost-build" disabled={busy||p.materialsT<20||p.equipmentT<5} onClick={()=>act(w=>installIndustry(w,id))}>Install {INDUSTRY[id].name.toLowerCase()}</button><p className="tiny">20 t material + 5 t equipment</p></>}
           {id==='earth'&&<div className="earth-allocation"><button disabled={busy||world.day<world.nextSupplyDay} onClick={()=>act(resupply)}>{world.day<world.nextSupplyDay?'Next allocation: '+date(world.nextSupplyDay):'Request supply allocation'}</button><p>+60 t material +60 t fuel · every 30 days</p></div>}
+          {id==='moon'&&<a className="outpost-experiment" href="/lab/lunar/" target="_blank" rel="noopener" aria-label="Explore the lunar tether in Flight Studio (opens a new tab)">Explore this tether <span>↗</span><small>Flight Studio · separate orbital experiment</small></a>}
         </>}
       </article>;
     })}

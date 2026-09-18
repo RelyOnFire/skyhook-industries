@@ -1,7 +1,7 @@
 ---
 import LabLayout from '../../layouts/LabLayout.astro';
 import { ARCHITECTURES } from '../../simulation/catalogue';
-import { DEFAULT } from '../../simulation/engine';
+import { DEFAULT, LUNAR_DEFAULT } from '../../simulation/engine';
 import { designFragment } from '../../simulation/design-io';
 ---
 <LabLayout title="Architecture catalogue · Tether Lab" description="Explore rotating, two-tier, electrodynamic and cislunar tether concepts. See what the lab can run and what needs a different model." active="architectures">
@@ -10,14 +10,15 @@ import { designFragment } from '../../simulation/design-io';
       <p class="micro">ARCHITECTURE CATALOGUE</p>
       <h1>More than one way to build a tether.</h1>
       <p>Start with a spinning cable. Then explore two-tier machines, atmospheric pickup concepts and orbital transport networks.</p>
-      <div class="guide-meta"><span>1 RUNNABLE MODEL</span><span>7 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
+      <div class="guide-meta"><span>2 RUNNABLE EXPERIMENTS</span><span>7 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
     </header>
-    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>These are not eight skins for the same simulation. Reference-only entries explain the extra physics they need; they cannot be launched in the current engine.</p></div>
+    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>Start with the Earth or Moon experiment. Reference entries explain the extra physics needed for other configurations and connected transport networks.</p></div>
     <div class="architecture-grid">
       {ARCHITECTURES.map(record => <article id={record.id} class:list={['architecture-card', {runnable: record.availability === 'runnable'}]}>
         <div class="architecture-art">
           <svg viewBox="0 0 300 120" aria-hidden="true" focusable="false">
             {record.id === 'single-stage-rotovator' && <><ellipse cx="150" cy="60" rx="104" ry="39" stroke-dasharray="3 7" opacity=".3"/><path d="M100 102 L200 18" stroke-width="3"/><circle cx="150" cy="60" r="6"/><circle cx="100" cy="102" r="3"/><circle cx="200" cy="18" r="3"/></>}
+            {record.id === 'lunar-rotovator' && <><circle cx="116" cy="74" r="34" opacity=".5"/><circle cx="104" cy="66" r="8" opacity=".25"/><circle cx="129" cy="84" r="5" opacity=".25"/><ellipse cx="116" cy="74" rx="68" ry="43" stroke-dasharray="3 7" opacity=".3"/><path d="M153 18 L197 54" stroke-width="3"/><circle cx="175" cy="36" r="5"/><path d="M197 54 Q265 36 254 103" stroke="#ffc186" stroke-dasharray="4 5"/><circle cx="254" cy="103" r="3" stroke="#ffc186"/></>}
             {record.id === 't4' && <><path d="M58 91 L202 49" stroke-width="3"/><circle cx="58" cy="91" r="8"/><path d="M177 17 L227 81" stroke="#ffc186" stroke-width="3"/><circle cx="202" cy="49" r="6" stroke="#ffc186"/><circle cx="177" cy="17" r="3" stroke="#ffc186"/><circle cx="227" cy="81" r="3" stroke="#ffc186"/><path d="M230 19 A40 40 0 0 1 240 64" stroke="#ffc186" opacity=".5"/><path d="M114 52 L123 31 M219 93 L241 103" stroke="#96acc1"/><text x="84" y="23" fill="#bccdde" stroke="none" font-size="10">Primary stage</text><text x="193" y="116" fill="#ffc186" stroke="none" font-size="10">Secondary rotor</text></>}
             {record.id === 'cardiorotovator' && <><ellipse cx="148" cy="60" rx="110" ry="43" opacity=".4"/><circle cx="200" cy="60" r="16" opacity=".5"/><path d="M27 88 L66 20 M242 39 L268 81" stroke-width="3"/><circle cx="47" cy="54" r="4"/><circle cx="255" cy="60" r="4"/></>}
             {record.id === 'hyperskyhook' && <><path d="M46 116 Q150 41 254 116" opacity=".5"/><path d="M150 9 V79" stroke-width="3"/><circle cx="150" cy="9" r="5"/><circle cx="150" cy="79" r="3"/><path d="M163 9 H208 M200 4 L209 9 L200 14"/><path d="M40 77 Q150 2 260 77" stroke-dasharray="3 7" opacity=".3"/></>}
@@ -33,7 +34,7 @@ import { designFragment } from '../../simulation/design-io';
           <p class="micro">{record.category.toUpperCase()}</p><h3>{record.name}</h3><p>{record.summary}</p>
           <dl><dt>Configuration</dt><dd>{record.topology}</dd><dt>{record.availability === 'runnable' ? 'In the current lab' : 'Before it can run'}</dt><dd>{record.missing}</dd></dl>
           <a class="source-link" href={record.source.url}>{record.source.title} ↗<br/><span>{record.source.locator}</span></a>
-          {record.availability === 'runnable' && <a class="button-link primary" href={`/lab/${designFragment(DEFAULT)}`}>Open the rotovator experiment →</a>}
+          {record.availability === 'runnable' && <a class="button-link primary" href={record.id === 'lunar-rotovator' ? `/lab/lunar/${designFragment(LUNAR_DEFAULT)}` : `/lab/${designFragment(DEFAULT)}`}>Open the {record.id === 'lunar-rotovator' ? 'Moon' : 'Earth'} experiment →</a>}
         </div>
       </article>)}
     </div>

@@ -20,6 +20,13 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     source: { title: 'Cislunar Tether Transport System', url: cislunar, locator: '1999 · introduction: momentum-exchange tethers' },
   },
   {
+    id: 'lunar-rotovator', name: 'Lunar rotovator', category: 'Mechanical configuration', availability: 'runnable',
+    summary: 'A rotating facility above the Moon transfers two independently approaching payloads into higher lunar orbits. Explore gravity, clearance, loads and the cost of recovery.',
+    topology: 'Lunar orbit · fixed-length rotor · two orbital deliveries',
+    missing: 'Available: spherical Moon gravity, ideal orbital handoffs, finite chemical recovery and Coast. Surface pickup, adjustable ballast and tether reeling from the historical lunavator are not modeled.',
+    source: { title: 'Cislunar Tether Transport System', url: cislunar, locator: '1999 · III.A.3 and Appendix B: lunar tether concepts' },
+  },
+  {
     id: 't4', name: 'Tillotson Two-Tier Tether', category: 'Mechanical configuration', availability: 'reference-only',
     summary: 'T4 couples a smaller spinning tether to the end of a larger spinning tether through a pivot. The secondary stage has two balanced arms.',
     topology: 'Primary arm → pivot → two-arm secondary rotor',
@@ -58,7 +65,7 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     id: 'cislunar', name: 'Earth–Moon relay', category: 'Mission system', availability: 'reference-only',
     summary: 'Separate Earth-orbit and lunar-orbit tethers exchange outbound and return payloads. This is a transport network rather than one compound rotor.',
     topology: 'Earth tether → transfer trajectory → lunar tether',
-    missing: 'Needs lunar gravity, transfer targeting, separate facility states and a finite return-traffic schedule.',
+    missing: 'Earth and Moon experiments run separately. A connected relay still needs Earth–Moon transfer targeting, simultaneous facility states and a finite return-traffic schedule.',
     source: { title: 'Cislunar Tether Transport System', url: cislunar, locator: '1999 · project summary and system architecture' },
   },
   {

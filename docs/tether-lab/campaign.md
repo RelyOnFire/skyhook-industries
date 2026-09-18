@@ -64,7 +64,7 @@ replace the Earth–Phobos allowance of three. Existing route durations are
 unchanged. No launch windows, ephemerides, lunar escape, Phobos interception,
 capture loads, surface pickup or flexible dynamics are solved. Tether ratings,
 instant construction, fuel allocations and endpoint recovery remain game rules.
-The detailed Earth Flight Studio is separate and unchanged.
+The detailed Earth and lunar Flight Studio experiments are separate from the campaign. The Moon outpost's “Explore this tether” link opens `/lab/lunar/` in a new tab without changing campaign resources or saved progress. That experiment models orbital transfers; it does not validate the campaign's Earth–Moon routes or simulate surface pickup.
 
 Each of up to twelve recurring services uses the manual dispatch checks. First
 attempt is tomorrow. After success, next attempt is departure + chosen interval

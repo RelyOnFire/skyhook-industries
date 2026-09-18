@@ -42,6 +42,8 @@ jobs:
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
       - name: Exercise electrodynamic recovery and resource controls
         run: python3 tests/lab-electrodynamic.browser.py --require-webgl
+      - name: Exercise lunar Flight Studio and independent design storage
+        run: python3 tests/lab-lunar.browser.py --require-webgl
       - name: Capture and check responsive company pages
         run: python3 tests/site-pages.browser.py
       - name: Exercise campaign progression and durable saves
