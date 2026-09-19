@@ -23,11 +23,11 @@ function pipeline() {
 test('solar: a real v2 network migrates all stocks, schedules and active flights exactly',()=>{
   const before=structuredClone(fixture),old=fixture.state,w=validateCampaign(old);
   for(const k of Object.keys(old).filter(k=>!['schema','model','ports'].includes(k)))assert.deepEqual(w[k],old[k],k);
-  for(const site of Object.keys(old.ports))assert.deepEqual(w.ports[site],old.ports[site]);
+  for(const site of Object.keys(old.ports))assert.deepEqual(w.ports[site],{...old.ports[site],waterT:0});
   assert.equal(w.solar.unlocked,false);assert.equal(w.ports.mercury.level,0);
   assert.equal(w.solar.manufacturedT,0);assert.deepEqual(w.solar.deployments,[]);
   assert.deepEqual(validateCampaign(w),w);assert.deepEqual(fixture,before);
-  assert.equal(importCampaign(JSON.stringify(fixture),'new').schema,4);
+  assert.equal(importCampaign(JSON.stringify(fixture),'new').schema,5);
 });
 test('solar: expedition costs and lock apply equally to direct commands and scheduled routes',()=>{
   const w=fresh(),before=structuredClone(w);

@@ -10,14 +10,15 @@ function expanded() {let w=linked();w=build(w,'mercury');return build(w,'mercury
 
 test('power: a real v3 world preserves every balance, facility, schedule, clock and deployment',()=>{
   const old=fixture.state,before=structuredClone(fixture),w=validateCampaign(old);
-  for(const k of Object.keys(old).filter(k=>!['schema','model','solar'].includes(k)))assert.deepEqual(w[k],old[k],k);
+  for(const k of Object.keys(old).filter(k=>!['schema','model','solar','ports'].includes(k)))assert.deepEqual(w[k],old[k],k);
+  for(const site of Object.keys(old.ports))assert.deepEqual(w.ports[site],{...old.ports[site],waterT:0});
   for(const k of Object.keys(old.solar))assert.deepEqual(w.solar[k],old.solar[k],k);
-  assert.equal(w.schema,4);assert.equal(w.solar.powerLink,false);
+  assert.equal(w.schema,5);assert.equal(w.solar.powerLink,false);
   assert.equal(swarmPower(w).multiplier,1);assert.equal(swarmPower(w).returnedGW,0);
   assert.equal(mercuryProduction(w).mineCapacity,2);assert.equal(mercuryProduction(w).mirrorCapacity,1);
   assert.deepEqual(automaticMirrorPlan(w),{massT:10,intervalDays:10});
   assert.deepEqual(validateCampaign(w),w);assert.deepEqual(fixture,before);
-  const exported=JSON.parse(exportCampaign(w));assert.equal(exported.version,4);
+  const exported=JSON.parse(exportCampaign(w));assert.equal(exported.version,5);
   assert.deepEqual(importCampaign(JSON.stringify(exported),'copy').solar,w.solar);
   // Old envelopes cannot smuggle activation into a migration.
   const altered=structuredClone(old);altered.solar.powerLink=true;

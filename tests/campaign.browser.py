@@ -190,7 +190,7 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==4 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==5 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
             assert migrated['checkpoints'][0]==legacy
             page.get_by_role('button',name='Your saves',exact=True).click()
@@ -253,12 +253,12 @@ def main():
             solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
             assert records(solar)[0]==previous_record
             action('Save now',solar);migrated=records(solar)[0]
-            assert migrated['state']['schema']==4 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['state']['schema']==5 and migrated['state']['revision']==previous['revision']+1
             assert migrated['checkpoints'][0]==previous
             for key in ['flights','services','day','fuelT','marsOperations']:
                 assert migrated['state'][key]==previous[key]
             for site in ['earth','moon','phobos']:
-                assert migrated['state']['ports'][site]==previous['ports'][site]
+                assert migrated['state']['ports'][site]=={**previous['ports'][site],'waterT':0}
             done('v2 native save upgrades without altering industry, stocks, scheduled services or in-flight cargo')
             action('Request supply allocation',solar);action('Open Mercury expedition',solar)
             solar.get_by_label('From',exact=True).select_option('moon');solar.get_by_label('To',exact=True).select_option('mercury')
@@ -488,10 +488,11 @@ def main():
             stale.get_by_role('button',name='Continue Power loop').click();saved(stale)
             action('Save now',motion)
             migrated=next(r for r in records(motion) if r['id']==old['id'])
-            assert migrated['state']['schema']==4 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==5 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints'][0]==old and migrated['state']['solar']['powerLink'] is False
             for key in old:
-                if key not in ['schema','model','revision','solar']:assert migrated['state'][key]==old[key]
+                if key not in ['schema','model','revision','solar','ports']:assert migrated['state'][key]==old[key]
+            for site in old['ports']:assert migrated['state']['ports'][site]=={**old['ports'][site],'waterT':0}
             for key in old['solar']:assert migrated['state']['solar'][key]==old['solar'][key]
             stale.get_by_role('button',name='+1 day',exact=True).click()
             expect(stale.get_by_role('alert')).to_contain_text('Another tab changed this campaign')
@@ -543,7 +544,7 @@ def main():
             expect(motion.get_by_test_id('swarm-power')).not_to_have_text(initial_power)
             expect(motion.get_by_test_id('map-power')).to_have_text(motion.get_by_test_id('swarm-power').inner_text())
             assert motion.locator('.power-goals li.complete').count()==4
-            expect(motion.get_by_role('heading',name='Your swarm is powering its own expansion.',exact=True)).to_be_visible()
+            expect(motion.get_by_role('heading',name='Prepare the belt expedition',exact=True)).to_be_visible()
             show_saves(motion)
             with motion.expect_download() as event:motion.get_by_role('button',name='Download backup',exact=True).click()
             power_backup=out/'power-backup.json';event.value.save_as(power_backup)

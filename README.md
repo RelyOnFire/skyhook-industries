@@ -26,11 +26,13 @@ Cloudflare deployment is configured in `wrangler.jsonc` and builds from GitHub.
 
 ## Expeditions
 
-`/lab/campaign/` is a persistent Earth–Moon–Phobos–Mercury logistics campaign:
+`/lab/campaign/` is a persistent Earth–Moon–Phobos–Mercury–Ceres logistics campaign:
 build a lunar lunavator and Phobos anchor hub, produce material and equipment,
 schedule direct Moon–Phobos deliveries, then unlock Mercury industry and launch
-mirrors into a growing solar swarm. Run the clock and resume named saves.
-First-chapter and working-network saves migrate without resetting progress. `/lab/campaign/method/` documents the calculations,
+mirrors into a growing solar swarm. Reinvest its power automatically, then use
+Phobos to supply Ceres and return water for support propellant. Twenty milestones
+span five chapters. Run the clock and resume named saves; valid schema 1–4 saves
+migrate without resetting progress. `/lab/campaign/method/` documents the calculations,
 game assumptions and save behavior. See `docs/tether-lab/campaign.md` for the
 model, persistence format and validation. Flight Studio offers separate Earth
 (`/lab/`), lunar (`/lab/lunar/`), Phobos anchored (`/lab/phobos/`) and T4

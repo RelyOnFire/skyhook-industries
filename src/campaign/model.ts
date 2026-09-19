@@ -1,19 +1,22 @@
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.4.0';
-export const SITES = ['earth', 'moon', 'phobos', 'mercury'] as const;
+export const CAMPAIGN_MODEL = 'network-0.5.0';
+export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
   earth: { name: 'Earth', facility: 'Orbital rotovator', description: 'Manufacture equipment and allocate support propellant for the network.', color: '#8ebbc6' },
   moon: { name: 'Moon', facility: 'Lunavator', description: 'A freely orbiting lunar rotor. Supply its processor with equipment to export lunar construction material.', color: '#d7d1bf' },
   mercury: { name: 'Mercury', facility: 'Mercury rotovator', description: 'An orbital transfer port above a surface refinery and mirror works. Supply equipment to turn local material into the first solar swarm.', color: '#c6b69a' },
   phobos: { name: 'Phobos', facility: 'Phobos anchor hub', description: 'Phobos is the central anchor, with an inward Mars-facing tether and an outward transfer arm.', color: '#e3a782' },
+  ceres: { name: 'Ceres', facility: 'Ceres rotovator', description: 'A freely orbiting transfer port serving a surface water works. Ship equipment from Phobos and return water for network propellant.', color: '#a0ccd4' },
 } as const;
 export const DAY = 86400;
 export const EARTH_EQUIPMENT_PER_DAY = .5;
 const AU = 149597870700, SUN_GM = 1.32712440018e20, EARTH_GM = 3.986004418e14;
 const EPS = 1e-8;
 export const MERCURY_AU = .38709927;
+// Rounded mean distance from NASA Ceres Facts, frozen for this scenario.
+export const CERES_AU = 2.8;
 /** Ideal half-ellipse between circular radii, SI. No ephemerides or targeting. */
 export function hohmannDays(mu: number, r1: number, r2: number) {
   if (![mu,r1,r2].every(x => Number.isFinite(x) && x > 0)) throw Error('Invalid orbital parameters.');
@@ -27,6 +30,7 @@ export const ROUTES = [
   { id: 'earth-mercury', a: 'earth', b: 'mercury', name: 'Mercury supply corridor', coastDays: hohmannDays(SUN_GM, AU, AU * MERCURY_AU), handlingDays: 4, fuelPerT: 1.8 },
   { id: 'moon-mercury', a: 'moon', b: 'mercury', name: 'Lunar–Mercury corridor', coastDays: hohmannDays(SUN_GM, AU, AU * MERCURY_AU), handlingDays: 5, fuelPerT: 1.8 },
   { id: 'phobos-mercury', a: 'phobos', b: 'mercury', name: 'Phobos–Mercury corridor', coastDays: hohmannDays(SUN_GM, AU * 1.523679, AU * MERCURY_AU), handlingDays: 6, fuelPerT: 2.2 },
+  { id: 'phobos-ceres', a: 'phobos', b: 'ceres', name: 'Belt supply corridor', coastDays: hohmannDays(SUN_GM, AU * 1.523679, AU * CERES_AU), handlingDays: 6, fuelPerT: .5 },
 ] as const;
 export const SOLAR = {
   depositT: 100000, unlockMaterialsT: 60, unlockEquipmentT: 20, unlockOperations: 100,
@@ -40,15 +44,21 @@ export const POWER = {
   linkMaterialsT: 60, linkEquipmentT: 10, minDeployedT: 100,
   irradianceWm2: 1361, returnedFraction: .2, capacityGW: 20,
 } as const;
-export type CargoKind = 'materials' | 'equipment';
-export const CARGO = { materials: 'Construction material', equipment: 'Equipment' } as const;
+export const BELT = {
+  depositT:100000, minSwarmT:2000, unlockMaterialsT:60, unlockEquipmentT:20,
+  plantMaterialsT:40, plantEquipmentT:10, waterTPerDay:2, mineEquipmentPerT:.01,
+  fuelTPerDay:2, plantEquipmentPerT:.005,
+} as const;
+export type CargoKind = 'materials' | 'equipment' | 'water';
+export const CARGO = { materials: 'Construction material', equipment: 'Equipment', water:'Water' } as const;
 export const INDUSTRY = {
   mercury: { name: 'Mercury refinery', detail: 'Up to 2 t construction material / daily cycle, using 0.1 t equipment and 2 t of the local deposit.' },
   earth: { name: 'Earth manufacturing', detail: '+0.5 t equipment and +1 t pooled support propellant / day. Surface supply is included.' },
   moon: { name: 'Lunar processor', detail: '+1 t construction material / day, using 0.05 t equipment / day for maintenance.' },
   phobos: { name: 'Mars staging depot', detail: '+1 Mars operations point / day, using 0.5 t construction material and 0.02 t equipment / day.' },
+  ceres: { name: 'Ceres water works', detail: 'Up to 2 t water / daily cycle, using 0.01 t equipment per tonne from a finite local deposit.' },
 } as const;
-export interface Port { materialsT: number; equipmentT: number; industry: boolean; level: number; readyDay: number; receivedT: number; sentT: number }
+export interface Port { materialsT: number; equipmentT: number; waterT:number; industry: boolean; level: number; readyDay: number; receivedT: number; sentT: number }
 export interface Shipment { id: number; from: SiteId; to: SiteId; cargoT: number; fuelT: number; mode: 'tug' | 'tether'; departed: number; arrival: number; kind: CargoKind; serviceId: number | null }
 export interface Service { id: number; from: SiteId; to: SiteId; cargoT: number; kind: CargoKind; mode: Shipment['mode']; intervalDays: number; nextDay: number; enabled: boolean; dispatched: number; deliveredT: number }
 export interface Deployment { id: number; massT: number; departed: number; arrival: number }
@@ -61,29 +71,33 @@ function freshSolar(): SolarIndustry {
   return {unlocked:false,depositT:SOLAR.depositT,nextCycleDay:null,mirrorWorks:false,launchArray:false,powerLink:false,
     mirrorsT:0,manufacturedT:0,deployedT:0,autoLaunch:false,nextLaunchDay:null,nextDeployment:1,deployments:[]};
 }
-function emptyPort(): Port {return {materialsT:0,equipmentT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
+export interface BeltIndustry { unlocked:boolean; depositT:number; extractedT:number; returnedWaterT:number; refinedT:number; propellantWorks:boolean; nextCycleDay:number|null }
+function freshBelt():BeltIndustry {return {unlocked:false,depositT:BELT.depositT,extractedT:0,returnedWaterT:0,refinedT:0,propellantWorks:false,nextCycleDay:null};}
+function emptyPort(): Port {return {materialsT:0,equipmentT:0,waterT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 4; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 5; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
-  solar: SolarIndustry; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
+  solar: SolarIndustry; belt:BeltIndustry; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
 }
 export const LIMITS = { days: 100000, stock: 1000000, flights: 32, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
-  const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 4, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
+  return { schema: 5, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
-    ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort() }, flights: [],
-    solar:freshSolar(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
+    ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort(), ceres:emptyPort() }, flights: [],
+    solar:freshSolar(), belt:freshBelt(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
     log: [{ day: 0, text: 'Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator.' }] };
 }
 export function routeFor(from: SiteId, to: SiteId) {
   const route = ROUTES.find(r => (r.a === from && r.b === to) || (r.b === from && r.a === to));
-  if (!route) throw Error('Choose two different destinations.');
+  if (!route) throw Error(from==='ceres'||to==='ceres'?'Ceres connects through the Phobos hub.':'Choose two different destinations.');
   return route;
 }
-const key = (kind: CargoKind) => kind === 'materials' ? 'materialsT' : 'equipmentT';
+const key = (kind: CargoKind) => kind === 'materials' ? 'materialsT' : kind==='equipment'?'equipmentT':'waterT';
+export const waterRoute = (from:SiteId,to:SiteId) => from==='ceres'&&to==='phobos';
+export const siteLocked = (w:Campaign,id:SiteId) => id==='mercury'&&!w.solar.unlocked||id==='ceres'&&!w.belt.unlocked;
 const stock = (w: Campaign, site: SiteId, kind: CargoKind) => w.ports[site][key(kind)];
 function room(w: Campaign, site: SiteId, kind: CargoKind) {
   return Math.max(0,LIMITS.stock-stock(w,site,kind)-w.flights.filter(f=>f.to===site&&f.kind===kind).reduce((n,f)=>n+f.cargoT,0));
@@ -96,7 +110,9 @@ export function flightPlan(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
   const duration = route.coastDays + route.handlingDays;
   let reason = '';
   if ((from==='mercury'||to==='mercury')&&!world.solar.unlocked) reason = 'Open the Mercury expedition in Chapter 03 first.';
+  else if ((from==='ceres'||to==='ceres')&&!world.belt.unlocked) reason = 'Open the Ceres expedition in Chapter 05 first.';
   else if (!Object.hasOwn(CARGO,kind)) reason = 'Choose a cargo type.';
+  else if (kind==='water'&&!waterRoute(from,to)) reason = 'Water returns from Ceres to the Phobos propellant works.';
   else if (!['tug','tether'].includes(mode)) reason = 'Choose a transport mode.';
   else if (!Number.isFinite(cargoT) || cargoT < 1 || !Number.isInteger(cargoT)) reason = 'Cargo must be a whole number of tonnes, at least 1.';
   else if (mode === 'tether' && (!origin.level || !destination.level)) reason = 'Commission a tether at both ends first. Use a bootstrap tug to deliver construction cargo.';
@@ -106,7 +122,7 @@ export function flightPlan(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
     if(from==='earth'&&kind==='equipment'&&origin.industry) reason += ' Earth manufactures '+EARTH_EQUIPMENT_PER_DAY+' t per simulation day. Press Play or advance time to replenish it.';
   }
   else if (room(world,to,kind) + EPS < cargoT) reason = 'The destination has no storage space after incoming deliveries.';
-  else if (world.fuelT + EPS < fuelT) reason = 'Support propellant is low. Request an Earth supply allocation.';
+  else if (world.fuelT + EPS < fuelT) reason = 'Support propellant is low. Request an Earth supply allocation.'+(world.belt.propellantWorks?' Returned Ceres water also feeds the Phobos plant.':'');
   else if (mode === 'tether' && Math.max(origin.readyDay,destination.readyDay) > world.day + EPS) reason = 'The tether service is recovering. Advance time before booking another slot.';
   else if (world.flights.length + world.solar.deployments.length >= LIMITS.flights) reason = 'The traffic limit is 32 active flights. Advance to an arrival first.';
   else if (world.day + duration > LIMITS.days) reason = 'This campaign has reached its simulation horizon. Export it and start a new network.';
@@ -185,6 +201,7 @@ function arrive(w: Campaign) {
     w.ports[f.to][key(f.kind)] += f.cargoT; w.ports[f.to].receivedT += f.cargoT;
     if(f.from==='moon'&&f.to==='earth') w.lunarReturnedT += f.cargoT;
     if(f.from==='moon'&&f.to==='phobos'&&f.kind==='materials') w.lunarPhobosDeliveredT += f.cargoT;
+    if(f.kind==='water')w.belt.returnedWaterT+=f.cargoT;
     const service=w.services.find(s=>s.id===f.serviceId); if(service) service.deliveredT += f.cargoT;
     note(w,'Flight '+f.id+' arrived at '+SITE[f.to].name+'. '+f.cargoT+' t '+CARGO[f.kind].toLowerCase()+' added to the depot.');
   }
@@ -198,10 +215,12 @@ export function advance(world: Campaign, days: number): Campaign {
     const events=[target,...next.flights.map(f=>f.arrival),...next.services.filter(s=>s.enabled).map(s=>s.nextDay),
       ...next.solar.deployments.map(d=>d.arrival),
       ...(next.solar.nextCycleDay===null?[]:[next.solar.nextCycleDay]),
+      ...(next.belt.nextCycleDay===null?[]:[next.belt.nextCycleDay]),
       ...(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null?[next.solar.nextLaunchDay]:[])];
     const at=Math.min(...events); produce(next,Math.max(0,at-next.day)); next.day=at;
     arrive(next); deploy(next);
     if(next.solar.nextCycleDay!==null&&next.solar.nextCycleDay<=at+EPS)mercuryCycle(next);
+    if(next.belt.nextCycleDay!==null&&next.belt.nextCycleDay<=at+EPS)beltCycle(next);
     for(const service of [...next.services].sort((a,b)=>a.id-b.id)) {
       if(!service.enabled||service.nextDay>at+EPS) continue;
       const plan=flightPlan(next,service.from,service.to,service.cargoT,service.mode,service.kind);
@@ -223,12 +242,14 @@ export function nextEventDay(world: Campaign) {
   const days = [...world.flights.map(f => f.arrival), ...SITES.map(s => world.ports[s].readyDay), world.nextSupplyDay,
     ...world.services.filter(s=>s.enabled).map(s=>s.nextDay),...world.solar.deployments.map(d=>d.arrival),
     ...(world.solar.nextCycleDay===null?[]:[world.solar.nextCycleDay]),
+    ...(world.belt.nextCycleDay===null?[]:[world.belt.nextCycleDay]),
     ...(world.solar.autoLaunch&&world.solar.nextLaunchDay!==null?[world.solar.nextLaunchDay]:[])].filter(d => d > world.day + EPS && d <= LIMITS.days);
   return days.length ? Math.min(...days) : null;
 }
 export function buildCost(world: Campaign, site: SiteId) { return 30 * (world.ports[site].level + 1); }
 export function build(world: Campaign, site: SiteId): Campaign {
   if(site==='mercury'&&!world.solar.unlocked)throw Error('Open the Mercury expedition first.');
+  if(site==='ceres'&&!world.belt.unlocked)throw Error('Open the Ceres expedition first.');
   const port = world.ports[site], cost = buildCost(world,site);
   if (port.level >= 3) throw Error('This facility is already at the highest campaign tier.');
   if (port.materialsT + EPS < cost) throw Error('Deliver '+(cost-port.materialsT)+' t more construction cargo to '+SITE[site].name+'.');
@@ -238,6 +259,7 @@ export function build(world: Campaign, site: SiteId): Campaign {
 }
 export function installIndustry(world: Campaign, site: SiteId): Campaign {
   if(site==='mercury'&&!world.solar.unlocked)throw Error('Open the Mercury expedition first.');
+  if(site==='ceres'&&!world.belt.unlocked)throw Error('Open the Ceres expedition first.');
   const p=world.ports[site];
   if(p.industry) throw Error('This industry is already installed.');
   if(!p.level) throw Error('Commission the tether here first.');
@@ -250,6 +272,7 @@ export function industryStatus(w: Campaign, site: SiteId) {
   const p=w.ports[site];
   if(!p.industry) return 'Not installed';
   if(site==='earth') return 'Manufacturing and support allocation active';
+  if(site==='ceres')return w.belt.depositT<EPS?'Local water deposit exhausted':p.equipmentT<EPS?'Waiting for equipment':room(w,site,'water')<EPS?'Water storage full':'Extracting water each simulation day';
   if(site==='mercury'&&w.solar.depositT<EPS)return 'Local deposit exhausted';
   if(site==='mercury'&&mercuryProduction(w).minedT>EPS)return 'Refining local material each simulation day';
   if(site==='mercury'&&room(w,site,'materials')<EPS)return 'Construction storage full';
@@ -262,6 +285,8 @@ export function industryStatus(w: Campaign, site: SiteId) {
 export function addService(world: Campaign, from: SiteId, to: SiteId, cargoT: number, mode: Shipment['mode'], kind: CargoKind, intervalDays: number): Campaign {
   routeFor(from,to);
   if((from==='mercury'||to==='mercury')&&!world.solar.unlocked)throw Error('Open the Mercury expedition first.');
+  if((from==='ceres'||to==='ceres')&&!world.belt.unlocked)throw Error('Open the Ceres expedition first.');
+  if(kind==='water'&&!waterRoute(from,to))throw Error('Water returns from Ceres to the Phobos propellant works.');
   if(world.services.length>=LIMITS.services) throw Error('The network supports up to 12 scheduled services.');
   if(!Number.isInteger(intervalDays)||intervalDays<1||intervalDays>3650) throw Error('Choose an interval from 1 to 3,650 whole days.');
   if(!['tug','tether'].includes(mode)||!Object.hasOwn(CARGO,kind)||!Number.isInteger(cargoT)||cargoT<1||cargoT>(mode==='tug'?10:30)) throw Error('Choose a valid cargo type, service and payload.');
@@ -394,6 +419,57 @@ export function powerObjectives(w: Campaign) {
   ];
 }
 
+export function ceresUnlockReason(w:Campaign) {
+  if(w.belt.unlocked)return 'Ceres expedition already open.';
+  if(!w.solar.powerLink||w.solar.deployedT+EPS<BELT.minSwarmT)return 'Connect swarm power and deploy 2,000 t of mirrors to open Chapter 05.';
+  if(w.ports.phobos.level<2||!w.ports.phobos.industry)return 'Prepare a tier-2 Phobos anchor and its Mars staging depot.';
+  if(w.ports.phobos.materialsT+EPS<BELT.unlockMaterialsT||w.ports.phobos.equipmentT+EPS<BELT.unlockEquipmentT)return 'Stage 60 t construction material and 20 t equipment at Phobos for the expedition.';
+  return '';
+}
+export function unlockCeres(w:Campaign):Campaign {
+  const reason=ceresUnlockReason(w);if(reason)throw Error(reason);
+  const next=edit(w);next.ports.phobos.materialsT=Math.max(0,next.ports.phobos.materialsT-BELT.unlockMaterialsT);
+  next.ports.phobos.equipmentT=Math.max(0,next.ports.phobos.equipmentT-BELT.unlockEquipmentT);
+  next.belt.unlocked=true;next.belt.nextCycleDay=next.day+1;
+  note(next,'Ceres expedition opened from Phobos. Staging consumed 60 t material and 20 t equipment. Send construction and working supplies to Ceres next.');return next;
+}
+export function propellantBuildReason(w:Campaign) {
+  if(w.belt.propellantWorks)return 'Phobos propellant works already installed.';
+  if(!w.belt.unlocked)return 'Open the Ceres expedition first.';
+  if(w.ports.phobos.materialsT+EPS<BELT.plantMaterialsT||w.ports.phobos.equipmentT+EPS<BELT.plantEquipmentT)return 'The plant needs 40 t construction material and 10 t equipment at Phobos.';
+  return '';
+}
+export function buildPropellantWorks(w:Campaign):Campaign {
+  const reason=propellantBuildReason(w);if(reason)throw Error(reason);
+  const next=edit(w);next.ports.phobos.materialsT=Math.max(0,next.ports.phobos.materialsT-BELT.plantMaterialsT);
+  next.ports.phobos.equipmentT=Math.max(0,next.ports.phobos.equipmentT-BELT.plantEquipmentT);next.belt.propellantWorks=true;
+  note(next,'Phobos propellant works installed. Returned Ceres water becomes pooled support propellant on the next belt cycle, using equipment.');return next;
+}
+/** Separate depot recipes. Water must arrive at Phobos before it can fuel a flight. */
+export function beltProduction(w:Campaign) {
+  const c=w.ports.ceres,p=w.ports.phobos,b=w.belt;
+  const waterT=b.unlocked&&c.industry?Math.max(0,Math.min(BELT.waterTPerDay,b.depositT,c.equipmentT/BELT.mineEquipmentPerT,room(w,'ceres','water'))):0;
+  const fuelT=b.propellantWorks?Math.max(0,Math.min(BELT.fuelTPerDay,p.waterT,p.equipmentT/BELT.plantEquipmentPerT,LIMITS.stock-w.fuelT)):0;
+  const mineStatus=!c.industry?'Install the Ceres water works':b.depositT<EPS?'Local water deposit exhausted':c.equipmentT<EPS?'Waiting for Ceres equipment':room(w,'ceres','water')<EPS?'Water storage full':'Water extraction active';
+  const plantStatus=!b.propellantWorks?'Install the Phobos propellant works':w.fuelT>=LIMITS.stock-EPS?'Support fuel storage full':p.waterT<EPS?'Waiting for returned water':p.equipmentT<EPS?'Waiting for Phobos equipment':'Returned water feeding the network';
+  return {waterT,fuelT,mineStatus,plantStatus};
+}
+function beltCycle(w:Campaign) {
+  const {waterT,fuelT}=beltProduction(w),b=w.belt;
+  w.ports.ceres.waterT+=waterT;w.ports.ceres.equipmentT=Math.max(0,w.ports.ceres.equipmentT-waterT*BELT.mineEquipmentPerT);
+  b.depositT=Math.max(0,b.depositT-waterT);b.extractedT+=waterT;
+  w.ports.phobos.waterT=Math.max(0,w.ports.phobos.waterT-fuelT);w.ports.phobos.equipmentT=Math.max(0,w.ports.phobos.equipmentT-fuelT*BELT.plantEquipmentPerT);
+  w.fuelT=Math.min(LIMITS.stock,w.fuelT+fuelT);b.refinedT+=fuelT;b.nextCycleDay=w.day+1;
+}
+export function beltObjectives(w:Campaign) {
+  return [
+    {name:'Prepare the belt expedition',detail:'Connect swarm power, deploy 2,000 t, then fund Ceres from a tier-2 Phobos staging hub.',done:w.belt.unlocked},
+    {name:'Establish the Ceres works',detail:'Deliver supplies from Phobos, commission the Ceres rotovator and install water extraction.',done:w.ports.ceres.industry},
+    {name:'Fuel from the belt',detail:'Install the Phobos propellant works and process at least 10 t of returned Ceres water.',done:w.belt.refinedT>=10-EPS},
+    {name:'Make the belt a regular supplier',detail:'Process 100 t of Ceres water; keep a return service with three departures and a delivery.',done:w.belt.refinedT>=100-EPS&&w.services.some(s=>waterRoute(s.from,s.to)&&s.kind==='water'&&s.dispatched>=3&&s.deliveredT>0)},
+  ];
+}
+
 /** Construct clean bounded state, migrating known previous campaign schemas.
  * No catch-up production: the new economy starts at the saved simulation day. */
 export function validateCampaign(value: unknown): Campaign {
@@ -402,15 +478,18 @@ export function validateCampaign(value: unknown): Campaign {
   const str = (v: unknown, max: number): string => { if (typeof v !== 'string' || !v.trim() || v.length > max) throw Error('Invalid campaign text.'); return v; };
   const site = (v: unknown): SiteId => { if (!SITES.includes(v as SiteId)) throw Error('Unknown destination in save.'); return v as SiteId; };
   const bool=(v: unknown): boolean=>{if(typeof v!=='boolean')throw Error('Invalid campaign flag.');return v;};
-  const kind=(v: unknown): CargoKind=>{if(v!=='materials'&&v!=='equipment')throw Error('Invalid cargo type.');return v;};
+  const kind=(v: unknown): CargoKind=>{if(v!=='materials'&&v!=='equipment'&&!(v==='water'&&!oldSchema))throw Error('Invalid cargo type.');return v as CargoKind;};
   const raw = object(value), legacy=raw.schema===1 && raw.model==='network-0.1.0', previous=raw.schema===2 && raw.model==='network-0.2.0', migrate=legacy||previous;
   const firstLight=raw.schema===3&&raw.model==='network-0.3.0';
-  if (!migrate && !firstLight && (raw.schema !== 4 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const powerLoop=raw.schema===4&&raw.model==='network-0.4.0',oldSchema=migrate||firstLight||powerLoop;
+  if (!oldSchema && (raw.schema !== 5 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   const day = num(raw.day,0,LIMITS.days), rawPorts = object(raw.ports), ports = {} as Record<SiteId,Port>;
   for (const id of SITES) {
     if(id==='mercury'&&migrate){ports.mercury=emptyPort();continue;}
+    if(id==='ceres'&&oldSchema){ports.ceres=emptyPort();continue;}
     const p = object(rawPorts[id]); ports[id] = {
       materialsT: num(p.materialsT,0,LIMITS.stock), equipmentT:legacy?(id==='earth'?20:0):num(p.equipmentT,0,LIMITS.stock),
+      waterT:oldSchema?0:num(p.waterT,0,LIMITS.stock),
       industry:legacy?id==='earth':bool(p.industry), level: num(p.level,0,3,true), readyDay: num(p.readyDay,0,LIMITS.days+30),
       receivedT: num(p.receivedT,0,1e9), sentT: num(p.sentT,0,1e9) };
     if(ports[id].industry&&!ports[id].level) throw Error('Industry requires a commissioned facility.');
@@ -422,10 +501,12 @@ export function validateCampaign(value: unknown): Campaign {
   const services: Service[]=legacy?[]:(raw.services as unknown[]).map(v=>{
     const s=object(v), id=num(s.id,1,nextService-1,true), from=site(s.from), to=site(s.to);routeFor(from,to);
     if(migrate&&(from==='mercury'||to==='mercury'))throw Error('Invalid route for the saved campaign version.');
+    if(oldSchema&&(from==='ceres'||to==='ceres'))throw Error('Invalid route for the saved campaign version.');
     if(serviceIds.has(id))throw Error('Duplicate service in save.');serviceIds.add(id);
     if(s.mode!=='tug'&&s.mode!=='tether')throw Error('Invalid service mode.');
-    const enabled=bool(s.enabled);
-    return {id,from,to,kind:kind(s.kind),mode:s.mode,cargoT:num(s.cargoT,1,s.mode==='tug'?10:30,true),
+    const enabled=bool(s.enabled),cargoKind=kind(s.kind);
+    if(cargoKind==='water'&&!waterRoute(from,to))throw Error('Invalid water route.');
+    return {id,from,to,kind:cargoKind,mode:s.mode,cargoT:num(s.cargoT,1,s.mode==='tug'?10:30,true),
       intervalDays:num(s.intervalDays,1,3650,true),nextDay:num(s.nextDay,enabled?day+1e-9:0,LIMITS.days+3650),enabled,
       dispatched:num(s.dispatched,0,1e9,true),deliveredT:num(s.deliveredT,0,1e9)};
   });
@@ -433,15 +514,18 @@ export function validateCampaign(value: unknown): Campaign {
   const flights: Shipment[] = raw.flights.map((v): Shipment => {
     const f = object(v), from = site(f.from), to = site(f.to), route = routeFor(from,to);
     if((legacy&&route.id==='lunar-mars')||(migrate&&(from==='mercury'||to==='mercury')))throw Error('Invalid first-chapter route.');
+    if(oldSchema&&(from==='ceres'||to==='ceres'))throw Error('Invalid route for the saved campaign version.');
     const id = num(f.id,1,nextShipment-1,true); if (ids.has(id)) throw Error('Duplicate flight in save.'); ids.add(id);
     const departed = num(f.departed,0,day), arrival = num(f.arrival,day+1e-9,LIMITS.days);
     if (Math.abs(arrival - departed - route.coastDays - route.handlingDays) > 1e-6) throw Error('Invalid flight timing in save.');
     if (f.mode !== 'tug' && f.mode !== 'tether') throw Error('Invalid transport mode.');
     const cargoT = num(f.cargoT,1,f.mode === 'tug' ? 10 : 30,true);
+    const cargoKind=legacy?'materials':kind(f.kind);
+    if(cargoKind==='water'&&!waterRoute(from,to))throw Error('Invalid water route.');
     return { id, from, to, cargoT, fuelT: num(f.fuelT,0,1000), mode: f.mode, departed, arrival,
-      kind:legacy?'materials':kind(f.kind),serviceId:legacy||f.serviceId===null?null:num(f.serviceId,1,nextService-1,true) };
+      kind:cargoKind,serviceId:legacy||f.serviceId===null?null:num(f.serviceId,1,nextService-1,true) };
   });
-  for(const id of SITES) for(const resource of ['materials','equipment'] as CargoKind[]) {
+  for(const id of SITES) for(const resource of ['materials','equipment','water'] as CargoKind[]) {
     const inbound=flights.filter(f=>f.to===id&&f.kind===resource).reduce((sum,f)=>sum+f.cargoT,0);
     if(ports[id][key(resource)]+inbound>LIMITS.stock+EPS) throw Error('Incoming cargo exceeds depot storage.');
   }
@@ -471,16 +555,27 @@ export function validateCampaign(value: unknown): Campaign {
     if(!solar.unlocked&&(ports.mercury.level||ports.mercury.materialsT||ports.mercury.equipmentT||solar.depositT!==SOLAR.depositT||
       services.some(s=>s.from==='mercury'||s.to==='mercury')||flights.some(f=>f.from==='mercury'||f.to==='mercury')))throw Error('Mercury requires an open expedition.');
   }
+  let belt=freshBelt();
+  if(!oldSchema){const b=object(raw.belt);
+    belt={unlocked:bool(b.unlocked),depositT:num(b.depositT,0,BELT.depositT),extractedT:num(b.extractedT,0,BELT.depositT),returnedWaterT:num(b.returnedWaterT,0,BELT.depositT),refinedT:num(b.refinedT,0,BELT.depositT),propellantWorks:bool(b.propellantWorks),nextCycleDay:b.nextCycleDay===null?null:num(b.nextCycleDay,day+1e-9,LIMITS.days+1)};
+    if(belt.unlocked!==(belt.nextCycleDay!==null))throw Error('Invalid belt production clock.');
+    if(belt.unlocked&&(!solar.powerLink||solar.deployedT+EPS<BELT.minSwarmT||ports.phobos.level<2||!ports.phobos.industry))throw Error('Ceres requires an established swarm and Phobos staging hub.');
+    if(!belt.unlocked&&(belt.propellantWorks||ports.ceres.level||ports.ceres.materialsT||ports.ceres.equipmentT||ports.ceres.receivedT||ports.ceres.sentT||belt.extractedT||services.some(s=>s.from==='ceres'||s.to==='ceres')||flights.some(f=>f.from==='ceres'||f.to==='ceres')))throw Error('Ceres requires an open expedition.');
+    if(belt.extractedT>0&&!ports.ceres.industry||belt.refinedT>0&&!belt.propellantWorks)throw Error('Belt production requires installed facilities.');
+    if(SITES.some(id=>id!=='ceres'&&id!=='phobos'&&ports[id].waterT!==0))throw Error('Water is stored at Ceres and Phobos only.');
+    const transit=flights.filter(f=>f.kind==='water').reduce((n,f)=>n+f.cargoT,0);
+    if(Math.abs(BELT.depositT-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
+  }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  return { schema:4, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  return { schema:5, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
-    solar,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
+    solar,belt,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:4, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:5, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

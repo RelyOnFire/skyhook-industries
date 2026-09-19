@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, SITE, SITES, swarmPower, type Campaign as World, type Shipment, type SiteId } from './model.js';
+import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
 import SolarChapter from './SolarChapter.js';
+import BeltChapter from './BeltChapter.js';
 import NetworkMap from './NetworkMap.js';
 import { Milestones, NextMove, Outposts, TrafficBoard } from './Operations.js';
 import type { TrafficId } from './traffic.js';
@@ -75,7 +76,12 @@ export default function Campaign() {
   const latest=slots.find(s=>s.valid), event=world?nextEventDay(world):null;
   let plan:ReturnType<typeof flightPlan>|undefined;
   if(world){try{plan=flightPlan(world,from,to,Number(cargo),mode,kind);}catch{/* A destination selection is incomplete. */}}
-  const chooseFrom=(id:SiteId)=>{setFrom(id);if(id===to)setTo(SITES.find(s=>s!==id&&!(s==='mercury'&&!world?.solar.unlocked))!);};
+  const connected=(a:SiteId,b:SiteId)=>ROUTES.some(r=>(r.a===a&&r.b===b)||(r.b===a&&r.a===b));
+  const chooseFrom=(id:SiteId)=>{
+    const destination=connected(id,to)?to:SITES.find(s=>connected(id,s)&&world&&!siteLocked(world,s))!;
+    setFrom(id);setTo(destination);if(kind==='water'&&!waterRoute(id,destination))setKind('materials');
+  };
+  const chooseTo=(id:SiteId)=>{setTo(id);if(kind==='water'&&!waterRoute(from,id))setKind('materials');};
   const reveal=(element:HTMLElement|null)=>{if(element instanceof HTMLDetailsElement)element.open=true;element?.scrollIntoView({block:'nearest'});};
   const focusSite=(id:SiteId)=>{setSelected(id);reveal(document.getElementById('outpost-'+id));};
   const trackFlight=(id:TrafficId|null)=>{
@@ -92,7 +98,7 @@ export default function Campaign() {
   const prepare=(origin:SiteId,destination:SiteId,resource:CargoKind)=>{
     setFrom(origin);setTo(destination);setKind(resource);setCargo('10');setSelected(destination);
     setMode(world?.ports[origin].level&&world?.ports[destination].level?'tether':'tug');
-    setIntervalDays(destination==='moon'?'90':destination==='mercury'?'60':'100');
+    setIntervalDays(destination==='ceres'?'200':resource==='water'?'90':destination==='moon'?'90':destination==='mercury'?'60':'100');
     requestAnimationFrame(()=>{reveal(document.getElementById('dispatch'));document.getElementById('campaign-origin')?.focus({preventScroll:true});});
   };
   return <main ref={main} tabIndex={-1} id="lab-content" className={'campaign'+(world?' has-world':'')}>
@@ -100,7 +106,7 @@ export default function Campaign() {
       {world&&<div className="campaign-save"><span role="status">{saveStatus}</span><button onClick={()=>reveal(savePanel.current)}>Your saves <span aria-hidden="true">↗</span></button></div>}
     </header>
     {error&&<div className="campaign-message error" role="alert"><span>{error}</span>{world&&saveStatus.startsWith('Not saved')&&<div><button disabled={busy} onClick={()=>void task(async()=>persist(world))}>Retry save</button> <button onClick={download}>Export unsaved progress</button></div>}</div>}{notice&&<div className="campaign-message" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice('')}>Dismiss</button></div>}
-    {!world&&<><section className="campaign-welcome" aria-label="Start or continue"><div><p className="campaign-eyebrow">BUILD AN INTERPLANETARY SUPPLY CHAIN</p><h2>Start at Earth.<br/>Build toward the Sun.</h2><p>Supply a lunar lunavator. Anchor your Mars network at Phobos. Build an industry on Mercury and watch your solar swarm grow.</p><p>Your outposts, routes and cargo share one operations view. Time moves when you choose.</p></div><div className="campaign-start">
+    {!world&&<><section className="campaign-welcome" aria-label="Start or continue"><div><p className="campaign-eyebrow">BUILD AN INTERPLANETARY SUPPLY CHAIN</p><h2>Start at Earth.<br/>Build toward the Sun.</h2><p>Supply a lunar lunavator. Anchor your Mars network at Phobos. Grow a solar swarm from Mercury, then reach into the belt for water and propellant.</p><p>Your outposts, routes and cargo share one operations view. Time moves when you choose.</p></div><div className="campaign-start">
       {loading?<p role="status">Checking saved networks…</p>:latest&&<button className="primary" disabled={busy} onClick={()=>resume(latest.id)}>Continue {latest.name} <small>{day(latest.day)}</small></button>}
       <label htmlFor="campaign-name">Name your network</label><input id="campaign-name" maxLength={48} value={name} onChange={e=>setName(e.target.value)} autoComplete="off"/>
       <button className={latest?'':'primary'} disabled={busy||loading} onClick={()=>start()}>Start new network</button><button disabled={busy} onClick={()=>upload.current?.click()}>Import campaign backup</button>
@@ -119,22 +125,23 @@ export default function Campaign() {
         <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} onTrack={trackFlight} playing={playing} route={{from,to}}/></section>
           <section className="campaign-dispatch" id="dispatch" aria-labelledby="dispatch-heading"><header className="panel-title"><h2 id="dispatch-heading">Send cargo</h2><span>{SITE[from].name} → {SITE[to].name}</span></header>
         <form onSubmit={e=>{e.preventDefault();act(w=>dispatch(w,from,to,Number(cargo),mode,kind));}}>
-          <div className="campaign-fields"><div><label htmlFor="campaign-origin">From</label><select id="campaign-origin" value={from} onChange={e=>chooseFrom(e.target.value as SiteId)}>{SITES.map(s=><option key={s} value={s} disabled={s==='mercury'&&!world.solar.unlocked}>{SITE[s].name}{s==='mercury'&&!world.solar.unlocked?' · Chapter 03':''}</option>)}</select></div><div><label htmlFor="campaign-destination">To</label><select id="campaign-destination" value={to} onChange={e=>setTo(e.target.value as SiteId)}>{SITES.filter(s=>s!==from).map(s=><option key={s} value={s} disabled={s==='mercury'&&!world.solar.unlocked}>{SITE[s].name}{s==='mercury'&&!world.solar.unlocked?' · Chapter 03':''}</option>)}</select></div><div><label htmlFor="campaign-kind">Cargo type</label><select id="campaign-kind" value={kind} onChange={e=>setKind(e.target.value as CargoKind)}><option value="materials">Construction material</option><option value="equipment">Equipment</option></select></div><div><label htmlFor="campaign-cargo">Cargo (t)</label><input id="campaign-cargo" type="number" min="1" max="30" step="1" required value={cargo} onChange={e=>setCargo(e.target.value)}/></div></div>
+          <div className="campaign-fields"><div><label htmlFor="campaign-origin">From</label><select id="campaign-origin" value={from} onChange={e=>chooseFrom(e.target.value as SiteId)}>{SITES.map(s=><option key={s} value={s} disabled={siteLocked(world,s)}>{SITE[s].name}{siteLocked(world,s)?' · Chapter '+(s==='ceres'?'05':'03'):''}</option>)}</select></div><div><label htmlFor="campaign-destination">To</label><select id="campaign-destination" value={to} onChange={e=>chooseTo(e.target.value as SiteId)}>{SITES.filter(s=>connected(from,s)).map(s=><option key={s} value={s} disabled={siteLocked(world,s)}>{SITE[s].name}{siteLocked(world,s)?' · Chapter '+(s==='ceres'?'05':'03'):''}</option>)}</select></div><div><label htmlFor="campaign-kind">Cargo type</label><select id="campaign-kind" value={kind} onChange={e=>setKind(e.target.value as CargoKind)}><option value="materials">Construction material</option><option value="equipment">Equipment</option>{waterRoute(from,to)&&<option value="water">Water</option>}</select></div><div><label htmlFor="campaign-cargo">Cargo (t)</label><input id="campaign-cargo" type="number" min="1" max="30" step="1" required value={cargo} onChange={e=>setCargo(e.target.value)}/></div></div>
           <aside className="campaign-origin-stock" aria-label="Departure depot stock">
-            <span>{SITE[from].name} stock</span><dl><div><dt>Material</dt><dd>{number(world.ports[from].materialsT)} t</dd></div><div><dt>Equipment</dt><dd data-testid="origin-equipment">{number(world.ports[from].equipmentT)} t</dd></div></dl>
+            <span>{SITE[from].name} stock</span><dl><div><dt>Material</dt><dd>{number(world.ports[from].materialsT)} t</dd></div><div><dt>Equipment</dt><dd data-testid="origin-equipment">{number(world.ports[from].equipmentT)} t</dd></div>{waterRoute(from,to)&&<div><dt>Water</dt><dd data-testid="origin-water">{number(world.ports[from].waterT)} t</dd></div>}</dl>
             {from==='earth'&&world.ports.earth.industry&&kind==='equipment'&&world.ports.earth.equipmentT<Number(cargo)&&<p>Earth manufactures {EARTH_EQUIPMENT_PER_DAY} t per simulation day. <b>+30 days produces {30*EARTH_EQUIPMENT_PER_DAY} t.</b>{world.services.some(s=>s.enabled&&s.from==='earth'&&s.kind==='equipment')&&' Scheduled services draw from this stock.'}</p>}
           </aside>
           <fieldset className="campaign-service"><legend className="sr-only">Transport service</legend><label><input type="radio" name="service" value="tug" checked={mode==='tug'} onChange={()=>setMode('tug')}/><span><b>Bootstrap tug</b><small>10 t capacity</small></span></label><label><input type="radio" name="service" value="tether" checked={mode==='tether'} onChange={()=>setMode('tether')}/><span><b>Tether corridor</b><small>Both tethers required</small></span></label></fieldset>
           {plan&&<div className="campaign-flight-estimate"><div><span>COAST + HANDLING</span><b>{number(plan.duration)} days</b></div><div><span>SUPPORT PROPELLANT</span><b>{Number.isFinite(plan.fuelT)?number(plan.fuelT):'—'} t</b></div><div><span>ARRIVAL</span><b>{day(world.day+plan.duration)}</b></div></div>}
           <div className="dispatch-action"><p id="flight-reason" className={'campaign-hint'+(plan?.reason?' dispatch-blocked':'')}>{plan?.reason||'Ready for departure'}</p><button className="primary" type="submit" disabled={busy||!!plan?.reason||!plan} aria-describedby="flight-reason">Dispatch cargo <span aria-hidden="true">↗</span></button></div>
-          <div className="campaign-schedule-form"><label htmlFor="service-interval">Repeat every (simulation days)</label><div><input id="service-interval" type="number" min="1" max="3650" step="1" value={intervalDays} onChange={e=>setIntervalDays(e.target.value)}/><button type="button" disabled={busy||world.services.length>=LIMITS.services||!Number.isInteger(Number(intervalDays))||Number(intervalDays)<1||Number(intervalDays)>3650||!Number.isInteger(Number(cargo))||Number(cargo)<1||Number(cargo)>(mode==='tug'?10:30)} onClick={()=>act(w=>addService(w,from,to,Number(cargo),mode,kind,Number(intervalDays)))}>Schedule service</button></div><p className="campaign-hint">First attempt tomorrow. Blocked departures retry daily.</p></div>
+          <div className="campaign-schedule-form"><label htmlFor="service-interval">Repeat every (simulation days)</label><div><input id="service-interval" type="number" min="1" max="3650" step="1" value={intervalDays} onChange={e=>setIntervalDays(e.target.value)}/><button type="button" disabled={busy||!plan||siteLocked(world,from)||siteLocked(world,to)||world.services.length>=LIMITS.services||!Number.isInteger(Number(intervalDays))||Number(intervalDays)<1||Number(intervalDays)>3650||!Number.isInteger(Number(cargo))||Number(cargo)<1||Number(cargo)>(mode==='tug'?10:30)} onClick={()=>act(w=>addService(w,from,to,Number(cargo),mode,kind,Number(intervalDays)))}>Schedule service</button></div><p className="campaign-hint">First attempt tomorrow. Blocked departures retry daily.</p></div>
         </form>
           </section>
           <SolarChapter world={world} busy={busy} act={act}/>
+          <BeltChapter world={world} busy={busy} act={act} prepare={prepare}/>
         </div>
         <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
-      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop</span></summary><Milestones world={world}/></details>
+      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop → into the belt</span></summary><Milestones world={world}/></details>
     </>}
     <details ref={savePanel} className="campaign-save-manager" open={!world}><summary>Saved networks & backups</summary>
     <section className="campaign-saves" id="campaign-saves" aria-labelledby="save-heading"><div className="campaign-panel-heading"><div><p className="campaign-eyebrow">YOUR CAMPAIGNS</p><h2 id="save-heading">Saved networks</h2></div><button disabled={busy} onClick={()=>upload.current?.click()}>Import backup</button></div>

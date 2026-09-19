@@ -5,7 +5,7 @@ export type TrafficId = `cargo-${number}` | `mirror-${number}`;
 export interface TrafficItem {
   id: TrafficId; label: string; from: SiteId; to: SiteId | 'swarm';
   fromName: string; toName: string; mass: number;
-  kind: 'materials' | 'equipment' | 'mirrors'; cargo: string;
+  kind: 'materials' | 'equipment' | 'water' | 'mirrors'; cargo: string;
   departed: number; arrival: number;
 }
 export function trafficItems(world: Campaign): TrafficItem[] {
