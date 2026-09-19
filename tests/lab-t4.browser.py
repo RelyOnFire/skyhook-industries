@@ -92,7 +92,15 @@ def main():
             assert export_report()['release']['orbit']==challenge['release']['orbit']
             expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','false')
             done('streamed phase sweep preserves partial samples and accepted flight on stop; inspection restores exact settings')
-            preset('Working release');accepted=export_report();page.get_by_role('button',name='Map release timing →',exact=True).click()
+            preset('Working release');accepted=export_report()
+            page.evaluate("()=>{window.__originalT4Worker=window.Worker;window.Worker=class {constructor(){throw Error('Injected worker startup failure')}};}")
+            page.get_by_role('button',name='Map release timing →',exact=True).click()
+            expect(page.get_by_role('alert')).to_contain_text('Injected worker startup failure')
+            expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','false');expect(page.locator('.t4-study-status')).to_contain_text('Interrupted')
+            expect(page.get_by_role('button',name='Map release timing →',exact=True)).to_be_enabled();assert export_report()==accepted
+            page.evaluate('()=>{window.Worker=window.__originalT4Worker;delete window.__originalT4Worker;}')
+            done('synchronous worker startup failure interrupts the study, preserves the accepted flight and permits retry')
+            page.get_by_role('button',name='Map release timing →',exact=True).click()
             cells=page.locator('.t4-timing-map td button');expect(cells).to_have_count(30)
             expect(page.locator('.t4-timing-map td button:not([disabled])').first).to_be_enabled()
             page.get_by_role('button',name='Stop study',exact=True).click();ready()

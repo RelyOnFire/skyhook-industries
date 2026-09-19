@@ -39,7 +39,7 @@ export default function T4Lab(){
         setResult(e.data.result);clock.current=0;setTime(0);setPlaying(auto&&!document.hidden&&e.data.result.duration>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches);
         if(focusFlight){flight.current?.scrollIntoView({block:'start',behavior:'instant'});flight.current?.focus({preventScroll:true});}
       };w.postMessage({id,design:d,kind,spacing});
-    }catch(e){setBusy('');setError((e as Error).message);}
+    }catch(e){request.current++;worker.current?.terminate();worker.current=null;setBusy('');setStudy(old=>old?.status==='running'?{...old,status:'error'}:old);setError((e as Error).message);}
   }
   function cancel(){request.current++;worker.current?.terminate();worker.current=null;setBusy('');setStudy(old=>old?.status==='running'?{...old,status:'cancelled'}:old);setNotice(result?'Calculation stopped. Your last completed flight is still available.':'Calculation stopped. Choose Run release to start again.');}
   function adopt(d:T4Design,auto=false,keepLink=false,focusFlight=false){if(!keepLink)history.replaceState(null,'','/lab/t4/');setDesign(d);setBad([]);setFieldKey(k=>k+1);calculate(d,'run',auto,1,focusFlight);}
