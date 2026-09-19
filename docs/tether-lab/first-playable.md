@@ -28,9 +28,9 @@ Coast hides budget, thrust and specific-impulse controls. Switching back to Chem
 
 ## Architecture catalogue
 
-`src/simulation/catalogue.ts` separates reference records from executable Design values. The initial release supported only `single-stage-rotovator`. The current catalogue also runs `lunar-rotovator` and, through a separate P1 solver, `phobos-anchored`. Each validator rejects architectures it does not implement.
+`src/simulation/catalogue.ts` separates reference records from executable Design values. The initial release supported only `single-stage-rotovator`. The current catalogue also runs `lunar-rotovator` and, through separate solvers, `phobos-anchored` and `t4`. Each validator rejects architectures it does not implement.
 
-The other entries are Tillotson Two-Tier Tether (T4), CardioRotovator, HyperSkyhook, LIFTether, MXER, Earth–Moon relay and Hoytether construction. Each identifies missing model work and a primary source. Mechanical configurations, mission systems and structural construction are distinct categories.
+The reference-only entries are CardioRotovator, HyperSkyhook, LIFTether, MXER, Earth–Moon relay and Hoytether construction. Each identifies missing model work and a primary source. Mechanical configurations, mission systems and structural construction are distinct categories.
 
 T4 is an attached compound rotor: the secondary two-arm tether turns about a pivot at the end of the primary tether. It is not simply a handoff between two independent orbital facilities. See HASTOL Phase I, p. 19 and Appendix 2 A2-15–17: https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf . Early idealized mass assumptions are not imported as a validated operating design.
 
@@ -62,4 +62,4 @@ Before merging, inspect native WebGL, camera interactions, ordinary-origin shari
 
 ## Subsequent model work
 
-Add an electrodynamic circuit/force model and finite incoming traffic events with separate tests. Then broaden geometry, eccentric orbits and Earth–Moon dynamics. T4 needs coupled stage states, pivot reactions, rotation phases and conservation checks before it can become runnable. Do not transfer domains or replace the company homepage as part of this review branch.
+Add an electrodynamic circuit/force model and finite incoming traffic events with separate tests. Then broaden geometry, eccentric orbits and Earth–Moon dynamics. The later T4p experiment implements coupled stage states, pivot reactions, rotation phases and conservation checks; see `t4-flight-studio.md`. Physical crossing geometry, cable flexure, capture and recovery remain open. Do not transfer domains or replace the company homepage as part of this review branch.

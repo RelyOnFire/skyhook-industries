@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import PhobosScene from './PhobosScene.js';
+import NumericField from './StudioField.js';
 import { PHOBOS_DEFAULT, PHOBOS_MODEL, PHOBOS_BOUNDS, PERIOD, MARS, MARS_X, PHOBOS, TERMINAL_KG, phobosFragment, readPhobos, validatePhobos, phobosSample, type PhobosDesign, type PhobosResult, type Arm } from '../simulation/phobos.js';
 import './phobos.css';
 
@@ -9,15 +10,6 @@ const duration=(seconds:number)=>`${Math.floor(seconds/3600)}h ${String(Math.flo
 const signed=(n:number,d=2)=>`${n>=0?'+':'−'}${fmt(Math.abs(n),d)}`;
 function download(name:string,data:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
-function NumericField({name,label,unit,value,min,max,step,onChange,onValidity}:{name:string;label:string;unit:string;value:number;min:number;max:number;step:number;onChange:(n:number)=>void;onValidity:(invalid:boolean)=>void}){
-  const [text,setText]=useState(String(value)),[invalid,setInvalid]=useState(false);
-  useEffect(()=>setText(String(value)),[value]);
-  return <div className="phobos-field"><label htmlFor={`p-${name}`}>{label}<span>{unit}</span></label><div>
-    <input aria-label={label} type="range" min={min} max={max} step={step} value={value} onChange={e=>{setText(e.target.value);setInvalid(false);onValidity(false);onChange(+e.target.value);}}/>
-    <input id={`p-${name}`} aria-label={`${label} value`} type="number" min={min} max={max} step="any" value={text} aria-invalid={invalid||undefined} aria-describedby={invalid?`p-${name}-error`:undefined} onChange={e=>{
-      setText(e.target.value);const n=e.target.valueAsNumber,bad=!Number.isFinite(n)||n<min||n>max;setInvalid(bad);onValidity(bad);if(!bad)onChange(n);
-    }}/></div>{invalid&&<small id={`p-${name}-error`} className="field-error">Enter {min}–{max} {unit}.</small>}</div>;
-}
 
 export default function PhobosLab(){
   const [design,setDesign]=useState<PhobosDesign>({...PHOBOS_DEFAULT}),[result,setResult]=useState<PhobosResult|null>(null);
@@ -70,7 +62,7 @@ export default function PhobosLab(){
   const presets=[{name:'Low Mars orbit',d:PHOBOS_DEFAULT},{name:'Outbound release',d:{...PHOBOS_DEFAULT,release:'outward' as const}},{name:'Tune a low pass',d:{...PHOBOS_DEFAULT,inwardKm:1500}}];
   return <main className="lab-app phobos-app" id="lab-content">
     <header className="workbench-bar"><div><p className="micro">MARS / PHOBOS ANCHOR</p><h1>Tether Lab <span className="model-tag">{PHOBOS_MODEL}</span></h1></div><div className="workbench-actions"><button onClick={save} disabled={!!bad.length}>Save</button><button onClick={load}>Load</button><button className="share-design" disabled={!!bad.length} onClick={()=>setShare(`${location.origin}/lab/phobos/${phobosFragment(design)}`)}>Share design ↗</button></div></header>
-    <div className="studio-worlds" role="group" aria-label="Flight environment"><span>FLIGHT STUDIO</span><a className="studio-world-link" href="/lab/">Earth <small>Orbital rotovator</small></a><a className="studio-world-link" href="/lab/lunar/">Moon <small>Lunavator experiment</small></a><a className="studio-world-link" aria-current="page" href="/lab/phobos/">Phobos <small>Anchored tethers</small></a><a href="/lab/phobos/method/">Phobos model & assumptions ↗</a></div>
+    <div className="studio-worlds" role="group" aria-label="Flight environment"><span>FLIGHT STUDIO</span><a className="studio-world-link" href="/lab/">Earth <small>Orbital rotovator</small></a><a className="studio-world-link" href="/lab/lunar/">Moon <small>Lunavator experiment</small></a><a className="studio-world-link" aria-current="page" href="/lab/phobos/">Phobos <small>Anchored tethers</small></a><a className="studio-world-link" href="/lab/t4/">T4 <small>Two-tier rotor</small></a><a href="/lab/phobos/method/">Phobos model & assumptions ↗</a></div>
     <div className="experiment-strip" aria-label="Experiment presets"><span>START WITH</span>{presets.map((p,i)=><button key={p.name} onClick={()=>adopt({...p.d},true)}><span className="preset-number">0{i+1}</span>{p.name}<span aria-hidden="true">↗</span></button>)}<a href="/lab/architectures/">Architecture catalogue →</a></div>
     <section className="phobos-intro"><div><span className="micro">ONE MOON. TWO DIRECTIONS.</span><h2>Make Phobos the anchor.</h2><p>Release inward toward Mars or outward to a higher orbit. Change the reach. Watch the cost.</p></div><span className="phobos-orbit-fact"><strong>{fmt(PERIOD/3600,2)} h</strong> one Phobos orbit</span></section>
     <div className="phobos-feedback" aria-live="polite">{error?<p role="alert" className="field-error">{error}</p>:notice?<p>{notice}</p>:<p>Payload starts at the terminal. The climb and arrival capture are outside this experiment.</p>}</div>

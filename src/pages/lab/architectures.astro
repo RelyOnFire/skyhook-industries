@@ -10,9 +10,9 @@ import { designFragment } from '../../simulation/design-io';
       <p class="micro">ARCHITECTURE CATALOGUE</p>
       <h1>More than one way to build a tether.</h1>
       <p>Start with a spinning cable. Then explore two-tier machines, atmospheric pickup concepts and orbital transport networks.</p>
-      <div class="guide-meta"><span>3 RUNNABLE EXPERIMENTS</span><span>7 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
+      <div class="guide-meta"><span>4 RUNNABLE EXPERIMENTS</span><span>6 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
     </header>
-    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>Start with an Earth rotovator, lunar rotovator or Phobos anchored release. Reference entries explain the extra physics needed for other configurations and connected transport networks.</p></div>
+    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>Start with an Earth or lunar rotovator, Phobos anchored release or T4 compound rotor. Reference entries explain the extra physics needed for other configurations and connected transport networks.</p></div>
     <div class="architecture-grid">
       {ARCHITECTURES.map(record => <article id={record.id} class:list={['architecture-card', {runnable: record.availability === 'runnable'}]}>
         <div class="architecture-art">
@@ -35,11 +35,11 @@ import { designFragment } from '../../simulation/design-io';
           <p class="micro">{record.category.toUpperCase()}</p><h3>{record.name}</h3><p>{record.summary}</p>
           <dl><dt>Configuration</dt><dd>{record.topology}</dd><dt>{record.availability === 'runnable' ? 'In the current lab' : 'Before it can run'}</dt><dd>{record.missing}</dd></dl>
           <a class="source-link" href={record.source.url}>{record.source.title} ↗<br/><span>{record.source.locator}</span></a>
-          {record.availability === 'runnable' && <a class="button-link primary" href={record.id === 'phobos-anchored' ? '/lab/phobos/' : record.id === 'lunar-rotovator' ? `/lab/lunar/${designFragment(LUNAR_DEFAULT)}` : `/lab/${designFragment(DEFAULT)}`}>Open the {record.id === 'phobos-anchored' ? 'Phobos' : record.id === 'lunar-rotovator' ? 'Moon' : 'Earth'} experiment →</a>}
+          {record.availability === 'runnable' && <a class="button-link primary" href={record.id === 't4' ? '/lab/t4/' : record.id === 'phobos-anchored' ? '/lab/phobos/' : record.id === 'lunar-rotovator' ? `/lab/lunar/${designFragment(LUNAR_DEFAULT)}` : `/lab/${designFragment(DEFAULT)}`}>Open the {record.id === 't4' ? 'T4' : record.id === 'phobos-anchored' ? 'Phobos' : record.id === 'lunar-rotovator' ? 'Moon' : 'Earth'} experiment →</a>}
         </div>
       </article>)}
     </div>
-    <section class="catalogue-note" id="t4-model"><h2>T4 needs a second moving system, not a second line.</h2><p>The smaller rotor turns about a moving pivot. Its phase and loads couple back into the primary stage. A future T4 solver must track both stages, the payload and the pivot reaction; the current single-rigid-body solver cannot supply those results.</p><p>The source is Brian Tillotson’s two-tier concept as documented in <a href="https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf#page=101">HASTOL Phase I, Appendix 2</a>. Its early simplifying assumptions are not adopted as a validated lab preset.</p></section>
+    <section class="catalogue-note" id="t4-model"><h2>Watch the pivot move with both stages.</h2><p>The <a href="/lab/t4/">T4 experiment</a> calculates both rotations, finite stage and station masses, pivot force and cargo separation. Compare starting phases to see how their velocity vectors combine.</p><p>Its ideal hinge and rigid stages omit physical crossing clearance, cable flexure and capture. Read the <a href="/lab/t4/method/">T4 model and assumptions</a> before interpreting an axial pass as an engineering result.</p></section>
     <section class="catalogue-note" id="recovery"><h2>Recovery is a separate design choice.</h2><p>Chemical, Coast and the educational E0 electrodynamic mode are runnable. E0 is an actuator experiment, not a validated recreation of MXER. Incoming traffic remains reference-only.</p>
       <div class="recovery-reference"><div><span class="tag">RUNNABLE / E0 EXPERIMENT</span><h3>Electrodynamic reboost</h3><p>Two powered conductor segments produce actual Lorentz force and torque under bus-power, voltage and current caps. An equatorial dipole and plasma closure are assumed; current collection, hardware qualification and thermal limits are not predicted. <a href="/lab/method/#electrodynamic">E0 scope and equations</a>.</p><a href="https://ntrs.nasa.gov/citations/20070013898">NASA / electrodynamic tether performance ↗</a></div><div><span class="tag tag-amber">REFERENCE ONLY</span><h3>Incoming traffic exchange</h3><p>An incoming payload can give energy and momentum to a tether as it is slowed. The exchange must follow an actual arrival state and schedule, not a refill credit.</p><a href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">Cislunar transport / return traffic ↗</a></div></div>
     </section>

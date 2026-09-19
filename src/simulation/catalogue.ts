@@ -34,10 +34,10 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     source: { title: 'Space Colonization Using Space-Elevators from Phobos', url: 'https://ntrs.nasa.gov/citations/20030065879', locator: 'Weinstein, 2003 · inward and outward Phobos-anchored concepts' },
   },
   {
-    id: 't4', name: 'Tillotson Two-Tier Tether', category: 'Mechanical configuration', availability: 'reference-only',
+    id: 't4', name: 'Tillotson Two-Tier Tether', category: 'Mechanical configuration', availability: 'runnable',
     summary: 'T4 couples a smaller spinning tether to the end of a larger spinning tether through a pivot. The secondary stage has two balanced arms.',
     topology: 'Primary arm → pivot → two-arm secondary rotor',
-    missing: 'Needs coupled stage dynamics, independent rotation phases, pivot loads and stage mass accounting. Not two independent relay stations.',
+    missing: 'Available: finite-mass coupled rigid stages, an ideal free hinge, phase comparison, pivot forces and a pre-attached cargo release. Flexible cables, physical stage crossings, capture and reboost are not modeled.',
     source: { title: 'HASTOL Phase I', url: `${hastol}#page=101`, locator: '2000 · p. 19 and Appendix 2, A2-15–17' },
   },
   {

@@ -156,7 +156,7 @@ def main():
                     if 'method' in path: expect(guide.locator('#energy')).to_contain_text('The anchor orbit is held fixed.')
                     else: expect(guide.get_by_role('link',name='Open the Phobos experiment →',exact=True)).to_have_count(1)
                     guide.screenshot(path=str(out/f'{"method" if "method" in path else "catalogue"}-{width}.png'),full_page=True)
-            static.close();done('Phobos method and three runnable catalogue entries readable without JavaScript')
+            static.close();done('Phobos method and architecture catalogue readable without JavaScript')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);shot('failure');raise

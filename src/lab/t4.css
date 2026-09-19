@@ -1,0 +1,28 @@
+.t4-app .phobos-workspace{grid-template-columns:260px minmax(0,1fr) 290px}
+.t4-app .phobos-viewport{min-height:410px}
+.t4-app .phobos-verdict p{min-height:83px}
+.t4-app .phobos-material[open] summary{margin-bottom:16px}
+.t4-cancel{font-size:11px;min-height:36px;width:100%;background:none;border:0;margin-top:5px;color:var(--lab-muted)}
+.t4-sweep{margin-top:14px}
+.t4-sweep .panel-heading{padding:20px;gap:20px}
+.t4-sweep .panel-heading p,.t4-sweep-note{font-size:12px;line-height:1.6;color:var(--lab-muted);margin:7px 0 0}
+.t4-sweep .panel-heading button{min-height:42px;flex:none;font-size:12px}
+.t4-sweep-note{margin:16px 20px}
+.t4-trials{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--lab-line);border-top:1px solid var(--lab-line)}
+.t4-trials article{background:#101619;display:grid;gap:12px;padding:20px 15px}
+.t4-trials article[data-pass=true]{background:#142320}
+.t4-trials strong{font-size:20px;font-weight:400;font-variant-numeric:tabular-nums}
+.t4-trials small{font-size:11px;color:var(--lab-muted);line-height:1.5}
+.t4-trials article[data-pass=true] small{color:#acd6c1}
+.t4-trials button{font-size:11px;padding:8px 0;min-height:36px;color:var(--lab-cyan);border:0;background:none;text-align:left}
+.t4-velocity table{width:calc(100% - 36px);margin:18px;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.t4-velocity caption{text-align:left;font-size:10px;line-height:1.6;color:var(--lab-muted);margin-bottom:12px}
+.t4-velocity th{text-align:left;font-weight:400;color:var(--lab-soft)}
+.t4-velocity td,.t4-velocity th{padding:8px 0}
+.t4-velocity thead th{font-size:10px;color:var(--lab-muted)}
+.t4-velocity td,.t4-velocity th:not(:first-child){text-align:right;white-space:nowrap}
+.t4-velocity tbody tr:last-child>*{border-top:1px solid var(--lab-line);color:var(--lab-cyan);padding-top:12px}
+.t4-primary-key{color:#b7cdcf}.t4-secondary-key{color:#efa477}.t4-cargo-key{color:#c9a4e4}
+@media(max-width:1250px){.t4-app .phobos-workspace{grid-template-columns:250px minmax(0,1fr)}.t4-app .phobos-verdict p{min-height:0}.t4-app .phobos-flight-readout{grid-template-columns:1fr 1fr}.t4-app .phobos-flight-readout>div:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}.t4-app .phobos-flight-readout>div:last-child strong{font-size:14px}}
+@media(max-width:750px){.t4-app .phobos-workspace{grid-template-columns:1fr}.t4-trials{grid-template-columns:repeat(3,minmax(0,1fr))}.t4-sweep .panel-heading{align-items:start;flex-direction:column;gap:14px}.t4-trials button{min-height:44px}.t4-app .phobos-viewport{min-height:390px}.t4-app .phobos-playback select{width:65px}}
+@media(max-width:400px){.t4-trials{grid-template-columns:repeat(2,minmax(0,1fr))}.t4-app .phobos-viewport{min-height:345px}.t4-app .phobos-flight-readout>div:last-child{display:flex}.t4-velocity table{font-size:11px}}

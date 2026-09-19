@@ -75,7 +75,7 @@ test('coast has no hidden propellant mass or chemical thrust',()=>{
   assert.equal(initial(d)[6],0);assert.equal(r.fuelUsed,0);
   assert.ok(r.frames.every(f=>f.fuel===0&&!f.burn));
 });
-test('catalogue-only architectures cannot masquerade as runnable rotovators',()=>{
+test('other solver architectures cannot masquerade as Earth rotovators',()=>{
   for(const architecture of ['t4','mxer','cislunar','hoytether']) assert.throws(()=>validate({...DEFAULT,architecture}));
 });
 
@@ -114,8 +114,9 @@ test('architecture catalogue never marks an unsupported solver as runnable', asy
   const { ARCHITECTURES } = await import('../.lab-test/simulation/catalogue.js');
   const runnable = ARCHITECTURES.filter(a => a.availability === 'runnable');
   const { PHOBOS_DEFAULT, validatePhobos } = await import('../.lab-test/simulation/phobos.js');
-  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture,PHOBOS_DEFAULT.architecture]);
-  for(const record of runnable) record.id===PHOBOS_DEFAULT.architecture?validatePhobos(PHOBOS_DEFAULT):validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
+  const { T4_DEFAULT, validateT4 } = await import('../.lab-test/simulation/t4.js');
+  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture,PHOBOS_DEFAULT.architecture,T4_DEFAULT.architecture]);
+  for(const record of runnable) record.id===T4_DEFAULT.architecture?validateT4(T4_DEFAULT):record.id===PHOBOS_DEFAULT.architecture?validatePhobos(PHOBOS_DEFAULT):validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
   assert.match(ARCHITECTURES.find(a => a.id === 't4').topology, /pivot/);
   assert.equal(ARCHITECTURES.find(a => a.id === 'hoytether').category, 'Structural construction');
   assert.equal(new Set(ARCHITECTURES.map(a => a.id)).size, ARCHITECTURES.length);
