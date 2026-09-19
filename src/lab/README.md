@@ -12,7 +12,9 @@ accounting. See `docs/tether-lab/phobos-flight-studio.md` for boundaries and che
 experiment, backed by `src/simulation/t4.ts`. It has separate versioned storage,
 finite-mass coupled dynamics and a passive ideal hinge. `T4Study.tsx` displays
 streamed phase/timing samples planned by `src/simulation/t4-study.ts`; opening a
-sample restores and reruns its exact design. See
+sample restores and reruns its exact design. `T4Comparison.tsx` keeps an optional
+session-only pin, draws both propagated cargo paths on a common scale, and
+reports exact input/metric changes via `src/simulation/t4-comparison.ts`. See
 `docs/tether-lab/t4-flight-studio.md` for equations and limits. `StudioField.tsx`
 is the shared Phobos/T4 numeric input; Earth texture generation is shared too.
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import T4Scene from './T4Scene.js';
 import T4Study from './T4Study.js';
+import T4Comparison from './T4Comparison.js';
 import NumericField from './StudioField.js';
 import { EARTH, MU, MATERIALS } from '../simulation/engine.js';
 import { T4_DEFAULT, T4_MODEL, T4_BOUNDS, T4_HUB, T4_PIVOT, T4_TIP, T4_CUTOFF, t4Fragment, readT4, validateT4, t4Sample, t4Gates, type T4Design, type T4Result } from '../simulation/t4.js';
@@ -17,6 +18,7 @@ function download(name:string,data:unknown){const url=URL.createObjectURL(new Bl
 export default function T4Lab(){
   const [design,setDesign]=useState<T4Design>({...T4_DEFAULT}),[result,setResult]=useState<T4Result|null>(null);
   const [busy,setBusy]=useState<''|'run'|T4StudyMode>('run'),[study,setStudy]=useState<Study|null>(null);
+  const [pinned,setPinned]=useState<T4Result|null>(null),pinButton=useRef<HTMLButtonElement>(null);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[share,setShare]=useState('');
   const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(120);
   const [bad,setBad]=useState<string[]>([]),[fieldKey,setFieldKey]=useState(0);
@@ -56,6 +58,7 @@ export default function T4Lab(){
     return()=>{cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',pause);motion.removeEventListener('change',reduce);};
   },[]);
   function seek(t:number){setPlaying(false);clock.current=t;setTime(t);}
+  function clearPin(){setPinned(null);requestAnimationFrame(()=>{const button=pinButton.current;if(button&&!button.disabled)button.focus();else flight.current?.focus();});}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(validateT4(design)));setNotice('T4 design saved in this browser.');setError('');}catch(e){setError((e as Error).message);}}
   function load(){try{const raw=localStorage.getItem(KEY);if(!raw)throw Error('No T4 design has been saved in this browser.');adopt(readT4(raw));setNotice('Loaded your T4 design.');}catch(e){setError((e as Error).message);}}
   async function importFile(f:File){try{if(f.size>6000)throw Error('Design exceeds the 6 KB limit.');adopt(readT4(await f.text()));setNotice('T4 design imported. Use Save to keep it in this browser.');}catch(e){setError((e as Error).message);}}
@@ -89,9 +92,11 @@ export default function T4Lab(){
         {result&&<><div className="phobos-verdict"><span className="micro">{fmt(result.design.phaseDeg)}° INITIAL PHASE</span><h3>{result.outcome!=='complete'?'A stage reaches its limit.':gates.every(Boolean)?'The rotations line up.':'Timing changes the orbit.'}</h3><p>{result.outcome!=='complete'?result.reason:`Cargo separates at ${duration(result.release!.t)} with the tip’s current velocity. ${gates[2]?'Its release orbit reaches the target altitude band.':'Adjust the phase or compare six starting angles to reach the target band.'}`}</p></div>
         <dl className="phobos-metrics"><div><dt>Release orbit apoapsis</dt><dd>{orbit?orbit.apoapsis===null?'Escape':fmt(orbit.apoapsis/1000):'—'} <small>{orbit?.apoapsis!=null?'km':''}</small></dd></div><div><dt>Release orbit periapsis</dt><dd>{orbit?fmt(orbit.periapsis/1000):'—'} <small>{orbit?'km':''}</small></dd></div><div><dt>Lowest axial margin</dt><dd>{fmt(allowable/Math.max(...result.peakStress),2)} <small>×</small></dd></div></dl>
         <div className="phobos-challenge"><span className="micro">FIND THE PHASE</span><ul>{['Complete the two-hour model checks','Cargo periapsis above 120 km','Cargo apoapsis: 8,000–12,000 km'].map((text,i)=><li key={text} data-pass={gates[i]}><span>{gates[i]?'✓':'○'}</span>{text}</li>)}</ul><button onClick={()=>adopt({...T4_DEFAULT,phaseDeg:60},true)}>Try the phase challenge →</button></div>
+        <button className="t4-pin" ref={pinButton} disabled={!!busy||pinned===result} onClick={()=>{setPlaying(false);setPinned(result);}}>{pinned===result?'Flight pinned':pinned?'Replace pinned flight':'Pin calculated flight'}</button>
         <button className="phobos-report" onClick={()=>download('t4-flight-report.json',{...result,constants:{EARTH,MU,T4_HUB,T4_PIVOT,T4_TIP,T4_CUTOFF},scope:'Planar uniform rigid stages, finite masses, passive ideal hinge; pre-attached cargo and one impulse-free release. Axial screen only; no bending, cable flexure, physical crossover clearance, capture, atmosphere or reboost.'})}>Export flight report ↗</button></>}
       </aside>
     </div>
+    {pinned&&result&&<T4Comparison pinned={pinned} current={result} dirty={dirty} busy={!!busy} onRestore={()=>adopt(pinned.design,false,false,true)} onClear={clearPin}/>}
     <T4Study study={study} design={design} busy={busy} invalid={invalid} onStart={(mode,spacing)=>calculate(design,mode,false,spacing)} onCancel={cancel} onInspect={d=>adopt(d,false,false,true)}/>
     {result&&<div className="phobos-analysis"><section className="lab-panel phobos-loads" aria-label="Two-stage loads"><div className="panel-heading"><h2>What the pivot carries</h2><span className="tag">RIGID STAGES</span></div><p>Peak axial stress through the replay: <span className="t4-primary-key">primary</span> and <span className="t4-secondary-key">secondary</span>. Dotted line: material allowable.</p><svg viewBox="0 0 620 170" role="img" aria-label="Primary and secondary axial stress over time">
       {(()=>{const top=Math.max(allowable,...result.peakStress)*1.15,y=(n:number)=>135-n/top*106,x=(t:number)=>45+t/(result.duration||1)*550;return <><line x1="45" y1="135" x2="595" y2="135" stroke="#63747b"/><line x1="45" y1={y(allowable)} x2="595" y2={y(allowable)} stroke="#a69781" strokeDasharray="3 5"/>{[0,1].map(stage=><polyline key={stage} points={result.frames.map(f=>`${x(f.t)},${y(f.loads.stress[stage])}`).join(' ')} fill="none" stroke={stage?'#efa477':'#b7cdcf'} strokeWidth="2"/>)}<line x1={x(time)} x2={x(time)} y1="24" y2="135" stroke="#e1e4da" opacity=".5"/><text x="45" y="15">{fmt(top/1e9,2)} GPa scale · allowable {fmt(allowable/1e9,2)} GPa</text><text x="45" y="160">Start</text><text x="595" y="160" textAnchor="end">{duration(result.duration)} min:sec</text></>;})()}

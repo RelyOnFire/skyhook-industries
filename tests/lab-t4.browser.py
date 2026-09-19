@@ -41,6 +41,9 @@ def main():
         def export_report():
             with page.expect_download() as dl: page.get_by_role('button',name='Export flight report ↗',exact=True).click()
             return json.loads(Path(dl.value.path()).read_text())
+        def export_comparison():
+            with page.expect_download() as dl: page.get_by_role('button',name='Export comparison ↗',exact=True).click()
+            return json.loads(Path(dl.value.path()).read_text())
         def preset(name): page.get_by_label('Experiment presets',exact=True).get_by_role('button',name=re.compile(name)).click();ready()
         try:
             page.goto(origin+'/lab/t4/',wait_until='domcontentloaded');ready();no_overflow()
@@ -78,7 +81,62 @@ def main():
             preset('Thin secondary');expect(page.locator('.phobos-verdict')).to_contain_text('exceeds the axial material allowable')
             expect(page.get_by_role('button',name='Play replay',exact=True)).to_be_disabled();assert export_report()['release'] is None
             done('genuine phase challenge failure to success and initial axial limit blocking release')
-            preset('Working release');page.get_by_role('button',name='Compare six phases →',exact=True).click()
+            expect(page.get_by_label('Pinned flight comparison',exact=True)).to_have_count(0)
+            storage_before=page.evaluate('JSON.stringify({...localStorage})')
+            preset('Find the phase');page.get_by_role('button',name='Pin calculated flight',exact=True).click()
+            comparison=page.get_by_label('Pinned flight comparison',exact=True);expect(comparison).to_be_focused()
+            first_comparison=export_comparison();assert first_comparison['pinned']==first_comparison['current']
+            assert first_comparison['pinned']['design']['phaseDeg']==60
+            page.get_by_role('spinbutton',name='Initial phase value',exact=True).fill('180')
+            expect(comparison).to_have_attribute('data-draft','true');expect(comparison).to_contain_text('unrun edits')
+            assert export_comparison()==first_comparison
+            page.get_by_role('button',name='Run release →',exact=True).click();ready()
+            pair=export_comparison();assert pair['format']=='skyhook-t4-comparison' and pair['model']=='T4p-0.1.0'
+            assert pair['pinned']==first_comparison['pinned'] and pair['current']['design']['phaseDeg']==180
+            actual=export_report();assert all(pair['current'][key]==value for key,value in actual.items() if key not in ['constants','scope'])
+            apo=next(row for row in pair['metrics'] if row['id']=='apoapsis')
+            assert abs(apo['delta']-(actual['release']['orbit']['apoapsis']-challenge['release']['orbit']['apoapsis'])/1000)<1e-9
+            assert len(pair['changes'])==1 and pair['changes'][0]['key']=='phaseDeg'
+            expect(comparison).to_have_attribute('data-draft','false')
+            expect(comparison.locator('g[data-flight]')).to_have_count(2)
+            assert comparison.locator('.t4-path-pinned polyline').get_attribute('points')!=comparison.locator('.t4-path-current polyline').get_attribute('points')
+            comparison.get_by_text('1 changed input',exact=True).click();expect(comparison).to_contain_text('60 → 180 °')
+            done('pinned comparison preserves calculated snapshots through draft edits and reports exact phase, orbit and load changes')
+            for width in [1440,1280,1000,768,390,320]:
+                page.set_viewport_size({'width':width,'height':950});no_overflow()
+                assert comparison.evaluate('(el)=>el.scrollWidth<=el.clientWidth+1')
+                expect(comparison.locator('svg')).to_be_visible()
+                if width<=390:
+                    assert comparison.locator('button').evaluate_all('(buttons)=>buttons.every(b=>b.getBoundingClientRect().height>=44)')
+                comparison.screenshot(path=str(out/f't4-comparison-{width}.png'))
+            page.get_by_role('spinbutton',name='Initial phase value',exact=True).fill('180.000001')
+            page.get_by_role('button',name='Run release →',exact=True).click();ready()
+            expect(comparison).to_contain_text('60 → 180.000001 °');no_overflow()
+            restore=page.get_by_role('button',name='Open pinned flight →',exact=True);restore.focus();restore.press('Enter');ready()
+            expect(page.locator('.phobos-flight')).to_be_focused();expect(page.get_by_role('spinbutton',name='Initial phase value',exact=True)).to_have_value('60')
+            restored=export_comparison();assert restored['current']==restored['pinned']==first_comparison['pinned']
+            done('shared-scale cargo comparison fits six widths and keyboard restoration reopens the exact pinned flight')
+            preset('Thin secondary');stopped=export_comparison();assert stopped['pinned']==first_comparison['pinned']
+            assert stopped['current']['release'] is None and stopped['current']['duration']==0
+            expect(comparison.locator('.t4-path-current')).to_have_count(0);expect(comparison).to_contain_text('Current: no cargo release.')
+            expect(comparison.locator('[data-metric=apoapsis] td').last).to_have_text('——')
+            page.get_by_role('spinbutton',name='Payload value',exact=True).fill('');assert export_comparison()==stopped
+            page.get_by_role('button',name='Open pinned flight →',exact=True).click();ready();assert export_comparison()['current']==first_comparison['pinned']
+            preset('Working release');page.get_by_role('button',name='Replace pinned flight',exact=True).click();expect(comparison).to_be_focused()
+            replacement=export_comparison();assert replacement['pinned']['design']['phaseDeg']==180 and replacement['pinned']==replacement['current']
+            page.get_by_role('button',name='Clear comparison',exact=True).click()
+            expect(page.get_by_role('button',name='Pin calculated flight',exact=True)).to_be_focused();expect(comparison).to_have_count(0)
+            page.get_by_role('button',name='Pin calculated flight',exact=True).click()
+            page.get_by_role('button',name='Map release timing →',exact=True).click()
+            expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','true')
+            page.get_by_role('button',name='Clear comparison',exact=True).click();expect(page.locator('.phobos-flight')).to_be_focused()
+            page.get_by_role('button',name='Stop study',exact=True).click();ready();expect(comparison).to_have_count(0)
+            page.get_by_role('button',name='Pin calculated flight',exact=True).click();page.reload(wait_until='domcontentloaded');ready();expect(comparison).to_have_count(0)
+            assert page.evaluate('JSON.stringify({...localStorage})')==storage_before
+            page.set_viewport_size({'width':1440,'height':1050})
+            done('failed and invalid drafts cannot corrupt a pin; replacement, focus-safe clearing and session-only storage preserve saved designs')
+            preset('Working release');page.get_by_role('button',name='Pin calculated flight',exact=True).click();study_pin=export_comparison()['pinned']
+            page.get_by_role('button',name='Compare six phases →',exact=True).click()
             expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','true');expect(page.locator('.t4-trials article').first).to_be_visible()
             page.get_by_role('button',name='Stop study',exact=True).click();ready()
             completed_samples=page.locator('.t4-trials article').count();assert 0<completed_samples<6
@@ -90,8 +148,10 @@ def main():
             page.get_by_role('button',name='Inspect 60° →',exact=True).click();ready()
             expect(page.get_by_role('spinbutton',name='Payload value',exact=True)).to_have_value('3');expect(page.get_by_role('spinbutton',name='Initial phase value',exact=True)).to_have_value('60')
             assert export_report()['release']['orbit']==challenge['release']['orbit']
+            assert export_comparison()['pinned']==study_pin
+            page.get_by_role('button',name='Clear comparison',exact=True).click()
             expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','false')
-            done('streamed phase sweep preserves partial samples and accepted flight on stop; inspection restores exact settings')
+            done('streamed phase sweep preserves partial samples, accepted flight and pinned comparison; inspection restores exact settings')
             preset('Working release');accepted=export_report()
             page.evaluate("()=>{window.__originalT4Worker=window.Worker;window.Worker=class {constructor(){throw Error('Injected worker startup failure')}};}")
             page.get_by_role('button',name='Map release timing →',exact=True).click()
@@ -202,6 +262,7 @@ def main():
                     if 'method' in path:
                         expect(guide.get_by_text('Crossing clearance, bearing dimensions and flexible cable behavior are not modeled.',exact=True)).to_be_visible()
                         expect(guide.get_by_text('The gaps between samples are untested.',exact=True)).to_be_visible()
+                        expect(guide.get_by_text('Paths end where each calculation ends.',exact=True)).to_be_visible()
                     else:
                         expect(guide.get_by_text('4 RUNNABLE EXPERIMENTS',exact=True)).to_be_visible();expect(guide.get_by_role('link',name='Open the T4 experiment →',exact=True)).to_have_attribute('href','/lab/t4/')
                     guide.screenshot(path=str(out/f'{"method" if "method" in path else "catalogue"}-{width}.png'),full_page=True)

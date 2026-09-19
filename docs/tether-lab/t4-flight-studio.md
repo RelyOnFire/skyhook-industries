@@ -145,6 +145,32 @@ Accepted results stay distinct from draft controls. Hidden tabs and reduced
 motion pause replay; there is no wall-clock catch-up. The scene samples
 calculated stage angles and cargo states; no visual coordinate drives physics.
 
+`T4Comparison.tsx` provides an optional pinned-flight comparison, with pure
+reporting helpers in `src/simulation/t4-comparison.ts`. Pinning retains the
+accepted result, including a failed run, and pauses replay. Draft input edits,
+studies, cancellation and later runs do not replace the pin. The comparison
+opens only after pinning and stays available while a new flight calculates.
+Unrun controls are flagged separately; comparison values always come from the
+two accepted results. Reopening the pin restores and reruns its exact design,
+including all hardware settings, and returns focus to the main flight.
+
+Both propagated cargo paths use the same Earth-centered inertial axes and
+scale. A dashed pale path identifies the pin; a solid copper path identifies
+the current result. Circles mark the exact release, diamonds each run's last
+propagated cargo state. An unreleased flight has no cargo path. These are the
+calculated path segments through each run's actual end, not extrapolated full
+orbits or forecasts to apoapsis.
+
+The comparison lists changes in phase, timing and every hardware input, plus
+release apoapsis/periapsis, minimum axial margin, peak pivot force, minimum
+clearance, dry mass and actual run duration. Signed metric changes are current
+minus pinned in the stated row units. Missing release and unbound apoapsis have
+no numerical orbit delta; no zero-valued orbit is invented. Outcomes and run
+durations remain visible so lower loads on a stopped run are not presented as
+an efficiency gain. The comparison export contains both complete result
+snapshots, exact input changes, metrics, model version and scope. Pins are
+session-only and do not write local storage or alter any save format.
+
 Designs use `skyhook-lab-t4-design-v1`, schema 1/model T4p-0.1.0, with `#t4=`
 links and a 6 KB input limit. Other architectures are rejected. Earth, Moon,
 Phobos and campaign stores are untouched. Campaign saves need no migration.
@@ -156,6 +182,11 @@ structural/clearance stops and replay/IO boundaries. `tests/lab-t4.browser.py`
 covers native workers/WebGL, the challenge, streaming phase/timing studies,
 partial cancellation, exact export and sample reopening, stale fixed-input
 notices, isolated storage, sharing/imports, responsive layouts and 2D/reduced-motion
-access. `tests/lab-t4-study.test.mjs` checks bounded sample planning, full-model
+access. It also checks pin isolation through drafts, failed runs and studies,
+exact restoration/export, common-scale paths, keyboard focus, six-width layout
+and session-only lifetime. `tests/lab-t4-comparison.test.mjs` verifies metric
+units/signs, missing releases, bounded and unbound orbits, input differences,
+path endpoints and exact export snapshots.
+`tests/lab-t4-study.test.mjs` checks bounded sample planning, full-model
 equivalence, recommendation filtering, fixed-input identity and export completeness.
 All are CI gates.
