@@ -41,7 +41,7 @@ test('belt: the real v4 export preserves every old field and starts an empty Cer
   for(const id of Object.keys(old.ports))assert.deepEqual(w.ports[id],{...old.ports[id],waterT:0});
   const fresh=createCampaign('fresh','Fresh');
   assert.deepEqual(w.ports.ceres,fresh.ports.ceres);assert.deepEqual(w.belt,fresh.belt);
-  assert.equal(w.schema,5);assert.equal(w.model,'network-0.5.0');assert.deepEqual(fixture,before);
+  assert.equal(w.schema,5);assert.equal(w.model,'network-0.5.1');assert.deepEqual(fixture,before);
   const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,5);
   const restored=importCampaign(JSON.stringify(envelope),'copy');assert.deepEqual(restored,{...w,id:'copy',revision:0});
   checkLedger(w);
@@ -161,9 +161,10 @@ test('belt: daily, irregular and large steps agree across supply, returns, fuel 
   assert.ok(large.ports.ceres.equipmentT>0);assert.ok(large.belt.refinedT>=100);assert.ok(large.belt.depositT>0);
 });
 
-test('belt: global traffic capacity and the final campaign day still bound new flights and cycles',()=>{
+test('belt: cargo capacity and the final campaign day still bound new flights and cycles',()=>{
   let w=advance(outpost(),5);w=dispatch(w,'ceres','phobos',10,'tether','water');
-  while(w.flights.length<LIMITS.flights)w=dispatch(w,'phobos','ceres',1,'tug','equipment');
+  w.ports.phobos.equipmentT=LIMITS.cargoFlights+10;
+  while(w.flights.length<LIMITS.cargoFlights)w=dispatch(w,'phobos','ceres',1,'tug','equipment');
   assert.match(flightPlan(w,'phobos','ceres',1,'tug','equipment').reason,/traffic/);checkLedger(w);
   let last=productionOnly();last.day=LIMITS.days-1;last.belt.nextCycleDay=LIMITS.days;last.solar.nextCycleDay=LIMITS.days;
   assert.equal(nextEventDay(last),LIMITS.days);assert.match(flightPlan(last,'phobos','ceres',1,'tug','equipment').reason,/horizon/);

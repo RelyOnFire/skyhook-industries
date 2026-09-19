@@ -76,7 +76,10 @@ attempt is tomorrow. After success, next attempt is departure + chosen interval
 (1–3,650 days). Blocked service retries in one day; no catch-up queue accumulates.
 Arrivals precede bookings at the same instant, then ascending service ID controls
 shared endpoint priority. Pause/remove leaves active flights intact. Resume
-cannot create overdue attempts. Traffic remains limited to 32 active flights.
+cannot create overdue attempts. Cargo has 256 active-flight slots; mirror deployments
+have an independent 128-batch allowance. Mirrors cannot consume cargo capacity.
+Both counts appear in the traffic panel. Fuel, local stock, endpoint recovery,
+storage reservations and the simulation horizon still constrain departures.
 
 advance() processes every arrival and service attempt chronologically. Production
 integrates between events, so large jumps and small steps give equivalent stock,
@@ -105,7 +108,7 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 5 / network-0.5.0 exports in a skyhook-campaign
+store. Current state schema 5 / network-0.5.1 exports in a skyhook-campaign
 version-5 envelope. The validator accepts schemas 1, 2, 3 and 4 with their matching
 models and original backup envelopes.
 
@@ -114,7 +117,7 @@ fuel, objectives, logs, flight IDs and arrival dates. Flights become constructio
 cargo with no recurring-service ID. Earth gains manufacturing and 20 t equipment,
 the remote industries start unbuilt, and schedules/progress start empty. No
 retroactive production. Reading does not rewrite IndexedDB. The first save
-atomically retains the old head in its checkpoint history. A schema-only Save now
+atomically retains the old head in its checkpoint history. A schema- or model-only Save now
 also increments revision so an old cached app cannot overwrite the migrated head
 with its previously valid revision. Normal gameplay increments it as before.
 
@@ -124,11 +127,11 @@ unbuilt, the expedition locked, with no extra Earth allocation or past productio
 Version-three migration preserves every existing field, including solar stocks,
 deposit, facilities, launch schedules and in-flight deployments. Its powerLink
 starts false. It grants no resources, output or past power; existing
-players can continue completed worlds. The same schema-only revision/checkpoint
+players can continue completed worlds. The same migration revision/checkpoint
 protection applies. Current validation checks solar clocks and deployment durations, unique
 IDs, facility dependencies, stock bounds and the mirror mass identity:
-manufactured = ready + in transit + deployed. Cargo and solar flights share
-the 32-flight bound. Schema-one/two files cannot contain Mercury routes. A power link requires an
+manufactured = ready + in transit + deployed. Cargo flights are bounded at 256
+and mirror deployments separately at 128. Schema-one/two files cannot contain Mercury routes. A power link requires an
 installed launch array and at least 100 t deployed. Schemas one through three cannot activate it.
 
 Version-four migration preserves every old field, including the connected power
@@ -140,6 +143,14 @@ The same read-only load, first-write checkpoint and revision protection apply.
 Water validation checks the finite-deposit and depot/transit/consumption identities
 documented below. The genuine completed v4 export is tracked in
 `tests/fixtures/campaign-v4.json`, alongside real v1, v2 and v3 fixtures.
+
+Model 0.5.1 keeps schema 5 and expands transit capacity. Valid network-0.5.0
+worlds change only their model tag on load: every stock, Ceres field, flight,
+arrival date, service, clock, milestone and log is preserved. There is no reset or
+catch-up production. The first write retains the old head and advances revision,
+including Save now without a gameplay action. Older models are validated against
+their original combined 32-flight bound; current worlds use independent limits.
+The genuine congested v5 export is `tests/fixtures/campaign-v5.json`.
 
 Atomic writes compare the stored revision with the writer token; failed writes
 preserve committed state. The UI retains unsaved state for retry/export and
@@ -184,6 +195,15 @@ It verifies migration and stale-writer protection, local costs, no fuel before
 delivery, backup/reload, map tracking, route preparation, reduced motion, fixed
 arrival geometry, all four new milestones and responsive layouts. Its optional
 `--origin` runs the same checks against the stable preview in an isolated browser.
+
+`tests/lab-campaign-traffic.test.mjs` verifies exact v5 model migration, independent
+capacity boundaries, automatic retry, bounded backup size, invalid imports and
+large/small/reloaded time-step agreement above the old cap.
+`tests/campaign-traffic.browser.py` resumes a real 32-flight v5 world, verifies
+model-only revision/checkpoint protection and stale-writer rejection, then dispatches
+and schedules beyond the old limit. It exercises more than 100 simultaneous
+flights, ordered tracking, backup/reload and five responsive widths. It also
+supports `--origin` for isolated preview verification.
 
 ## Mercury and solar deployment
 
@@ -279,7 +299,7 @@ After a successful launch, the next interval is max(2/tier, batch mass/F) days.
 An already scheduled attempt keeps its date; new power changes the interval at
 its next success. Blocked attempts still retry tomorrow. Upgrading Mercury's
 tether increases batch size and throughput per traffic slot. All fuel, recovery,
-32-flight and horizon checks remain active; existing batches retain their mass
+mirror-capacity and horizon checks remain active; existing batches retain their mass
 and original deployment time. Enabling the link does not enable paused launches.
 
 Four additional milestones: connect power, double Mercury capacity (20 GW),

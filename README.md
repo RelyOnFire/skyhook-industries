@@ -31,8 +31,10 @@ build a lunar lunavator and Phobos anchor hub, produce material and equipment,
 schedule direct Moon–Phobos deliveries, then unlock Mercury industry and launch
 mirrors into a growing solar swarm. Reinvest its power automatically, then use
 Phobos to supply Ceres and return water for support propellant. Twenty milestones
-span five chapters. Run the clock and resume named saves; valid schema 1–4 saves
-migrate without resetting progress. `/lab/campaign/method/` documents the calculations,
+span five chapters. Run the clock and resume named saves; valid schema 1–5 saves
+migrate without resetting progress. Cargo supports 256 concurrent flights; solar
+deployments have a separate 128-batch allowance, keeping swarm growth from
+crowding out supply lines. `/lab/campaign/method/` documents the calculations,
 game assumptions and save behavior. See `docs/tether-lab/campaign.md` for the
 model, persistence format and validation. Flight Studio offers separate Earth
 (`/lab/`), lunar (`/lab/lunar/`), Phobos anchored (`/lab/phobos/`) and T4

@@ -1,4 +1,4 @@
-import { BELT, beltObjectives, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
+import { BELT, beltObjectives, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
 import { trafficItems, type TrafficId } from './traffic.js';
 
@@ -71,7 +71,8 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
       })}</div>
     </section>;
   return <aside className="ops-traffic" id="traffic" aria-label="Live logistics">
-    <section className="campaign-traffic" aria-labelledby="traffic-heading"><header className="panel-title"><h2 id="traffic-heading">In flight</h2><span>{flights.length} / 32</span></header>
+    <section className="campaign-traffic" aria-labelledby="traffic-heading"><header className="panel-title"><h2 id="traffic-heading">In flight</h2><span>{flights.length} active</span></header>
+      <div className="traffic-capacity" aria-label="Independent flight capacities"><span>Cargo <b data-testid="cargo-capacity">{world.flights.length} / {LIMITS.cargoFlights}</b></span>{world.solar.unlocked&&<span>Mirrors <b data-testid="mirror-capacity">{world.solar.deployments.length} / {LIMITS.mirrorDeployments}</b></span>}</div>
       <div className="traffic-total"><b>{n(flights.reduce((a,f)=>a+f.mass,0))} t</b> in transit <span>Next arrivals first</span></div>
       <div className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!flights.length?<p className="campaign-empty">No cargo in transit. Send a shipment and watch it cross the map.</p>:flights.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-arrival={f.arrival} data-kind={f.kind}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
     </section>

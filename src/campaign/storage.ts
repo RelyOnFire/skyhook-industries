@@ -59,9 +59,9 @@ export async function saveCampaign(input: Campaign, expectedRevision: number | n
       if ((expectedRevision===null && previous) || (expectedRevision!==null && (!previous || previous.state.revision!==expectedRevision))) {
         error='Another tab changed this campaign. Download your current world or load the latest saved version before continuing.'; tx.abort(); return;
       }
-      // An older cached app also checks revisions. A schema-only save must
+      // An older cached app also checks revisions. A schema/model-only save must
       // invalidate its writer token even when no gameplay action occurred.
-      if(previous && previous.state.schema!==state.schema && previous.state.revision===state.revision)state.revision++;
+      if(previous && (previous.state.schema!==state.schema || previous.state.model!==state.model) && previous.state.revision===state.revision)state.revision++;
       // Repeated manual saves of an unchanged world must not push meaningful
       // recovery points out of the three-checkpoint history.
       if(previous && JSON.stringify(previous.state)===JSON.stringify(state)) return;

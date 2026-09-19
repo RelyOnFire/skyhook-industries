@@ -101,8 +101,9 @@ test('power: power-driven launch batches retain recovery, fuel, storage and traf
   w=launchMirrors(w,schedule.massT);assert.match(mirrorLaunchPlan(w,30).reason,/stock|recovering/i);
   w.fuelT=0;assert.match(mirrorLaunchPlan(w,10).reason,/propellant/);
   const full=expanded();full.solar.mirrorsT+=100;full.solar.manufacturedT+=100;
-  while(full.flights.length+full.solar.deployments.length<LIMITS.flights){full.flights.push({...full.flights[0],id:full.nextShipment++});}
+  while(full.solar.deployments.length<LIMITS.mirrorDeployments){full.solar.deployments.push({id:full.solar.nextDeployment++,massT:1,departed:full.day,arrival:full.day+SOLAR.deploymentDays});full.solar.manufacturedT++;}
   assert.match(mirrorLaunchPlan(full,30).reason,/traffic/);
+  assert.deepEqual(validateCampaign(full),full);
   const end=expanded();end.day=LIMITS.days-1;end.flights=[];end.services=[];end.solar.deployments=[];
   end.solar.manufacturedT=end.solar.mirrorsT+end.solar.deployedT;end.solar.nextCycleDay=end.day+1;end.solar.nextLaunchDay=end.day+1;
   const last=advance(end,1);assert.equal(last.solar.deployments.length,0);assert.doesNotThrow(()=>validateCampaign(last));

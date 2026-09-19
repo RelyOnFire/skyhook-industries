@@ -1,6 +1,6 @@
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.5.0';
+export const CAMPAIGN_MODEL = 'network-0.5.1';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -81,7 +81,8 @@ export interface Campaign {
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
   solar: SolarIndustry; belt:BeltIndustry; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
 }
-export const LIMITS = { days: 100000, stock: 1000000, flights: 32, services: 12, fileBytes: 512000 };
+// Independent transit budgets keep the growing swarm from crowding out supply lines.
+export const LIMITS = { days: 100000, stock: 1000000, cargoFlights: 256, mirrorDeployments: 128, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
   return { schema: 5, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
@@ -124,7 +125,7 @@ export function flightPlan(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
   else if (room(world,to,kind) + EPS < cargoT) reason = 'The destination has no storage space after incoming deliveries.';
   else if (world.fuelT + EPS < fuelT) reason = 'Support propellant is low. Request an Earth supply allocation.'+(world.belt.propellantWorks?' Returned Ceres water also feeds the Phobos plant.':'');
   else if (mode === 'tether' && Math.max(origin.readyDay,destination.readyDay) > world.day + EPS) reason = 'The tether service is recovering. Advance time before booking another slot.';
-  else if (world.flights.length + world.solar.deployments.length >= LIMITS.flights) reason = 'The traffic limit is 32 active flights. Advance to an arrival first.';
+  else if (world.flights.length >= LIMITS.cargoFlights) reason = 'Cargo traffic is full ('+LIMITS.cargoFlights+' active flights). Advance to a cargo arrival.';
   else if (world.day + duration > LIMITS.days) reason = 'This campaign has reached its simulation horizon. Export it and start a new network.';
   return { route, capacity, fuelT, duration, reason };
 }
@@ -381,7 +382,7 @@ export function mirrorLaunchPlan(w: Campaign, massT: number) {
   else if(w.solar.mirrorsT+EPS<massT)reason='Mirror stock is low. Supply Mercury with equipment and advance time.';
   else if(w.fuelT+EPS<fuelT)reason='Support propellant is low. Advance time or request an Earth supply allocation.';
   else if(p.readyDay>w.day+EPS)reason='Mercury transfer service is recovering.';
-  else if(w.flights.length+w.solar.deployments.length>=LIMITS.flights)reason='The network traffic limit is 32 active flights.';
+  else if(w.solar.deployments.length>=LIMITS.mirrorDeployments)reason='Mirror traffic is full ('+LIMITS.mirrorDeployments+' active batches). Advance to a mirror arrival.';
   else if(w.day+SOLAR.deploymentDays>LIMITS.days)reason='This transfer would exceed the campaign horizon.';
   return {fuelT,duration:SOLAR.deploymentDays,reason};
 }
@@ -482,7 +483,8 @@ export function validateCampaign(value: unknown): Campaign {
   const raw = object(value), legacy=raw.schema===1 && raw.model==='network-0.1.0', previous=raw.schema===2 && raw.model==='network-0.2.0', migrate=legacy||previous;
   const firstLight=raw.schema===3&&raw.model==='network-0.3.0';
   const powerLoop=raw.schema===4&&raw.model==='network-0.4.0',oldSchema=migrate||firstLight||powerLoop;
-  if (!oldSchema && (raw.schema !== 5 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const firstBelt=raw.schema===5&&raw.model==='network-0.5.0',oldTraffic=oldSchema||firstBelt;
+  if (!oldTraffic && (raw.schema !== 5 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   const day = num(raw.day,0,LIMITS.days), rawPorts = object(raw.ports), ports = {} as Record<SiteId,Port>;
   for (const id of SITES) {
     if(id==='mercury'&&migrate){ports.mercury=emptyPort();continue;}
@@ -494,7 +496,7 @@ export function validateCampaign(value: unknown): Campaign {
       receivedT: num(p.receivedT,0,1e9), sentT: num(p.sentT,0,1e9) };
     if(ports[id].industry&&!ports[id].level) throw Error('Industry requires a commissioned facility.');
   }
-  if (!Array.isArray(raw.flights) || raw.flights.length > LIMITS.flights || !Array.isArray(raw.log) || raw.log.length > 60) throw Error('Campaign record exceeds its size limit.');
+  if (!Array.isArray(raw.flights) || raw.flights.length > (oldTraffic?32:LIMITS.cargoFlights) || !Array.isArray(raw.log) || raw.log.length > 60) throw Error('Campaign record exceeds its size limit.');
   const nextService=legacy?1:num(raw.nextService,1,1e9,true);
   if(!legacy&&(!Array.isArray(raw.services)||raw.services.length>LIMITS.services)) throw Error('Invalid service list.');
   const serviceIds=new Set<number>();
@@ -532,7 +534,7 @@ export function validateCampaign(value: unknown): Campaign {
   let solar=freshSolar();
   if(!migrate) {
     const r=object(raw.solar), nextDeployment=num(r.nextDeployment,1,1e9,true);
-    if(!Array.isArray(r.deployments)||r.deployments.length+flights.length>LIMITS.flights)throw Error('Too many active flights.');
+    if(!Array.isArray(r.deployments)||(oldTraffic?r.deployments.length+flights.length>32:r.deployments.length>LIMITS.mirrorDeployments))throw Error('Too many active mirror deployments.');
     const deploymentIds=new Set<number>();
     const deployments=r.deployments.map(v=>{
       const d=object(v),id=num(d.id,1,nextDeployment-1,true);

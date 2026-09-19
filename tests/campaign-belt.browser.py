@@ -105,7 +105,7 @@ def main():
             cargo('earth','phobos','equipment')
             for _ in range(8): action('Dispatch cargo')
             assert len(state()['flights'])==32
-            expect(page.get_by_role('button', name='Dispatch cargo', exact=True)).to_be_disabled()
+            expect(page.get_by_role('button', name='Dispatch cargo', exact=True)).to_be_enabled()
             step(9)
             action('Upgrade anchor hub · 60 t')
             before = state()
@@ -211,12 +211,12 @@ def main():
             assert page.locator('.belt-goals li.complete').count()==4
             expect(page.get_by_role('heading', name='The belt is supplying your network.', exact=True)).to_be_visible()
             ledger(grown)
-            # Resume the shared consumer to review a busy world with both water and mirror traffic.
+            # Resume mirror traffic alongside a busy cargo network.
             action('Enable automatic launches')
             action('+30 days')
             grown = state()
             assert any(f['kind']=='water' for f in grown['flights']) and grown['solar']['deployments']
-            assert len(grown['flights'])+len(grown['solar']['deployments'])<=32
+            assert len(grown['flights'])<=256 and len(grown['solar']['deployments'])<=128
             ledger(grown)
             done('recurring equipment and water services complete all belt milestones and share traffic with mirror launches')
 

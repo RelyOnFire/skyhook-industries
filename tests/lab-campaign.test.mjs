@@ -178,7 +178,7 @@ test('network: service limits, traffic limits, invalid recipes and horizon remai
   for(const interval of [0,-1,NaN,1.5,3651])assert.throws(()=>addService(w,'earth','moon',1,'tug','materials',interval));
   for(let i=0;i<12;i++)w=addService(w,'earth','moon',1,'tug','equipment',1);
   assert.throws(()=>addService(w,'earth','moon',1,'tug','materials',1),/12/);
-  w.ports.earth.equipmentT=100;w=advance(w,5);assert.equal(w.flights.length,32);assert.doesNotThrow(()=>validateCampaign(w));
+  w.ports.earth.equipmentT=100;w=advance(w,5);assert.equal(w.flights.length,60);assert.doesNotThrow(()=>validateCampaign(w));
   w=advance(w,20);assert.ok(w.ports.moon.receivedT>0);
   const end=fresh();end.day=LIMITS.days-1;
   const last=advance(addService(end,'earth','moon',1,'tug','materials',1),1);

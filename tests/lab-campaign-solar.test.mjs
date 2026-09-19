@@ -107,13 +107,14 @@ test('solar: paused automatic launches keep transit and resume without a missed-
   w=toggleMirrorLaunches(w);w=advance(w,1);assert.equal(w.solar.nextDeployment,3);
   assert.doesNotThrow(()=>validateCampaign(w));
 });
-test('solar: shared recovery and traffic capacity constrain mirror launch attempts',()=>{
+test('solar: Mercury recovery is shared, but 32 cargo flights no longer block automatic mirrors',()=>{
   let w=pipeline();w=dispatch(w,'earth','mercury',1,'tether','equipment');
   assert.match(mirrorLaunchPlan(w,10).reason,/recovering/);
   w=advance(w,2);
   while(w.flights.length<32)w=dispatch(w,'earth','mercury',1,'tug','equipment');
-  assert.match(mirrorLaunchPlan(w,10).reason,/traffic/);
-  w=toggleMirrorLaunches(w);const next=w.solar.nextDeployment;w=advance(w,1);assert.equal(w.solar.nextDeployment,next);
+  assert.equal(mirrorLaunchPlan(w,10).reason,'');
+  w=toggleMirrorLaunches(w);const next=w.solar.nextDeployment;w=advance(w,1);assert.equal(w.solar.nextDeployment,next+1);
+  assert.ok(w.flights.length+w.solar.deployments.length>32);assert.deepEqual(validateCampaign(w),w);
 });
 test('solar: horizon and corrupted solar saves cannot run overdue events or duplicate mass',()=>{
   const w=launchMirrors(pipeline());
