@@ -129,9 +129,52 @@ only the matching P1 design (6 KB maximum). A shared `#p=` URL uses this same
 validator. Result exports include constants, frames, loads, work terms, limits
 and Jacobi drift. Loading/importing/presets clear a stale shared-design fragment.
 
+## Arm-length studies
+
+`src/simulation/phobos-study.ts` plans seven samples around the selected arm's
+length, spaced by 50, 100, 250 or 500 km. It changes only that arm, preserving
+the other arm, payload, area, material, safety factor and release direction.
+Lengths clamp to the existing design bounds; duplicate boundary samples are
+removed. Each sample runs the unmodified full P1 solver, including initial
+structural blocks and refined boundary stops. No interpolation, continuous
+operating interval or global optimum is inferred from the discrete results.
+
+`PhobosStudy.tsx` plots inward samples by the minimum simulated Mars altitude;
+the 150 km line is the engine's stopping boundary. Outward samples use signed
+Mars-centered two-body release energy in MJ/kg; the zero line separates bound
+and unbound release states. This is not a solved solar-system destination or
+proof of indefinite escape. Length columns are evenly spaced categorical
+samples, labelled with their actual lengths. Blocked releases have no flight
+orbit or clearance and appear on a separate no-release row. Symbols and text
+distinguish clear, target/escape-energy, stopped, blocked and pending samples.
+
+Selection exposes exact design length, flight duration, outcome/issues,
+minimum Mars altitude, release periapsis or escape excess, both-arm load
+margin, cable/terminal mass and the separate ideal positioning work budget.
+The optional inward suggestion uses only full low-pass challenge passes,
+nearest to the 450 km midpoint of its 150–750 km release-periapsis band.
+Outward flights are not ranked as an optimum; energy, mass and loads remain
+separate observations.
+
+Studies stream completed rows without replacing the accepted flight. Stopping
+retains explicitly partial results; request IDs reject queued stale messages.
+Worker failures interrupt the study and permit retry. Presets and sample
+inspection stop an active study. Opening a row restores and reruns its exact
+design, clears invalid drafts and returns keyboard focus to the flight. Edits
+to fixed inputs or direction mark the earlier study stale; changing only its
+sampled length does not. Complete studies export the plan and actual result
+summaries as versioned JSON. Partial studies cannot export as complete.
+Study state is session-only and never writes saved designs or campaign worlds.
+Phones scroll the plot internally with at least 44 px point targets.
+
 `tests/lab-phobos.test.mjs` covers force/potential consistency, independent
 quadrature of cable loads, interior maxima, pre/post states, conservation,
 Kepler release values, step convergence, budget identities and malformed IO.
 `tests/lab-phobos.browser.py` exercises the actual worker, WebGL, challenge,
 replay, validation, isolated storage, share/import/export, navigation, reduced
 motion, fallback, responsive widths and the campaign link.
+`tests/lab-phobos-study.test.mjs` checks bounded planning, native-solver result
+equivalence, blocked releases, signed energy, candidate filtering, stale inputs
+and complete exports. Browser coverage also includes exact sample reopening,
+both study directions, blocked fixed arms, partial cancellation with queued
+real-worker responses, startup failure/retry and six-width study interaction.
