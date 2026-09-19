@@ -8,6 +8,46 @@
 .t4-sweep .panel-heading p,.t4-sweep-note{font-size:12px;line-height:1.6;color:var(--lab-muted);margin:7px 0 0}
 .t4-sweep .panel-heading button{min-height:42px;flex:none;font-size:12px}
 .t4-sweep-note{margin:16px 20px}
+.t4-study-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.t4-study-actions label{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--lab-muted)}
+.t4-study-actions select{min-height:42px;padding:6px;font-size:11px}
+.t4-study-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;background:#0c1215;border-bottom:1px solid var(--lab-line);min-height:48px}
+.t4-study-status p{font-size:12px;margin:0;color:var(--lab-soft);font-variant-numeric:tabular-nums}
+.t4-study-status button{background:none;color:var(--lab-cyan);font-size:11px;min-height:36px;padding:6px 12px}
+.t4-study-status>span{font-size:11px;color:var(--lab-muted)}
+.t4-sweep-note[data-stale=true]{color:#e5ad82}
+.t4-timing-body{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;padding:0 20px 20px;align-items:start}
+.t4-timing-map{overflow:auto;max-height:460px;scrollbar-width:thin;scrollbar-color:#596968 #0c1215}
+.t4-timing-map table{width:100%;border-spacing:4px;table-layout:fixed;font-variant-numeric:tabular-nums}
+.t4-timing-map caption{text-align:left;color:var(--lab-muted);font-size:10px;line-height:1.7;padding-bottom:12px}
+.t4-timing-map th{font-size:11px;font-weight:400;color:var(--lab-muted);text-align:center;padding:7px 0}
+.t4-timing-map thead th{position:sticky;top:0;background:#101619;z-index:1}
+.t4-timing-map th:first-child{width:60px;text-align:left}
+.t4-timing-map td{padding:0}
+.t4-timing-map td button{position:relative;width:100%;min-height:71px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:13px 5px 8px;border:1px solid #35454b;background:#131d22;color:var(--lab-soft)}
+.t4-timing-map td button:disabled{opacity:.6;background:#0c1215;border-style:dashed}
+.t4-timing-map button[data-result=target]{background:#17312b;border-color:#456b5b;color:#c5e4d5}
+.t4-timing-map button[data-result=limit]{background:#30241e;border-color:#715041;color:#e5ad82}
+.t4-timing-map button[aria-pressed=true]{box-shadow:inset 0 0 0 1px #f3cca8;border-color:#f3cca8}
+.t4-timing-map strong{font-size:17px;font-weight:400}
+.t4-timing-map small{font-size:9px;color:var(--lab-muted)}
+.t4-cell-mark{position:absolute;left:7px;top:4px;font-size:10px}
+.t4-cell-phase{display:none}
+.t4-map-scroll-hint{display:none}
+.t4-trial-detail{padding:19px;background:#0c1215;border:1px solid var(--lab-line);border-radius:3px;min-height:350px}
+.t4-trial-detail h3{margin:12px 0;font-size:23px;font-weight:400;font-variant-numeric:tabular-nums}
+.t4-trial-detail h3 span{font-size:12px;color:var(--lab-muted)}
+.t4-trial-detail p{font-size:11px;line-height:1.65;color:var(--lab-muted)}
+.t4-trial-detail .t4-sample-outcome{color:#e5ad82}
+.t4-trial-detail .t4-sample-outcome[data-pass=true]{color:#acd6c1}
+.t4-trial-detail dl{margin:20px 0}
+.t4-trial-detail dl>div{display:flex;justify-content:space-between;gap:8px;margin:13px 0;font-size:11px}
+.t4-trial-detail dt{color:var(--lab-muted)}
+.t4-trial-detail dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.t4-trial-detail button{width:100%;min-height:40px;font-size:11px}
+.t4-trial-detail .t4-recommend{background:none;border:0;color:var(--lab-cyan);margin-top:8px}
+.t4-trial-detail .t4-sampling-note{font-size:10px;margin-bottom:0}
+.t4-app .phobos-flight{scroll-margin-top:16px}
 .t4-trials{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--lab-line);border-top:1px solid var(--lab-line)}
 .t4-trials article{background:#101619;display:grid;gap:12px;padding:20px 15px}
 .t4-trials article[data-pass=true]{background:#142320}
@@ -26,3 +66,7 @@
 @media(max-width:1250px){.t4-app .phobos-workspace{grid-template-columns:250px minmax(0,1fr)}.t4-app .phobos-verdict p{min-height:0}.t4-app .phobos-flight-readout{grid-template-columns:1fr 1fr}.t4-app .phobos-flight-readout>div:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}.t4-app .phobos-flight-readout>div:last-child strong{font-size:14px}}
 @media(max-width:750px){.t4-app .phobos-workspace{grid-template-columns:1fr}.t4-trials{grid-template-columns:repeat(3,minmax(0,1fr))}.t4-sweep .panel-heading{align-items:start;flex-direction:column;gap:14px}.t4-trials button{min-height:44px}.t4-app .phobos-viewport{min-height:390px}.t4-app .phobos-playback select{width:65px}}
 @media(max-width:400px){.t4-trials{grid-template-columns:repeat(2,minmax(0,1fr))}.t4-app .phobos-viewport{min-height:345px}.t4-app .phobos-flight-readout>div:last-child{display:flex}.t4-velocity table{font-size:11px}}
+@media(max-width:1100px){.t4-sweep .panel-heading{align-items:start;flex-direction:column}.t4-study-actions{justify-content:flex-start}.t4-timing-body{grid-template-columns:minmax(0,1fr) 230px;gap:12px}.t4-timing-map strong{font-size:14px}.t4-timing-map th:first-child{width:43px}}
+@media(max-width:850px){.t4-timing-body{grid-template-columns:1fr}.t4-trial-detail{min-height:0}.t4-trial-detail dl{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}.t4-trial-detail button{width:auto;margin-right:12px}.t4-trial-detail .t4-recommend{margin:0}.t4-study-status{flex-wrap:wrap}}
+@media(max-width:600px){.t4-timing-body{padding:0 14px 14px}.t4-timing-map table,.t4-timing-map tbody{display:block}.t4-timing-map thead{display:none}.t4-timing-map tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:16px}.t4-timing-map th:first-child{width:auto;grid-column:1/-1;font-size:12px}.t4-timing-map td button{min-height:85px;padding:11px 4px 8px}.t4-cell-phase{display:block;font-size:11px;color:var(--lab-soft)}.t4-timing-map strong{font-size:16px}.t4-timing-map caption{display:block}.t4-study-actions{width:100%}.t4-study-actions>button{flex:1 1 100%;min-height:44px}.t4-study-status button,.t4-trial-detail button,.t4-study-actions select{min-height:44px}.t4-trial-detail dl{display:block}.t4-trial-detail button{width:100%;margin:4px 0}.t4-study-status{padding:10px 14px}.t4-sweep-note{margin:14px}}
+@media(max-width:600px){.t4-map-scroll-hint{display:block;position:sticky;bottom:0;margin:0;padding:10px 0 4px;font-size:10px;color:var(--lab-muted);background:linear-gradient(transparent,#101619 25%);pointer-events:none}}

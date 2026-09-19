@@ -10,7 +10,9 @@ accounting. See `docs/tether-lab/phobos-flight-studio.md` for boundaries and che
 
 `T4Lab.tsx`, `t4-worker.ts` and `T4Scene.tsx` provide the compound-rotor
 experiment, backed by `src/simulation/t4.ts`. It has separate versioned storage,
-finite-mass coupled dynamics and a passive ideal hinge. See
+finite-mass coupled dynamics and a passive ideal hinge. `T4Study.tsx` displays
+streamed phase/timing samples planned by `src/simulation/t4-study.ts`; opening a
+sample restores and reruns its exact design. See
 `docs/tether-lab/t4-flight-studio.md` for equations and limits. `StudioField.tsx`
 is the shared Phobos/T4 numeric input; Earth texture generation is shared too.
 

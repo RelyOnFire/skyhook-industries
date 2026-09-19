@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import T4Scene from './T4Scene.js';
+import T4Study from './T4Study.js';
 import NumericField from './StudioField.js';
 import { EARTH, MU, MATERIALS } from '../simulation/engine.js';
-import { T4_DEFAULT, T4_MODEL, T4_BOUNDS, T4_HUB, T4_PIVOT, T4_TIP, T4_CUTOFF, t4Fragment, readT4, validateT4, t4Sample, t4Gates, type T4Design, type T4Result, type t4Summary } from '../simulation/t4.js';
+import { T4_DEFAULT, T4_MODEL, T4_BOUNDS, T4_HUB, T4_PIVOT, T4_TIP, T4_CUTOFF, t4Fragment, readT4, validateT4, t4Sample, t4Gates, type T4Design, type T4Result } from '../simulation/t4.js';
+import { planT4Study, type T4Study as Study, type T4StudyMode } from '../simulation/t4-study.js';
 import './phobos.css';
 import './t4.css';
 
@@ -10,33 +12,37 @@ const KEY='skyhook-lab-t4-design-v1';
 const fmt=(n:number,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const duration=(n:number)=>`${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`;
 const signed=(n:number)=>`${n<0?'−':'+'}${fmt(Math.abs(n),3)}`;
-type Trial=ReturnType<typeof t4Summary>;
 function download(name:string,data:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 export default function T4Lab(){
   const [design,setDesign]=useState<T4Design>({...T4_DEFAULT}),[result,setResult]=useState<T4Result|null>(null);
-  const [busy,setBusy]=useState<''|'run'|'sweep'>('run'),[progress,setProgress]=useState(0),[trials,setTrials]=useState<Trial[]>([]);
+  const [busy,setBusy]=useState<''|'run'|T4StudyMode>('run'),[study,setStudy]=useState<Study|null>(null);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[share,setShare]=useState('');
   const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(120);
   const [bad,setBad]=useState<string[]>([]),[fieldKey,setFieldKey]=useState(0);
-  const clock=useRef(0),worker=useRef<Worker|null>(null),request=useRef(0),file=useRef<HTMLInputElement>(null);
+  const clock=useRef(0),worker=useRef<Worker|null>(null),request=useRef(0),file=useRef<HTMLInputElement>(null),flight=useRef<HTMLElement>(null);
   const runRef=useRef(result),playingRef=useRef(playing),speedRef=useRef(speed);runRef.current=result;playingRef.current=playing;speedRef.current=speed;
   let validation='';try{validateT4(design);}catch(e){validation=(e as Error).message;}
   const invalid=!!bad.length||!!validation,dirty=!!result&&(invalid||JSON.stringify(validateT4(result.design))!==JSON.stringify(validateT4(design)));
-  function calculate(candidate:T4Design,kind:'run'|'sweep'='run',auto=false){
+  function calculate(candidate:T4Design,kind:'run'|T4StudyMode='run',auto=false,spacing=1,focusFlight=false){
     try{
-      const d=validateT4(candidate);worker.current?.terminate();setBusy(kind);setProgress(0);setPlaying(false);setError('');setNotice('');setShare('');
+      const d=validateT4(candidate),plan=kind==='run'?null:planT4Study(d,kind,spacing);worker.current?.terminate();setBusy(kind);setPlaying(false);setError('');setNotice('');setShare('');
+      setStudy(old=>plan?{plan,rows:[],status:'running'}:old?.status==='running'?{...old,status:'cancelled'}:old);
       const id=++request.current,w=new Worker(new URL('./t4-worker.ts',import.meta.url),{type:'module'});worker.current=w;
-      w.onerror=()=>{if(id!==request.current)return;setBusy('');setError('The calculation worker could not start. Reload to try again.');w.terminate();worker.current=null;};
-      w.onmessage=e=>{if(id!==request.current)return;if(e.data.progress){setProgress(e.data.progress);return;}
-        setBusy('');w.terminate();worker.current=null;if(e.data.error){setError(e.data.error);return;}
-        if(e.data.rows){setTrials(e.data.rows);setNotice('Six phases compared. Inspect a trial to replay its flight.');return;}
+      const fail=(message:string)=>{setBusy('');setError(message);setStudy(old=>old?.status==='running'?{...old,status:'error'}:old);w.terminate();worker.current=null;};
+      w.onerror=()=>{if(id!==request.current)return;fail('The calculation worker could not start. Reload to try again.');};
+      w.onmessage=e=>{if(id!==request.current)return;
+        if(e.data.row){setStudy(old=>old?{...old,rows:[...old.rows,e.data.row]}:old);return;}
+        if(e.data.error){fail(e.data.error);return;}
+        setBusy('');w.terminate();worker.current=null;
+        if(e.data.complete){setStudy(old=>old?{...old,status:'complete'}:old);setNotice('Study complete. Open a sample to inspect its flight.');return;}
         setResult(e.data.result);clock.current=0;setTime(0);setPlaying(auto&&!document.hidden&&e.data.result.duration>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches);
-      };w.postMessage({id,design:d,kind});
+        if(focusFlight){flight.current?.scrollIntoView({block:'start',behavior:'instant'});flight.current?.focus({preventScroll:true});}
+      };w.postMessage({id,design:d,kind,spacing});
     }catch(e){setBusy('');setError((e as Error).message);}
   }
-  function cancel(){request.current++;worker.current?.terminate();worker.current=null;setBusy('');setNotice(result?'Calculation cancelled. Your last completed result is still available.':'Calculation cancelled. Choose Run release to start again.');}
-  function adopt(d:T4Design,auto=false,keepLink=false){if(!keepLink)history.replaceState(null,'','/lab/t4/');setDesign(d);setBad([]);setFieldKey(k=>k+1);calculate(d,'run',auto);}
+  function cancel(){request.current++;worker.current?.terminate();worker.current=null;setBusy('');setStudy(old=>old?.status==='running'?{...old,status:'cancelled'}:old);setNotice(result?'Calculation stopped. Your last completed flight is still available.':'Calculation stopped. Choose Run release to start again.');}
+  function adopt(d:T4Design,auto=false,keepLink=false,focusFlight=false){if(!keepLink)history.replaceState(null,'','/lab/t4/');setDesign(d);setBad([]);setFieldKey(k=>k+1);calculate(d,'run',auto,1,focusFlight);}
   useEffect(()=>{
     let d={...T4_DEFAULT},message='';try{const raw=new URLSearchParams(location.hash.slice(1)).get('t4');if(raw)d=readT4(raw);}catch(e){message=`Shared design rejected: ${(e as Error).message}`;}
     adopt(d,false,true);if(message)setError(message);return()=>worker.current?.terminate();
@@ -75,7 +81,7 @@ export default function T4Lab(){
         {busy&&<button className="t4-cancel" onClick={cancel}>Cancel calculation</button>}
         <div className="phobos-files"><button disabled={invalid} onClick={()=>download('t4-design.json',validateT4(design))}>Export design</button><button onClick={()=>file.current?.click()}>Import</button><input ref={file} type="file" accept=".json,application/json" hidden aria-label="Import T4 design" onChange={e=>{const f=e.target.files?.[0];if(f)void importFile(f);e.target.value='';}}/></div>
       </div></aside>
-      <section className="lab-panel phobos-flight" aria-label="Two-stage flight" aria-busy={busy==='run'}>
+      <section className="lab-panel phobos-flight" ref={flight} tabIndex={-1} aria-label="Two-stage flight" aria-busy={busy==='run'}>
         {result&&f?<><T4Scene result={result} clock={clock} time={time}/><div className="phobos-flight-readout"><div><span>{f.cargo?'CARGO RELEASED':'CARGO ATTACHED'}{dirty?' · PREVIOUS RUN':''}</span><strong>{duration(time)} <small>/ {duration(result.duration)}</small></strong></div><div><span>RELATIVE PHASE</span><strong>{fmt(phase,1)}<small> °</small></strong></div><div><span>ANGULAR RATES · °/s</span><strong>{fmt(f.s[6]*180/Math.PI,2)} <small>/</small> {fmt(f.s[7]*180/Math.PI,2)}</strong></div></div>
         <div className="phobos-playback"><button className="primary" disabled={!!busy||!result.duration} aria-label={playing?'Pause replay':'Play replay'} onClick={()=>{if(time>=result.duration){clock.current=0;setTime(0);}setPlaying(!playing);}}>{playing?'Ⅱ':'▶'}</button><input type="range" aria-label="Flight time" min="0" max={result.duration||1} step=".1" value={time} disabled={!result.duration} onChange={e=>seek(+e.target.value)}/><label>Speed<select aria-label="Replay speed" value={speed} onChange={e=>setSpeed(+e.target.value)}>{[120,600,1800].map(s=><option key={s} value={s}>{s}×</option>)}</select></label><button disabled={!result.release} onClick={()=>seek(result.release!.t)}>At release</button></div></>:<div className="phobos-loading">{busy?'Calculating the coupled flight…':'Choose Run release to calculate a flight.'}</div>}
       </section>
@@ -86,9 +92,7 @@ export default function T4Lab(){
         <button className="phobos-report" onClick={()=>download('t4-flight-report.json',{...result,constants:{EARTH,MU,T4_HUB,T4_PIVOT,T4_TIP,T4_CUTOFF},scope:'Planar uniform rigid stages, finite masses, passive ideal hinge; pre-attached cargo and one impulse-free release. Axial screen only; no bending, cable flexure, physical crossover clearance, capture, atmosphere or reboost.'})}>Export flight report ↗</button></>}
       </aside>
     </div>
-    <section className="lab-panel t4-sweep" aria-label="Phase comparison" aria-busy={busy==='sweep'}><div className="panel-heading"><div><h2>Find the useful alignment.</h2><p>Same design, six starting angles. Each trial calculates the full flight.</p></div><button className="primary" disabled={!!busy||invalid} onClick={()=>calculate(design,'sweep')}>{busy==='sweep'?`Comparing ${progress} / 6…`:'Compare six phases →'}</button></div>
-      {trials.length>0&&<><p className="t4-sweep-note">Compared design: {fmt(trials[0].design.primaryKm)} / {fmt(trials[0].design.secondaryKm)} km · {fmt(trials[0].design.payloadT,1)} t cargo · release at {fmt(trials[0].design.releaseMin,1)} min. Inspect restores that trial’s exact settings.</p><div className="t4-trials">{trials.map(row=><article key={row.design.phaseDeg} data-pass={row.pass}><span className="micro">{row.design.phaseDeg}° PHASE</span><strong>{row.released?(row.apoapsis===null?'Escape':fmt(row.apoapsis/1000)+' km'):'No release'}</strong><small>{row.outcome!=='complete'?'Model limit reached':row.pass?'Target reached':'Outside target band'}</small><button onClick={()=>adopt(row.design)}>Inspect {row.design.phaseDeg}° →</button></article>)}</div></>}
-    </section>
+    <T4Study study={study} design={design} busy={busy} invalid={invalid} onStart={(mode,spacing)=>calculate(design,mode,false,spacing)} onCancel={cancel} onInspect={d=>adopt(d,false,false,true)}/>
     {result&&<div className="phobos-analysis"><section className="lab-panel phobos-loads" aria-label="Two-stage loads"><div className="panel-heading"><h2>What the pivot carries</h2><span className="tag">RIGID STAGES</span></div><p>Peak axial stress through the replay: <span className="t4-primary-key">primary</span> and <span className="t4-secondary-key">secondary</span>. Dotted line: material allowable.</p><svg viewBox="0 0 620 170" role="img" aria-label="Primary and secondary axial stress over time">
       {(()=>{const top=Math.max(allowable,...result.peakStress)*1.15,y=(n:number)=>135-n/top*106,x=(t:number)=>45+t/(result.duration||1)*550;return <><line x1="45" y1="135" x2="595" y2="135" stroke="#63747b"/><line x1="45" y1={y(allowable)} x2="595" y2={y(allowable)} stroke="#a69781" strokeDasharray="3 5"/>{[0,1].map(stage=><polyline key={stage} points={result.frames.map(f=>`${x(f.t)},${y(f.loads.stress[stage])}`).join(' ')} fill="none" stroke={stage?'#efa477':'#b7cdcf'} strokeWidth="2"/>)}<line x1={x(time)} x2={x(time)} y1="24" y2="135" stroke="#e1e4da" opacity=".5"/><text x="45" y="15">{fmt(top/1e9,2)} GPa scale · allowable {fmt(allowable/1e9,2)} GPa</text><text x="45" y="160">Start</text><text x="595" y="160" textAnchor="end">{duration(result.duration)} min:sec</text></>;})()}
       </svg><div className="phobos-load-stats"><span>Peak pivot force<strong>{fmt(result.peakPivotForce/1000,1)} kN</strong></span><span>Transverse · primary<strong>{fmt(result.peakTransverse[0]/1000,1)} kN</strong></span><span>Transverse · secondary<strong>{fmt(result.peakTransverse[1]/1000,1)} kN</strong></span></div><p>The rigid model also needs transverse forces. An axial pass does not establish bending strength, cable stability or a viable pivot bearing.</p></section>

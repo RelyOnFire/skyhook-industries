@@ -79,20 +79,63 @@ def main():
             expect(page.get_by_role('button',name='Play replay',exact=True)).to_be_disabled();assert export_report()['release'] is None
             done('genuine phase challenge failure to success and initial axial limit blocking release')
             preset('Working release');page.get_by_role('button',name='Compare six phases →',exact=True).click()
-            expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','true');page.get_by_role('button',name='Cancel calculation',exact=True).click();ready()
-            expect(page.locator('.t4-trials article')).to_have_count(0);assert export_report()['design']['phaseDeg']==180
+            expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','true');expect(page.locator('.t4-trials article').first).to_be_visible()
+            page.get_by_role('button',name='Stop study',exact=True).click();ready()
+            completed_samples=page.locator('.t4-trials article').count();assert 0<completed_samples<6
+            expect(page.locator('.t4-study-status')).to_contain_text('Stopped');page.wait_for_timeout(200);expect(page.locator('.t4-trials article')).to_have_count(completed_samples)
+            assert export_report()['design']['phaseDeg']==180
             page.get_by_role('button',name='Compare six phases →',exact=True).click();expect(page.locator('.t4-trials article')).to_have_count(6,timeout=90000)
             expect(page.locator('.t4-trials article[data-pass=true]')).to_have_count(1);no_overflow();shot('t4-phase-comparison')
-            page.get_by_role('spinbutton',name='Payload value',exact=True).fill('5')
+            page.get_by_role('spinbutton',name='Payload value',exact=True).fill('5');expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','true')
             page.get_by_role('button',name='Inspect 60° →',exact=True).click();ready()
             expect(page.get_by_role('spinbutton',name='Payload value',exact=True)).to_have_value('3');expect(page.get_by_role('spinbutton',name='Initial phase value',exact=True)).to_have_value('60')
             assert export_report()['release']['orbit']==challenge['release']['orbit']
-            done('cancellable phase sweep preserves accepted result; six solved trials restore exact design on inspection')
+            expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','false')
+            done('streamed phase sweep preserves partial samples and accepted flight on stop; inspection restores exact settings')
+            preset('Working release');accepted=export_report();page.get_by_role('button',name='Map release timing →',exact=True).click()
+            cells=page.locator('.t4-timing-map td button');expect(cells).to_have_count(30)
+            expect(page.locator('.t4-timing-map td button:not([disabled])').first).to_be_enabled()
+            page.get_by_role('button',name='Stop study',exact=True).click();ready()
+            completed_samples=page.locator('.t4-timing-map td button:not([disabled])').count();assert 0<completed_samples<30
+            expect(page.get_by_role('button',name='Export study ↗',exact=True)).to_have_count(0)
+            page.wait_for_timeout(200);expect(page.locator('.t4-timing-map td button:not([disabled])')).to_have_count(completed_samples)
+            assert export_report()==accepted
+            page.get_by_role('button',name='Map release timing →',exact=True).click()
+            expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','false',timeout=120000)
+            expect(page.locator('.t4-timing-map td button:not([disabled])')).to_have_count(30)
+            with page.expect_download() as dl: page.get_by_role('button',name='Export study ↗',exact=True).click()
+            study=json.loads(Path(dl.value.path()).read_text());assert study['format']=='skyhook-t4-study' and study['plan']['times']==[0,1,2,3,4]
+            assert len(study['rows'])==30 and all(row['design']==study['plan']['samples'][row['index']] for row in study['rows'])
+            passing=[row for row in study['rows'] if row['pass']];assert passing
+            suggested=min(passing,key=lambda r:(abs(r['apoapsis']-1e7),r['index']))
+            page.get_by_role('button',name='Select closest to 10,000 km',exact=True).click()
+            expect(page.locator(f'.t4-timing-map button[data-index="{suggested["index"]}"]')).to_have_attribute('aria-pressed','true')
+            page.get_by_role('spinbutton',name='Payload value',exact=True).fill('5');expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','true')
+            cell=page.locator('.t4-timing-map button[data-index="15"]');cell.focus();cell.press('Enter')
+            expect(cell).to_have_attribute('aria-pressed','true');expect(page.get_by_label('Selected timing sample',exact=True)).to_contain_text('9,500 km')
+            assert export_report()==accepted
+            shot('t4-timing-map')
+            page.get_by_role('button',name='Open this flight →',exact=True).click();ready()
+            expect(page.locator('.phobos-flight')).to_be_focused();expect(page.get_by_role('spinbutton',name='Payload value',exact=True)).to_have_value('3')
+            opened=export_report();assert opened==accepted
+            expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','false')
+            done('30 solved timing samples stream, stop safely, export exactly, suggest only passing trials and open with keyboard/focus continuity')
+            for width in [1440,1280,1000,768,390,320]:
+                page.set_viewport_size({'width':width,'height':950});no_overflow()
+                expect(page.locator('.t4-timing-map button[data-index="15"]')).to_be_enabled();shot(f't4-timing-{width}')
+            page.get_by_role('button',name='Select closest to 10,000 km',exact=True).click()
+            visible=page.locator(f'.t4-timing-map button[data-index="{suggested["index"]}"]').bounding_box();region=page.locator('.t4-timing-map').bounding_box()
+            assert visible['y']>=region['y'] and visible['y']+visible['height']<=region['y']+region['height']
+            mobile_cell=page.locator('.t4-timing-map button[data-index="15"]');mobile_cell.focus();mobile_cell.press('Enter')
+            page.get_by_role('button',name='Open this flight →',exact=True).click();ready();expect(page.locator('.phobos-flight')).to_be_focused()
+            assert 0<=page.locator('.phobos-flight').bounding_box()['y']<=40
+            page.set_viewport_size({'width':1440,'height':1050})
+            done('timing map fits six widths, scrolls within phone bounds and returns focus to the selected flight')
             value=page.get_by_role('spinbutton',name='Payload value',exact=True);value.fill('')
             expect(value).to_have_attribute('aria-invalid','true')
-            for name in ['Run release →','Save','Share design ↗','Export design','Compare six phases →']: expect(page.get_by_role('button',name=name,exact=True)).to_be_disabled()
+            for name in ['Run release →','Save','Share design ↗','Export design','Compare six phases →','Map release timing →']: expect(page.get_by_role('button',name=name,exact=True)).to_be_disabled()
             value.fill('4');phase=page.get_by_role('slider',name='Initial phase',exact=True);phase.focus();phase.press('ArrowRight');phase.press('ArrowRight');assert phase.evaluate('(el)=>el===document.activeElement')
-            expect(page.get_by_role('spinbutton',name='Initial phase value',exact=True)).to_have_value('62')
+            expect(page.get_by_role('spinbutton',name='Initial phase value',exact=True)).to_have_value('182')
             page.get_by_text('Geometry & initial rotation',exact=True).click();page.get_by_role('spinbutton',name='Each secondary arm value',exact=True).fill('200')
             expect(page.get_by_role('alert')).to_contain_text('half the primary arm');expect(page.get_by_role('button',name='Run release →',exact=True)).to_be_disabled()
             preset('Working release');page.get_by_role('spinbutton',name='Payload value',exact=True).fill('4');page.get_by_role('button',name='Run release →',exact=True).click();ready()
@@ -121,7 +164,18 @@ def main():
                 assert page.locator('.experiment-strip button').evaluate_all('(buttons)=>buttons.every(b=>b.scrollWidth<=b.clientWidth+1)')
                 if report['webgl']: expect(page.locator('.phobos-world-label')).to_be_visible()
                 shot(f't4-{width}')
-            done('six responsive widths including readable stage view, phase trials and 320 px touch controls')
+            done('six responsive widths including readable stage view, study controls and 320 px touch controls')
+            preset('Thin secondary');page.get_by_role('spinbutton',name='Release after value',exact=True).fill('30')
+            page.get_by_role('combobox',name='Study time spacing',exact=True).select_option('0.5')
+            page.get_by_role('button',name='Map release timing →',exact=True).click();expect(page.locator('.t4-sweep')).to_have_attribute('aria-busy','false',timeout=120000)
+            expect(page.locator('.t4-timing-map td button')).to_have_count(18)
+            expect(page.get_by_label('Selected timing sample',exact=True)).to_contain_text('Model limit reached')
+            expect(page.get_by_role('button',name='Select closest to 10,000 km',exact=True)).to_have_count(0)
+            expect(page.get_by_label('Selected timing sample',exact=True)).to_contain_text('No completed sample met the target.')
+            with page.expect_download() as dl: page.get_by_role('button',name='Export study ↗',exact=True).click()
+            edge=json.loads(Path(dl.value.path()).read_text());assert edge['plan']['times']==[29,29.5,30] and not any(row['pass'] for row in edge['rows'])
+            preset('Working release');expect(page.locator('.t4-sweep-note')).to_have_attribute('data-stale','true')
+            done('time-boundary rows remain distinct; failed trials expose their limits and produce no false recommendation')
             page.set_viewport_size({'width':1440,'height':1050})
             if report['webgl']:
                 page.locator('.t4-three canvas').evaluate("el=>{const gl=el.getContext('webgl2');gl.getExtension('WEBGL_lose_context').loseContext()}")
@@ -137,7 +191,9 @@ def main():
             for path in ['/lab/t4/method/','/lab/architectures/']:
                 for width in [1440,390,320]:
                     guide.set_viewport_size({'width':width,'height':950});guide.goto(origin+path,wait_until='domcontentloaded');no_overflow(guide)
-                    if 'method' in path: expect(guide.get_by_text('Crossing clearance, bearing dimensions and flexible cable behavior are not modeled.',exact=True)).to_be_visible()
+                    if 'method' in path:
+                        expect(guide.get_by_text('Crossing clearance, bearing dimensions and flexible cable behavior are not modeled.',exact=True)).to_be_visible()
+                        expect(guide.get_by_text('The gaps between samples are untested.',exact=True)).to_be_visible()
                     else:
                         expect(guide.get_by_text('4 RUNNABLE EXPERIMENTS',exact=True)).to_be_visible();expect(guide.get_by_role('link',name='Open the T4 experiment →',exact=True)).to_have_attribute('href','/lab/t4/')
                     guide.screenshot(path=str(out/f'{"method" if "method" in path else "catalogue"}-{width}.png'),full_page=True)

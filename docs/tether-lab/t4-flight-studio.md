@@ -118,8 +118,29 @@ not hardware capacities.
 ## Application and verification
 
 `src/simulation/t4.ts` is pure numerical code. `t4-worker.ts` runs it off the UI
-thread, including six full phase trials. Cancellation terminates the worker;
-request IDs reject stale results. Inspection restores a trial's exact settings.
+thread. `t4-study.ts` plans either six phases at the chosen delay or a timing
+map: phases 0/60/120/180/240/300° crossed with release delays at the current
+value plus -2/-1/0/+1/+2 time-spacing increments. Spacing is 0.5, 1 or 2 minutes.
+Delays clamp to the existing 0–30 minute input range; duplicate boundary rows
+are removed. Every cell runs the unmodified two-hour model, including its
+early-stop checks. No continuous window, interpolated flight, optimum or timing
+tolerance is inferred between samples.
+
+Completed samples stream to the map, with target, off-target, limit and pending
+states distinguished by text/symbols as well as color. Selection exposes orbit
+altitudes, axial margin, pivot force and the actual stop reason. The suggestion
+chooses only full-check passes, nearest to 10,000 km apoapsis, breaking ties by
+sample order. Fixed-input edits flag an older study; changing an axis that study
+deliberately varies does not invalidate its fixed hardware. The captured plan
+and every sample retain all exact settings.
+
+Cancellation terminates the worker and retains explicitly incomplete samples;
+request IDs reject stale results. A study does not replace the accepted flight.
+Opening a sample restores its exact design, reruns it, and returns keyboard focus
+and the viewport to the flight. A completed study can export its plan, sample
+results, model version, units and target limits as JSON. Incomplete studies cannot
+be exported as complete. Study results are session-only, separate from saved
+designs; the design model/schema and all simulation outputs remain unchanged.
 Accepted results stay distinct from draft controls. Hidden tabs and reduced
 motion pause replay; there is no wall-clock catch-up. The scene samples
 calculated stage angles and cargo states; no visual coordinate drives physics.
@@ -132,6 +153,9 @@ Phobos and campaign stores are untouched. Campaign saves need no migration.
 free-body force/torque closure, finite coupling, zero-gravity and orbital
 invariants, release continuity, cargo coast, step/quadrature convergence,
 structural/clearance stops and replay/IO boundaries. `tests/lab-t4.browser.py`
-covers native workers/WebGL, the challenge, phase comparison and cancellation,
-isolated storage, sharing/imports, responsive layouts and 2D/reduced-motion
-access. Both are CI gates.
+covers native workers/WebGL, the challenge, streaming phase/timing studies,
+partial cancellation, exact export and sample reopening, stale fixed-input
+notices, isolated storage, sharing/imports, responsive layouts and 2D/reduced-motion
+access. `tests/lab-t4-study.test.mjs` checks bounded sample planning, full-model
+equivalence, recommendation filtering, fixed-input identity and export completeness.
+All are CI gates.
