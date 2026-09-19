@@ -1,8 +1,11 @@
 import { ED_DEFAULTS, ED_DENSITY, conductorNodes, electrodynamicForces, type EDSettings, type EDReading } from './electrodynamic.js';
+import { EARTH_ENV, environment, type Environment } from './environment.js';
+export { EARTH_ENV, MOON_ENV, environment, type Environment } from './environment.js';
 /** Tether Lab D1p/0.4.0. Planar rigid extended-body educational model.
  * SI throughout. No atmosphere, elasticity, capture shock, or debris model.
  * Rendering is never an input to this module. */
 export const MODEL = 'D1p-0.4.0';
+export const LUNAR_MODEL = 'L1p-0.1.0';
 export const PAYLOAD_LIMIT_T = 250;
 export const STANDARD_PAYLOAD_T = 20;
 export const ACTIVE_ARCHITECTURE = 'single-stage-rotovator' as const;
@@ -18,7 +21,7 @@ export const MATERIALS: Material[] = [
   {id:'custom', name:'Custom material', density:1500, ultimate:6e9, basis:'User-defined hypothetical input', source:'', locator:'User assumption'},
 ];
 export interface Design extends EDSettings {
-  schema: 2; model: typeof MODEL; architecture: typeof ACTIVE_ARCHITECTURE; material: string; spanKm: number; altitudeKm: number;
+  schema: 2; model: typeof MODEL | typeof LUNAR_MODEL; architecture: typeof ACTIVE_ARCHITECTURE | 'lunar-rotovator'; material: string; spanKm: number; altitudeKm: number;
   tipSpeedKms: number; areaMm2: number; shape: 'uniform'|'tapered'; payloadT: number;
   fuelT: number; recovery: 'none'|'chemical'|'electrodynamic'; releaseDeg: number; safetyFactor: number;
   density: number; ultimateGPa: number; thrustN: number; isp: number;
@@ -33,17 +36,29 @@ export const PRESETS = [
   {id:'future',name:'A longer reach',description:'Hypothetical carbon, 1,200 km span, more demanding transfer.',design:{...DEFAULT,material:'future',spanKm:1200,altitudeKm:2400,tipSpeedKms:1.7,areaMm2:100,fuelT:15,payloadT:5}},
 ];
 export const EDT_PRESET: Design = {...DEFAULT,recovery:'electrodynamic',fuelT:0,spanKm:200,altitudeKm:700,tipSpeedKms:.8,areaMm2:70,payloadT:.5};
+export const LUNAR_DEFAULT: Design = {...DEFAULT,model:LUNAR_MODEL,architecture:'lunar-rotovator',spanKm:200,altitudeKm:250,
+  tipSpeedKms:.4,areaMm2:50,payloadT:3,fuelT:10,thrustN:3000};
+export const LUNAR_PRESETS = [
+  {id:'lunar-relay',name:'Lunar relay',description:'Two orbital deliveries above the Moon, with chemical recovery.',design:{...LUNAR_DEFAULT}},
+  {id:'lunar-coast',name:'No reboost',description:'Let the same lunar structure coast without onboard propellant.',design:{...LUNAR_DEFAULT,recovery:'none' as const,fuelT:0}},
+  {id:'lunar-clearance',name:'Too close',description:'A low pass crosses the lunar experiment’s clearance boundary.',design:{...LUNAR_DEFAULT,altitudeKm:105}},
+  {id:'lunar-load',name:'Load limit',description:'Can a thinner cable carry a heavier payload?',design:{...LUNAR_DEFAULT,payloadT:10,areaMm2:5}},
+];
 const BOUNDS: Record<string,[number,number]> = {spanKm:[80,4000],altitudeKm:[400,8000],tipSpeedKms:[0.25,2.5],areaMm2:[5,2500],payloadT:[0.1,PAYLOAD_LIMIT_T],fuelT:[0,80],releaseDeg:[70,210],safetyFactor:[1.2,5],density:[500,12000],ultimateGPa:[0.1,100],thrustN:[100,10000],isp:[150,450],edLengthKm:[1,500],edAreaMm2:[1,200],edPowerKw:[0,5000],edCurrentA:[0,100],edVoltageKv:[0,200],edHardwareT:[.1,500]};
+const LUNAR_BOUNDS: typeof BOUNDS = {...BOUNDS,spanKm:[40,1200],altitudeKm:[80,2000],tipSpeedKms:[.1,1.5]};
+export const designBounds = (d:{architecture:string}) => d.architecture==='lunar-rotovator'?LUNAR_BOUNDS:BOUNDS;
 export function validate(input: unknown): Design {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Design must be an object.');
   const d = input as Record<string,unknown>;
-  if (d.schema !== 2 || d.model !== MODEL) throw Error('This saved design needs a different model version. It has not been silently migrated.');
-  if (d.architecture !== ACTIVE_ARCHITECTURE) throw Error('This architecture has no simulation engine in this build. Open the architecture catalogue for its status.');
+  if (d.schema !== 2 || ![MODEL,LUNAR_MODEL].includes(d.model as typeof MODEL)) throw Error('This saved design needs a different model version. It has not been silently migrated.');
+  if (d.architecture !== ACTIVE_ARCHITECTURE && d.architecture !== 'lunar-rotovator') throw Error('This architecture has no simulation engine in this build. Open the architecture catalogue for its status.');
+  if (d.model !== (d.architecture==='lunar-rotovator'?LUNAR_MODEL:MODEL)) throw Error('The saved model and architecture do not match.');
   if (!MATERIALS.some(m=>m.id===d.material)) throw Error('Unknown material profile.');
   if (!['uniform','tapered'].includes(String(d.shape))) throw Error('Unsupported structure.');
   if (!['none','chemical','electrodynamic'].includes(String(d.recovery))) throw Error('Unsupported recovery model.');
-  const clean: Record<string,unknown> = {schema:2,model:MODEL,architecture:ACTIVE_ARCHITECTURE,material:d.material,shape:d.shape,recovery:d.recovery};
-  for (const [key,[lo,hi]] of Object.entries(BOUNDS)) {
+  if(d.architecture==='lunar-rotovator'&&d.recovery==='electrodynamic')throw Error('The Earth E0 field/plasma experiment is not available at the Moon. Choose Coast or Chemical.');
+  const clean: Record<string,unknown> = {schema:2,model:d.model,architecture:d.architecture,material:d.material,shape:d.shape,recovery:d.recovery};
+  for (const [key,[lo,hi]] of Object.entries(designBounds(d as unknown as Design))) {
     if (typeof d[key] !== 'number' || !Number.isFinite(d[key]) || (d[key] as number)<lo || (d[key] as number)>hi) throw Error(`${key} must be between ${lo} and ${hi}.`);
     clean[key] = d[key];
   }
@@ -83,17 +98,18 @@ export function pointState(y:State,b:Body,s:number):number[] {
   const q=s-b.center,c=Math.cos(y[4]),z=Math.sin(y[4]);
   return [y[0]+q*c,y[1]+q*z,y[2]-y[5]*q*z,y[3]+y[5]*q*c];
 }
-export function gravity(x:number,y:number):[number,number] {const r=Math.hypot(x,y),f=-MU/r**3;return [f*x,f*y];}
+export function gravity(x:number,y:number,env:Environment=EARTH_ENV):[number,number] {const r=Math.hypot(x,y),f=-env.mu/r**3;return [f*x,f*y];}
 export function forces(y:State,b:Body,d:Design,burn=false) {
+  const env=environment(d);
   const c=Math.cos(y[4]),s=Math.sin(y[4]);let fx=0,fy=0,torque=0;
-  const grav=b.points.map(p=>{const q=p.s-b.center,[gx,gy]=gravity(y[0]+q*c,y[1]+q*s);fx+=p.m*gx;fy+=p.m*gy;torque+=p.m*q*(c*gy-s*gx);return [gx,gy];});
+  const grav=b.points.map(p=>{const q=p.s-b.center,[gx,gy]=gravity(y[0]+q*c,y[1]+q*s,env);fx+=p.m*gx;fy+=p.m*gy;torque+=p.m*q*(c*gy-s*gx);return [gx,gy];});
   let tx=0,ty=0,tt=0,flow=0;
   if(burn && ((y[6]>1e-7 && d.recovery==='chemical') || d.recovery==='electrodynamic')) {
     const r=Math.hypot(y[0],y[1]),ex=y[0]/r,ey=y[1]/r,vr=y[2]*ex+y[3]*ey,vt=-y[2]*ey+y[3]*ex;
-    const targetR=EARTH+d.altitudeKm*1000,targetV=Math.sqrt(MU/targetR);
+    const targetR=env.radius+d.altitudeKm*1000,targetV=Math.sqrt(env.mu/targetR);
     // Feedback forces; the orbit and spin are never reset. Cancels only modeled gravity.
     const ar=-(r-targetR)/2500**2-vr/1200-vt*vt/r-(fx*ex+fy*ey)/b.mass;
-    const at=(Math.sqrt(MU*targetR)/r-vt)/1200-(-fx*ey+fy*ex)/b.mass;
+    const at=(Math.sqrt(env.mu*targetR)/r-vt)/1200-(-fx*ey+fy*ex)/b.mass;
     tx=b.mass*(ar*ex-at*ey);ty=b.mass*(ar*ey+at*ex);
     const ref=spinReference(y,d);
     tt=b.inertia*((ref.omega-y[5])/350+ref.alpha)-torque;
@@ -117,8 +133,8 @@ export function rk4(y:State,h:number,d:Design,loaded=false,burn=false,cells=48):
   const k1=derivative(y,d,loaded,burn,cells),k2=derivative(y.map((v,i)=>v+h*k1[i]/2),d,loaded,burn,cells),k3=derivative(y.map((v,i)=>v+h*k2[i]/2),d,loaded,burn,cells),k4=derivative(y.map((v,i)=>v+h*k3[i]),d,loaded,burn,cells);
   return y.map((v,i)=>v+h*(k1[i]+2*k2[i]+2*k3[i]+k4[i])/6);
 }
-export function particleStep(p:number[],h:number):number[] {
-  const f=(x:number[])=>[x[2],x[3],...gravity(x[0],x[1])];const a=f(p),b=f(p.map((v,i)=>v+h*a[i]/2)),c=f(p.map((v,i)=>v+h*b[i]/2)),e=f(p.map((v,i)=>v+h*c[i]));return p.map((v,i)=>v+h*(a[i]+2*b[i]+2*c[i]+e[i])/6);
+export function particleStep(p:number[],h:number,env:Environment=EARTH_ENV):number[] {
+  const f=(x:number[])=>[x[2],x[3],...gravity(x[0],x[1],env)];const a=f(p),b=f(p.map((v,i)=>v+h*a[i]/2)),c=f(p.map((v,i)=>v+h*b[i]/2)),e=f(p.map((v,i)=>v+h*c[i]));return p.map((v,i)=>v+h*(a[i]+2*b[i]+2*c[i]+e[i])/6);
 }
 export function reframe(y:State,old:Body,next:Body):State {
   const shift=next.center-old.center,c=Math.cos(y[4]),s=Math.sin(y[4]);
@@ -126,19 +142,19 @@ export function reframe(y:State,old:Body,next:Body):State {
   // Unwrap the new centroid's polar angle without changing the physical attitude.
   const delta=Math.atan2(n[1],n[0])-Math.atan2(y[1],y[0]);n[7]+=Math.atan2(Math.sin(delta),Math.cos(delta));return n;
 }
-export function invariants(y:State,b:Body) {
+export function invariants(y:State,b:Body,env:Environment=EARTH_ENV) {
   let energy=0,angular=0,px=0,py=0;
-  for(const p of b.points) {const q=pointState(y,b,p.s);energy+=p.m*(0.5*(q[2]**2+q[3]**2)-MU/Math.hypot(q[0],q[1]));angular+=p.m*(q[0]*q[3]-q[1]*q[2]);px+=p.m*q[2];py+=p.m*q[3];}
+  for(const p of b.points) {const q=pointState(y,b,p.s);energy+=p.m*(0.5*(q[2]**2+q[3]**2)-env.mu/Math.hypot(q[0],q[1]));angular+=p.m*(q[0]*q[3]-q[1]*q[2]);px+=p.m*q[2];py+=p.m*q[3];}
   return {energy,angular,px,py};
 }
-export function orbit(p:number[]) {
-  const r=Math.hypot(p[0],p[1]),v2=p[2]**2+p[3]**2,e=v2/2-MU/r,h=p[0]*p[3]-p[1]*p[2];
-  const ecc=Math.sqrt(Math.max(0,1+2*e*h*h/MU**2)),peri=h*h/(MU*(1+ecc))-EARTH;
-  return {energy:e,ecc,perigee:peri,apogee:e<0?-MU/(2*e)*(1+ecc)-EARTH:null};
+export function orbit(p:number[],env:Environment=EARTH_ENV) {
+  const r=Math.hypot(p[0],p[1]),v2=p[2]**2+p[3]**2,e=v2/2-env.mu/r,h=p[0]*p[3]-p[1]*p[2];
+  const ecc=Math.sqrt(Math.max(0,1+2*e*h*h/env.mu**2)),peri=h*h/(env.mu*(1+ecc))-env.radius;
+  return {energy:e,ecc,perigee:peri,apogee:e<0?-env.mu/(2*e)*(1+ecc)-env.radius:null};
 }
-export function clearance(y:State,b:Body) {
+export function clearance(y:State,b:Body,env:Environment=EARTH_ENV) {
   const a=pointState(y,b,-b.half),z=pointState(y,b,b.half),dx=z[0]-a[0],dy=z[1]-a[1],u=Math.max(0,Math.min(1,-(a[0]*dx+a[1]*dy)/(dx*dx+dy*dy)));
-  return Math.hypot(a[0]+u*dx,a[1]+u*dy)-EARTH;
+  return Math.hypot(a[0]+u*dx,a[1]+u*dy)-env.radius;
 }
 export interface LoadCut { s:number; area:number; tension:number; stress:number }
 export function loadProfile(y:State,b:Body,d:Design,burn:boolean):LoadCut[] {
@@ -160,19 +176,22 @@ export function loadCheck(y:State,b:Body,d:Design,burn:boolean,cuts?:LoadCut[]) 
   }
   return {margin:maxStress>0?allow/maxStress:999,stress:maxStress,minTension,peak};
 }
-export function initial(d:Design):State {const r=EARTH+d.altitudeKm*1000;return [r,0,0,Math.sqrt(MU/r),Math.PI,d.tipSpeedKms*1000/(d.spanKm*500),d.fuelT*1000,0,0,0,0,0];}
+export function initial(d:Design):State {
+  const env=environment(d);const r=env.radius+d.altitudeKm*1000;return [r,0,0,Math.sqrt(env.mu/r),Math.PI,d.tipSpeedKms*1000/(d.spanKm*500),d.fuelT*1000,0,0,0,0,0];}
 export function spinReference(y:State,d:Design) {
+  const env=environment(d);
   // Circular short-rod gravity-gradient reference for the guidance law only.
   // The actual motion still uses distributed gravity. Do not fight the natural
   // periodic spin variation as if a constant inertial spin were free.
-  const r=EARTH+d.altitudeKm*1000,n=Math.sqrt(MU/r**3),w=d.tipSpeedKms*1000/(d.spanKm*500);
+  const r=env.radius+d.altitudeKm*1000,n=Math.sqrt(env.mu/r**3),w=d.tipSpeedKms*1000/(d.spanKm*500);
   const phase=y[4]-y[7],q=(w-n)**2+1.5*n*n*(Math.cos(2*phase)-1);
   const rel=Math.sqrt(Math.max(q,1e-12)),polar=(y[0]*y[3]-y[1]*y[2])/(y[0]**2+y[1]**2);
   return {omega:n+rel,alpha:-1.5*n*n*Math.sin(2*phase)*(y[5]-polar)/rel};
 }
 export function ready(y:State,d:Design) {
-  const r=Math.hypot(y[0],y[1]),vr=(y[0]*y[2]+y[1]*y[3])/r,vt=(y[0]*y[3]-y[1]*y[2])/r,target=EARTH+d.altitudeKm*1000;
-  return Math.abs(r-target)<15000 && Math.abs(vr)<8 && Math.abs(vt-Math.sqrt(MU/target))<12 && Math.abs(y[5]/spinReference(y,d).omega-1)<0.005;
+  const env=environment(d);
+  const r=Math.hypot(y[0],y[1]),vr=(y[0]*y[2]+y[1]*y[3])/r,vt=(y[0]*y[3]-y[1]*y[2])/r,target=env.radius+d.altitudeKm*1000;
+  return Math.abs(r-target)<env.radiusTolerance && Math.abs(vr)<env.radialTolerance && Math.abs(vt-Math.sqrt(env.mu/target))<env.tangentialTolerance && Math.abs(y[5]/spinReference(y,d).omega-1)<0.005;
 }
 export type PayloadId = 1 | 2;
 export interface Frame {t:number;state:State;loaded:boolean;burn:boolean;payloads:number[][];incoming:number[]|null;incomingId:PayloadId|null;clearance:number;margin:number;deliveries:number;fuel:number;electrical?:EDReading}
@@ -196,6 +215,7 @@ export function rendezvousResidual(tip:number[], incoming:number[]) {
  * No renderer, animation clock or enlarged marker affects this calculation. */
 export function planApproach(y:State, d:Design, targetPhase:number, now:number,
   step:number, cells:number, remaining:number):Approach|null {
+  const env=environment(d);
   let predicted=[...y], duration=0;
   while(duration<remaining && duration<21600) {
     let h=Math.min(step,remaining-duration);
@@ -211,14 +231,14 @@ export function planApproach(y:State, d:Design, targetPhase:number, now:number,
     }
     duration+=h; predicted=next;
     const b=compile(d,predicted[6],false,cells), load=loadCheck(predicted,b,d,false);
-    if(clearance(predicted,b)<120000 || load.margin<1 || load.minTension<-100) return null;
+    if(clearance(predicted,b,env)<env.cutoff || load.margin<1 || load.minTension<-100) return null;
     if(predicted[4]-predicted[7]>=targetPhase-1e-8) {
       if(!ready(predicted,d)) return null;
       const lead=Math.min(APPROACH_SECONDS,duration);
       let incoming=pointState(predicted,b,b.half);
       for(let back=0;back<lead;) {
-        const dt=Math.min(step,lead-back); incoming=particleStep(incoming,-dt); back+=dt;
-        if(Math.hypot(incoming[0],incoming[1])<EARTH+120000) return null;
+        const dt=Math.min(step,lead-back); incoming=particleStep(incoming,-dt,env); back+=dt;
+        if(Math.hypot(incoming[0],incoming[1])<env.radius+env.cutoff) return null;
       }
       return {payloadId:2,startTime:now+duration-lead,captureTime:now+duration,initialState:incoming};
     }
@@ -229,10 +249,11 @@ export interface MissionEvent {t:number;kind:string;title:string;detail:string;p
 export interface Delivery {number:number;t:number;gain:number;perigee:number;apogee:number|null;energy:number}
 export interface Result {model:string;design:Design;frames:Frame[];events:MissionEvent[];deliveries:Delivery[];approaches:Approach[];rendezvous:RendezvousCheck[];outcome:string;reason:string;dryMass:number;structuralMass:number;minClearance:number;minMargin:number;fuelUsed:number;final:State;maxStep:number;cells:number;electricalEnergyJ:number;electricalWorkJ:number;electricalHeatJ:number;environmentEnergyJ:number;conductorMass:number;electricalHardwareMass:number}
 export function resize(d:Design):number {
+  const env=environment(d);
   if(d.recovery==='electrodynamic')throw Error('Automatic sizing does not yet include conductor mass. Set the strength-tether section explicitly and run the full load check.');
-  const {density,allowable}=properties(d),h=d.spanKm*500,r=EARTH+d.altitudeKm*1000,w=d.tipSpeedKms*1000/h;
-  const a=(s:number)=>MU/(r-s)**2-MU/r**2+w*w*s;
-  if(r-h<=EARTH+120000) throw Error('Raise the orbit before sizing: a tip starts outside the modeled environment.');
+  const {density,allowable}=properties(d),h=d.spanKm*500,r=env.radius+d.altitudeKm*1000,w=d.tipSpeedKms*1000/h;
+  const a=(s:number)=>env.mu/(r-s)**2-env.mu/r**2+w*w*s;
+  if(r-h<=env.radius+env.cutoff) throw Error('Raise the orbit before sizing: a tip starts outside the modeled environment.');
   const n=2000,ds=h/n,mt=d.payloadT*1000+TIP;let self=0,need=0;
   for(let i=n;i>=0;i--) {const s=i*ds,f=d.shape==='uniform'?1:1-0.7*(s/h)**2;
     if(i<n){const mid=s+ds/2;self+=density*(d.shape==='uniform'?1:1-0.7*(mid/h)**2)*a(mid)*ds;}
@@ -242,10 +263,10 @@ export function resize(d:Design):number {
   const mm2=Math.ceil(need*1.15*1e6);if(mm2>2500)throw Error('Sizing exceeds the 2,500 mm² sandbox limit.');return Math.max(5,mm2);
 }
 export function simulate(input:unknown,options:{step?:number;cells?:number;horizon?:number}={}):Result {
-  const d=validate(input),step=options.step??2,cells=options.cells??48,horizon=options.horizon??21600;
+  const d=validate(input),env=environment(d),step=options.step??2,cells=options.cells??48,horizon=options.horizon??21600;
   if(!Number.isFinite(step)||step<=0||step>4||!Number.isInteger(cells)||cells<8||cells>192||!Number.isFinite(horizon)||horizon<0||horizon>21600)throw Error('Invalid numerical budget.');
-  const w=d.tipSpeedKms*1000/(d.spanKm*500),n=Math.sqrt(MU/(EARTH+d.altitudeKm*1000)**3);
-  if(w-n<=Math.sqrt(3)*n) throw Error('This scenario requires continuous prograde rotation relative to Earth. Increase tip speed, shorten the tether, or raise the orbit. Gravity-gradient libration is not included in this mission.');
+  const w=d.tipSpeedKms*1000/(d.spanKm*500),n=Math.sqrt(env.mu/(env.radius+d.altitudeKm*1000)**3);
+  if(w-n<=Math.sqrt(3)*n) throw Error(`This scenario requires continuous prograde rotation relative to ${env.name}. Increase tip speed, shorten the tether, or raise the orbit. Gravity-gradient libration is not included in this mission.`);
   let y=initial(d),loaded=false,t=0,burn=false,nextCapture=90,phaseAtCapture=0,stable=0,checkTime=0,awaitingPass=false,passTarget=0;
   let capturedEnergy=0,stopAt=Infinity,minClearance=Infinity,minMargin=Infinity,outcome='incomplete',reason='Recovery did not meet the orbit and spin tolerances within six simulated hours.';
   const events:MissionEvent[]=[],frames:Frame[]=[],deliveries:Delivery[]=[],payloads:number[][]=[];
@@ -256,16 +277,16 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
   // Start exactly at a supplied, velocity-matched rendezvous. The first 90 s
   // are an independently propagated lead-in, not a decorative approach arc.
   let incoming:number[]|null=pointState(y,compile(d,y[6],false,cells),d.spanKm*500);
-  for(let back=0;back<90;){const h=Math.min(step,90-back);y=rk4(y,-h,d,false,false,cells);incoming=particleStep(incoming,-h);back+=h;}
+  for(let back=0;back<90;){const h=Math.min(step,90-back);y=rk4(y,-h,d,false,false,cells);incoming=particleStep(incoming,-h,env);back+=h;}
   approaches.push({payloadId:1,startTime:0,captureTime:90,initialState:[...incoming]});
   event('start','Payload 1 on approach','An independently propagated 90-second approach, constructed to meet the moving tip. This is an ideal rendezvous, not a simulated launch or guidance system.',1);
   let nextSample=0;
   for(let count=0;t<=Math.min(horizon,stopAt)+1e-8&&count<40000;count++) {
-    let b=compile(d,y[6],loaded,cells),low=clearance(y,b),load=loadCheck(y,b,d,burn);
+    let b=compile(d,y[6],loaded,cells),low=clearance(y,b,env),load=loadCheck(y,b,d,burn);
     minClearance=Math.min(minClearance,low);minMargin=Math.min(minMargin,load.margin);
     const save=()=>frames.push({t,state:[...y],loaded,burn,payloads:payloads.map(p=>[...p]),incoming:incoming?[...incoming]:null,incomingId,clearance:low,margin:load.margin,deliveries:deliveries.length,fuel:Math.max(0,y[6]),...(d.recovery==='electrodynamic'?{electrical:forces(y,b,d,burn).electrical!}:{})});
-    if(low<120000||load.margin<1||load.minTension<-100) {
-      outcome='limit';reason=low<120000?'A part of the tether crossed the 120 km model cutoff. Atmospheric flight is not modeled.':load.margin<1?'The axial stress exceeded the chosen fiber allowable. Elastic failure is not simulated.':'A cable section requires compression. A rigid tether is no longer a valid taut-cable approximation.';
+    if(low<env.cutoff||load.margin<1||load.minTension<-100) {
+      outcome='limit';reason=low<env.cutoff?(env.id==='earth'?'A part of the tether crossed the 120 km model cutoff. Atmospheric flight is not modeled.':'A part of the tether crossed the 10 km lunar model cutoff. Surface contact and terrain are not modeled.'):load.margin<1?'The axial stress exceeded the chosen fiber allowable. Elastic failure is not simulated.':'A cable section requires compression. A rigid tether is no longer a valid taut-cable approximation.';
       event('limit','Modeled limit reached',reason);save();break;
     }
     if(y.some(v=>!Number.isFinite(v))){throw Error('Non-finite state; numerical calculation stopped.');}
@@ -283,21 +304,21 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
       }
       save(); // Preserve the unladen endpoint state at the event for continuous replay.
       incoming=null; incomingId=null; pendingApproach=null;
-      capturedEnergy=orbit(tip).energy;const nb=compile(d,y[6],true,cells);y=reframe(y,b,nb);loaded=true;burn=false;awaitingPass=false;stable=0;phaseAtCapture=y[4]-y[7];nextCapture=Infinity;
-      event('capture',`Payload ${id} captured`,`Payload ${id} met the working tip: ${positionError.toFixed(3)} m position error and ${velocityError.toFixed(5)} m/s velocity error. Ideal matched attachment; no capture shock is modeled.${id===2?' Payload 1 remains on its own orbit.':''}`,id);b=nb;checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
+      capturedEnergy=orbit(tip,env).energy;const nb=compile(d,y[6],true,cells);y=reframe(y,b,nb);loaded=true;burn=false;awaitingPass=false;stable=0;phaseAtCapture=y[4]-y[7];nextCapture=Infinity;
+      event('capture',`Payload ${id} captured`,`Payload ${id} met the working tip: ${positionError.toFixed(3)} m position error and ${velocityError.toFixed(5)} m/s velocity error. Ideal matched attachment; no capture shock is modeled.${id===2?' Payload 1 remains on its own orbit.':''}`,id);b=nb;checkTime=t;low=clearance(y,b,env);load=loadCheck(y,b,d,burn);save();continue;
     }
     const local=y[4]-y[7];
     if(loaded&&local>=phaseAtCapture+d.releaseDeg*Math.PI/180-1e-8) {
       save(); // Interpolation may approach the release, but never cross attachment states.
-      const p=pointState(y,b,b.half),o=orbit(p);payloads.push(p);deliveries.push({number:deliveries.length+1,t,gain:o.energy-capturedEnergy,...o});
+      const p=pointState(y,b,b.half),o=orbit(p,env);payloads.push(p);deliveries.push({number:deliveries.length+1,t,gain:o.energy-capturedEnergy,...o});
       const nb=compile(d,y[6],false,cells);y=reframe(y,b,nb);loaded=false;b=nb;
-      event('release',`Payload ${deliveries.length} released`,o.perigee>=120000?`Released orbit: ${Math.round(o.perigee/1000)} km perigee; ${o.apogee===null?'Earth escape':Math.round(o.apogee/1000)+' km apogee'}.`:'The released payload orbit intersects the 120 km cutoff; this is not a successful delivery.',deliveries.length as PayloadId);
-      if(o.perigee<120000||o.energy<=capturedEnergy){outcome='delivery-failed';reason='The payload did not reach a higher-energy orbit with perigee above 120 km.';stopAt=t+120;}
+      event('release',`Payload ${deliveries.length} released`,o.perigee>=env.cutoff?`Released orbit: ${Math.round(o.perigee/1000)} km perigee; ${o.apogee===null?env.name+' escape':Math.round(o.apogee/1000)+' km apogee'}.`:`The released payload orbit intersects the ${env.cutoff/1000} km cutoff; this is not a successful delivery.`,deliveries.length as PayloadId);
+      if(o.perigee<env.cutoff||o.energy<=capturedEnergy){outcome='delivery-failed';reason=`The payload did not reach a higher-energy orbit with perigee above ${env.cutoff/1000} km.`;stopAt=t+120;}
       else if(deliveries.length===2){outcome='complete';reason='Two distinct payloads delivered to higher-energy orbits, with facility readiness and both incoming position/velocity matches checked.';stopAt=t+240;}
       else if(d.recovery==='electrodynamic'){burn=true;event('recovery','Electrodynamic recovery begins','Two powered conductor segments apply limited Lorentz forces. Current collection is assumed, not predicted; power and heat are recorded.');}
       else if(d.recovery==='chemical'&&y[6]>0){burn=true;event('recovery','Facility reboost begins','The thrusters restore the facility’s orbit and spin, not the released payload. Payload 1 continues independently; propellant is consumed continuously.');}
       else event('coast','Coasting without reboost','The second rendezvous waits for radius, radial/tangential speed and spin to return within the defined tolerances.');
-      checkTime=t;low=clearance(y,b);load=loadCheck(y,b,d,burn);save();continue;
+      checkTime=t;low=clearance(y,b,env);load=loadCheck(y,b,d,burn);save();continue;
     }
     if(!loaded&&deliveries.length===1&&stopAt===Infinity) {
       stable=ready(y,d)?stable+Math.max(0,t-checkTime):0;checkTime=t;
@@ -328,14 +349,14 @@ export function simulate(input:unknown,options:{step?:number;cells?:number;horiz
     if(y[4]-y[7]<target&&yn[4]-yn[7]>=target){let lo=0,hi=h;for(let k=0;k<22;k++){const mid=(lo+hi)/2,v=rk4(y,mid,d,loaded,burn,cells);if(v[4]-v[7]>=target)hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
     if(yn[6]<0&&burn&&d.recovery==='chemical'){const flow=forces(y,b,d,true).flow;h=Math.min(h,y[6]/Math.max(flow,1e-20));yn=rk4(y,h,d,loaded,burn,cells);yn[6]=Math.max(0,yn[6]);}
     if(h<1e-10)throw Error('Numerical event step stalled.');
-    const violates=(v:State)=>{const body=compile(d,v[6],loaded,cells),check=loadCheck(v,body,d,burn);return clearance(v,body)<120000||check.margin<1||check.minTension<-100;};
+    const violates=(v:State)=>{const body=compile(d,v[6],loaded,cells),check=loadCheck(v,body,d,burn);return clearance(v,body,env)<env.cutoff||check.margin<1||check.minTension<-100;};
     if(violates(yn)){let lo=0,hi=h;for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(violates(rk4(y,mid,d,loaded,burn,cells)))hi=mid;else lo=mid;}h=hi;yn=rk4(y,h,d,loaded,burn,cells);}
     // Limit crossings and mission commands are bracketed independently of render time.
-    if(incoming) incoming=particleStep(incoming,h);
-    for(let i=0;i<payloads.length;i++){if(Math.hypot(payloads[i][0],payloads[i][1])>EARTH+120000)payloads[i]=particleStep(payloads[i],h);}
+    if(incoming) incoming=particleStep(incoming,h,env);
+    for(let i=0;i<payloads.length;i++){if(Math.hypot(payloads[i][0],payloads[i][1])>env.radius+env.cutoff)payloads[i]=particleStep(payloads[i],h,env);}
     y=yn;t+=h;
   }
   if(outcome==='incomplete')event('end','Second delivery not achieved',reason);
   if(outcome==='complete')event('end','Two deliveries complete',reason);
-  return {model:MODEL,design:d,frames,events,deliveries,approaches,rendezvous,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells,electricalEnergyJ:y[8],electricalWorkJ:y[9],electricalHeatJ:y[10],environmentEnergyJ:y[11],conductorMass:dry.conductorMass,electricalHardwareMass:dry.electricalHardwareMass};
+  return {model:d.model,design:d,frames,events,deliveries,approaches,rendezvous,outcome,reason,dryMass:dry.mass,structuralMass:dry.structural,minClearance,minMargin,fuelUsed:d.fuelT*1000-Math.max(0,y[6]),final:y,maxStep:step,cells,electricalEnergyJ:y[8],electricalWorkJ:y[9],electricalHeatJ:y[10],environmentEnergyJ:y[11],conductorMass:dry.conductorMass,electricalHardwareMass:dry.electricalHardwareMass};
 }

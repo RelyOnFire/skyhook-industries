@@ -2,35 +2,29 @@
 import '../styles/production.css';
 import '../styles/polish.css';
 import '../styles/architecture.css';
+import '../styles/orbital.css';
+import '../styles/company.css';
+import SiteHeader from '../components/SiteHeader.astro';
 
 interface Props {
   title: string;
   description: string;
-  theme?: 'dark' | 'paper';
   noindex?: boolean;
 }
 
-const { title, description, theme = 'dark', noindex = false } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
-const paperPaths = ['/research/', '/reference-architecture/', '/about/', '/contact/', '/archive/'];
-const effectiveTheme = theme === 'paper' || paperPaths.includes(path) ? 'paper' : 'dark';
-const nav = [
-  ['The System', '/system/'],
-  ['Research', '/research/'],
-  ['Roadmap', '/roadmap/'],
-  ['About', '/about/'],
-];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const socialImage = new URL('/social-card.svg', Astro.site);
 const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
 ---
 <!doctype html>
-<html lang="en" data-theme={effectiveTheme}>
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content={effectiveTheme === 'paper' ? '#e8e4da' : '#030506'} />
+    <meta name="theme-color" content="#080b0d" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {noindex && <meta name="robots" content="noindex,follow" />}
@@ -51,25 +45,9 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
     <meta name="twitter:image:alt" content={socialImageAlt} />
     <title>{title}</title>
   </head>
-  <body>
+  <body class:list={{ 'company-page': path !== '/' }}>
     <a class="skip" href="#content">Skip to content</a>
-    <header class="site-nav">
-      <a class="wordmark" href="/" aria-label="Skyhook Industries home" aria-current={path === '/' ? 'page' : undefined}>
-        <span class="wordmark-mark" aria-hidden="true"><i></i></span>
-        <span>Skyhook Industries</span>
-      </a>
-      <nav class="desktop-nav" aria-label="Primary navigation">
-        {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
-        <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
-      </nav>
-      <details class="mobile-nav">
-        <summary>Menu</summary>
-        <div>
-          {nav.map(([label, href]) => <a class:list={{active:path === href}} aria-current={path === href ? 'page' : undefined} href={href}>{label}</a>)}
-          <a class:list={{active:path === '/contact/'}} aria-current={path === '/contact/' ? 'page' : undefined} href="/contact/">Contact</a>
-        </div>
-      </details>
-    </header>
+    <SiteHeader />
     <main id="content"><slot /></main>
     <footer class="site-footer">
       <div class="footer-top">

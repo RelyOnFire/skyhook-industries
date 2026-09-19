@@ -9,6 +9,7 @@
     "outDir": ".lab-test"
   },
   "include": [
+    "src/campaign/model.ts",
     "src/simulation/**/*.ts",
     "src/lab/view.ts",
     "src/lab/objects.ts",

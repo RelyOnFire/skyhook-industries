@@ -1,0 +1,95 @@
+---
+const path = Astro.url.pathname;
+const nav = [['Tether Lab', '/lab/'], ['The System', '/system/'], ['Research', '/research/'], ['Roadmap', '/roadmap/'], ['About', '/about/'], ['Contact', '/contact/']];
+const current = (href: string) => path === href;
+const active = (href: string) => current(href) || (href === '/lab/' && path.startsWith('/lab/'));
+---
+<header class="brand-header">
+  <a class="brand-wordmark" href="/" aria-label="Skyhook Industries home" aria-current={path === '/' ? 'page' : undefined}>
+    <span class="brand-symbol" aria-hidden="true"><i></i></span><span>Skyhook Industries</span>
+  </a>
+  <nav class="brand-links" aria-label="Primary navigation">
+    {nav.map(([label, href]) => <a class:list={{active:active(href)}} href={href} aria-current={current(href) ? 'page' : undefined}>{label}</a>)}
+  </nav>
+  <details class="brand-mobile">
+    <summary>Menu</summary>
+    <nav aria-label="Mobile navigation">
+      {nav.map(([label, href]) => <a class:list={{active:active(href)}} href={href} aria-current={current(href) ? 'page' : undefined}>{label}</a>)}
+    </nav>
+  </details>
+</header>
+<script>
+  const header = document.querySelector<HTMLElement>('.brand-header');
+  const menu = header?.querySelector<HTMLDetailsElement>('.brand-mobile');
+  const trigger = menu?.querySelector<HTMLElement>('summary');
+  const desktop = header?.querySelector<HTMLElement>('.brand-links');
+
+  if (header && menu && trigger && desktop) {
+    let navigationFocus: HTMLElement | null = null;
+    const inNavigation = (node: Node) => menu.contains(node) || desktop.contains(node);
+    // Keep the native disclosure and its no-JavaScript navigation behavior.
+    menu.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !menu.open) return;
+      event.preventDefault();
+      event.stopPropagation();
+      menu.open = false;
+      trigger.focus();
+    });
+    const closeOutside = (event: Event) => {
+      if (menu.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target instanceof Node && !inNavigation(event.target)) navigationFocus = null;
+      closeOutside(event);
+    });
+    document.addEventListener('focusin', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        if (inNavigation(target)) navigationFocus = target;
+        else if (target !== document.body || !navigationFocus || navigationFocus.getClientRects().length) {
+          navigationFocus = null;
+        }
+      }
+      closeOutside(event);
+    });
+
+    const mobileWidth = matchMedia('(max-width: 1000px)');
+    mobileWidth.addEventListener('change', () => {
+      // CSS can clear focus to body before the media-query event runs. Retain
+      // only navigation focus hidden by that transition, not outside focus.
+      const focused = document.activeElement === document.body && navigationFocus?.getClientRects().length === 0
+        ? navigationFocus : document.activeElement;
+      menu.open = false;
+      if (mobileWidth.matches) {
+        if (focused && desktop.contains(focused)) trigger.focus();
+        return;
+      }
+      if (focused && menu.contains(focused)) {
+        const destination = focused instanceof HTMLAnchorElement ? focused.href : null;
+        const counterpart = Array.from(header.querySelectorAll<HTMLAnchorElement>('.brand-links a'))
+          .find(link => link.href === destination);
+        (counterpart ?? header.querySelector<HTMLAnchorElement>('.brand-wordmark'))?.focus();
+      }
+    });
+    window.addEventListener('pagehide', () => { menu.open = false; });
+  }
+</script>
+<style>
+  .brand-header{box-sizing:border-box;position:relative;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:86px;padding:20px 4vw;border-bottom:1px solid #ffffff21;background:#080b0d;color:#f4f6f5;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .brand-wordmark{display:inline-flex;align-items:center;gap:12px;color:#f4f6f5;text-decoration:none;font-size:14px;font-weight:600;line-height:1.2;letter-spacing:.035em;text-transform:uppercase;white-space:nowrap}
+  .brand-symbol{position:relative;width:28px;height:18px;border-block:1px solid #dce9ed;transform:skew(-18deg);flex-shrink:0}
+  .brand-symbol i{position:absolute;width:34px;height:1px;background:#dce9ed;left:-3px;top:8px;transform:rotate(-31deg)}
+  .brand-links{display:flex;align-items:center;gap:28px;font-size:14px;line-height:1.2}
+  .brand-links a,.brand-mobile a{color:#c9d1d3;text-decoration:none}
+  .brand-links a:last-child{border:1px solid #697477;padding:12px 18px}
+  .brand-links a:hover,.brand-links a.active,.brand-mobile a:hover,.brand-mobile a.active{color:#f1a174}
+  .brand-mobile{display:none;position:relative;font-size:14px}
+  .brand-mobile summary{cursor:pointer;padding:8px 0}
+  .brand-mobile nav{position:absolute;right:0;top:40px;min-width:190px;display:grid;padding:12px;background:#101619;border:1px solid #37434b}
+  .brand-mobile a{padding:11px 12px}
+  a:focus-visible,summary:focus-visible{outline:2px solid #f1a174;outline-offset:5px}
+  @media(max-width:1000px){.brand-links{display:none}.brand-mobile{display:block}}
+  @media(max-width:700px){.brand-header{min-height:72px;padding:18px 20px;gap:12px}.brand-wordmark{font-size:12px;gap:9px}.brand-symbol{width:25px}}
+</style>
