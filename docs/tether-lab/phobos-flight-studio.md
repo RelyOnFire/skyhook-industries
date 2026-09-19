@@ -167,6 +167,46 @@ summaries as versioned JSON. Partial studies cannot export as complete.
 Study state is session-only and never writes saved designs or campaign worlds.
 Phones scroll the plot internally with at least 44 px point targets.
 
+## Pinned flight comparison
+
+`PhobosComparison.tsx` is optional: pin an accepted result in the Flight brief
+to open it. Subsequent draft edits, study calculations, failed workers and
+newly accepted flights leave that baseline intact. Pins are session-only;
+they never write design storage or campaign worlds. Opening the pin restores
+all exact inputs, clears invalid drafts, reruns P1 and returns focus to the
+flight. Replacing a pin focuses the comparison; clearing returns focus to
+the pin button, or to the flight if that button is disabled during calculation.
+
+`src/simulation/phobos-comparison.ts` transforms each stored rotating-frame
+state through `marsState(state, t)` at that frame's own time. The overlaid
+paths share Mars-centered inertial axes and a scale enclosing both flights
+and the imposed Phobos orbit. They include the exact release and actual final
+frame, including refined early stops. A blocked release has no path. Release
+circles, end diamonds, distinct line styles and per-flight outcomes identify
+what each trace covers; no longer-duration path is extrapolated.
+
+The comparison reports current-minus-pinned differences in actual minimum
+Mars altitude, release periapsis/apoapsis/energy, both-arm cable margin,
+cable plus retained-terminal mass, ideal anchor/winch work and duration.
+Blocked flights have null orbit and clearance metrics; unbound apoapsis has
+no numerical delta. Static loads and the ideal positioning budget remain
+available, explicitly separate from a released flight. All seven configurable
+input differences retain full precision in the disclosure and export.
+
+Version 1 `skyhook-phobos-comparison` JSON includes both complete accepted
+results, input differences, metrics and scope. Raw result frames remain
+rotating barycentric SI states. Raw blocked-result orbit fields describe an
+unflown terminal state, not a release; the derived comparison suppresses them.
+The P1 solver, model version and saved-design schema are unchanged.
+
+`tests/lab-phobos-comparison.test.mjs` checks unit/sign conversions, actual
+stop durations, blocked and unbound values, frame-time coordinate transforms,
+exact path endpoints, shared bounds and full-result exports. Browser checks
+exercise pin survival through studies/cancellation/failure, exact restoration,
+replacement, keyboard focus, unchanged storage and six responsive widths.
+
+## Verification
+
 `tests/lab-phobos.test.mjs` covers force/potential consistency, independent
 quadrature of cable loads, interior maxima, pre/post states, conservation,
 Kepler release values, step convergence, budget identities and malformed IO.

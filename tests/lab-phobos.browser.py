@@ -45,6 +45,10 @@ def main():
         def export_study():
             with page.expect_download() as dl: page.get_by_role('button',name='Export arm study ↗',exact=True).click()
             return json.loads(Path(dl.value.path()).read_text())
+        def export_comparison():
+            with page.expect_download() as dl: page.get_by_role('button',name='Export comparison ↗',exact=True).click()
+            return json.loads(Path(dl.value.path()).read_text())
+        def core(r): return {k:v for k,v in r.items() if k not in ['constants','scope']}
         def study_ready():
             expect(page.get_by_label('Phobos arm study',exact=True)).to_have_attribute('aria-busy','false')
             expect(page.get_by_role('button',name='Export arm study ↗',exact=True)).to_be_visible()
@@ -99,6 +103,58 @@ def main():
             page.get_by_role('group',name='Inspected arm',exact=True).get_by_role('button',name='Outward',exact=True).click()
             expect(page.locator('.phobos-loads svg')).to_have_attribute('aria-label',re.compile('outward cable tension'))
             shot('phobos-outbound');done('outbound release, escape excess, positive anchor work and arm load inspection')
+            preset('Low Mars orbit');comparison_storage=page.evaluate('JSON.stringify({...localStorage})')
+            baseline=core(export_report());comparison=page.get_by_label('Pinned flight comparison',exact=True)
+            expect(comparison).to_have_count(0)
+            pin=page.get_by_role('button',name='Pin calculated flight',exact=True);pin.focus();pin.press('Enter')
+            expect(comparison).to_be_focused();first_comparison=export_comparison()
+            assert first_comparison['pinned']==first_comparison['current']==baseline
+            page.get_by_role('spinbutton',name='Inward arm value',exact=True).fill('1350')
+            expect(comparison).to_have_attribute('data-draft','true');expect(comparison).to_contain_text('unrun edits')
+            assert export_comparison()==first_comparison
+            page.get_by_role('button',name='Run release →',exact=True).click();ready()
+            pair=export_comparison();assert pair['format']=='skyhook-phobos-comparison' and pair['model']=='P1-0.1.0'
+            assert pair['pinned']==baseline and pair['current']==core(export_report()) and pair['current']['design']['inwardKm']==1350
+            metrics={row['id']:row for row in pair['metrics']}
+            assert metrics['altitude']['delta']<0 and metrics['mass']['delta']>0 and metrics['anchor']['delta']<0
+            expect(comparison).to_have_attribute('data-draft','false');expect(comparison.locator('g[data-flight]')).to_have_count(2)
+            assert comparison.locator('.phobos-path-pinned polyline').get_attribute('points')!=comparison.locator('.phobos-path-current polyline').get_attribute('points')
+            comparison.get_by_text('1 changed input',exact=True).click();expect(comparison).to_contain_text('1250 → 1350 km')
+            done('pinned P1 flights preserve exact accepted snapshots through draft edits and show signed clearance, cable and work changes')
+            for width in [1440,1280,1000,768,390,320]:
+                page.set_viewport_size({'width':width,'height':950});no_overflow()
+                assert comparison.evaluate('(el)=>el.scrollWidth<=el.clientWidth+1');expect(comparison.locator('svg')).to_be_visible()
+                if width<=390: assert comparison.locator('button').evaluate_all('(buttons)=>buttons.every(b=>b.getBoundingClientRect().height>=44)')
+                comparison.screenshot(path=str(out/f'phobos-comparison-{width}.png'))
+            page.get_by_role('spinbutton',name='Inward arm value',exact=True).fill('1350.000001')
+            page.get_by_role('button',name='Run release →',exact=True).click();ready();expect(comparison).to_contain_text('1250 → 1350.000001 km');no_overflow()
+            restore=page.get_by_role('button',name='Open pinned flight →',exact=True);restore.focus();restore.press('Enter');ready()
+            expect(page.locator('.phobos-flight')).to_be_focused();assert 0<=page.locator('.phobos-flight').bounding_box()['y']<=40
+            assert export_comparison()['current']==baseline
+            page.set_viewport_size({'width':1440,'height':1050})
+            done('common-scale P1 comparison fits six widths, retains full-precision input changes and restores the exact pinned flight with keyboard focus')
+            preset('Outbound release');escape=export_comparison();assert escape['pinned']==baseline
+            metrics={row['id']:row for row in escape['metrics']};assert metrics['apoapsis']['current'] is None and metrics['apoapsis']['delta'] is None
+            assert metrics['energy']['current']>0 and metrics['anchor']['current']>0
+            expect(comparison.locator('[data-metric=apoapsis] td').last).to_have_text('Unbound—')
+            comparison.screenshot(path=str(out/'phobos-comparison-outward.png'))
+            preset('Tune a low pass');early=export_comparison();assert early['current']['outcome']=='mars-limit'
+            assert early['current']['duration']<early['pinned']['duration'];expect(comparison).to_contain_text('Mars boundary reached')
+            page.get_by_role('spinbutton',name='Inward arm value',exact=True).fill('1')
+            page.get_by_role('button',name='Run release →',exact=True).click();ready();stopped=export_comparison()
+            assert stopped['pinned']==baseline and stopped['current']['outcome']=='structure-limit'
+            assert all(row['current'] is None and row['delta'] is None for row in stopped['metrics'] if row['id'] in ['altitude','periapsis','apoapsis','energy'])
+            expect(comparison.locator('.phobos-path-current')).to_have_count(0);expect(comparison).to_contain_text('Current: no cargo release.')
+            expect(comparison).to_contain_text('Inward arm needs compression')
+            page.get_by_role('spinbutton',name='Payload value',exact=True).fill('');expect(comparison).to_have_attribute('data-draft','true')
+            assert export_comparison()==stopped
+            page.get_by_role('button',name='Open pinned flight →',exact=True).click();ready();assert export_comparison()['current']==baseline
+            preset('Outbound release');page.get_by_role('button',name='Replace pinned flight',exact=True).click();expect(comparison).to_be_focused()
+            replacement=export_comparison();assert replacement['pinned']==replacement['current'] and replacement['pinned']['design']['release']=='outward'
+            page.get_by_role('button',name='Clear comparison',exact=True).click();expect(comparison).to_have_count(0);expect(pin).to_be_focused()
+            assert page.evaluate('JSON.stringify({...localStorage})')==comparison_storage
+            preset('Low Mars orbit');page.get_by_role('button',name='Pin calculated flight',exact=True).click()
+            done('P1 comparison distinguishes escape, early boundaries and blocked releases; invalid drafts, pin replacement and clearing preserve saved designs')
             preset('Low Mars orbit');accepted=export_report();storage_before=page.evaluate('JSON.stringify({...localStorage})')
             board=page.get_by_label('Phobos arm study',exact=True);detail=page.get_by_label('Selected arm sample',exact=True)
             expect(page.get_by_role('combobox',name='Arm study spacing',exact=True)).to_have_value('100')
@@ -115,6 +171,7 @@ def main():
             expect(page.locator('.phobos-flight')).to_be_focused();expect(page.get_by_role('spinbutton',name='Payload value',exact=True)).to_have_value('3')
             opened=export_report();sample=inward['rows'][6]
             assert opened['design']==sample['design'] and opened['duration']==sample['duration'] and opened['orbit']==sample['orbit'] and opened['budget']==sample['budget']
+            assert export_comparison()['pinned']==baseline and export_comparison()['current']==core(opened)
             expect(page.locator('.phobos-study-design')).to_have_attribute('data-stale','false')
             page.get_by_role('button',name='Select closest to 450 km periapsis',exact=True).click()
             expect(board.locator('[data-index="3"]')).to_have_attribute('aria-pressed','true')
@@ -165,14 +222,30 @@ def main():
             expect(page.get_by_role('button',name='Export arm study ↗',exact=True)).to_have_count(0)
             page.evaluate('()=>{window.__phobosQueue.splice(0).forEach(deliver=>deliver());}')
             expect(board.locator('[aria-disabled="false"]')).to_have_count(1);assert export_report()==accepted
+            assert export_comparison()['pinned']==baseline and export_comparison()['current']==core(accepted)
             page.evaluate("()=>{window.Worker=class {constructor(){throw Error('Injected Phobos worker startup failure')}};}")
             page.get_by_role('button',name='Compare arm lengths →',exact=True).click()
             expect(page.get_by_role('alert')).to_contain_text('Injected Phobos worker startup failure')
             expect(board).to_have_attribute('aria-busy','false');expect(page.locator('.phobos-study-status')).to_contain_text('Interrupted')
             assert export_report()==accepted
+            assert export_comparison()['pinned']==baseline
             page.evaluate('()=>{window.Worker=window.__phobosNativeWorker;delete window.__phobosNativeWorker;delete window.__phobosQueue;}')
             page.get_by_role('button',name='Compare arm lengths →',exact=True).click();study_ready();assert export_study()==inward
             done('real-worker partial cancellation rejects late queued samples; startup failure preserves the flight and permits an exact retry')
+            # Clearing during a native calculation must move focus somewhere enabled.
+            page.evaluate("""()=>{window.__phobosNativeWorker=window.Worker;window.__phobosQueue=[];
+              window.Worker=class {
+                constructor(...args){this.inner=new window.__phobosNativeWorker(...args);this.inner.onmessage=e=>window.__phobosQueue.push(()=>this.onmessage?.(e));this.inner.onerror=e=>this.onerror?.(e);}
+                postMessage(message){this.inner.postMessage(message);}terminate(){this.inner.terminate();}
+              };
+            }""")
+            page.get_by_role('button',name='Run release →',exact=True).click();page.wait_for_function('window.__phobosQueue.length===1')
+            expect(page.get_by_role('button',name='Open pinned flight →',exact=True)).to_be_disabled()
+            expect(comparison).to_contain_text('Calculation in progress');assert export_comparison()['pinned']==baseline
+            page.get_by_role('button',name='Clear comparison',exact=True).click();expect(page.locator('.phobos-flight')).to_be_focused()
+            page.evaluate('()=>{window.__phobosQueue.splice(0).forEach(deliver=>deliver());window.Worker=window.__phobosNativeWorker;delete window.__phobosNativeWorker;delete window.__phobosQueue;}');ready()
+            expect(comparison).to_have_count(0);page.get_by_role('button',name='Pin calculated flight',exact=True).click()
+            done('pinned baseline survives real study cancellation and worker failure; clearing during calculation restores enabled keyboard focus')
             page.get_by_role('button',name='Select closest to 450 km periapsis',exact=True).click()
             for width in [1440,1280,1000,768,390,320]:
                 page.set_viewport_size({'width':width,'height':950});no_overflow()
@@ -185,7 +258,8 @@ def main():
             point.focus();point.press('Space');page.get_by_role('button',name='Open this flight →',exact=True).click();ready()
             expect(page.locator('.phobos-flight')).to_be_focused();assert 0<=page.locator('.phobos-flight').bounding_box()['y']<=40
             assert page.evaluate('JSON.stringify({...localStorage})')==storage_before
-            page.reload(wait_until='domcontentloaded');ready();expect(page.get_by_role('button',name='Export arm study ↗',exact=True)).to_have_count(0)
+            page.reload(wait_until='domcontentloaded');ready();expect(page.get_by_role('button',name='Export arm study ↗',exact=True)).to_have_count(0);expect(comparison).to_have_count(0)
+            assert page.evaluate('JSON.stringify({...localStorage})')==storage_before
             page.set_viewport_size({'width':1440,'height':1050});preset('Outbound release')
             done('arm studies fit six widths with touch-sized points, internal phone scrolling, keyboard flight focus and session-only state')
             value=page.get_by_role('spinbutton',name='Payload value',exact=True);value.fill('')
@@ -251,6 +325,7 @@ def main():
                     if 'method' in path:
                         expect(guide.locator('#energy')).to_contain_text('The anchor orbit is held fixed.')
                         expect(guide.get_by_text('Gaps between sampled lengths are untested.',exact=True)).to_be_visible()
+                        expect(guide.get_by_role('heading',name='Keep a flight for comparison',exact=True)).to_be_visible()
                     else: expect(guide.get_by_role('link',name='Open the Phobos experiment →',exact=True)).to_have_count(1)
                     guide.screenshot(path=str(out/f'{"method" if "method" in path else "catalogue"}-{width}.png'),full_page=True)
             static.close();done('Phobos method and architecture catalogue readable without JavaScript')

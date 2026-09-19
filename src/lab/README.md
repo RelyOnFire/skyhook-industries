@@ -8,7 +8,10 @@ backed by `src/simulation/phobos.ts`. It has isolated design storage, a circular
 Mars–Phobos restricted-gravity solver, static cable loading and ideal work
 accounting. `PhobosStudy.tsx` displays discrete arm-length comparisons planned
 by `src/simulation/phobos-study.ts`, with streamed results and exact sample
-reopening. See `docs/tether-lab/phobos-flight-studio.md` for boundaries and checks.
+reopening. `PhobosComparison.tsx` and `src/simulation/phobos-comparison.ts`
+preserve a pinned result, overlay both actual cargo paths in Mars-centered
+inertial coordinates and report exact design/metric changes. See
+`docs/tether-lab/phobos-flight-studio.md` for boundaries and checks.
 
 `T4Lab.tsx`, `t4-worker.ts` and `T4Scene.tsx` provide the compound-rotor
 experiment, backed by `src/simulation/t4.ts`. It has separate versioned storage,

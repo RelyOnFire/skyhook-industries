@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import PhobosScene from './PhobosScene.js';
 import PhobosStudy from './PhobosStudy.js';
+import PhobosComparison from './PhobosComparison.js';
 import NumericField from './StudioField.js';
 import { PHOBOS_DEFAULT, PHOBOS_MODEL, PHOBOS_BOUNDS, PERIOD, MARS, MARS_X, PHOBOS, TERMINAL_KG, phobosFragment, readPhobos, validatePhobos, phobosSample, type PhobosDesign, type PhobosResult, type Arm } from '../simulation/phobos.js';
 import { planPhobosStudy,type PhobosStudy as Study } from '../simulation/phobos-study.js';
 import './phobos.css';
 import './phobos-study.css';
+import './phobos-comparison.css';
 
 const KEY='skyhook-lab-phobos-design-v1';
 const fmt=(n:number,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
@@ -16,6 +18,7 @@ function download(name:string,data:unknown){const url=URL.createObjectURL(new Bl
 
 export default function PhobosLab(){
   const [design,setDesign]=useState<PhobosDesign>({...PHOBOS_DEFAULT}),[result,setResult]=useState<PhobosResult|null>(null);
+  const [pinned,setPinned]=useState<PhobosResult|null>(null),pinButton=useRef<HTMLButtonElement>(null);
   const [busy,setBusy]=useState<''|'run'|'study'>('run'),[study,setStudy]=useState<Study|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[share,setShare]=useState('');
   const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(600),[inspected,setInspected]=useState<Arm>('inward');
   const [bad,setBad]=useState<string[]>([]),[fieldKey,setFieldKey]=useState(0);
@@ -59,6 +62,7 @@ export default function PhobosLab(){
     return()=>{cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',pause);motion.removeEventListener('change',reduce);};
   },[]);
   function seek(t:number){setPlaying(false);clock.current=t;setTime(t);}
+  function clearPin(){setPinned(null);requestAnimationFrame(()=>{const button=pinButton.current;if(button&&!button.disabled)button.focus();else flight.current?.focus();});}
   function save(){try{if(bad.length)throw Error('Correct the highlighted fields before saving.');localStorage.setItem(KEY,JSON.stringify(validatePhobos(design)));setNotice('Phobos design saved in this browser.');setError('');}catch(e){setError((e as Error).message);}}
   function load(){try{const raw=localStorage.getItem(KEY);if(!raw)throw Error('No Phobos design has been saved in this browser.');adopt(readPhobos(raw));setNotice('Loaded your Phobos design.');}catch(e){setError((e as Error).message);}}
   async function importFile(f:File){try{if(f.size>6000)throw Error('Design exceeds the 6 KB limit.');adopt(readPhobos(await f.text()));setNotice('Phobos design imported. Use Save to keep it in this browser.');}catch(e){setError((e as Error).message);}}
@@ -100,10 +104,11 @@ export default function PhobosLab(){
         {result&&<><div className="phobos-verdict"><span className="micro">{result.design.release==='inward'?'TOWARD MARS':'AWAY FROM MARS'}</span><h3>{result.outcome==='structure-limit'?'Revise the tether.':result.outcome==='mars-limit'?'This pass is too low.':result.outcome==='phobos-impact'?'Cargo returns to Phobos.':result.orbit.apoapsis===null?'An outbound trajectory.':result.design.release==='inward'?'A lower orbit, without a burn.':'A higher Mars orbit.'}</h3><p>{result.outcome==='structure-limit'?result.issues.join(' '):result.outcome==='mars-limit'?'The flight stops at 150 km above Mars. Shorten the inward arm to raise the next pass.':result.outcome==='phobos-impact'?'The flight reaches the spherical Phobos surface. Change the release reach.':`Clear of both exclusion boundaries for ${fmt(result.duration/3600,1)} simulated hours. ${result.orbit.apoapsis===null?'Escape energy at release; no interplanetary destination is targeted.':result.design.release==='inward'?'The released cargo falls inward while Phobos continues along its orbit.':'The released cargo climbs outward while Phobos continues along its orbit.'}`}</p></div>
           <dl className="phobos-metrics"><div><dt>{result.orbit.apoapsis===null?'Mars escape excess':'Release orbit periapsis'}</dt><dd>{result.orbit.apoapsis===null?fmt(result.orbit.vInfinity,0):fmt(result.orbit.periapsis/1000)} <small>{result.orbit.apoapsis===null?'m/s':'km'}</small></dd></div><div><dt>Lowest cable margin</dt><dd>{fmt(Math.min(...result.loads.map(l=>l.margin)),2)} <small>×</small></dd></div><div><dt>Cable + terminal mass</dt><dd>{fmt((result.loads.reduce((sum,l)=>sum+l.massKg,0)+2*TERMINAL_KG)/1000,1)} <small>t</small></dd></div></dl>
           <div className="phobos-challenge"><span className="micro">LOW MARS ORBIT CHECK</span><ul>{['Both arms carry their loads','Full flight clears both bodies','Inward periapsis: 150–750 km'].map((label,i)=><li key={label} data-pass={gates[i]}><span>{gates[i]?'✓':'○'}</span>{label}</li>)}</ul><button onClick={()=>adopt({...PHOBOS_DEFAULT,inwardKm:1500},true)}>Try the low-pass challenge →</button></div>
-          <button className="phobos-report" onClick={()=>download('phobos-flight-report.json',{...result,constants:{MARS,PHOBOS,PERIOD,TERMINAL_KG},scope:'Prescribed circular binary; prepositioned payload; static uniform cables before/after release; no capture, climb dynamics, anchor geology or orbit recovery.'})}>Export flight report ↗</button>
+          <div className="phobos-flight-actions"><button className="phobos-pin" ref={pinButton} disabled={!!busy||pinned===result} onClick={()=>{setPlaying(false);setPinned(result);}}>{pinned===result?'Flight pinned':pinned?'Replace pinned flight':'Pin calculated flight'}</button><button className="phobos-report" onClick={()=>download('phobos-flight-report.json',{...result,constants:{MARS,PHOBOS,PERIOD,TERMINAL_KG},scope:'Prescribed circular binary; prepositioned payload; static uniform cables before/after release; no capture, climb dynamics, anchor geology or orbit recovery.'})}>Export flight report ↗</button></div>
         </>}
       </aside>
     </div>
+    {pinned&&result&&<PhobosComparison pinned={pinned} current={result} dirty={dirty} busy={!!busy} onRestore={()=>adopt(pinned.design,false,false,true)} onClear={clearPin}/>}
     <PhobosStudy study={study} design={design} busy={busy} invalid={!!bad.length} onStart={spacing=>run(design,false,'study',spacing)} onCancel={cancel} onInspect={d=>adopt(d,false,false,true)}/>
     {result&&<div className="phobos-analysis">
       <section className="lab-panel phobos-loads" aria-label="Anchored cable loads"><div className="panel-heading"><h2>What the anchor carries</h2><div className="phobos-arm-switch" role="group" aria-label="Inspected arm">{(['inward','outward'] as const).map(a=><button key={a} aria-pressed={inspected===a} onClick={()=>setInspected(a)}>{a==='inward'?'Inward':'Outward'}</button>)}</div></div>
