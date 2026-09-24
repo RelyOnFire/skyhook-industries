@@ -596,6 +596,11 @@ def main():
             names=motion.locator(moving+',.map-power-link path').evaluate_all('els=>els.map(e=>getComputedStyle(e).animationName)')
             assert all(name=='none' for name in names)
             motion.evaluate("""()=>{
+                const button=[...document.querySelectorAll('.campaign-time-controls button')].find(e=>e.textContent.includes('+30 days'));
+                window.busyButtonOpacity=[];
+                new MutationObserver(()=>{if(button.disabled)window.busyButtonOpacity.push(Number(getComputedStyle(button).opacity))}).observe(button,{attributes:true,attributeFilter:['disabled']});
+            }""")
+            motion.evaluate("""()=>{
                 window.mapPaintCheck={scene:document.querySelector('.map-visual>svg:first-child'),power:document.querySelector('.map-power-flow'),sceneStyles:0,trafficStyles:0};
                 for(const [target,key] of [[window.mapPaintCheck.scene,'sceneStyles'],[document.querySelector('.map-traffic-layer'),'trafficStyles']]){
                     new MutationObserver(records=>{window.mapPaintCheck[key]+=records.length}).observe(target,{subtree:true,attributes:true,attributeFilter:['style']});
@@ -605,10 +610,13 @@ def main():
             motion.wait_for_function('d=>Number(document.querySelector("[data-testid=campaign-day]").textContent.replace(/[^0-9.]/g,""))>d',arg=before_day+.1)
             motion.get_by_role('button',name='Pause simulation',exact=True).click();saved(motion)
             assert power_state()['day']>before_day
+            opacity=motion.evaluate('window.busyButtonOpacity')
+            assert opacity and min(opacity)>.95, f'Time-control text faded during a saved Play tick: {opacity}'
             paint=motion.evaluate("""()=>({sceneStable:window.mapPaintCheck.scene===document.querySelector('.map-visual>svg:first-child'),powerStable:window.mapPaintCheck.power===document.querySelector('.map-power-flow'),sceneStyles:window.mapPaintCheck.sceneStyles,trafficStyles:window.mapPaintCheck.trafficStyles})""")
             assert paint['sceneStable'] and paint['powerStable'] and paint['sceneStyles']==0 and paint['trafficStyles']>0, f'Daily traffic repainted the map scene: {paint}'
             done('orbiting rotors, Phobos anchor and swarm rings move on Play, hold on Pause, and respect reduced motion without stopping simulation')
             done('daily traffic updates remain in the aligned overlay without rewriting map text or the Mercury power path')
+            done('short Play saves leave disabled time-control text legible, including with reduced motion')
             for cost in [60,90]:
                 motion.locator('#outpost-mercury').get_by_role('button',name=f'Upgrade rotovator · {cost} t',exact=True).click();saved(motion)
             action('Pause service 4',motion)
