@@ -329,6 +329,8 @@ def main():
             for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 solar.set_viewport_size({'width':width,'height':height});solar.evaluate('document.activeElement?.blur()')
                 no_overflow(solar,width)
+                layers=solar.locator('.map-visual>svg').evaluate_all("els=>els.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}})")
+                assert len(layers)==2 and layers[0]==layers[1], f'Map traffic layer drifted at {width}: {layers}'
                 solar.evaluate('scrollTo(0,0)')
                 solar.screenshot(path=str(out/f'operations-{width}.png'),full_page=True)
                 solar.screenshot(path=str(out/f'operations-viewport-{width}.png'))
@@ -593,11 +595,20 @@ def main():
             motion.emulate_media(reduced_motion='reduce')
             names=motion.locator(moving+',.map-power-link path').evaluate_all('els=>els.map(e=>getComputedStyle(e).animationName)')
             assert all(name=='none' for name in names)
+            motion.evaluate("""()=>{
+                window.mapPaintCheck={scene:document.querySelector('.map-visual>svg:first-child'),power:document.querySelector('.map-power-flow'),sceneStyles:0,trafficStyles:0};
+                for(const [target,key] of [[window.mapPaintCheck.scene,'sceneStyles'],[document.querySelector('.map-traffic-layer'),'trafficStyles']]){
+                    new MutationObserver(records=>{window.mapPaintCheck[key]+=records.length}).observe(target,{subtree:true,attributes:true,attributeFilter:['style']});
+                }
+            }""")
             motion.get_by_role('button',name='Play simulation',exact=True).click()
             motion.wait_for_function('d=>Number(document.querySelector("[data-testid=campaign-day]").textContent.replace(/[^0-9.]/g,""))>d',arg=before_day+.1)
             motion.get_by_role('button',name='Pause simulation',exact=True).click();saved(motion)
             assert power_state()['day']>before_day
+            paint=motion.evaluate("""()=>({sceneStable:window.mapPaintCheck.scene===document.querySelector('.map-visual>svg:first-child'),powerStable:window.mapPaintCheck.power===document.querySelector('.map-power-flow'),sceneStyles:window.mapPaintCheck.sceneStyles,trafficStyles:window.mapPaintCheck.trafficStyles})""")
+            assert paint['sceneStable'] and paint['powerStable'] and paint['sceneStyles']==0 and paint['trafficStyles']>0, f'Daily traffic repainted the map scene: {paint}'
             done('orbiting rotors, Phobos anchor and swarm rings move on Play, hold on Pause, and respect reduced motion without stopping simulation')
+            done('daily traffic updates remain in the aligned overlay without rewriting map text or the Mercury power path')
             for cost in [60,90]:
                 motion.locator('#outpost-mercury').get_by_role('button',name=f'Upgrade rotovator · {cost} t',exact=True).click();saved(motion)
             action('Pause service 4',motion)

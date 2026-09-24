@@ -135,7 +135,9 @@ Mercury and Ceres; Phobos and its attached inward/outward arms orbit Mars togeth
 Swarm rings circulate around the Sun. Visual periods are fixed for readability,
 not physical orbital periods or positions. Corridor endpoints denote schematic
 outposts, not intercepts. Play runs motion, Pause holds its pose, and changing
-worlds resets the pose. Reduced motion disables orbital animations, power-link
+worlds resets the pose. Flight glyphs use a separate, aligned SVG overlay so
+daily traffic updates do not repaint map labels or the Mercury power conduit.
+Reduced motion disables orbital animations, power-link
 flow and cargo transitions without changing simulation time or outcomes.
 
 A sustainable scenario tested for 1,000 days sends 5 t Earth–Moon equipment every
