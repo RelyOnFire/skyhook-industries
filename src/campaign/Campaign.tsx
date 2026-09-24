@@ -112,9 +112,11 @@ export default function Campaign() {
       }
     });
   };
-  const prepare=(origin:SiteId,destination:SiteId,resource:CargoKind)=>{
-    setFrom(origin);setTo(destination);setKind(resource);setCargo('10');setSelected(destination);
-    setMode(world?.ports[origin].level&&world?.ports[destination].level?'tether':'tug');
+  const prepare=(origin:SiteId,destination:SiteId,resource:CargoKind,requestedT=10)=>{
+    const tether=!!(world?.ports[origin].level&&world?.ports[destination].level);
+    const capacity=tether?10*Math.min(world!.ports[origin].level,world!.ports[destination].level):10;
+    setFrom(origin);setTo(destination);setKind(resource);setCargo(String(Math.max(1,Math.min(Math.ceil(requestedT),capacity))));setSelected(destination);
+    setMode(tether?'tether':'tug');
     setIntervalDays(destination==='ceres'?'200':resource==='water'?'90':destination==='moon'?'90':destination==='mercury'?'60':'100');
     requestAnimationFrame(()=>{reveal(document.getElementById('dispatch'));document.getElementById('campaign-origin')?.focus({preventScroll:true});});
   };
@@ -138,6 +140,9 @@ export default function Campaign() {
       <NextMove world={world} onSelect={focusSite} onMilestones={()=>reveal(milestonePanel.current)} onOutlook={()=>{
         const panel=document.querySelector<HTMLDetailsElement>('.network-outlook');
         if(panel){panel.open=true;reveal(panel);panel.querySelector('summary')?.focus({preventScroll:true});}
+      }} onTract={()=>{
+        const panel=document.querySelector<HTMLDetailsElement>('.development-tracts');
+        if(panel){panel.open=true;const heading=document.getElementById('development-mercuryTract-heading');reveal(heading);heading?.focus({preventScroll:true});}
       }}/>
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#dispatch">Send cargo</a></nav>
       <div className="ops-grid">

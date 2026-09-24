@@ -104,6 +104,17 @@ def main():
             assert record()==migrated
             done('native v5 load is read-only; schema 6 checkpoints every old field once and starts with no development upgrades')
 
+            chapter = page.locator('#development-operations')
+            launch = chapter.locator('[data-project="launch"]')
+            expect(launch.locator('.development-shortfall')).to_contain_text('16 t equipment')
+            launch.get_by_role('button', name='Prepare Earth equipment for mercury launch array').click()
+            expect(page.get_by_label('From', exact=True)).to_have_value('earth')
+            expect(page.get_by_label('To', exact=True)).to_have_value('mercury')
+            expect(page.get_by_label('Cargo type', exact=True)).to_have_value('equipment')
+            expect(page.get_by_label('Cargo (t)', exact=True)).to_have_value('10')
+            assert record()==migrated, 'Preparing project supplies changed the saved world'
+            done('project supply cue counts local stock and prepares the missing equipment without dispatching or saving')
+
             page.locator('input[type=file]').set_input_files(str(prepared_path))
             saved()
             imported = next(r for r in records() if r['id']!=old['id'])

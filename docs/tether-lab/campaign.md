@@ -65,6 +65,11 @@ read-only 90-day projection of added mirrors and returned power, with a direct
 route to Network outlook and a short cue for paused launches, an exhausted
 Mercury tract or projected departure holds. These are optional scale targets,
 not new saved objectives; they do not alter the economy or save schema.
+An exhausted Mercury tract links straight to its project card. Industrial
+projects now show the remaining material and equipment after counting stock and
+cargo already in flight. Supply shortcuts choose a stocked connected origin,
+prepare a payload within the current corridor rating, and take the player to the
+cargo form. Preparing a shipment never dispatches it or changes the save.
 Model 0.5.0 / schema 5 adds the Phobos–Ceres water loop. Ceres and its operations
 panel appear once the power link is online; opening its expedition is a separate
 funded action. Its only corridor runs through Phobos. Contextual supply actions

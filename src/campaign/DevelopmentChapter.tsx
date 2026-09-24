@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { automaticMirrorLaunchReason, automaticMirrorPlan, beltProduction, ceresReserveT, DEVELOPMENT, developmentProjects, developmentUnlockReason, mercuryReserveT, mirrorCapacity, setMirrorFuelReserve, SITE, upgradeDevelopment, type Campaign } from './model.js';
-import { n, type Act, type Prepare } from './Operations.js';
+import { automaticMirrorLaunchReason, automaticMirrorPlan, beltProduction, ceresReserveT, DEVELOPMENT, developmentProjects, developmentUnlockReason, mercuryReserveT, mirrorCapacity, setMirrorFuelReserve, SITE, upgradeDevelopment, type Campaign, type CargoKind, type SiteId } from './model.js';
+import { n, projectSupplyNeed, type Act, type Prepare } from './Operations.js';
 import './development.css';
 
 type Project = ReturnType<typeof developmentProjects>[number];
@@ -8,15 +8,25 @@ type Project = ReturnType<typeof developmentProjects>[number];
 function DevelopmentProject({project,world,busy,act,prepare}:{project:Project;world:Campaign;busy:boolean;act:Act;prepare:Prepare}) {
   const port=world.ports[project.site],complete=project.level>=project.maxLevel;
   const tract=project.id==='mercuryTract'||project.id==='ceresTract';
-  const source=project.site==='ceres'?'phobos':'earth';
+  const sources:SiteId[]=project.site==='ceres'?['phobos']:project.site==='phobos'?['moon','earth']:['moon','earth','phobos'];
+  const sourceFor=(kind:CargoKind)=>{
+    const stock=kind==='materials'?'materialsT':'equipmentT';
+    return [...sources].filter(id=>world.ports[id].level>0).sort((a,b)=>world.ports[b][stock]-world.ports[a][stock])[0]??sources[0];
+  };
+  const materialSource=sourceFor('materials'),equipmentSource=sourceFor('equipment');
+  const {inboundMaterial,inboundEquipment,materialShort,equipmentShort}=projectSupplyNeed(world,project);
+  const inboundLabels=[inboundMaterial>0?n(inboundMaterial)+' t material':'',inboundEquipment>0?n(inboundEquipment)+' t equipment':''].filter(Boolean).join(' · ');
+  const shortfallLabels=[materialShort>0?n(materialShort)+' t material':'',equipmentShort>0?n(equipmentShort)+' t equipment':''].filter(Boolean).join(' · ');
+  const shipmentCapacity=(source:SiteId)=>world.ports[source].level>0&&port.level>0?10*Math.min(world.ports[source].level,port.level):10;
   const headingId='development-'+project.id+'-heading';
   const descriptionId='development-'+project.id+'-description';
   const costId='development-'+project.id+'-cost';
+  const reason=project.reason.startsWith('Prepare ')?shortfallLabels?'Send the missing stock, then commission when it arrives.':'Waiting for inbound cargo.':project.reason||'Supplies ready at '+SITE[project.site].name+'.';
   const completedBenefit=project.id==='launch'?n(mirrorCapacity(world))+' t per mirror launch':project.id==='water'?n(beltProduction(world).waterCapacity)+' t water / day':project.id==='fuel'?n(beltProduction(world).fuelCapacity)+' t fuel / day':n(project.level)+' additional tracts opened';
   const productionLimited=project.id==='launch'&&automaticMirrorPlan(world).intervalDays>2/Math.max(1,world.ports.mercury.level)+1e-8;
   return <article className={'development-project'+(complete?' complete':'')} data-project={project.id} aria-labelledby={headingId}>
     <div className="development-project-title">
-      <div><span>{SITE[project.site].name}</span><h3 id={headingId}>{project.name}</h3></div>
+      <div><span>{SITE[project.site].name}</span><h3 id={headingId} tabIndex={-1}>{project.name}</h3></div>
       <span className="development-level" aria-label={(tract?'Additional tracts':'Upgrade level')+' '+project.level+' of '+project.maxLevel}>{complete?'Complete':(tract?'Tracts ':'Level ')+project.level+' / '+project.maxLevel}</span>
     </div>
     <p className="development-description">{project.description}</p>
@@ -28,11 +38,16 @@ function DevelopmentProject({project,world,busy,act,prepare}:{project:Project;wo
         <b>{n(project.materialsT)}&nbsp;t material <span>+</span> {n(project.equipmentT)}&nbsp;t equipment</b>
         <small>Stored: <span className={port.materialsT+1e-8<project.materialsT?'short':''}>{n(port.materialsT)}&nbsp;t material</span> · <span className={port.equipmentT+1e-8<project.equipmentT?'short':''}>{n(port.equipmentT)}&nbsp;t equipment</span></small>
       </div>
+      {(inboundLabels||shortfallLabels)&&<p className="development-shortfall">
+        {inboundLabels&&<>In flight: {inboundLabels}. </>}
+        {shortfallLabels?<>Still to send: <b>{shortfallLabels}.</b></>:'Inbound cargo covers the current shortfall; wait for delivery.'}
+      </p>}
       <div className="development-project-actions">
         <button className="primary" disabled={busy||!!project.reason} aria-label={tract?'Open next '+project.name.toLowerCase():undefined} aria-describedby={costId+' '+descriptionId} onClick={()=>act(w=>upgradeDevelopment(w,project.id))}>{tract?'Open next tract':'Upgrade '+project.name.toLowerCase()}</button>
-        <button className="development-supply" onClick={()=>prepare(source,project.site,'equipment')} aria-label={'Supply '+SITE[project.site].name+' equipment for '+project.name.toLowerCase()}>Supply equipment ↗</button>
+        {materialShort>0&&<button className="development-supply" onClick={()=>prepare(materialSource,project.site,'materials',Math.min(materialShort,shipmentCapacity(materialSource)))} aria-label={'Prepare '+SITE[materialSource].name+' material for '+project.name.toLowerCase()}>Prepare {SITE[materialSource].name} material ↗</button>}
+        {equipmentShort>0&&<button className="development-supply" onClick={()=>prepare(equipmentSource,project.site,'equipment',Math.min(equipmentShort,shipmentCapacity(equipmentSource)))} aria-label={'Prepare '+SITE[equipmentSource].name+' equipment for '+project.name.toLowerCase()}>Prepare {SITE[equipmentSource].name} equipment ↗</button>}
       </div>
-      <p className={'development-reason'+(project.reason?' blocked':'')} id={descriptionId}>{project.reason||'Supplies ready at '+SITE[project.site].name+'.'}</p>
+      <p className={'development-reason'+(project.reason?' blocked':'')} id={descriptionId}>{reason}</p>
     </>}
   </article>;
 }

@@ -9,7 +9,17 @@ import ServiceEditor from './ServiceEditor.js';
 export const n = (v:number,digits=1) => v.toLocaleString('en-US',{maximumFractionDigits:digits});
 export const date = (v:number) => 'Day '+n(v);
 export type Act = (fn:(w:Campaign)=>Campaign)=>void;
-export type Prepare = (from:SiteId,to:SiteId,kind:CargoKind)=>void;
+export type Prepare = (from:SiteId,to:SiteId,kind:CargoKind,cargoT?:number)=>void;
+export function projectSupplyNeed(world:Campaign,project:ReturnType<typeof developmentProjects>[number]) {
+  const port=world.ports[project.site],inbound=world.flights.filter(flight=>flight.to===project.site);
+  const inboundMaterial=inbound.filter(flight=>flight.kind==='materials').reduce((sum,flight)=>sum+flight.cargoT,0);
+  const inboundEquipment=inbound.filter(flight=>flight.kind==='equipment').reduce((sum,flight)=>sum+flight.cargoT,0);
+  return {
+    inboundMaterial,inboundEquipment,
+    materialShort:Math.max(0,Math.ceil(project.materialsT-port.materialsT-inboundMaterial-1e-8)),
+    equipmentShort:Math.max(0,Math.ceil(project.equipmentT-port.equipmentT-inboundEquipment-1e-8)),
+  };
+}
 
 function Stock({value,testId}:{value:number;testId?:string}) {
   const text=n(value);
@@ -49,7 +59,7 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
   </section>;
 }
 
-export function NextMove({world,onSelect,onMilestones,onOutlook}:{world:Campaign;onSelect:(site:SiteId)=>void;onMilestones:()=>void;onOutlook:()=>void}) {
+export function NextMove({world,onSelect,onMilestones,onOutlook,onTract}:{world:Campaign;onSelect:(site:SiteId)=>void;onMilestones:()=>void;onOutlook:()=>void;onTract:()=>void}) {
   const chapters=[objectives(world),networkObjectives(world),solarObjectives(world),powerObjectives(world),beltObjectives(world),developmentObjectives(world)], all=chapters.flat(), done=all.filter(g=>g.done).length;
   const chapter=chapters.findIndex(gs=>gs.some(g=>!g.done)), next=all.find(g=>!g.done);
   const targets:SiteId[]=['moon','moon','phobos','moon','moon','phobos','phobos','phobos','mercury','mercury','mercury','mercury','mercury','mercury','mercury','mercury','phobos','ceres','phobos','ceres'];
@@ -58,10 +68,13 @@ export function NextMove({world,onSelect,onMilestones,onOutlook}:{world:Campaign
   const gained=outlook?outlook.swarmLater-outlook.swarmNow:0;
   const powerGain=outlook?swarmPower({...world,solar:{...world.solar,deployedT:outlook.swarmLater}}).returnedGW-swarmPower(world).returnedGW:0;
   const tract=developmentProjects(world).find(project=>project.id==='mercuryTract');
+  const needsMercuryTract=world.solar.depositT<=0&&!!tract&&tract.level<tract.maxLevel;
+  const tractNeed=tract?projectSupplyNeed(world,tract):null;
+  const tractShortfall=tractNeed?[tractNeed.materialShort>0?n(tractNeed.materialShort,0)+' t material':'',tractNeed.equipmentShort>0?n(tractNeed.equipmentShort,0)+' t equipment':''].filter(Boolean).join(' · '):'';
   let advice='The power loop is growing; keep the supply lines and fuel flowing.';
   if(world.day>=LIMITS.days)advice='The simulation horizon has been reached.';
   else if(!world.solar.autoLaunch)advice='Automatic mirror launches are paused. Enable them in Mirror operations.';
-  else if(world.solar.depositT<=0&&tract&&tract.level<tract.maxLevel)advice='Mercury’s current mining tract is exhausted. '+(tract.reason||'Open the next tract to restart production.');
+  else if(needsMercuryTract)advice='Mercury’s mining tract is exhausted. '+(tractShortfall?'Still to send '+tractShortfall+'.':tract!.reason?'Supplies are in flight; wait for delivery.':'Supplies ready to open the next tract.');
   else if(outlook?.holds.length)advice=outlook.holds.length+' departure '+(outlook.holds.length===1?'cause needs':'causes need')+' review in Network outlook.';
   else if(gained<=0)advice='No mirror deployment is projected in this window. Review supplies and launch controls.';
   return <section className={'ops-next'+(!next?' ongoing':'')} aria-label={next?'Next milestone':'Ongoing network objective'}>
@@ -76,7 +89,7 @@ export function NextMove({world,onSelect,onMilestones,onOutlook}:{world:Campaign
       </>}
     </div>
     <div className="next-actions">
-      {next?(chapter===5?<a className="next-power" href="#development-operations">Plan industrial expansion ↗</a>:chapter===4?<a className="next-power" href="#belt-operations">Open belt operations ↗</a>:chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>):<button className="next-power" onClick={onOutlook}>Review network outlook ↗</button>}
+      {next?(chapter===5?<a className="next-power" href="#development-operations">Plan industrial expansion ↗</a>:chapter===4?<a className="next-power" href="#belt-operations">Open belt operations ↗</a>:chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>):!world.solar.autoLaunch?<a className="next-power" href="#solar-heading">Review mirror controls ↗</a>:needsMercuryTract?<button className="next-power" onClick={onTract}>Plan Mercury supply ↗</button>:<button className="next-power" onClick={onOutlook}>Review network outlook ↗</button>}
       <button className="text-button" onClick={onMilestones}>{done} / {all.length} milestones</button>
     </div>
   </section>;
