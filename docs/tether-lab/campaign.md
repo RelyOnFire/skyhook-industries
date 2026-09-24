@@ -32,6 +32,14 @@ the map; mirror operations follow it. The clock and pooled totals share a sticky
 bar. At smaller widths the workspace reflows, with anchor links to Outposts, Map,
 Traffic and Send cargo. Tablet depots form a grid beneath the map; phones stack.
 
+An optional Network outlook below the live traffic projects 30, 90 or 365 days
+using the same chronological simulation engine on copies of the current world.
+It reports service departures and blocked attempts, received cargo, support fuel,
+deployed mirrors and depot stocks, including end-of-window industry shortages.
+The projection assumes existing schedules and automatic launches continue, while
+no manual shipments, construction or Earth allocations occur. It updates when
+the world changes while open and never advances simulation time or writes a save.
+
 One next-milestone prompt guides progression. Completed objectives, architecture
 explanations and saved-network management use secondary disclosures. Your saves
 opens save, backup, import and recovery controls. A save failure also exposes
@@ -212,8 +220,11 @@ large/small/reloaded time-step agreement above the old cap.
 `tests/campaign-traffic.browser.py` resumes a real 32-flight v5 world, verifies
 model-only revision/checkpoint protection and stale-writer rejection, then dispatches
 and schedules beyond the old limit. It exercises more than 100 simultaneous
-flights, ordered tracking, backup/reload and five responsive widths. It also
-supports `--origin` for isolated preview verification.
+flights, ordered tracking, backup/reload and five responsive widths. It opens the
+90/365-day outlook on that mature network and verifies no save mutation or 320 px
+overflow. `tests/lab-campaign-forecast.test.mjs` checks the projection against a
+direct engine advance, blocked service attempts and the simulation horizon. The
+browser suite also supports `--origin` for isolated preview verification.
 
 ## Mercury and solar deployment
 

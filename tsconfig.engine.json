@@ -10,6 +10,7 @@
   },
   "include": [
     "src/campaign/model.ts",
+    "src/campaign/forecast.ts",
     "src/simulation/**/*.ts",
     "src/lab/view.ts",
     "src/lab/objects.ts",

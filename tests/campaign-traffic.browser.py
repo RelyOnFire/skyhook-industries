@@ -118,6 +118,23 @@ def main():
             page.get_by_role('button', name='Continue Open corridors').click()
             saved()
             assert state()==busy
+            page.locator('.network-outlook>summary').click()
+            expect(page.get_by_label('Forecast horizon')).to_have_value('90')
+            expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+90:,.1f}")
+            expect(page.locator('.outlook-ports')).to_contain_text('Ceres')
+            assert state()==busy
+            page.get_by_label('Forecast horizon').select_option('365')
+            expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+365:,.1f}")
+            assert state()==busy
+            page.locator('.network-outlook').screenshot(path=str(out/'outlook-desktop.png'))
+            page.set_viewport_size({'width':320,'height':800})
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),'Outlook overflows at 320 px'
+            page.locator('.network-outlook').evaluate("e=>e.scrollIntoView({block:'start'})")
+            assert page.locator('.network-outlook>summary').bounding_box()['y'] >= page.locator('.campaign-clock').bounding_box()['height']-1
+            page.screenshot(path=str(out/'outlook-phone.png'))
+            page.locator('.network-outlook>summary').click()
+            page.set_viewport_size({'width':1440,'height':1000})
+            done('read-only 90/365-day outlook projects mature-network stocks and delays without touching saves or overflowing on phones')
             action('Your saves')
             with page.expect_download() as event:
                 page.get_by_role('button', name='Download backup', exact=True).click()

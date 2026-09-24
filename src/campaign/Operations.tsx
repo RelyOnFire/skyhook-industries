@@ -1,6 +1,7 @@
 import { BELT, beltObjectives, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
 import { trafficItems, type TrafficId } from './traffic.js';
+import NetworkOutlook from './NetworkOutlook.js';
 
 export const n = (v:number,digits=1) => v.toLocaleString('en-US',{maximumFractionDigits:digits});
 export const date = (v:number) => 'Day '+n(v);
@@ -77,6 +78,7 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
       <div className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!flights.length?<p className="campaign-empty">No cargo in transit. Send a shipment and watch it cross the map.</p>:flights.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-arrival={f.arrival} data-kind={f.kind}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
     </section>
     {services}
+    <NetworkOutlook world={world}/>
     {!!arrivals.length&&<section className="campaign-arrivals" aria-label="Recent arrivals"><header><b>Deliveries received</b><button aria-label="Dismiss arrival notifications" onClick={onDismiss}>Dismiss</button></header><div role="status">{arrivals.map((text,i)=><p key={i}>{text}</p>)}</div></section>}
     <details className="campaign-history"><summary>Activity log <span>{world.log.length} events</span></summary><ol>{[...world.log].reverse().map((e,i)=><li key={i}><time>{date(e.day)}</time><span>{e.text}</span></li>)}</ol></details>
   </aside>;
