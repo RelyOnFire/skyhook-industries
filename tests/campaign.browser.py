@@ -193,7 +193,7 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==5 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==6 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
             assert migrated['checkpoints'][0]==legacy
             page.get_by_role('button',name='Your saves',exact=True).click()
@@ -256,7 +256,7 @@ def main():
             solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
             assert records(solar)[0]==previous_record
             action('Save now',solar);migrated=records(solar)[0]
-            assert migrated['state']['schema']==5 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['state']['schema']==6 and migrated['state']['revision']==previous['revision']+1
             assert migrated['checkpoints'][0]==previous
             for key in ['flights','services','day','fuelT','marsOperations']:
                 assert migrated['state'][key]==previous[key]
@@ -553,7 +553,7 @@ def main():
             stale.get_by_role('button',name='Continue Power loop').click();saved(stale)
             action('Save now',motion)
             migrated=next(r for r in records(motion) if r['id']==old['id'])
-            assert migrated['state']['schema']==5 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==6 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints'][0]==old and migrated['state']['solar']['powerLink'] is False
             for key in old:
                 if key not in ['schema','model','revision','solar','ports']:assert migrated['state'][key]==old[key]

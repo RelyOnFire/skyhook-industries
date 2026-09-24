@@ -25,7 +25,8 @@ function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site
   </g>;
 }
 export default function NetworkMap({world,selected,onSelect,tracked,onTrack,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:TrafficId|null;onTrack?:(id:TrafficId|null)=>void;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
-  const swarmCount=Math.min(80,Math.ceil((world?.solar.deployedT||0)/10));
+  const swarmMass=world?.solar.deployedT||0,swarmCount=Math.min(80,Math.ceil(swarmMass/10));
+  const shells=[0,1,...(swarmMass>=2000?[2]:[]),...(swarmMass>=10000?[3]:[]),...(swarmMass>=50000?[4]:[])];
   const visibleSites=SITES.filter(id=>id!=='ceres'||world?.solar.powerLink);
   const traffic=world?trafficItems(world):[],followed=traffic.find(f=>f.id===tracked),power=world?swarmPower(world):null;
   const destination=followed&&(followed.to==='swarm'?SWARM:POINTS[followed.to]);
@@ -56,10 +57,10 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
       {followed&&destination&&<line x1={POINTS[followed.from][0]} y1={POINTS[followed.from][1]} x2={destination[0]} y2={destination[1]} className={'map-tracked-route '+followed.kind}/>}
       {world?.solar.powerLink&&<g className="map-power-link"><path d="M111 274Q119 342 174 391"/><text x="101" y="335">POWER RETURN</text></g>}
       <g className="map-swarm" aria-label={'Solar swarm: '+(world?.solar.deployedT||0)+' tonnes deployed'} transform="translate(95 215)">
-        {[0,1].map(ring=><g key={ring} transform="scale(.75 1)">
-          {swarmCount>0&&<circle r={ring?100:78} className="map-swarm-track"/>}
-          <g className="map-swarm-motion" style={{animationDuration:ring?'48s':'34s'}}>
-            {Array.from({length:Math.ceil((swarmCount-ring)/2)},(_,i)=>{const angle=i*2.399963+ring,r=ring?100:78,x=Math.cos(angle)*r,y=Math.sin(angle)*r;return <rect key={i} x={x-3} y={y-1.5} width="6" height="3" fill="#efc995" transform={`rotate(${angle*180/Math.PI} ${x} ${y})`}/>;})}
+        {shells.map(ring=><g key={ring} data-shell={ring} transform="scale(.75 1)">
+          {swarmCount>0&&<circle r={78+ring*22} className="map-swarm-track"/>}
+          <g className="map-swarm-motion" style={{animationDuration:(34+ring*14)+'s'}}>
+            {Array.from({length:ring<2?Math.ceil((swarmCount-ring)/2):Math.min(24,Math.ceil(12*swarmMass/[1,1,2000,10000,50000][ring]))},(_,i)=>{const angle=i*2.399963+ring,r=78+ring*22,x=Math.cos(angle)*r,y=Math.sin(angle)*r;return <rect key={i} x={x-3} y={y-1.5} width="6" height="3" fill="#efc995" transform={`rotate(${angle*180/Math.PI} ${x} ${y})`}/>;})}
           </g>
         </g>)}
       </g>
@@ -76,6 +77,7 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
       <OrbitalTether site="phobos" cx={855} cy={403} radius={88} seconds={42} phase={-10} commissioned={!!world?.ports.phobos.level}/>
       {!!world?.ports.mercury.level&&<OrbitalTether site="mercury" cx={180} cy={420} radius={54} seconds={26} phase={-30}/>}
       {!!world?.ports.ceres.level&&<OrbitalTether site="ceres" cx={840} cy={110} radius={50} seconds={50} phase={24}/>}
+      {world&&([{id:'launch',name:'Mirror array',level:world.development.launchLevel,x:219,y:453},{id:'water',name:'Water works',level:world.development.waterLevel,x:885,y:119},{id:'fuel',name:'Fuel works',level:world.development.fuelLevel,x:915,y:353}]).filter(item=>item.level>0).map(item=><g key={item.id} className="map-infrastructure" transform={`translate(${item.x} ${item.y})`} role="img" aria-label={item.name+' at '+2**item.level+' times base capacity'}><path d="M-3 12H35"/>{Array.from({length:item.level},(_,i)=><rect key={i} x={i*11} y={8-i*3} width="7" height={4+i*3} rx="1"/>)}<text y="25">{2**item.level}× {item.name.toUpperCase()}</text></g>)}
       {visibleSites.map(id=><g key={id} role="button" tabIndex={0} aria-label={'Locate '+SITE[id].name} aria-pressed={selected===id} onClick={()=>onSelect(id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(id);}}}><rect x={POINTS[id][0]-75} y={POINTS[id][1]-75} width="150" height={id==='phobos'?260:150} fill="transparent"/><circle cx={id==='phobos'?855:POINTS[id][0]} cy={id==='phobos'?403:POINTS[id][1]} r={id==='phobos'?112:id==='earth'?69:36} className={selected===id?'map-selected':'map-ring'} stroke={SITE[id].color}/><text x={POINTS[id][0]} y={id==='moon'||id==='ceres'?30:id==='mercury'?516:POINTS[id][1]+(id==='earth'?114:-68)} textAnchor="middle" className="map-label">{SITE[id].name.toUpperCase()}</text><text x={POINTS[id][0]} y={id==='moon'||id==='ceres'?47:id==='mercury'?535:POINTS[id][1]+(id==='earth'?134:-49)} textAnchor="middle" className="map-site-state">{id==='ceres'&&!world?.belt.unlocked?'CHAPTER 05':id==='mercury'&&!world?.solar.unlocked?'CHAPTER 03':world?.ports[id].level?'TIER '+world.ports[id].level+' / '+SITE[id].facility.toUpperCase():'AWAITING CONSTRUCTION'}</text></g>)}
       {world&&[...traffic.filter(f=>f.id!==tracked),...(followed?[followed]:[])].map(f=>{const t=Math.min(1,Math.max(0,(world.day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=f.to==='swarm'?SWARM:POINTS[f.to],angle=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;return <g key={f.id} className={'map-flight '+f.kind+(tracked===f.id?' tracked':'')} data-traffic-id={f.id} style={{transform:`translate(${a[0]+(b[0]-a[0])*t}px,${a[1]+(b[1]-a[1])*t}px)`}}>
         {tracked===f.id&&<circle r="14" className="map-flight-halo"/>}<path transform={`rotate(${angle})`} d={f.kind==='mirrors'?'M0-5L7 0 0 5-7 0Z':f.kind==='water'?'M8 0Q0-8-5-4Q-11 0-5 4Q0 8 8 0Z':f.kind==='equipment'?'M7 0L-1-5-6-3-6 3-1 5Z':'M8 0L-6-5-3 0-6 5Z'}/><title>{f.label+': '+f.mass+' t '+f.cargo.toLowerCase()+' to '+f.toName}</title>

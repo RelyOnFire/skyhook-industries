@@ -56,6 +56,7 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     receivedT: ports.reduce((sum, port) => sum + port.later.receivedT - port.now.receivedT, 0),
     activeServices: world.services.filter(service => service.enabled).length,
     serviceDepartures,
+    mirrorLaunches: projected.solar.nextDeployment - world.solar.nextDeployment,
     delayed: [...delayed.values()].sort((a, b) => a.firstDay - b.firstDay || a.id - b.id),
     ports,
   };

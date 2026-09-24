@@ -3,6 +3,7 @@ import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCam
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
 import SolarChapter from './SolarChapter.js';
 import BeltChapter from './BeltChapter.js';
+import DevelopmentChapter from './DevelopmentChapter.js';
 import NetworkMap from './NetworkMap.js';
 import { Milestones, NextMove, Outposts, TrafficBoard } from './Operations.js';
 import type { TrafficId } from './traffic.js';
@@ -154,10 +155,11 @@ export default function Campaign() {
           </section>
           <SolarChapter world={world} busy={busy} act={act}/>
           <BeltChapter world={world} busy={busy} act={act} prepare={prepare}/>
+          <DevelopmentChapter key={world.id} world={world} busy={busy} act={act} prepare={prepare}/>
         </div>
         <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
-      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop → into the belt</span></summary><Milestones world={world}/></details>
+      <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop → into the belt → industrial scale</span></summary><Milestones world={world}/></details>
     </>}
     <details ref={savePanel} className="campaign-save-manager" open={!world}><summary>Saved networks & backups</summary>
     <section className="campaign-saves" id="campaign-saves" aria-labelledby="save-heading"><div className="campaign-panel-heading"><div><p className="campaign-eyebrow">YOUR CAMPAIGNS</p><h2 id="save-heading">Saved networks</h2></div><button disabled={busy} onClick={()=>upload.current?.click()}>Import backup</button></div>

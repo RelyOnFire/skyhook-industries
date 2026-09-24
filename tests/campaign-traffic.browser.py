@@ -73,7 +73,7 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']=={**old, 'model':'network-0.5.1', 'revision':old['revision']+1}
+            assert migrated['state']=={**old, 'schema':6, 'model':'network-0.6.0', 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
             assert migrated['checkpoints']==[old]
             action('Save now')
             assert record()==migrated
@@ -82,7 +82,7 @@ def main():
             assert record()==migrated
             stale.close()
             page.locator('.campaign-save-manager>summary').click()
-            done('native v5 model migration preserves all progress, checkpoints once, keeps unchanged saves idle and invalidates stale writers')
+            done('native v5 migration preserves all progress, checkpoints once, keeps unchanged saves idle and invalidates stale writers')
 
             cargo('earth','phobos','equipment')
             action('Dispatch cargo')

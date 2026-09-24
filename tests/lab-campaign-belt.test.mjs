@@ -41,8 +41,8 @@ test('belt: the real v4 export preserves every old field and starts an empty Cer
   for(const id of Object.keys(old.ports))assert.deepEqual(w.ports[id],{...old.ports[id],waterT:0});
   const fresh=createCampaign('fresh','Fresh');
   assert.deepEqual(w.ports.ceres,fresh.ports.ceres);assert.deepEqual(w.belt,fresh.belt);
-  assert.equal(w.schema,5);assert.equal(w.model,'network-0.5.1');assert.deepEqual(fixture,before);
-  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,5);
+  assert.equal(w.schema,6);assert.equal(w.model,'network-0.6.0');assert.deepEqual(fixture,before);
+  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,6);
   const restored=importCampaign(JSON.stringify(envelope),'copy');assert.deepEqual(restored,{...w,id:'copy',revision:0});
   checkLedger(w);
 });
@@ -173,7 +173,7 @@ test('belt: cargo capacity and the final campaign day still bound new flights an
 
 test('belt: validation rejects impossible water balances, dependencies, routes, clocks and versions',()=>{
   const good=advance(outpost(),5);
-  for(const mutate of [w=>delete w.belt,w=>w.belt.unlocked='yes',w=>w.belt.nextCycleDay=w.day,w=>w.belt.nextCycleDay=null,w=>w.belt.depositT=NaN,w=>w.belt.extractedT++,w=>w.belt.returnedWaterT++,w=>w.belt.refinedT++,w=>w.ports.earth.waterT=1,w=>w.ports.ceres.waterT=-1,w=>w.ports.ceres.industry=false,w=>w.ports.phobos.level=1,w=>w.solar.powerLink=false,w=>w.belt.unlocked=false,w=>w.schema=6]){
+  for(const mutate of [w=>delete w.belt,w=>w.belt.unlocked='yes',w=>w.belt.nextCycleDay=w.day,w=>w.belt.nextCycleDay=null,w=>w.belt.depositT=NaN,w=>w.belt.extractedT++,w=>w.belt.returnedWaterT++,w=>w.belt.refinedT++,w=>w.ports.earth.waterT=1,w=>w.ports.ceres.waterT=-1,w=>w.ports.ceres.industry=false,w=>w.ports.phobos.level=1,w=>w.solar.powerLink=false,w=>w.belt.unlocked=false,w=>w.schema=999]){
     const bad=structuredClone(good);mutate(bad);assert.throws(()=>validateCampaign(bad));
   }
   const withWater=dispatch(good,'ceres','phobos',10,'tether','water');withWater.flights[0].to='earth';assert.throws(()=>validateCampaign(withWater));

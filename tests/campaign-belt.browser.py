@@ -81,7 +81,7 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = records()[0]
-            assert migrated['state']['schema']==5 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==6 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints'][0]==old
             for key in old:
                 if key not in ['schema','model','revision','ports']: assert migrated['state'][key]==old[key], key
@@ -209,7 +209,7 @@ def main():
             assert returns['dispatched']>=3 and returns['deliveredT']>=100 and grown['belt']['refinedT']>=100
             assert grown['ports']['ceres']['equipmentT']>0 and grown['ports']['phobos']['equipmentT']>0
             assert page.locator('.belt-goals li.complete').count()==4
-            expect(page.get_by_role('heading', name='The belt is supplying your network.', exact=True)).to_be_visible()
+            expect(page.get_by_role('heading', name='Expand the launch array', exact=True)).to_be_visible()
             ledger(grown)
             # Resume mirror traffic alongside a busy cargo network.
             action('Enable automatic launches')
@@ -226,7 +226,7 @@ def main():
             backup = out/'belt-backup.json'
             event.value.save_as(backup)
             exported = json.loads(backup.read_text())
-            assert exported['version']==5 and exported['state']==grown
+            assert exported['version']==6 and exported['state']==grown
             bad = json.loads(backup.read_text())
             bad['state']['belt']['refinedT']+=1
             page.locator('input[type=file]').set_input_files({'name':'bad-water.json','mimeType':'application/json','buffer':json.dumps(bad).encode()})
@@ -239,7 +239,7 @@ def main():
             ledger(copy)
             page.locator('.campaign-save-manager>summary').click()
             action('Dismiss message')
-            done('schema-5 water backup imports into a separate slot; a broken mass ledger preserves the current world')
+            done('schema-6 water backup imports into a separate slot; a broken mass ledger preserves the current world')
 
             for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height})

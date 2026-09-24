@@ -1,6 +1,6 @@
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.5.1';
+export const CAMPAIGN_MODEL = 'network-0.6.0';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -49,6 +49,15 @@ export const BELT = {
   plantMaterialsT:40, plantEquipmentT:10, waterTPerDay:2, mineEquipmentPerT:.01,
   fuelTPerDay:2, plantEquipmentPerT:.005,
 } as const;
+/** Finite industrial projects and their local construction costs are scenario rules. */
+export const DEVELOPMENT = {
+  maxLevel:3, maxTracts:8, tractT:100000,
+  launchMaterialsT:300, launchEquipmentT:20, worksMaterialsT:100, worksEquipmentT:10,
+  mercuryTractMaterialsT:500, mercuryTractEquipmentT:20, ceresTractMaterialsT:150, ceresTractEquipmentT:10,
+} as const;
+export type DevelopmentProject = 'launch' | 'water' | 'fuel' | 'mercuryTract' | 'ceresTract';
+export interface Development { launchLevel:number; waterLevel:number; fuelLevel:number; mercuryTracts:number; ceresTracts:number; fuelReserveT:number }
+function freshDevelopment():Development {return {launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0};}
 export type CargoKind = 'materials' | 'equipment' | 'water';
 export const CARGO = { materials: 'Construction material', equipment: 'Equipment', water:'Water' } as const;
 export const INDUSTRY = {
@@ -76,19 +85,19 @@ function freshBelt():BeltIndustry {return {unlocked:false,depositT:BELT.depositT
 function emptyPort(): Port {return {materialsT:0,equipmentT:0,waterT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 5; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 6; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
-  solar: SolarIndustry; belt:BeltIndustry; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
+  solar: SolarIndustry; belt:BeltIndustry; development:Development; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
 }
 // Independent transit budgets keep the growing swarm from crowding out supply lines.
 export const LIMITS = { days: 100000, stock: 1000000, cargoFlights: 256, mirrorDeployments: 128, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 5, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  return { schema: 6, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
     ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort(), ceres:emptyPort() }, flights: [],
-    solar:freshSolar(), belt:freshBelt(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
+    solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
     log: [{ day: 0, text: 'Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator.' }] };
 }
 export function routeFor(from: SiteId, to: SiteId) {
@@ -232,7 +241,7 @@ export function advance(world: Campaign, days: number): Campaign {
     }
     if(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null&&next.solar.nextLaunchDay<=at+EPS) {
       const launch=automaticMirrorPlan(next);
-      if(!mirrorLaunchPlan(next,launch.massT).reason) {
+      if(!automaticMirrorLaunchReason(next)) {
         launchMirrorsInto(next,launch.massT); next.solar.nextLaunchDay=at+launch.intervalDays;
       } else next.solar.nextLaunchDay=at+1;
     }
@@ -370,15 +379,20 @@ export function connectSwarmPower(w: Campaign): Campaign {
   note(next,'Swarm power connected to Mercury. Automatic reinvestment scales refining, mirror works and local equipment fabrication from the next daily cycle.');return next;
 }
 export function automaticMirrorPlan(w: Campaign) {
-  const massT=w.solar.powerLink?Math.max(1,w.ports.mercury.level)*10:SOLAR.launchT;
+  const massT=w.solar.powerLink?mirrorCapacity(w):SOLAR.launchT;
   const intervalDays=w.solar.powerLink?Math.max(2/Math.max(1,w.ports.mercury.level),massT/(SOLAR.mirrorsTPerDay*swarmPower(w).multiplier)):SOLAR.intervalDays;
   return {massT,intervalDays};
+}
+export function mirrorCapacity(w:Campaign) {return Math.max(1,w.ports.mercury.level)*10*2**w.development.launchLevel;}
+export function automaticMirrorLaunchReason(w:Campaign) {
+  const {massT}=automaticMirrorPlan(w),plan=mirrorLaunchPlan(w,massT);
+  return plan.reason||(w.fuelT-plan.fuelT+EPS<w.development.fuelReserveT?'Automatic launches are holding '+w.development.fuelReserveT+' t of support propellant for cargo.':'');
 }
 export function mirrorLaunchPlan(w: Campaign, massT: number) {
   const fuelT=massT*SOLAR.fuelPerT,p=w.ports.mercury;
   let reason='';
   if(!w.solar.unlocked||!w.solar.launchArray||!p.level)reason='Build the mirror launch array at Mercury first.';
-  else if(!Number.isInteger(massT)||massT<1||massT>p.level*10)reason='Choose a whole payload from 1 to '+p.level*10+' t.';
+  else if(!Number.isInteger(massT)||massT<1||massT>mirrorCapacity(w))reason='Choose a whole payload from 1 to '+mirrorCapacity(w)+' t.';
   else if(w.solar.mirrorsT+EPS<massT)reason='Mirror stock is low. Supply Mercury with equipment and advance time.';
   else if(w.fuelT+EPS<fuelT)reason='Support propellant is low. Advance time or request an Earth supply allocation.';
   else if(p.readyDay>w.day+EPS)reason='Mercury transfer service is recovering.';
@@ -449,11 +463,12 @@ export function buildPropellantWorks(w:Campaign):Campaign {
 /** Separate depot recipes. Water must arrive at Phobos before it can fuel a flight. */
 export function beltProduction(w:Campaign) {
   const c=w.ports.ceres,p=w.ports.phobos,b=w.belt;
-  const waterT=b.unlocked&&c.industry?Math.max(0,Math.min(BELT.waterTPerDay,b.depositT,c.equipmentT/BELT.mineEquipmentPerT,room(w,'ceres','water'))):0;
-  const fuelT=b.propellantWorks?Math.max(0,Math.min(BELT.fuelTPerDay,p.waterT,p.equipmentT/BELT.plantEquipmentPerT,LIMITS.stock-w.fuelT)):0;
+  const waterCapacity=BELT.waterTPerDay*2**w.development.waterLevel,fuelCapacity=BELT.fuelTPerDay*2**w.development.fuelLevel;
+  const waterT=b.unlocked&&c.industry?Math.max(0,Math.min(waterCapacity,b.depositT,c.equipmentT/BELT.mineEquipmentPerT,room(w,'ceres','water'))):0;
+  const fuelT=b.propellantWorks?Math.max(0,Math.min(fuelCapacity,p.waterT,p.equipmentT/BELT.plantEquipmentPerT,LIMITS.stock-w.fuelT)):0;
   const mineStatus=!c.industry?'Install the Ceres water works':b.depositT<EPS?'Local water deposit exhausted':c.equipmentT<EPS?'Waiting for Ceres equipment':room(w,'ceres','water')<EPS?'Water storage full':'Water extraction active';
   const plantStatus=!b.propellantWorks?'Install the Phobos propellant works':w.fuelT>=LIMITS.stock-EPS?'Support fuel storage full':p.waterT<EPS?'Waiting for returned water':p.equipmentT<EPS?'Waiting for Phobos equipment':'Returned water feeding the network';
-  return {waterT,fuelT,mineStatus,plantStatus};
+  return {waterT,fuelT,waterCapacity,fuelCapacity,mineStatus,plantStatus};
 }
 function beltCycle(w:Campaign) {
   const {waterT,fuelT}=beltProduction(w),b=w.belt;
@@ -471,6 +486,75 @@ export function beltObjectives(w:Campaign) {
   ];
 }
 
+export function developmentUnlockReason(w:Campaign) {
+  if(!w.solar.powerLink||!w.belt.unlocked||!w.ports.ceres.industry||!w.belt.propellantWorks||w.belt.refinedT+EPS<100)
+    return 'Connect swarm power, install the Ceres water works and Phobos propellant works, then refine 100 t of returned water.';
+  return '';
+}
+export function mercuryReserveT(w:Campaign) {return SOLAR.depositT+w.development.mercuryTracts*DEVELOPMENT.tractT;}
+export function ceresReserveT(w:Campaign) {return BELT.depositT+w.development.ceresTracts*DEVELOPMENT.tractT;}
+export function developmentProjects(w:Campaign) {
+  const d=w.development;
+  const specs:{id:DevelopmentProject;name:string;site:SiteId;level:number;maxLevel:number;materialsT:number;equipmentT:number;description:string;benefit:string;dependency:string}[]=[
+    {id:'launch',name:'Mercury launch array',site:'mercury',level:d.launchLevel,maxLevel:DEVELOPMENT.maxLevel,
+      materialsT:DEVELOPMENT.launchMaterialsT*3**d.launchLevel,equipmentT:DEVELOPMENT.launchEquipmentT*2**d.launchLevel,
+      description:'Larger mirror batches share the existing Mercury transfer service. Fuel per tonne and recovery stay the same.',
+      benefit:mirrorCapacity(w)+' → '+mirrorCapacity(w)*2+' t per mirror launch',dependency:w.solar.launchArray?'':'Install the Mercury mirror launch array first.'},
+    {id:'water',name:'Ceres water works',site:'ceres',level:d.waterLevel,maxLevel:DEVELOPMENT.maxLevel,
+      materialsT:DEVELOPMENT.worksMaterialsT*2**d.waterLevel,equipmentT:DEVELOPMENT.worksEquipmentT*2**d.waterLevel,
+      description:'Extract more water each cycle. Equipment demand grows with completed output; water still needs transport to Phobos.',
+      benefit:BELT.waterTPerDay*2**d.waterLevel+' → '+BELT.waterTPerDay*2**(d.waterLevel+1)+' t water / day',dependency:w.ports.ceres.industry?'':'Install the Ceres water works first.'},
+    {id:'fuel',name:'Phobos propellant works',site:'phobos',level:d.fuelLevel,maxLevel:DEVELOPMENT.maxLevel,
+      materialsT:DEVELOPMENT.worksMaterialsT*2**d.fuelLevel,equipmentT:DEVELOPMENT.worksEquipmentT*2**d.fuelLevel,
+      description:'Process more delivered water into support propellant. Ceres stocks and water in flight cannot feed this plant.',
+      benefit:BELT.fuelTPerDay*2**d.fuelLevel+' → '+BELT.fuelTPerDay*2**(d.fuelLevel+1)+' t fuel / day',dependency:w.belt.propellantWorks?'':'Install the Phobos propellant works first.'},
+    {id:'mercuryTract',name:'Mercury mining tract',site:'mercury',level:d.mercuryTracts,maxLevel:DEVELOPMENT.maxTracts,
+      materialsT:DEVELOPMENT.mercuryTractMaterialsT*(d.mercuryTracts+1),equipmentT:DEVELOPMENT.mercuryTractEquipmentT*(d.mercuryTracts+1),
+      description:'Open another finite local tract for the existing refinery. This pays for access; material must still be mined.',
+      benefit:'+100,000 t local material reserve',dependency:w.ports.mercury.industry?'':'Install the Mercury refinery first.'},
+    {id:'ceresTract',name:'Ceres ice tract',site:'ceres',level:d.ceresTracts,maxLevel:DEVELOPMENT.maxTracts,
+      materialsT:DEVELOPMENT.ceresTractMaterialsT*(d.ceresTracts+1),equipmentT:DEVELOPMENT.ceresTractEquipmentT*(d.ceresTracts+1),
+      description:'Open another finite local ice tract. Water extraction, equipment and return flights are still required.',
+      benefit:'+100,000 t local water reserve',dependency:w.ports.ceres.industry?'':'Install the Ceres water works first.'},
+  ];
+  return specs.map(({dependency,...project})=>{
+    const p=w.ports[project.site];
+    const reason=developmentUnlockReason(w)||dependency||(project.level>=project.maxLevel?'This project has reached its limit.':'')||
+      (p.materialsT+EPS<project.materialsT||p.equipmentT+EPS<project.equipmentT?'Prepare '+project.materialsT+' t material and '+project.equipmentT+' t equipment at '+SITE[project.site].name+'.':'');
+    return {...project,reason};
+  });
+}
+export function upgradeDevelopment(w:Campaign,id:DevelopmentProject):Campaign {
+  const project=developmentProjects(w).find(p=>p.id===id);
+  if(!project)throw Error('Unknown industrial development project.');
+  if(project.reason)throw Error(project.reason);
+  const next=edit(w),p=next.ports[project.site];
+  p.materialsT=Math.max(0,p.materialsT-project.materialsT);p.equipmentT=Math.max(0,p.equipmentT-project.equipmentT);
+  if(id==='launch')next.development.launchLevel++;
+  else if(id==='water')next.development.waterLevel++;
+  else if(id==='fuel')next.development.fuelLevel++;
+  else if(id==='mercuryTract'){next.development.mercuryTracts++;next.solar.depositT+=DEVELOPMENT.tractT;}
+  else {next.development.ceresTracts++;next.belt.depositT+=DEVELOPMENT.tractT;}
+  note(next,project.name+' expanded at '+SITE[project.site].name+'. '+project.materialsT+' t material and '+project.equipmentT+' t equipment used. '+project.benefit+'.');
+  return next;
+}
+export function setMirrorFuelReserve(w:Campaign,tonnes:number):Campaign {
+  const reason=developmentUnlockReason(w);if(reason)throw Error(reason);
+  if(!Number.isInteger(tonnes)||tonnes<0||tonnes>LIMITS.stock)throw Error('Choose a fuel reserve from 0 to 1,000,000 whole tonnes.');
+  if(w.development.fuelReserveT===tonnes)return w;
+  const next=edit(w);next.development.fuelReserveT=tonnes;
+  note(next,'Automatic mirror launches will leave '+tonnes+' t support propellant for cargo. Manual mirror launches can use this reserve.');return next;
+}
+export function developmentObjectives(w:Campaign) {
+  const d=w.development;
+  return [
+    {name:'Expand the launch array',detail:'Build the first Mercury launch-array expansion for larger mirror batches.',done:d.launchLevel>=1},
+    {name:'Scale the water-to-fuel chain',detail:'Expand both Ceres extraction and Phobos refining, then keep the plants supplied.',done:d.waterLevel>=1&&d.fuelLevel>=1},
+    {name:'Open the next Mercury tract',detail:'Pay for access to another finite local material reserve.',done:d.mercuryTracts>=1},
+    {name:'An industrial solar swarm',detail:'Deploy 50,000 t of mirrors with expanded launch, water and fuel works.',done:w.solar.deployedT>=50000-EPS&&d.launchLevel>=1&&d.waterLevel>=1&&d.fuelLevel>=1},
+  ];
+}
+
 /** Construct clean bounded state, migrating known previous campaign schemas.
  * No catch-up production: the new economy starts at the saved simulation day. */
 export function validateCampaign(value: unknown): Campaign {
@@ -483,8 +567,15 @@ export function validateCampaign(value: unknown): Campaign {
   const raw = object(value), legacy=raw.schema===1 && raw.model==='network-0.1.0', previous=raw.schema===2 && raw.model==='network-0.2.0', migrate=legacy||previous;
   const firstLight=raw.schema===3&&raw.model==='network-0.3.0';
   const powerLoop=raw.schema===4&&raw.model==='network-0.4.0',oldSchema=migrate||firstLight||powerLoop;
-  const firstBelt=raw.schema===5&&raw.model==='network-0.5.0',oldTraffic=oldSchema||firstBelt;
-  if (!oldTraffic && (raw.schema !== 5 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const firstBelt=raw.schema===5&&raw.model==='network-0.5.0',expandedTraffic=raw.schema===5&&raw.model==='network-0.5.1',oldTraffic=oldSchema||firstBelt;
+  const beforeDevelopment=oldTraffic||expandedTraffic;
+  if (!beforeDevelopment && (raw.schema !== 6 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  let development=freshDevelopment();
+  if(!beforeDevelopment){const d=object(raw.development);development={
+    launchLevel:num(d.launchLevel,0,DEVELOPMENT.maxLevel,true),waterLevel:num(d.waterLevel,0,DEVELOPMENT.maxLevel,true),fuelLevel:num(d.fuelLevel,0,DEVELOPMENT.maxLevel,true),
+    mercuryTracts:num(d.mercuryTracts,0,DEVELOPMENT.maxTracts,true),ceresTracts:num(d.ceresTracts,0,DEVELOPMENT.maxTracts,true),fuelReserveT:num(d.fuelReserveT,0,LIMITS.stock,true),
+  };}
+  const mercuryReserve=SOLAR.depositT+development.mercuryTracts*DEVELOPMENT.tractT,ceresReserve=BELT.depositT+development.ceresTracts*DEVELOPMENT.tractT;
   const day = num(raw.day,0,LIMITS.days), rawPorts = object(raw.ports), ports = {} as Record<SiteId,Port>;
   for (const id of SITES) {
     if(id==='mercury'&&migrate){ports.mercury=emptyPort();continue;}
@@ -541,9 +632,11 @@ export function validateCampaign(value: unknown): Campaign {
       if(deploymentIds.has(id))throw Error('Duplicate mirror deployment.');deploymentIds.add(id);
       const departed=num(d.departed,0,day),arrival=num(d.arrival,day+1e-9,LIMITS.days);
       if(Math.abs(arrival-departed-SOLAR.deploymentDays)>1e-6)throw Error('Invalid mirror deployment timing.');
-      return {id,departed,arrival,massT:num(d.massT,1,30,true)};
+      // Earlier validators accepted any existing batch up to 30 t. Preserve
+      // those imports even if its saved port tier could not launch it today.
+      return {id,departed,arrival,massT:num(d.massT,1,beforeDevelopment?30:Math.max(30,ports.mercury.level*10*2**development.launchLevel),true)};
     });
-    solar={unlocked:bool(r.unlocked),depositT:num(r.depositT,0,SOLAR.depositT),
+    solar={unlocked:bool(r.unlocked),depositT:num(r.depositT,0,mercuryReserve),
       nextCycleDay:r.nextCycleDay===null?null:num(r.nextCycleDay,day+1e-9,LIMITS.days+1),
       mirrorWorks:bool(r.mirrorWorks),launchArray:bool(r.launchArray),powerLink:firstLight?false:bool(r.powerLink),mirrorsT:num(r.mirrorsT,0,LIMITS.stock),
       manufacturedT:num(r.manufacturedT,0,1e9),deployedT:num(r.deployedT,0,1e9),autoLaunch:bool(r.autoLaunch),
@@ -559,25 +652,27 @@ export function validateCampaign(value: unknown): Campaign {
   }
   let belt=freshBelt();
   if(!oldSchema){const b=object(raw.belt);
-    belt={unlocked:bool(b.unlocked),depositT:num(b.depositT,0,BELT.depositT),extractedT:num(b.extractedT,0,BELT.depositT),returnedWaterT:num(b.returnedWaterT,0,BELT.depositT),refinedT:num(b.refinedT,0,BELT.depositT),propellantWorks:bool(b.propellantWorks),nextCycleDay:b.nextCycleDay===null?null:num(b.nextCycleDay,day+1e-9,LIMITS.days+1)};
+    belt={unlocked:bool(b.unlocked),depositT:num(b.depositT,0,ceresReserve),extractedT:num(b.extractedT,0,ceresReserve),returnedWaterT:num(b.returnedWaterT,0,ceresReserve),refinedT:num(b.refinedT,0,ceresReserve),propellantWorks:bool(b.propellantWorks),nextCycleDay:b.nextCycleDay===null?null:num(b.nextCycleDay,day+1e-9,LIMITS.days+1)};
     if(belt.unlocked!==(belt.nextCycleDay!==null))throw Error('Invalid belt production clock.');
     if(belt.unlocked&&(!solar.powerLink||solar.deployedT+EPS<BELT.minSwarmT||ports.phobos.level<2||!ports.phobos.industry))throw Error('Ceres requires an established swarm and Phobos staging hub.');
     if(!belt.unlocked&&(belt.propellantWorks||ports.ceres.level||ports.ceres.materialsT||ports.ceres.equipmentT||ports.ceres.receivedT||ports.ceres.sentT||belt.extractedT||services.some(s=>s.from==='ceres'||s.to==='ceres')||flights.some(f=>f.from==='ceres'||f.to==='ceres')))throw Error('Ceres requires an open expedition.');
     if(belt.extractedT>0&&!ports.ceres.industry||belt.refinedT>0&&!belt.propellantWorks)throw Error('Belt production requires installed facilities.');
     if(SITES.some(id=>id!=='ceres'&&id!=='phobos'&&ports[id].waterT!==0))throw Error('Water is stored at Ceres and Phobos only.');
     const transit=flights.filter(f=>f.kind==='water').reduce((n,f)=>n+f.cargoT,0);
-    if(Math.abs(BELT.depositT-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
+    if(Math.abs(ceresReserve-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
   }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  return { schema:5, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  const world:Campaign={ schema:6, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
-    solar,belt,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
+    solar,belt,development,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
+  if(Object.values(development).some(v=>v>0)&&developmentUnlockReason(world))throw Error('Industrial development requires the established Mercury and Ceres network.');
+  return world;
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:5, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:6, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

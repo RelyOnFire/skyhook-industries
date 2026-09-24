@@ -2,8 +2,8 @@
 
 Routes: /lab/campaign/ and the public guide /lab/campaign/method/.
 
-The campaign has five linked chapters and twenty milestones: establish Earth–Moon–Phobos tethers,
-sustain industry and scheduled deliveries, develop Mercury and a solar swarm, connect its power back to Mercury, then supply Ceres through Phobos and return water for propellant. The Moon's lunavator remains a
+The campaign has six linked chapters and twenty-four milestones: establish Earth–Moon–Phobos tethers,
+sustain industry and scheduled deliveries, develop Mercury and a solar swarm, connect its power back to Mercury, then supply Ceres through Phobos and return water for propellant. Industrial scale adds paid capacity upgrades, finite mining tracts and a protected fuel reserve to grow beyond the first belt loop. The Moon's lunavator remains a
 free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
 ## Operations interface
@@ -83,7 +83,7 @@ Each of up to twelve recurring services uses the manual dispatch checks. First
 attempt is tomorrow. After success, next attempt is departure + chosen interval
 (1–3,650 days). Blocked service retries in one day; no catch-up queue accumulates.
 Arrivals precede bookings at the same instant, then ascending service ID controls
-shared endpoint priority. Pause/remove leaves active flights intact. Resume
+shared endpoint priority. Edit changes a service payload and interval in place, preserving its ID, history, enabled state, pending attempt and active flights. The new interval starts after the next successful departure. Unchanged edits are no-ops. Pause/remove leaves active flights intact. Resume
 cannot create overdue attempts. Cargo has 256 active-flight slots; mirror deployments
 have an independent 128-batch allowance. Mirrors cannot consume cargo capacity.
 Both counts appear in the traffic panel. Fuel, local stock, endpoint recovery,
@@ -122,8 +122,8 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 5 / network-0.5.1 exports in a skyhook-campaign
-version-5 envelope. The validator accepts schemas 1, 2, 3 and 4 with their matching
+store. Current state schema 6 / network-0.6.0 exports in a skyhook-campaign
+version-6 envelope. The validator accepts schemas 1, 2, 3, 4 and 5 with their matching
 models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
@@ -165,6 +165,14 @@ catch-up production. The first write retains the old head and advances revision,
 including Save now without a gameplay action. Older models are validated against
 their original combined 32-flight bound; current worlds use independent limits.
 The genuine congested v5 export is `tests/fixtures/campaign-v5.json`.
+
+Version-five migration accepts both network-0.5.0 and network-0.5.1. It preserves
+all earlier stocks, ports, deposits, arrivals, service counters and pending clocks,
+adding only an empty `development` record. All capacity levels, purchased tract
+counts and the automatic-mirror fuel reserve start at zero. Reading alone does not
+rewrite IndexedDB. The first successful write keeps the old head and advances
+revision, protecting the new world from an older cached writer. No extra reserve,
+production or upgrades are granted. Backups through version five remain portable.
 
 Atomic writes compare the stored revision with the writer token; failed writes
 preserve committed state. The UI retains unsaved state for retry/export and
@@ -404,9 +412,69 @@ propellant system. Power, thermal control, surface access, losses and storage
 engineering are not solved. Neither this rotovator nor its routes are validated
 by a Flight Studio experiment.
 
+## Industrial scale (Chapter 06)
+
+The next chapter opens for an established power and Ceres network: swarm power
+linked, Ceres extraction and Phobos propellant works installed, and at least
+100 t of returned water refined. Existing completed saves can continue directly.
+The four milestones are a launch-array expansion, expanded Ceres and Phobos
+works, another Mercury mining tract, and 50,000 t deployed with all three capacity
+expansions installed.
+
+Players pay material and equipment at the project site. Each of three capacity
+levels doubles the relevant capacity. No action advances time, rewrites pending
+flights or reschedules an already pending service/launch attempt.
+
+| Project | First upgrade | Later cost | Effect at levels 0 / 1 / 2 / 3 |
+| --- | --- | --- | --- |
+| Mercury mirror array | 300 t material + 20 t equipment | Material ×3 and equipment ×2 per level | Mirror payload factor 1 / 2 / 4 / 8 |
+| Ceres water works | 100 t material + 10 t equipment | Both costs ×2 per level | Water capacity 2 / 4 / 8 / 16 t/day |
+| Phobos propellant works | 100 t material + 10 t equipment | Both costs ×2 per level | Fuel capacity 2 / 4 / 8 / 16 t/day |
+
+Mirror payload is the existing Mercury tier rating multiplied by the array
+factor, up to 240 t at tier 3 and expansion level 3. Cargo flights keep their
+10/20/30 t ratings. Mirror fuel remains 0.1 t per tonne, Mercury recovery remains
+2/tier days, and cargo competes for that recovery service as before. The automatic
+interval is still the greater of batch mass/current mirror production capacity
+and recovery. Larger batches improve throughput per transit slot but demand more
+fuel per attempt. These industrial ratings are scenario rules, not structural or
+launch-engineering calculations.
+
+Water/fuel recipes spend the same equipment per tonne and process only available
+inputs with reserved storage respected. Upgrading extraction without sufficient
+return transport stockpiles water at Ceres; upgrading Phobos without delivered
+water leaves the plant idle. Mercury's local tooling maintains a working buffer,
+so importing equipment for construction is often necessary. Service editing and
+the outlook help tune the upgraded supply chain.
+
+A player-selected fuel reserve (0 to 1,000,000 whole tonnes) applies only to
+automatic mirror attempts, after scheduled cargo has run. An automatic launch
+waits if it would leave less than the reserve and retries the following day.
+Cargo and explicit manual mirror launches may use this fuel. Changing the reserve
+preserves the next attempt date; zero keeps the previous behavior.
+
+Each site offers up to eight additional finite 100,000 t tracts. Mercury tract n
+costs 500n material + 20n equipment locally; Ceres tract n costs 150n + 10n.
+Purchasing access increases the remaining deposit, not depot stock or production.
+The Ceres water ledger now begins with `100000 + 100000 × ceresTracts` instead of
+the original fixed allocation; all extracted, stored, in-transit and refined
+water still balances. Mercury and Ceres reserve displays include purchased tracts.
+The tract sizes do not estimate planetary resources.
+
+Map infrastructure markers reflect the three capacity upgrades. Additional
+schematic swarm bands appear at 2,000, 10,000 and 50,000 t; the diagram caps symbols
+for readability and continues to respect Play/Pause and reduced motion.
+
+`tests/lab-campaign-development.test.mjs` exercises v5 continuity, local costs,
+finite reserves and ledgers, reserve-protected automatic launches, existing-flight
+preservation, invalid state rejection and time-step agreement. Service-edit tests
+cover unchanged edits, validation and scheduling/history preservation. The
+industrial browser suite covers migration, paid projects, cargo reserve, service
+editing, backup/reload and responsive operation using an isolated test world.
+
 ## Further work and sources
 
-More destinations, larger extraction tracts and detailed swarm engineering remain future work.
+More destinations and detailed swarm engineering remain future work. Industrial upgrades and additional finite extraction tracts are now implemented.
 The separate lunar and Phobos Flight Studio experiments now expose orbital
 rotovator dynamics and static anchored-cable loads/local releases respectively.
 Lunar surface pickup, Phobos capture/recovery, real targeting/launch windows and
