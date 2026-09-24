@@ -59,6 +59,12 @@ opens save, backup, import and recovery controls. A save failure also exposes
 Retry save and Export unsaved progress directly in the error message. Primary
 stock, production and traffic information does not require opening a tab.
 Mirror production, launch controls and deployed totals sit in the same workspace.
+After all twenty-four milestones, that prompt becomes an ongoing operations goal:
+100,000, 200,000, 400,000 and 800,000 t deployed. It shows progress and a
+read-only 90-day projection of added mirrors and returned power, with a direct
+route to Network outlook and a short cue for paused launches, an exhausted
+Mercury tract or projected departure holds. These are optional scale targets,
+not new saved objectives; they do not alter the economy or save schema.
 Model 0.5.0 / schema 5 adds the Phobos–Ceres water loop. Ceres and its operations
 panel appear once the power link is online; opening its expedition is a separate
 funded action. Its only corridor runs through Phobos. Contextual supply actions

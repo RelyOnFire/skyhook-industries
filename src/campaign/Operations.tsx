@@ -1,5 +1,7 @@
-import { BELT, beltObjectives, beltProduction, developmentObjectives, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
+import { useMemo } from 'react';
+import { BELT, beltObjectives, beltProduction, developmentObjectives, developmentProjects, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, swarmPower, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
+import { forecastNetwork } from './forecast.js';
 import { trafficItems, type TrafficId } from './traffic.js';
 import NetworkOutlook from './NetworkOutlook.js';
 import ServiceEditor from './ServiceEditor.js';
@@ -47,11 +49,37 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
   </section>;
 }
 
-export function NextMove({world,onSelect,onMilestones}:{world:Campaign;onSelect:(site:SiteId)=>void;onMilestones:()=>void}) {
+export function NextMove({world,onSelect,onMilestones,onOutlook}:{world:Campaign;onSelect:(site:SiteId)=>void;onMilestones:()=>void;onOutlook:()=>void}) {
   const chapters=[objectives(world),networkObjectives(world),solarObjectives(world),powerObjectives(world),beltObjectives(world),developmentObjectives(world)], all=chapters.flat(), done=all.filter(g=>g.done).length;
   const chapter=chapters.findIndex(gs=>gs.some(g=>!g.done)), next=all.find(g=>!g.done);
   const targets:SiteId[]=['moon','moon','phobos','moon','moon','phobos','phobos','phobos','mercury','mercury','mercury','mercury','mercury','mercury','mercury','mercury','phobos','ceres','phobos','ceres'];
-  return <section className="ops-next" aria-label="Next milestone"><div className="next-index">{chapter<0?'✓':String(chapter+1).padStart(2,'0')}</div><div><p className="campaign-eyebrow">{next?'NEXT MILESTONE':'NETWORK ESTABLISHED'}</p><h2>{next?.name||'An industrial network across the inner system.'}</h2><p>{next?.detail||n(world.belt.refinedT)+' t of support fuel produced at Phobos. Keep your supply lines running and the swarm growing.'}</p></div><div className="next-actions">{next&&(chapter===5?<a className="next-power" href="#development-operations">Plan industrial expansion ↗</a>:chapter===4?<a className="next-power" href="#belt-operations">Open belt operations ↗</a>:chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>)}<button className="text-button" onClick={onMilestones}>{done} / {all.length} milestones</button></div></section>;
+  const outlook=useMemo(()=>!next&&world.day<LIMITS.days?forecastNetwork(world,90):null,[next,world]);
+  const scaleTarget=[100000,200000,400000,800000].find(mass=>world.solar.deployedT<mass);
+  const gained=outlook?outlook.swarmLater-outlook.swarmNow:0;
+  const powerGain=outlook?swarmPower({...world,solar:{...world.solar,deployedT:outlook.swarmLater}}).returnedGW-swarmPower(world).returnedGW:0;
+  const tract=developmentProjects(world).find(project=>project.id==='mercuryTract');
+  let advice='The power loop is growing; keep the supply lines and fuel flowing.';
+  if(world.day>=LIMITS.days)advice='The simulation horizon has been reached.';
+  else if(!world.solar.autoLaunch)advice='Automatic mirror launches are paused. Enable them in Mirror operations.';
+  else if(world.solar.depositT<=0&&tract&&tract.level<tract.maxLevel)advice='Mercury’s current mining tract is exhausted. '+(tract.reason||'Open the next tract to restart production.');
+  else if(outlook?.holds.length)advice=outlook.holds.length+' departure '+(outlook.holds.length===1?'cause needs':'causes need')+' review in Network outlook.';
+  else if(gained<=0)advice='No mirror deployment is projected in this window. Review supplies and launch controls.';
+  return <section className={'ops-next'+(!next?' ongoing':'')} aria-label={next?'Next milestone':'Ongoing network objective'}>
+    <div className="next-index">{chapter<0?'↗':String(chapter+1).padStart(2,'0')}</div>
+    <div className="next-copy">
+      <p className="campaign-eyebrow">{next?'NEXT MILESTONE':'ONGOING OPERATIONS'}</p>
+      <h2>{next?.name||(scaleTarget?'Grow the swarm to '+n(scaleTarget,0)+' t deployed':'Sustain the industrial network')}</h2>
+      {next?<p>{next.detail}</p>:<>
+        <p className="next-forecast">{outlook?<>Current schedules project <b>+{n(gained)} t mirrors</b> and <b>+{n(powerGain)} GW returned</b> over {n(outlook.days)} days.</>:'Your network reached the simulation horizon.'}</p>
+        {scaleTarget&&<progress className="next-progress" aria-label={'Progress toward '+n(scaleTarget,0)+' t deployed'} value={world.solar.deployedT} max={scaleTarget}/>}
+        <p className="next-advice">{advice}</p>
+      </>}
+    </div>
+    <div className="next-actions">
+      {next?(chapter===5?<a className="next-power" href="#development-operations">Plan industrial expansion ↗</a>:chapter===4?<a className="next-power" href="#belt-operations">Open belt operations ↗</a>:chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>):<button className="next-power" onClick={onOutlook}>Review network outlook ↗</button>}
+      <button className="text-button" onClick={onMilestones}>{done} / {all.length} milestones</button>
+    </div>
+  </section>;
 }
 
 export function Milestones({world}:{world:Campaign}) {

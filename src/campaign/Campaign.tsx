@@ -135,7 +135,10 @@ export default function Campaign() {
         <button disabled={busy||world.day+1>LIMITS.days} onClick={()=>act(w=>advance(w,1),true)}>+1 day</button><button disabled={busy||world.day+30>LIMITS.days} onClick={()=>act(w=>advance(w,30),true)}>+30 days</button><button aria-label="Advance to next event" title={event===null?'No future event':day(event)} disabled={busy||event===null} onClick={()=>event!==null&&act(w=>advance(w,Math.max(1e-7,event-w.day)),true)}>Next event →</button></div>
       <div className="ops-status" aria-label="Network status"><span><b data-testid="campaign-fuel">{number(world.fuelT)} t</b> support fuel</span><span><b>{number(world.marsOperations)}</b> Mars points</span><span><b>{world.flights.length+world.solar.deployments.length}</b> flights</span><span><b>{world.services.filter(s=>s.enabled).length}</b> active services</span>{world.solar.unlocked&&<span><b>{number(world.solar.deployedT)} t</b> swarm deployed</span>}{world.solar.unlocked&&<span><b>{number(swarmPower(world).returnedGW)} GW</b> to Mercury</span>}</div>
       </section>
-      <NextMove world={world} onSelect={focusSite} onMilestones={()=>reveal(milestonePanel.current)}/>
+      <NextMove world={world} onSelect={focusSite} onMilestones={()=>reveal(milestonePanel.current)} onOutlook={()=>{
+        const panel=document.querySelector<HTMLDetailsElement>('.network-outlook');
+        if(panel){panel.open=true;reveal(panel);panel.querySelector('summary')?.focus({preventScroll:true});}
+      }}/>
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#dispatch">Send cargo</a></nav>
       <div className="ops-grid">
         <Outposts world={world} busy={busy} selected={selected} onSelect={setSelected} act={act} prepare={prepare}/>
