@@ -31,6 +31,21 @@ export function modelNumber(value: number, scale: number): number {
   return Number((value / scale).toPrecision(12));
 }
 
+// Presentation only. Study results and portable reports retain their model units.
+export function shownUnit(source: string, units: StudioUnits): string {
+  return source === 'km' || source === 'm' ? units.distance
+    : source === 'km/s' || source === 'm/s' ? units.speed
+    : source === 'kN' || source === 'N' ? units.force : source;
+}
+
+export function shownValue(value: number, source: string, units: StudioUnits): number {
+  const target = shownUnit(source, units);
+  if (source === target) return value;
+  if ((source === 'km' && target === 'm') || (source === 'km/s' && target === 'm/s') || (source === 'kN' && target === 'N')) return displayNumber(value,1000);
+  if ((source === 'm' && target === 'km') || (source === 'm/s' && target === 'km/s') || (source === 'N' && target === 'kN')) return modelNumber(value,1000);
+  return value;
+}
+
 export default function UnitPicker({ units, onChange }: { units: StudioUnits; onChange: (next: StudioUnits) => void }) {
   return <div className="studio-units" role="group" aria-label="Flight Studio display units">
     <span>DISPLAY UNITS</span>

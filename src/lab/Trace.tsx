@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { environment, type Result } from '../simulation/engine.js';
+import { shownValue, type StudioUnits } from './StudioUnits.js';
 
 /** Plots recorded model output; never fabricated telemetry or a design score. */
-export default function Trace({ result, time, metric }: {
-  result: Result; time: number; metric: 'clearance' | 'margin';
+export default function Trace({ result, time, metric, units }: {
+  result: Result; time: number; metric: 'clearance' | 'margin'; units: StudioUnits;
 }) {
   const chart = useMemo(() => {
     const cutoff=environment(result.design).cutoff/1000;
@@ -19,13 +20,13 @@ export default function Trace({ result, time, metric }: {
     return { minimum, maximum, points, threshold: y(metric === 'margin' ? 1 : cutoff), end };
   }, [result, metric]);
   const label = metric === 'clearance' ? 'Tether clearance' : 'Axial load margin';
-  const unit = metric === 'clearance' ? 'km' : '×';
-  const format = (v: number) => v.toFixed(metric === 'clearance' ? 0 : 2);
+  const unit = metric === 'clearance' ? units.distance : '×';
+  const format = (v: number) => (metric === 'clearance' ? shownValue(v,'km',units) : v).toFixed(metric === 'clearance' ? 0 : 2);
   return <figure className={`trace trace-${metric}`}>
     <figcaption><span>{label}</span><span>min {format(chart.minimum)} {unit}</span></figcaption>
     <svg viewBox="0 0 240 78" role="img" aria-label={`${label} over the calculated mission. Minimum ${format(chart.minimum)} ${unit}; maximum ${format(chart.maximum)} ${unit}. Dashed line is the model threshold.`}>
       <path d="M0 16H240 M0 42H240 M0 68H240" className="trace-grid" />
-      <line x1="0" x2="240" y1={chart.threshold} y2={chart.threshold} className="trace-threshold"><title>Model threshold: {metric==='margin'?1:environment(result.design).cutoff/1000} {unit}</title></line>
+      <line x1="0" x2="240" y1={chart.threshold} y2={chart.threshold} className="trace-threshold"><title>Model threshold: {metric==='margin'?1:format(environment(result.design).cutoff/1000)} {unit}</title></line>
       <polyline points={chart.points} className="trace-data" />
       <line x1={Math.min(240, time / chart.end * 240)} x2={Math.min(240, time / chart.end * 240)} y1="10" y2="74" className="trace-cursor" />
     </svg>

@@ -112,8 +112,8 @@ export default function PhobosLab(){
         </>}
       </aside>
     </div>
-    {pinned&&result&&<PhobosComparison pinned={pinned} current={result} dirty={dirty} busy={!!busy} onRestore={()=>adopt(pinned.design,false,false,true)} onClear={clearPin}/>}
-    <PhobosStudy study={study} design={design} busy={busy} invalid={!!bad.length} onStart={spacing=>run(design,false,'study',spacing)} onCancel={cancel} onInspect={d=>adopt(d,false,false,true)}/>
+    {pinned&&result&&<PhobosComparison pinned={pinned} current={result} dirty={dirty} busy={!!busy} units={units} onRestore={()=>adopt(pinned.design,false,false,true)} onClear={clearPin}/>}
+    <PhobosStudy study={study} design={design} busy={busy} invalid={!!bad.length} units={units} onStart={spacing=>run(design,false,'study',spacing)} onCancel={cancel} onInspect={d=>adopt(d,false,false,true)}/>
     {result&&<div className="phobos-analysis">
       <section className="lab-panel phobos-loads" aria-label="Anchored cable loads"><div className="panel-heading"><h2>What the anchor carries</h2><div className="phobos-arm-switch" role="group" aria-label="Inspected arm">{(['inward','outward'] as const).map(a=><button key={a} aria-pressed={inspected===a} onClick={()=>setInspected(a)}>{a==='inward'?'Inward':'Outward'}</button>)}</div></div>
         {loads&&<><p>Static tension: <span style={{color:"#efa477"}}>dashed copper = loaded</span>; <span style={{color:"#abc2c2"}}>solid pale = empty</span>. Each terminal retains {TERMINAL_KG/1000} t.</p><svg viewBox="0 0 620 145" role="img" aria-label={`${inspected} cable tension from Phobos surface to terminal, loaded and empty`}>
