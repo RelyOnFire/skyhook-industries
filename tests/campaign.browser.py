@@ -13,12 +13,15 @@ class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self,*_): pass
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--executable');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--executable');parser.add_argument('--origin',help='Exercise a published preview in an isolated browser');args=parser.parse_args()
     out=ROOT/'qa/browser/campaign';out.mkdir(parents=True,exist_ok=True)
-    server=ThreadingHTTPServer(('127.0.0.1',0),partial(QuietHandler,directory=str(ROOT/'dist')))
-    threading.Thread(target=server.serve_forever,daemon=True).start()
-    origin=f'http://127.0.0.1:{server.server_port}'
-    report={'checks':[],'errors':[]}
+    server=None
+    if args.origin: origin=args.origin.rstrip('/')
+    else:
+        server=ThreadingHTTPServer(('127.0.0.1',0),partial(QuietHandler,directory=str(ROOT/'dist')))
+        threading.Thread(target=server.serve_forever,daemon=True).start()
+        origin=f'http://127.0.0.1:{server.server_port}'
+    report={'origin':origin,'checks':[],'errors':[]}
     def done(name): report['checks'].append(name);print('PASS',name,flush=True)
     with sync_playwright() as p:
         options={'headless':True}
@@ -397,6 +400,49 @@ def main():
             live=live_context.new_page();live.set_default_timeout(12000)
             live.on('pageerror',lambda e:report['errors'].append(str(e)))
             live.goto(origin+'/lab/campaign/',wait_until='networkidle');action('Start new network',live)
+            live.locator('#lab-content').focus();live.evaluate('scrollTo(0,240)')
+            scroll=live.evaluate('scrollY')
+            live.keyboard.down('Space');live.keyboard.down('Space');live.keyboard.up('Space')
+            expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_have_attribute('aria-keyshortcuts','Space')
+            live.wait_for_function('()=>document.querySelector("[data-testid=campaign-day]").textContent!=="Day 0"');saved(live)
+            live.keyboard.down('Space');live.keyboard.down('Space');live.keyboard.up('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            stopped=records(live)
+            live.wait_for_timeout(1150)
+            assert records(live)==stopped and live.evaluate('scrollY')==scroll
+            done('Space runs and pauses saved simulation time; held keys toggle once without scrolling or changing paused progress')
+            for shortcut in ['Shift+Space','Control+Space','Alt+Space','Meta+Space']:
+                live.keyboard.press(shortcut)
+                expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            live.locator('#lab-content').dispatch_event('keydown',{'key':' ','code':'Space','isComposing':True})
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            # A focused field edits normally; a native button or SVG button activates once.
+            show_saves(live)
+            live.get_by_label('New network name',exact=True).fill('Keyboard')
+            live.keyboard.press('Space');live.keyboard.type('pilot')
+            expect(live.get_by_label('New network name',exact=True)).to_have_value('Keyboard pilot')
+            live.get_by_role('button',name='Save now',exact=True).focus();live.keyboard.press('Space');saved(live)
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            summary=live.locator('.campaign-save-manager>summary')
+            summary.focus();live.keyboard.press('Space')
+            assert live.locator('.campaign-save-manager').get_attribute('open') is None
+            live.get_by_label('Cargo (t)',exact=True).focus();live.keyboard.press('Space')
+            expect(live.get_by_label('Cargo (t)',exact=True)).to_have_value('10')
+            live.get_by_label('Simulation speed',exact=True).focus();live.keyboard.press('Space');live.keyboard.press('Escape')
+            live.get_by_role('button',name='Locate Phobos',exact=True).focus();live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Locate Phobos',exact=True)).to_have_attribute('aria-pressed','true')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            assert records(live)==stopped
+            live.evaluate("""()=>{const editor=document.createElement('div');editor.id='keyboard-editor';editor.contentEditable='true';document.querySelector('#lab-content').append(editor);editor.focus();}""")
+            live.keyboard.press('Space')
+            assert live.locator('#keyboard-editor').inner_text() in [' ','\u00a0']
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            live.locator('#keyboard-editor').evaluate('e=>e.remove()')
+            live.get_by_role('button',name='Play simulation',exact=True).focus();live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
+            live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            done('Space preserves typing, controls, disclosures and map selection; modifiers, composition and native clock activation never double-toggle')
             live.evaluate('''()=>{
                 const original=IDBDatabase.prototype.transaction;
                 IDBDatabase.prototype.transaction=function(...args){
@@ -419,7 +465,15 @@ def main():
             expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
             live.wait_for_timeout(1200)
             assert records(live)[0]['state']==held, 'Play advanced before the manual save finished'
+            live.locator('#lab-content').focus();live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
+            live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
             live.evaluate('()=>window.releaseSave()');saved(live)
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_enabled()
+            live.wait_for_timeout(1150)
+            assert records(live)[0]['state']==held, 'Finishing a save restarted a keyboard-paused clock'
+            live.keyboard.press('Space')
             expect(live.get_by_role('button',name='Pause simulation',exact=True)).to_be_visible()
             live.wait_for_function('prior=>Number(document.querySelector("[data-testid=campaign-day]").textContent.replace(/[^0-9.]/g,""))>prior',arg=held['day'])
             saved(live)
@@ -429,6 +483,7 @@ def main():
             assert after['ports']['earth']['materialsT']==150
             assert after['flights'][0]==held['flights'][0]
             done('dispatch during Play saves exactly one shipment, waits for persistence, then resumes automatic time')
+            done('Space can pause a pending save, cannot restart until it finishes, and retains that pause after commit')
             live.get_by_role('button',name='Play simulation',exact=True).click()
             action('Schedule service',live);action('Pause service 1',live)
             action('Save now',live)
@@ -450,15 +505,25 @@ def main():
             expect(live.get_by_role('alert')).to_contain_text('Could not save')
             expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
             expect(live.get_by_role('button',name='Export unsaved progress',exact=True)).to_be_visible()
+            live.locator('#lab-content').focus();live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
             assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==fresh
             live.evaluate('()=>{IDBObjectStore.prototype.put=window.originalPut;}');action('Retry save',live)
             retried=next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])
             assert retried['day']==0 and len(retried['flights'])==1 and retried['ports']['earth']['materialsT']==150
             live.wait_for_timeout(1150)
             assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==retried
+            # A horizon save is still readable, but neither clock control may advance it.
+            horizon={**fresh,'day':100000}
+            live.evaluate("""async state=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{const tx=db.transaction('worlds','readwrite');tx.objectStore('worlds').put({id:state.id,state,savedAt:'2099-01-01T00:00:00.000Z',checkpoints:[]});tx.oncomplete=ok;tx.onerror=()=>no(tx.error)});db.close()}""",horizon)
+            live.reload(wait_until='networkidle');live.get_by_role('button',name='Continue Clock isolation').click();saved(live)
+            live.locator('#lab-content').focus();live.keyboard.press('Space')
+            expect(live.get_by_role('button',name='Play simulation',exact=True)).to_be_disabled()
+            assert next(r['state'] for r in records(live) if r['id']==fresh['id'])==horizon
             report['errors']=[e for e in report['errors'] if 'test full' not in e]
             live_context.close()
             done('service edits and Save now preserve Play; explicit time steps, world changes and failed manual saves stop it safely')
+            done('Space cannot bypass failed-save or simulation-horizon guards')
             # Fixed telemetry slots must not move depot controls when cargo appears or arrives.
             motion_context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='no-preference',accept_downloads=True)
             motion=motion_context.new_page();motion.set_default_timeout(12000)
@@ -570,6 +635,7 @@ def main():
             if 'motion' in locals() and not motion.is_closed():motion.screenshot(path=str(out/'power-failure.png'),full_page=True)
             raise
         finally:
-            (out/'report.json').write_text(json.dumps(report,indent=2));browser.close();server.shutdown()
+            (out/'report.json').write_text(json.dumps(report,indent=2));browser.close()
+            if server:server.shutdown()
 
 if __name__=='__main__':main()

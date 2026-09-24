@@ -21,6 +21,7 @@ export default function Campaign() {
   const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<TrafficId|null>(null);
   const [arrivals,setArrivals]=useState<string[]>([]);
   const milestonePanel=useRef<HTMLDetailsElement>(null), savePanel=useRef<HTMLDetailsElement>(null);
+  const playButton=useRef<HTMLButtonElement>(null);
   const revision=useRef<number|null>(null), upload=useRef<HTMLInputElement>(null), main=useRef<HTMLElement>(null);
   const refresh=async()=>setSlots(await listSaves());
   useEffect(()=>{ let alive=true; listSaves().then(s=>{if(alive)setSlots(s);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false;}; },[]);
@@ -50,6 +51,21 @@ export default function Campaign() {
     const hide=()=>{if(document.hidden)setPlaying(false);};
     document.addEventListener('visibilitychange',hide);
     return()=>document.removeEventListener('visibilitychange',hide);
+  },[]);
+  useEffect(()=>{
+    const space=(event:KeyboardEvent)=>{
+      if((event.code!=='Space'&&event.key!==' ')||event.defaultPrevented||event.isComposing||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.hidden)return;
+      const target=event.target;
+      // Keep native Space activation and text editing inside focused controls.
+      if(target instanceof Element&&(target.closest('input,textarea,select,button,a,summary,[role="button"],[role="link"]')||(target instanceof HTMLElement&&target.isContentEditable)))return;
+      const button=playButton.current;
+      if(!button)return;
+      event.preventDefault(); // Holding Space must not toggle repeatedly or scroll.
+      // Reuse the button's pending-save, error and horizon guards. Pause stays available.
+      if(!event.repeat&&!button.disabled)button.click();
+    };
+    window.addEventListener('keydown',space);
+    return()=>window.removeEventListener('keydown',space);
   },[]);
   useEffect(()=>{
     if(!playing||!world||busy)return;
@@ -113,7 +129,7 @@ export default function Campaign() {
     </div></section><NetworkMap world={null} selected={selected} onSelect={setSelected} tracked={null} playing={false}/></>}
     {world&&<>
       <section className="campaign-clock" aria-label="Advance simulation"><div className="clock-readout"><strong data-testid="campaign-day">{day(world.day)}</strong><span><i className={playing?'clock-running':''}/>{playing?'Running':'Paused'} · simulation time</span></div><div className="campaign-time-controls">
-        <button className="primary" disabled={!playing&&(busy||world.day>=LIMITS.days||saveStatus.startsWith('Not saved'))} aria-label={playing?'Pause simulation':'Play simulation'} onClick={()=>setPlaying(p=>!p)}><span aria-hidden="true">{playing?'Ⅱ':'▶'}</span> {playing?'Pause':'Play'}</button>
+        <button ref={playButton} className="primary" disabled={!playing&&(busy||world.day>=LIMITS.days||saveStatus.startsWith('Not saved'))} aria-label={playing?'Pause simulation':'Play simulation'} aria-keyshortcuts="Space" title={(playing?'Pause':'Play')+' simulation (Space)'} onClick={()=>setPlaying(p=>!p)}><span aria-hidden="true">{playing?'Ⅱ':'▶'}</span> {playing?'Pause':'Play'}<kbd className="clock-shortcut" aria-hidden="true">Space</kbd></button>
         <label className="campaign-speed"><span className="sr-only">Speed</span><select aria-label="Simulation speed" value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={1}>1 day / sec</option><option value={10}>10 days / sec</option><option value={30}>30 days / sec</option></select></label>
         <button disabled={busy||world.day+1>LIMITS.days} onClick={()=>act(w=>advance(w,1),true)}>+1 day</button><button disabled={busy||world.day+30>LIMITS.days} onClick={()=>act(w=>advance(w,30),true)}>+30 days</button><button aria-label="Advance to next event" title={event===null?'No future event':day(event)} disabled={busy||event===null} onClick={()=>event!==null&&act(w=>advance(w,Math.max(1e-7,event-w.day)),true)}>Next event →</button></div>
       <div className="ops-status" aria-label="Network status"><span><b data-testid="campaign-fuel">{number(world.fuelT)} t</b> support fuel</span><span><b>{number(world.marsOperations)}</b> Mars points</span><span><b>{world.flights.length+world.solar.deployments.length}</b> flights</span><span><b>{world.services.filter(s=>s.enabled).length}</b> active services</span>{world.solar.unlocked&&<span><b>{number(world.solar.deployedT)} t</b> swarm deployed</span>}{world.solar.unlocked&&<span><b>{number(swarmPower(world).returnedGW)} GW</b> to Mercury</span>}</div>

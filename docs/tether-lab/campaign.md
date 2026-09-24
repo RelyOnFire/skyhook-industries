@@ -91,6 +91,12 @@ now keep Play active. Their saves use the same lock as automatic ticks; the next
 tick waits for persistence to finish. Explicit +1/+30/next-event steps pause Play
 before advancing. Pause remains available during a pending save. Hidden tabs,
 reload, world changes, errors and the 100,000-day horizon also stop play.
+Space toggles Play/Pause while operating the map or reading panels. A key hint
+appears on the clock button. Holding the key toggles once and does not scroll;
+modifier shortcuts and IME composition are ignored. Text fields, selects,
+buttons, links, disclosures and map destination buttons retain their normal
+keyboard behavior. The shortcut uses the clock button's existing save and horizon
+guards, including allowing Pause while a save is pending.
 No offline or wall-clock catch-up. Marker movement is schematic elapsed
 fraction; tracked flight and arrival panels explain status. Orbital animations are illustrative: free rotors travel around Earth, the Moon
 Mercury and Ceres; Phobos and its attached inward/outward arms orbit Mars together.
@@ -182,6 +188,10 @@ reduced-motion behavior, increasing power after deployment, and the power-link
 upgrade and backup round-trip. A delayed manual-dispatch save verifies that Play waits, resumes,
 and retains exactly one shipment. Service edits and Save now preserve Play;
 explicit time steps, world changes and failed manual dispatch saves stop it.
+Space checks cover saved time advancing and stopping, held keys, no page scroll,
+editing and native control activation, modifiers/composition, pending saves,
+save failures and the horizon. `--origin` runs this suite against a published
+preview in an isolated browser.
 A real completed v2 network is supplied and built out through
 Mercury, automatic deployment, all new milestones and a solar backup round-trip.
 Responsive captures cover 1440, 1000, 768, 390 and 320 px; the method guide works
