@@ -30,8 +30,10 @@ Cloudflare deployment is configured in `wrangler.jsonc` and builds from GitHub.
 build a lunar lunavator and Phobos anchor hub, produce material and equipment,
 schedule direct Moon–Phobos deliveries, then unlock Mercury industry and launch
 mirrors into a growing solar swarm. Reinvest its power automatically, then use
-Phobos to supply Ceres and return water for support propellant. Twenty milestones
-span five chapters. Run the clock and resume named saves; valid schema 1–5 saves
+Phobos to supply Ceres and return water for support propellant. Expand industrial
+capacity, open additional finite mining tracts, and protect fuel for cargo as the
+swarm grows. Twenty-four milestones span six chapters. Run the clock and resume
+named saves; valid schema 1–6 saves
 migrate without resetting progress. Cargo supports 256 concurrent flights; solar
 deployments have a separate 128-batch allowance, keeping swarm growth from
 crowding out supply lines. `/lab/campaign/method/` documents the calculations,
