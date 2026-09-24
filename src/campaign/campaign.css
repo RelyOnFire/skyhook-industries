@@ -127,8 +127,8 @@
 @media(prefers-reduced-motion:reduce){.map-orbital-motion,.map-rotor-motion,.map-swarm-motion,.map-power-link path{animation:none!important}}
 
 /* The belt appears only when the power chapter opens this expansion. */
-.outpost-stock>div,.solar-stock>div{min-width:0}.outpost-stock dd{height:40px;white-space:nowrap}.outpost-stock dd>span{display:block;line-height:26px}.outpost-stock dd small{display:block;line-height:14px}.outpost-stock dd.stock-long>span{font-size:14px}
-.solar-stock b{height:46px;line-height:32px;white-space:nowrap}.solar-stock b small{display:block;line-height:14px}.solar-stock b.readout-long{font-size:clamp(16px,1.8vw,25px)}
+.outpost-stock>div,.solar-stock>div{min-width:0}.outpost-stock dd{display:flex;align-items:baseline;gap:.2em;min-height:40px;white-space:nowrap}.outpost-stock dd>span{line-height:1.3}.outpost-stock dd small{line-height:1.3}.outpost-stock dd.stock-long>span{font-size:14px}
+.solar-stock b{display:flex;align-items:baseline;gap:.2em;min-height:46px;line-height:1.3;white-space:nowrap}.solar-stock b small{line-height:1.3}.solar-stock b.readout-long{font-size:clamp(12px,1.2vw,18px)}
 .water{--cargo-color:#99d5bd}.cargo-swatch.water{clip-path:ellipse(48% 35% at 50% 50%)}.flight-row[data-kind=water] progress{accent-color:#99d5bd}.flight-row[data-kind=water] progress::-webkit-progress-value{background:#99d5bd}.flight-row[data-kind=water] progress::-moz-progress-bar{background:#99d5bd}
 .campaign-belt{border:1px solid #89b9ad30;border-radius:7px;background:linear-gradient(120deg,#426c6414,#10171b 70%);min-width:0;scroll-margin-top:140px}
 .campaign-belt>.panel-title{align-items:center}.campaign-belt .panel-title h2{margin-top:3px}.campaign-belt .panel-title>a{font-size:10px;white-space:nowrap}

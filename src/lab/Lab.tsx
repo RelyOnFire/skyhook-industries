@@ -13,6 +13,7 @@ import { DEFAULT, LUNAR_DEFAULT, LUNAR_PRESETS, EDT_PRESET, environment, designB
   validate, compile, properties, resize, type Design, type Result } from '../simulation/engine.js';
 import { readDesign, designFragment, type ImportedDesign } from '../simulation/design-io.js';
 import { elapsed, sample } from './view.js';
+import UnitPicker, { displayNumber, modelNumber, unitScale, useStudioUnits } from './StudioUnits.js';
 
 type ControlTab = 'structure' | 'mission' | 'recovery';
 type MobileTab = 'build' | 'fly' | 'results';
@@ -40,7 +41,7 @@ function Field({ label, unit, value, min, max, step, onChange, onValidity }: {
     if (!bad) onChange(number);
   }
   return <div className="lab-field">
-    <div className="field-heading"><label htmlFor={id}>{label}</label><span className="field-value">
+    <div className="field-heading"><label htmlFor={id}>{label}</label><span className={'field-value'+(unit==='m'||unit==='m/s'?' long-unit':'')}>
       <input id={id} aria-label={`${label} value`} type="number" inputMode="decimal" value={text} min={min} max={max} step="any"
         aria-invalid={invalid || outsideRange || undefined} aria-describedby={invalid || outsideRange ? `${id}-error` : undefined}
         onChange={e => edit(e.target.value)} /><span>{unit}</span>
@@ -58,6 +59,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
   const [completed, setCompleted] = useState<string[]>([]), [guide, setGuide] = useState<number|null>(null);
   const [baseline, setBaseline] = useState<Result|null>(null), [studyRows, setStudyRows] = useState<StudyRow[]>([]);
   const [vectors, setVectors] = useState(false), [focusScene, setFocusScene] = useState(false);
+  const [units, setUnits] = useStudioUnits();
   const challengeRef = useRef<Challenge|null>(null);
   const [design, setDesign] = useState<Design>({ ...initialDesign });
   const env=environment(design),lunar=env.id==='moon',bounds=designBounds(design);
@@ -198,8 +200,11 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     if (file.size > 16000) throw Error('Design file exceeds 16 KB.'); acceptImport(await file.text());
   } catch (e) { setError(`Import rejected: ${(e as Error).message}`); } finally { if (fileInput.current) fileInput.current.value = ''; } };
   const error3D = useCallback((message: string) => { setGpu(false); setView('plane'); setNotice(message); }, []);
-  const field = (key: keyof Design, label: string, unit: string, min: number, high: number, step: number) =>
-    <Field key={key} label={label} unit={unit} value={design[key] as number} min={min} max={high} step={step} onChange={v => change(key, v as never)} onValidity={reportValidity} />;
+  const field = (key: keyof Design, label: string, unit: string, min: number, high: number, step: number) => {
+    const shownUnit = unit === 'km' ? units.distance : unit === 'km/s' ? units.speed : unit === 'N' ? units.force : unit;
+    const scale = unit === 'N' ? unitScale(shownUnit) : shownUnit === unit ? 1 : unitScale(shownUnit);
+    return <Field key={`${key}-${shownUnit}`} label={label} unit={shownUnit} value={displayNumber(design[key] as number, scale)} min={displayNumber(min, scale)} max={displayNumber(high, scale)} step={displayNumber(step, scale)} onChange={v => change(key, modelNumber(v, scale) as never)} onValidity={reportValidity} />;
+  };
 
   const inspectResult=(r:Result)=>{
     worker.current?.terminate(); request.current++; setBusy(false); setPlaying(false); setError('');
@@ -231,6 +236,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       <div className="workbench-actions"><button className="open-missions" onClick={()=>setModal('missions')}>Flight school</button><button className="open-study" onClick={()=>{setPlaying(false);setModal('study');}} disabled={busy||hasInvalidInput}>Trade study</button><button onClick={save}>Save</button><button onClick={load}>Load</button><button className="share-design" onClick={share}>Share design <span aria-hidden="true">↗</span></button></div>
     </div>
     <div className="studio-worlds" role="group" aria-label="Flight environment"><span>FLIGHT STUDIO</span><button aria-pressed={!lunar} onClick={()=>{if(!lunar)return;setChallenge(null);challengeRef.current=null;adopt({...DEFAULT});setControl('structure');}}>Earth <small>Orbital rotovator</small></button><button aria-pressed={lunar} onClick={()=>{if(lunar)return;setChallenge(null);challengeRef.current=null;adopt({...LUNAR_DEFAULT});setControl('structure');}}>Moon <small>Lunavator experiment</small></button><a className="studio-world-link" href="/lab/phobos/">Phobos <small>Anchored tethers</small></a><a className="studio-world-link" href="/lab/t4/">T4 <small>Two-tier rotor</small></a>{lunar&&<a href="/lab/lunar/method/">Lunar model & assumptions ↗</a>}</div>
+    <UnitPicker units={units} onChange={setUnits}/>
     <div className="experiment-strip" aria-label="Experiment presets"><span>START WITH</span>{presets.map((p, i) => <button key={p.id} onClick={() => { setChallenge(null);challengeRef.current=null;setGuide(null);adopt({ ...p.design }); setMobile('fly'); }} title={p.description}>
       <span className="preset-number">0{i + 1}</span>{lunar?p.name:['Orbital relay', 'No reboost', 'Material limit', 'Long reach'][i]}<span aria-hidden="true">↗</span>
     </button>)}<a href="/lab/architectures/">Architecture catalogue <span aria-hidden="true">→</span></a></div>
@@ -290,7 +296,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
               {field('fuelT', 'Propellant budget', 't', 0, 80, 1)}
               {field('thrustN', 'Total available thrust', 'N', 100, 10000, 100)}
               {field('isp', 'Specific impulse', 's', 150, 450, 5)}
-              <p className="control-hint">The controller spends fuel to recover orbit and spin. It is bounded, not fuel-optimal.</p>
+              <p className="control-hint">Thrust sets how quickly the controller can recover orbit and spin. The velocity change depends on the propellant spent and the changing facility mass; thrust alone is not Δv.</p>
             </> : design.recovery==='electrodynamic' ? <div className="electrical-controls">
               <p className="range-warning"><b>Educational circuit model.</b> Two independently powered conductor segments; aligned equatorial field and assumed plasma closure. Not a validated MXER design.</p>
               <button className="electrical-example" onClick={()=>{setChallenge(null);challengeRef.current=null;setGuide(null);adopt({...EDT_PRESET});setControl('recovery');}}>Load powered-conductor example →</button>
@@ -320,7 +326,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       <section className="flight-panel" aria-label="Flight workspace">
         <div className="scene-toolbar"><span className="scene-name"><i aria-hidden="true" />{environment(result?.design??design).name.toUpperCase()} ORBIT</span><div className="view-switch" role="group" aria-label="View mode"><button disabled={!gpu} aria-pressed={view === 'earth'} onClick={() => setView('earth')}>Globe</button><button aria-pressed={view === 'plane'} onClick={() => setView('plane')}>Orbit plane</button><button aria-pressed={view === 'follow'} onClick={() => setView('follow')}>Follow</button><button aria-pressed={view === 'structure'} onClick={() => setView('structure')}>Structure</button></div></div>
         <div className={`scene-box ${view==='structure'?'is-structure':''}`}>
-          {result ? view === 'structure' ? <Structure result={result} time={time}/> : view === 'plane' || (!gpu && view === 'follow') ? <Plane result={result} clock={clock} vectors={vectors} selectedObject={selectedObject} follow={view==='follow'} /> : <Scene key={result.design.architecture} result={result} clock={clock} view={view} vectors={vectors} selectedObject={selectedObject} onFailure={error3D} /> : <div className="scene-loading"><div className="loading-orbit" /><h2>{busy ? 'Solving the trajectory' : 'Ready for a new experiment'}</h2><p>{busy ? 'Gravity, rotation, payload transfer and recovery.' : 'Choose a design and run the simulation.'}</p></div>}
+          {result ? view === 'structure' ? <Structure result={result} time={time} units={units}/> : view === 'plane' || (!gpu && view === 'follow') ? <Plane result={result} clock={clock} vectors={vectors} selectedObject={selectedObject} follow={view==='follow'} /> : <Scene key={result.design.architecture} result={result} clock={clock} view={view} vectors={vectors} selectedObject={selectedObject} onFailure={error3D} /> : <div className="scene-loading"><div className="loading-orbit" /><h2>{busy ? 'Solving the trajectory' : 'Ready for a new experiment'}</h2><p>{busy ? 'Gravity, rotation, payload transfer and recovery.' : 'Choose a design and run the simulation.'}</p></div>}
           {busy && <div className="scene-pending">Calculating mission <button onClick={cancel}>Cancel</button></div>}
           {dirty && !busy && <div className="stale-notice">Unrun changes · scene and telemetry show the last calculation</div>}
           <div className="scene-tools">{view!=='structure'&&<button aria-pressed={vectors} onClick={()=>setVectors(v=>!v)} title="Velocity arrows share a display scale">Velocity vectors</button>}<button onClick={()=>setFocusScene(v=>!v)} aria-label={focusScene?'Exit expanded flight view':'Expand flight view'}>{focusScene?'Exit expanded view':'Expand view'}</button></div>
@@ -341,8 +347,8 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       <aside inert={focusScene || undefined} className="results-panel lab-panel" aria-label="Mission telemetry">
         <div className="panel-heading"><h2>Flight recorder</h2><span className="tag">{dirty ? 'LAST RUN' : 'MODEL OUTPUT'}</span></div>
         <div className="telemetry-scroll"><div className="delivery-count"><div><span className="micro">DELIVERIES</span><strong>{result ? goodDeliveries(result).filter(d=>d.t<=time+.01).length : 0}<small>/ 2</small></strong></div><p>{atEnd ? result?.outcome === 'complete' ? 'Second delivery achieved' : 'Experiment finished' : currentEvent?.kind === 'recovery' ? 'Recovering orbit & spin' : 'Capture. Transfer. Repeat.'}</p></div>
-          <dl className="telemetry"><div><dt>Facility altitude</dt><dd>{frame ? fmt((Math.hypot(frame.state[0], frame.state[1]) - environment(result!.design).radius) / 1000) : '—'}<span>km</span></dd></div><div><dt>Closest tether point</dt><dd>{frame ? fmt(frame.clearance / 1000) : '—'}<span>km</span></dd></div><div><dt>Axial load margin</dt><dd className={frame && frame.margin < 1 ? 'bad' : ''}>{frame ? frame.margin > 99 ? '>99' : fmt(frame.margin, 2) : '—'}<span>×</span></dd></div>{(!result || result.design.recovery === 'chemical') ? <div><dt>Propellant remaining</dt><dd>{frame ? fmt(frame.fuel / 1000, 2) : '—'}<span>t</span></dd></div> : <div className="coast-status"><dt>Recovery state</dt><dd>{result.design.recovery==='electrodynamic'?'Electrodynamic':'Coast'}<small>{result.design.recovery==='electrodynamic'?'E0 circuit model · 0 t propellant':'No active thrust · 0 t propellant'}</small></dd></div>}</dl>
-          {result&&frame&&<ElectricalPanel result={result} frame={frame}/>}
+          <dl className="telemetry"><div><dt>Facility altitude</dt><dd>{frame ? fmt((Math.hypot(frame.state[0], frame.state[1]) - environment(result!.design).radius) / (units.distance==='km'?1000:1)) : '—'}<span>{units.distance}</span></dd></div><div><dt>Closest tether point</dt><dd>{frame ? fmt(frame.clearance / (units.distance==='km'?1000:1)) : '—'}<span>{units.distance}</span></dd></div><div><dt>Axial load margin</dt><dd className={frame && frame.margin < 1 ? 'bad' : ''}>{frame ? frame.margin > 99 ? '>99' : fmt(frame.margin, 2) : '—'}<span>×</span></dd></div>{(!result || result.design.recovery === 'chemical') ? <div><dt>Propellant remaining</dt><dd>{frame ? fmt(frame.fuel / 1000, 2) : '—'}<span>t</span></dd></div> : <div className="coast-status"><dt>Recovery state</dt><dd>{result.design.recovery==='electrodynamic'?'Electrodynamic':'Coast'}<small>{result.design.recovery==='electrodynamic'?'E0 circuit model · 0 t propellant':'No active thrust · 0 t propellant'}</small></dd></div>}</dl>
+          {result&&frame&&<ElectricalPanel result={result} frame={frame} units={units}/>}
           {result&&diagnosis&&<div className="recorder-insight"><span className="micro">CALCULATED OUTCOME / FULL RUN</span><h3>{diagnosis.title}</h3><button onClick={()=>{setPlaying(false);setModal('debrief');}}>Why did this happen? →</button><button onClick={pin}>{baseline===result?'Flight pinned':'Pin for comparison'}</button></div>}
           {result && <div className="trace-stack"><p className="micro">FULL RUN / CURSOR = REPLAY TIME</p><Trace result={result} time={time} metric="clearance" /><Trace result={result} time={time} metric="margin" /></div>}
           {atEnd && result && <div className={`outcome ${result.outcome === 'complete' ? 'success' : ''}`} role="status"><h3>{result.outcome === 'complete' ? 'Two payloads delivered.' : result.outcome === 'limit' ? 'The model found a limit.' : 'Change one thing. Try again.'}</h3><p>{result.reason}</p>{result.design.recovery === 'chemical' && <p><b>{fmt(result.fuelUsed / 1000, 2)} t</b> propellant used by this controller.</p>}{result.deliveries.map(d => <p key={d.number}>Payload {d.number}: <b>{d.gain >= 0 ? '+' : ''}{fmt(d.gain / 1e6, 1)} MJ/kg</b></p>)}</div>}

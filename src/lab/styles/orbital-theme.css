@@ -27,6 +27,15 @@
 .studio-worlds>a.studio-world-link small{font-size:11px;color:var(--lab-muted)}
 .studio-worlds>a.studio-world-link[aria-current=page]{border-color:#85684f;background:#30271f;color:var(--lab-cyan)}
 .studio-worlds>a.studio-world-link:hover{border-color:#798a92;background:#29353b}
+.studio-units{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:-7px 0 17px;color:var(--lab-soft);font-size:11px}
+.studio-units>span{font-size:9px;letter-spacing:.12em;color:var(--lab-muted)}
+.studio-units label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.studio-units select{min-height:30px;padding:3px 22px 3px 7px;font-size:11px;color:var(--lab-text);background:#182329;border:1px solid var(--lab-line);border-radius:3px}
+.studio-units small{margin-left:auto;font-size:10px;color:var(--lab-muted)}
+.studio-units select:focus-visible{outline:2px solid var(--lab-cyan);outline-offset:2px}
+.field-value.long-unit input{width:92px}
+.phobos-app .phobos-field.long-unit input[type=number]{width:96px}
+@media(max-width:700px){.studio-units{gap:8px 12px}.studio-units>span{width:100%}.studio-units small{width:100%;margin-left:0}}
 .mission-choices:has(>.mission-choice:only-child) {grid-template-columns:1fr}
 .mission-choices>.mission-choice:only-child {max-width:680px}
 .mission-choices>.mission-choice:only-child>strong {min-height:0}
