@@ -190,13 +190,37 @@ def main():
             ledger(updated)
             done('keyboard service editing cancels cleanly and preserves identity, departure timing, counters, resources and in-flight cargo')
 
-            edit.click()
-            editor.get_by_label('Interval · days', exact=True).fill('1')
-            editor.get_by_role('button', name='Save service', exact=True).click()
-            saved()
             before = state()
             page.locator('.network-outlook > summary').click()
             page.get_by_label('Forecast horizon').select_option('365')
+            page.get_by_label('Service to compare').select_option('7')
+            page.get_by_label('Every (days)', exact=True).fill('0')
+            expect(page.get_by_role('button', name='Compare plans')).to_be_disabled()
+            page.get_by_label('Every (days)', exact=True).fill('1')
+            page.get_by_role('button', name='Compare plans').click()
+            comparison = page.locator('.outlook-comparison')
+            departures = comparison.locator('tr').filter(has_text='This service departs')
+            current_count = int(departures.locator('td').nth(0).inner_text().replace(',',''))
+            proposed_count = int(departures.locator('td').nth(1).inner_text().replace(',',''))
+            proposed_fuel = comparison.locator('tr').filter(has_text='Fuel at end').locator('td').nth(1).inner_text()
+            assert proposed_count>current_count, 'The faster Ceres return should make more departures'
+            assert state()==before, 'Comparing a service wrote the saved world'
+            comparison.screenshot(path=str(out/'service-comparison-1440.png'))
+            page.set_viewport_size({'width':320,'height':800})
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'), 'Service comparison overflows at 320 px'
+            comparison.screenshot(path=str(out/'service-comparison-320.png'))
+            page.set_viewport_size({'width':1440,'height':1000})
+            comparison.get_by_role('button', name='Apply schedule').click()
+            saved()
+            applied = state()
+            assert next(s for s in applied['services'] if s['id']==7)=={**new_service,'intervalDays':1}
+            assert applied['day']==before['day'] and applied['flights']==before['flights']
+            assert applied['ports']==before['ports'] and applied['fuelT']==before['fuelT']
+            expect(comparison).to_have_count(0)
+            expect(page.locator('.outlook-metrics')).to_contain_text(proposed_fuel)
+            done('a read-only service comparison shows future departures, validates inputs and applies only the chosen schedule')
+
+            before = state()
             recovery = page.locator('.outlook-delays li').filter(has_text='#7 Ceres → Phobos').filter(has_text='tether service is recovering').first
             expect(recovery).to_be_visible()
             recovery.get_by_role('link', name='Review service').click()

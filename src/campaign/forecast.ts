@@ -39,10 +39,11 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
   // One chronological run records the exact decision at each attempt and avoids
   // cloning a busy network once per forecast day.
   const projected = advance(world, days, recordBlocked);
-  const serviceDepartures = projected.services.reduce((sum, service) => {
+  const serviceDeparturesById = Object.fromEntries(projected.services.map(service => {
     const original = world.services.find(candidate => candidate.id === service.id);
-    return sum + service.dispatched - (original?.dispatched ?? 0);
-  }, 0);
+    return [service.id,service.dispatched-(original?.dispatched??0)];
+  })) as Record<number,number>;
+  const serviceDepartures=Object.values(serviceDeparturesById).reduce((sum,count)=>sum+count,0);
   const ports = SITES.filter(id => !siteLocked(world, id)).map((id: SiteId) => ({
     id,
     name: SITE[id].name,
@@ -63,6 +64,7 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     receivedT: ports.reduce((sum, port) => sum + port.later.receivedT - port.now.receivedT, 0),
     activeServices: world.services.filter(service => service.enabled).length,
     serviceDepartures,
+    serviceDeparturesById,
     mirrorLaunches: projected.solar.nextDeployment - world.solar.nextDeployment,
     delayed: serviceDelays,
     mirrorDelayed: mirrorDelays,

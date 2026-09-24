@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { forecastNetwork } from '../.lab-test/campaign/forecast.js';
 import { addService, advance, createCampaign, validateCampaign } from '../.lab-test/campaign/model.js';
+import { updateService } from '../.lab-test/campaign/service-edit.js';
 
 test('outlook uses the real engine without changing the saved world or its revision', () => {
   const world = addService(createCampaign('forecast', 'Forecast'), 'earth', 'moon', 10, 'tug', 'equipment', 1);
@@ -61,4 +62,20 @@ test('outlook names actual automatic launch holds without consuming protected ca
   assert.deepEqual(outlook.ports.map(port=>port.later),outlook.ports.map(port=>actual.ports[port.id]));
   assert.equal(outlook.fuelLater,actual.fuelT);
   assert.deepEqual(validateCampaign(actual),actual);
+});
+
+test('a service schedule can be compared on a copy before changing the real world', () => {
+  const fixture=JSON.parse(readFileSync(new URL('./fixtures/campaign-v5.json',import.meta.url)));
+  const world=validateCampaign(fixture.state),original=structuredClone(world);
+  const baseline=forecastNetwork(world,365);
+  const proposal=updateService(world,7,10,8);
+  const alternative=forecastNetwork(proposal,365);
+  assert.deepEqual(world,original);
+  assert.equal(proposal.day,world.day);
+  assert.deepEqual(proposal.flights,world.flights);
+  assert.equal(proposal.services.find(s=>s.id===7).nextDay,world.services.find(s=>s.id===7).nextDay);
+  assert.ok(alternative.serviceDeparturesById[7]>baseline.serviceDeparturesById[7]);
+  assert.equal(baseline.serviceDepartures,Object.values(baseline.serviceDeparturesById).reduce((a,b)=>a+b,0));
+  assert.equal(alternative.serviceDepartures,Object.values(alternative.serviceDeparturesById).reduce((a,b)=>a+b,0));
+  assert.deepEqual(validateCampaign(proposal),proposal);
 });

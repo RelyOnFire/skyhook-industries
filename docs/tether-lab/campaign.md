@@ -40,6 +40,15 @@ including end-of-window industry shortages. Repeated holds are grouped by reason
 their links lead to the affected service or mirror controls. The hold list has a
 bounded keyboard-scrollable region. One chronological projection avoids cloning
 the world separately for every forecast day.
+
+The same outlook can compare a draft payload and interval for one existing
+service against the current plan at the selected horizon. Both sides use the
+same event engine; it shows that service's departures and blocked attempts,
+network cargo received, ending support fuel, and mirror launches. Editing the
+draft or comparing it never saves or changes in-flight cargo. Applying the
+schedule uses the ordinary service-edit action and preserves the next attempt,
+history and existing flights. If the next attempt is beyond the horizon, the
+comparison says so; cargo still travelling at the end is not counted as received.
 The projection assumes existing schedules and automatic launches continue, while
 no manual shipments, construction or Earth allocations occur. It updates when
 the world changes while open and never advances simulation time or writes a save.
