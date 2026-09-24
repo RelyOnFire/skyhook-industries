@@ -34,8 +34,12 @@ Traffic and Send cargo. Tablet depots form a grid beneath the map; phones stack.
 
 An optional Network outlook below the live traffic projects 30, 90 or 365 days
 using the same chronological simulation engine on copies of the current world.
-It reports service departures and blocked attempts, received cargo, support fuel,
-deployed mirrors and depot stocks, including end-of-window industry shortages.
+It reports service departures, the exact reason for each blocked cargo or automatic
+mirror attempt, received cargo, support fuel, deployed mirrors and depot stocks,
+including end-of-window industry shortages. Repeated holds are grouped by reason;
+their links lead to the affected service or mirror controls. The hold list has a
+bounded keyboard-scrollable region. One chronological projection avoids cloning
+the world separately for every forecast day.
 The projection assumes existing schedules and automatic launches continue, while
 no manual shipments, construction or Earth allocations occur. It updates when
 the world changes while open and never advances simulation time or writes a save.

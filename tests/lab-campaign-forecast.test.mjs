@@ -18,6 +18,8 @@ test('outlook uses the real engine without changing the saved world or its revis
   assert.ok(outlook.delayed.length === 1 && outlook.delayed[0].attempts > 0);
   assert.equal(outlook.delayed[0].id, world.services[0].id);
   assert.equal(outlook.delayed[0].firstDay, 3);
+  assert.match(outlook.delayed[0].reason,/Not enough equipment at Earth/);
+  assert.equal(outlook.holds[0].kind,'service');
 });
 
 test('mature-network outlook projects cargo, swarm, fuel and service counts without committing', () => {
@@ -43,4 +45,20 @@ test('outlook respects the remaining simulation horizon', () => {
   assert.equal(outlook.toDay, 100000);
   assert.equal(world.day, 99999.5);
   assert.throws(() => forecastNetwork({ ...world, day: 100000 }, 30), /horizon/);
+});
+
+test('outlook names actual automatic launch holds without consuming protected cargo fuel', () => {
+  const fixture=JSON.parse(readFileSync(new URL('./fixtures/campaign-v5.json', import.meta.url)));
+  const world=validateCampaign(fixture.state);
+  world.development.fuelReserveT=4000;
+  const original=structuredClone(world),outlook=forecastNetwork(world,3),actual=advance(world,3);
+  assert.deepEqual(world,original);
+  assert.equal(outlook.mirrorLaunches,0);
+  assert.equal(outlook.mirrorDelayed.length,1);
+  assert.equal(outlook.mirrorDelayed[0].firstDay,world.solar.nextLaunchDay);
+  assert.equal(outlook.mirrorDelayed[0].attempts,3);
+  assert.match(outlook.mirrorDelayed[0].reason,/holding 4000 t of support propellant/);
+  assert.deepEqual(outlook.ports.map(port=>port.later),outlook.ports.map(port=>actual.ports[port.id]));
+  assert.equal(outlook.fuelLater,actual.fuelT);
+  assert.deepEqual(validateCampaign(actual),actual);
 });

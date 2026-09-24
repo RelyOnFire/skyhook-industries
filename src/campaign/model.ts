@@ -217,7 +217,11 @@ function arrive(w: Campaign) {
   }
   w.flights=w.flights.filter(f=>f.arrival>w.day+EPS);
 }
-export function advance(world: Campaign, days: number): Campaign {
+export type BlockedDeparture =
+  | { kind:'service'; serviceId:number; day:number; reason:string }
+  | { kind:'mirrors'; day:number; reason:string };
+
+export function advance(world: Campaign, days: number, onBlocked?: (departure:BlockedDeparture)=>void): Campaign {
   if (!Number.isFinite(days) || days <= 0 || world.day + days > LIMITS.days) throw Error('Choose a positive time step within the campaign horizon.');
   const next=edit(world), target=world.day+days;
   // Arrivals precede bookings at the same instant; older services get first use.
@@ -237,13 +241,20 @@ export function advance(world: Campaign, days: number): Campaign {
       if(!plan.reason) {
         launch(next,service.from,service.to,service.cargoT,service.mode,service.kind,service.id);
         service.dispatched++; service.nextDay=at+service.intervalDays;
-      } else service.nextDay=at+1; // No backlog or log spam: retry tomorrow.
+      } else {
+        onBlocked?.({kind:'service',serviceId:service.id,day:at,reason:plan.reason});
+        service.nextDay=at+1; // No backlog or log spam: retry tomorrow.
+      }
     }
     if(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null&&next.solar.nextLaunchDay<=at+EPS) {
       const launch=automaticMirrorPlan(next);
-      if(!automaticMirrorLaunchReason(next)) {
+      const reason=automaticMirrorLaunchReason(next);
+      if(!reason) {
         launchMirrorsInto(next,launch.massT); next.solar.nextLaunchDay=at+launch.intervalDays;
-      } else next.solar.nextLaunchDay=at+1;
+      } else {
+        onBlocked?.({kind:'mirrors',day:at,reason});
+        next.solar.nextLaunchDay=at+1;
+      }
     }
   }
   return next;

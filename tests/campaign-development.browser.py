@@ -149,6 +149,12 @@ def main():
             held = state()
             assert held['solar']['nextDeployment']==before['solar']['nextDeployment']
             assert held['solar']['nextLaunchDay']>before['solar']['nextLaunchDay']
+            page.locator('.network-outlook > summary').click()
+            expect(page.locator('.outlook-hold-scroll')).to_contain_text('holding 5000 t of support propellant')
+            page.get_by_role('link', name='Review mirror controls').click()
+            assert page.evaluate('location.hash')=='#development-operations'
+            assert state()==held, 'The outlook or its link changed saved resources'
+            page.locator('.network-outlook > summary').click()
             page.get_by_label('From', exact=True).select_option('earth')
             page.get_by_label('To', exact=True).select_option('phobos')
             page.get_by_label('Cargo type', exact=True).select_option('equipment')
@@ -183,6 +189,22 @@ def main():
             assert updated['ports']==before['ports'] and updated['fuelT']==before['fuelT']
             ledger(updated)
             done('keyboard service editing cancels cleanly and preserves identity, departure timing, counters, resources and in-flight cargo')
+
+            edit.click()
+            editor.get_by_label('Interval · days', exact=True).fill('1')
+            editor.get_by_role('button', name='Save service', exact=True).click()
+            saved()
+            before = state()
+            page.locator('.network-outlook > summary').click()
+            page.get_by_label('Forecast horizon').select_option('365')
+            recovery = page.locator('.outlook-delays li').filter(has_text='#7 Ceres → Phobos').filter(has_text='tether service is recovering').first
+            expect(recovery).to_be_visible()
+            recovery.get_by_role('link', name='Review service').click()
+            assert page.evaluate('location.hash')=='#service-7'
+            expect(page.locator('#service-7')).to_be_in_viewport()
+            assert state()==before, 'Forecast navigation changed the saved service'
+            page.locator('.network-outlook > summary').click()
+            done('outlook names exact cargo and mirror hold reasons and links to the relevant controls without editing the save')
 
             for _ in range(7):
                 chapter.locator('[data-project="mercuryTract"]').get_by_role('button', name='Open next mercury mining tract', exact=True).click()
@@ -229,6 +251,14 @@ def main():
                 assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'), f'Editor overflows at {width}'
                 editor.screenshot(path=str(out/f'service-editor-{width}.png'))
                 editor.get_by_role('button', name='Cancel', exact=True).click()
+                if width==320:
+                    outlook = page.locator('.network-outlook')
+                    outlook.locator('summary').click()
+                    outlook.evaluate("element=>element.scrollIntoView({block:'start'})")
+                    expect(outlook.locator('.outlook-hold-scroll')).to_be_visible()
+                    assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'), 'Departure reasons overflow at 320 px'
+                    page.screenshot(path=str(out/'outlook-holds-320.png'))
+                    outlook.locator('summary').click()
             done('industrial projects and service editing fit desktop, tablet and 390/320 px phones')
             assert not report['errors'], report['errors']
             report['status']='passed'

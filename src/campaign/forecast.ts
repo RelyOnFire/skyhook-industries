@@ -1,8 +1,15 @@
-import { advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type Campaign, type SiteId } from './model.js';
+import { advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type SiteId } from './model.js';
 
 export interface ServiceDelay {
   id: number;
   route: string;
+  reason: string;
+  attempts: number;
+  firstDay: number;
+  lastDay: number;
+}
+export interface MirrorDelay {
+  reason: string;
   attempts: number;
   firstDay: number;
   lastDay: number;
@@ -12,28 +19,26 @@ export interface ServiceDelay {
 export function forecastNetwork(world: Campaign, requestedDays: number) {
   const days = Math.min(requestedDays, LIMITS.days - world.day);
   if (!Number.isInteger(requestedDays) || requestedDays < 1 || days <= 0) throw Error('Choose a forecast within the simulation horizon.');
-  const delayed = new Map<number, ServiceDelay>();
-  let projected = world;
-  const endDay = world.day + days;
-  while (projected.day < endDay - 1e-8) {
-    const before = projected;
-    projected = advance(before, Math.min(1, endDay - before.day));
-    for (const service of before.services) {
-      if (!service.enabled || service.nextDay > projected.day + 1e-8) continue;
-      const after = projected.services.find(candidate => candidate.id === service.id);
-      if (!after || after.dispatched !== service.dispatched) continue;
-      const entry = delayed.get(service.id) ?? {
-        id: service.id,
-        route: SITE[service.from].name + ' → ' + SITE[service.to].name,
-        attempts: 0,
-        firstDay: service.nextDay,
-        lastDay: service.nextDay,
-      };
+  const delayed = new Map<string, ServiceDelay>(),mirrorDelayed = new Map<string, MirrorDelay>();
+  const recordBlocked = (attempt: BlockedDeparture) => {
+    if (attempt.kind === 'mirrors') {
+      const entry = mirrorDelayed.get(attempt.reason) ?? {reason:attempt.reason,attempts:0,firstDay:attempt.day,lastDay:attempt.day};
       entry.attempts++;
-      entry.lastDay = service.nextDay;
-      delayed.set(service.id, entry);
+      entry.lastDay=attempt.day;
+      mirrorDelayed.set(attempt.reason,entry);
+    } else {
+      const service=world.services.find(candidate=>candidate.id===attempt.serviceId)!;
+      const key=attempt.serviceId+':'+attempt.reason;
+      const entry=delayed.get(key) ?? {id:attempt.serviceId,route:SITE[service.from].name+' → '+SITE[service.to].name,
+        reason:attempt.reason,attempts:0,firstDay:attempt.day,lastDay:attempt.day};
+      entry.attempts++;
+      entry.lastDay=attempt.day;
+      delayed.set(key,entry);
     }
-  }
+  };
+  // One chronological run records the exact decision at each attempt and avoids
+  // cloning a busy network once per forecast day.
+  const projected = advance(world, days, recordBlocked);
   const serviceDepartures = projected.services.reduce((sum, service) => {
     const original = world.services.find(candidate => candidate.id === service.id);
     return sum + service.dispatched - (original?.dispatched ?? 0);
@@ -45,6 +50,8 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     later: projected.ports[id],
     status: projected.ports[id].industry ? industryStatus(projected, id) : null,
   }));
+  const serviceDelays=[...delayed.values()].sort((a,b)=>b.attempts-a.attempts||a.firstDay-b.firstDay||a.id-b.id);
+  const mirrorDelays=[...mirrorDelayed.values()].sort((a,b)=>b.attempts-a.attempts||a.firstDay-b.firstDay);
   return {
     fromDay: world.day,
     toDay: projected.day,
@@ -57,7 +64,10 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     activeServices: world.services.filter(service => service.enabled).length,
     serviceDepartures,
     mirrorLaunches: projected.solar.nextDeployment - world.solar.nextDeployment,
-    delayed: [...delayed.values()].sort((a, b) => a.firstDay - b.firstDay || a.id - b.id),
+    delayed: serviceDelays,
+    mirrorDelayed: mirrorDelays,
+    holds: [...serviceDelays.map(item=>({...item,kind:'service' as const})),...mirrorDelays.map(item=>({...item,kind:'mirrors' as const}))]
+      .sort((a,b)=>b.attempts-a.attempts||a.firstDay-b.firstDay),
     ports,
   };
 }
