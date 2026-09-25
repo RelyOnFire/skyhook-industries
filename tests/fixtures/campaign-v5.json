@@ -1,0 +1,781 @@
+{
+  "format": "skyhook-campaign",
+  "version": 5,
+  "state": {
+    "schema": 5,
+    "model": "network-0.5.0",
+    "id": "belt-browser-fixture",
+    "name": "Into the Belt",
+    "revision": 292,
+    "day": 5572.865758917809,
+    "fuelT": 3695.605758917796,
+    "nextShipment": 380,
+    "nextSupplyDay": 1371.8657589178094,
+    "lunarReturnedT": 10,
+    "ports": {
+      "earth": {
+        "materialsT": 0,
+        "equipmentT": 2154.4328794589046,
+        "waterT": 0,
+        "industry": true,
+        "level": 1,
+        "readyDay": 5547.865758917809,
+        "receivedT": 10,
+        "sentT": 802
+      },
+      "moon": {
+        "materialsT": 1882.9954204047142,
+        "equipmentT": 13.850228979763584,
+        "waterT": 0,
+        "industry": true,
+        "level": 2,
+        "readyDay": 5568.865758917809,
+        "receivedT": 340,
+        "sentT": 2150
+      },
+      "phobos": {
+        "materialsT": 7.432879458904608,
+        "equipmentT": 61.54731517835206,
+        "waterT": 0,
+        "industry": true,
+        "level": 2,
+        "readyDay": 5568.865758917809,
+        "receivedT": 2397,
+        "sentT": 120
+      },
+      "mercury": {
+        "materialsT": 31808.090736001395,
+        "equipmentT": 4.646030000000001,
+        "waterT": 0,
+        "industry": true,
+        "level": 3,
+        "readyDay": 5552.603832785895,
+        "receivedT": 210,
+        "sentT": 0
+      },
+      "ceres": {
+        "materialsT": 0,
+        "equipmentT": 12.800000000000754,
+        "waterT": 3500,
+        "industry": true,
+        "level": 1,
+        "readyDay": 5550.865758917809,
+        "receivedT": 105,
+        "sentT": 220
+      }
+    },
+    "flights": [
+      {
+        "id": 330,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5008.865758917809,
+        "arrival": 5595.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 337,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5098.865758917809,
+        "arrival": 5685.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 341,
+        "from": "phobos",
+        "to": "ceres",
+        "cargoT": 5,
+        "fuelT": 1,
+        "mode": "tether",
+        "departed": 5146.865758917809,
+        "arrival": 5733.367601949185,
+        "kind": "equipment",
+        "serviceId": 6
+      },
+      {
+        "id": 346,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5188.865758917809,
+        "arrival": 5775.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 353,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5278.865758917809,
+        "arrival": 5865.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 356,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5324.865758917809,
+        "arrival": 5587.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 357,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5344.865758917809,
+        "arrival": 5607.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 358,
+        "from": "phobos",
+        "to": "ceres",
+        "cargoT": 5,
+        "fuelT": 1,
+        "mode": "tether",
+        "departed": 5346.865758917809,
+        "arrival": 5933.367601949185,
+        "kind": "equipment",
+        "serviceId": 6
+      },
+      {
+        "id": 360,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5364.865758917809,
+        "arrival": 5627.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 361,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 5,
+        "fuelT": 2.4,
+        "mode": "tether",
+        "departed": 5365.865758917809,
+        "arrival": 5627.731517835618,
+        "kind": "equipment",
+        "serviceId": 5
+      },
+      {
+        "id": 362,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5368.865758917809,
+        "arrival": 5955.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 363,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5384.865758917809,
+        "arrival": 5647.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 364,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5404.865758917809,
+        "arrival": 5667.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 365,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5424.865758917809,
+        "arrival": 5687.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 366,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5444.865758917809,
+        "arrival": 5707.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 368,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 5,
+        "fuelT": 2.4,
+        "mode": "tether",
+        "departed": 5455.865758917809,
+        "arrival": 5717.731517835618,
+        "kind": "equipment",
+        "serviceId": 5
+      },
+      {
+        "id": 369,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5458.865758917809,
+        "arrival": 6045.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 370,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5464.865758917809,
+        "arrival": 5727.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 371,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5484.865758917809,
+        "arrival": 5747.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 372,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5504.865758917809,
+        "arrival": 5767.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 373,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5524.865758917809,
+        "arrival": 5787.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 375,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5544.865758917809,
+        "arrival": 5807.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 376,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 5,
+        "fuelT": 2.4,
+        "mode": "tether",
+        "departed": 5545.865758917809,
+        "arrival": 5807.731517835618,
+        "kind": "equipment",
+        "serviceId": 5
+      },
+      {
+        "id": 377,
+        "from": "phobos",
+        "to": "ceres",
+        "cargoT": 5,
+        "fuelT": 1,
+        "mode": "tether",
+        "departed": 5546.865758917809,
+        "arrival": 6133.367601949185,
+        "kind": "equipment",
+        "serviceId": 6
+      },
+      {
+        "id": 378,
+        "from": "ceres",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 2,
+        "mode": "tether",
+        "departed": 5548.865758917809,
+        "arrival": 6135.367601949185,
+        "kind": "water",
+        "serviceId": 7
+      },
+      {
+        "id": 379,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 5567.865758917809,
+        "arrival": 5830.731517835618,
+        "kind": "materials",
+        "serviceId": 3
+      }
+    ],
+    "log": [
+      {
+        "day": 5279.8703385130875,
+        "text": "Flight 351 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5284.865758917809,
+        "text": "Flight 354: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5287.731517835618,
+        "text": "Flight 331 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5304.865758917809,
+        "text": "Flight 355: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5307.731517835618,
+        "text": "Flight 332 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5324.865758917809,
+        "text": "Flight 356: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5325.367601949185,
+        "text": "Flight 305 arrived at Phobos. 10 t water added to the depot."
+      },
+      {
+        "day": 5327.731517835618,
+        "text": "Flight 333 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5333.367601949185,
+        "text": "Flight 307 arrived at Ceres. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5344.865758917809,
+        "text": "Flight 357: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5346.865758917809,
+        "text": "Flight 358: 5 t equipment dispatched from Phobos to Ceres by service 6."
+      },
+      {
+        "day": 5347.731517835618,
+        "text": "Flight 334 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5357.731517835618,
+        "text": "Flight 336 arrived at Phobos. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5363.865758917809,
+        "text": "Flight 359: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 5364.865758917809,
+        "text": "Flight 360: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5365.865758917809,
+        "text": "Flight 361: 5 t equipment dispatched from Earth to Phobos by service 5."
+      },
+      {
+        "day": 5367.731517835618,
+        "text": "Flight 338 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5368.865758917809,
+        "text": "Flight 362: 10 t water dispatched from Ceres to Phobos by service 7."
+      },
+      {
+        "day": 5369.8703385130875,
+        "text": "Flight 359 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5384.865758917809,
+        "text": "Flight 363: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5387.731517835618,
+        "text": "Flight 339 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5404.865758917809,
+        "text": "Flight 364: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5407.731517835618,
+        "text": "Flight 340 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5415.367601949185,
+        "text": "Flight 314 arrived at Phobos. 10 t water added to the depot."
+      },
+      {
+        "day": 5424.865758917809,
+        "text": "Flight 365: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5427.731517835618,
+        "text": "Flight 342 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5444.865758917809,
+        "text": "Flight 366: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5447.731517835618,
+        "text": "Flight 344 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5447.731517835618,
+        "text": "Flight 345 arrived at Phobos. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5453.865758917809,
+        "text": "Flight 367: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 5455.865758917809,
+        "text": "Flight 368: 5 t equipment dispatched from Earth to Phobos by service 5."
+      },
+      {
+        "day": 5458.865758917809,
+        "text": "Flight 369: 10 t water dispatched from Ceres to Phobos by service 7."
+      },
+      {
+        "day": 5459.8703385130875,
+        "text": "Flight 367 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5464.865758917809,
+        "text": "Flight 370: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5467.731517835618,
+        "text": "Flight 347 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5484.865758917809,
+        "text": "Flight 371: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5487.731517835618,
+        "text": "Flight 348 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5504.865758917809,
+        "text": "Flight 372: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5505.367601949185,
+        "text": "Flight 321 arrived at Phobos. 10 t water added to the depot."
+      },
+      {
+        "day": 5507.731517835618,
+        "text": "Flight 349 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5524.865758917809,
+        "text": "Flight 373: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5527.731517835618,
+        "text": "Flight 350 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5533.367601949185,
+        "text": "Flight 324 arrived at Ceres. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5537.731517835618,
+        "text": "Flight 352 arrived at Phobos. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5542.865758917809,
+        "text": "Automatic mirror launches enabled at the power-driven production rate, retrying tomorrow when blocked."
+      },
+      {
+        "day": 5543.865758917809,
+        "text": "Flight 374: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 5543.865758917809,
+        "text": "Mirror launch 152: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5544.865758917809,
+        "text": "Flight 375: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 5545.480040358093,
+        "text": "Mirror launch 153: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5545.865758917809,
+        "text": "Flight 376: 5 t equipment dispatched from Earth to Phobos by service 5."
+      },
+      {
+        "day": 5546.865758917809,
+        "text": "Flight 377: 5 t equipment dispatched from Phobos to Ceres by service 6."
+      },
+      {
+        "day": 5547.094321798377,
+        "text": "Mirror launch 154: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5547.731517835618,
+        "text": "Flight 354 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5548.7086032386605,
+        "text": "Mirror launch 155: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5548.865758917809,
+        "text": "Flight 378: 10 t water dispatched from Ceres to Phobos by service 7."
+      },
+      {
+        "day": 5549.8703385130875,
+        "text": "Flight 374 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 5550.322884678944,
+        "text": "Mirror launch 156: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5551.937166119228,
+        "text": "Mirror launch 157: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 5567.731517835618,
+        "text": "Flight 355 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 5567.865758917809,
+        "text": "Flight 379: 10 t construction material dispatched from Moon to Phobos by service 3."
+      }
+    ],
+    "solar": {
+      "unlocked": true,
+      "depositT": 0,
+      "nextCycleDay": 5573.865758917809,
+      "mirrorWorks": true,
+      "launchArray": true,
+      "powerLink": true,
+      "mirrorsT": 56611.20307999887,
+      "manufacturedT": 60021.20307999877,
+      "deployedT": 3230,
+      "autoLaunch": true,
+      "nextLaunchDay": 5573.551447559512,
+      "nextDeployment": 158,
+      "deployments": [
+        {
+          "id": 152,
+          "departed": 5543.865758917809,
+          "arrival": 5599.814556627605,
+          "massT": 30
+        },
+        {
+          "id": 153,
+          "departed": 5545.480040358093,
+          "arrival": 5601.428838067889,
+          "massT": 30
+        },
+        {
+          "id": 154,
+          "departed": 5547.094321798377,
+          "arrival": 5603.043119508173,
+          "massT": 30
+        },
+        {
+          "id": 155,
+          "departed": 5548.7086032386605,
+          "arrival": 5604.657400948457,
+          "massT": 30
+        },
+        {
+          "id": 156,
+          "departed": 5550.322884678944,
+          "arrival": 5606.27168238874,
+          "massT": 30
+        },
+        {
+          "id": 157,
+          "departed": 5551.937166119228,
+          "arrival": 5607.885963829024,
+          "massT": 30
+        }
+      ]
+    },
+    "belt": {
+      "unlocked": true,
+      "depositT": 96280,
+      "extractedT": 3720,
+      "returnedWaterT": 150,
+      "refinedT": 150,
+      "propellantWorks": true,
+      "nextCycleDay": 5573.865758917809
+    },
+    "services": [
+      {
+        "id": 1,
+        "from": "earth",
+        "to": "moon",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 5,
+        "intervalDays": 90,
+        "nextDay": 5633.865758917809,
+        "enabled": true,
+        "dispatched": 42,
+        "deliveredT": 210
+      },
+      {
+        "id": 2,
+        "from": "earth",
+        "to": "phobos",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 3,
+        "intervalDays": 100,
+        "nextDay": 2558.865758917809,
+        "enabled": false,
+        "dispatched": 19,
+        "deliveredT": 57
+      },
+      {
+        "id": 3,
+        "from": "moon",
+        "to": "phobos",
+        "kind": "materials",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 20,
+        "nextDay": 5587.865758917809,
+        "enabled": true,
+        "dispatched": 185,
+        "deliveredT": 1720
+      },
+      {
+        "id": 4,
+        "from": "earth",
+        "to": "mercury",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 60,
+        "nextDay": 2184.865758917809,
+        "enabled": false,
+        "dispatched": 11,
+        "deliveredT": 110
+      },
+      {
+        "id": 5,
+        "from": "earth",
+        "to": "phobos",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 5,
+        "intervalDays": 90,
+        "nextDay": 5635.865758917809,
+        "enabled": true,
+        "dispatched": 21,
+        "deliveredT": 90
+      },
+      {
+        "id": 6,
+        "from": "phobos",
+        "to": "ceres",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 5,
+        "intervalDays": 200,
+        "nextDay": 5746.865758917809,
+        "enabled": true,
+        "dispatched": 10,
+        "deliveredT": 35
+      },
+      {
+        "id": 7,
+        "from": "ceres",
+        "to": "phobos",
+        "kind": "water",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 90,
+        "nextDay": 5638.865758917809,
+        "enabled": true,
+        "dispatched": 21,
+        "deliveredT": 140
+      }
+    ],
+    "nextService": 8,
+    "marsOperations": 3485.134241082191,
+    "lunarPhobosDeliveredT": 1960
+  }
+}

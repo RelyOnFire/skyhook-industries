@@ -9,6 +9,10 @@
     "outDir": ".lab-test"
   },
   "include": [
+    "src/components/flight-story-motion.ts",
+    "src/campaign/model.ts",
+    "src/campaign/forecast.ts",
+    "src/campaign/service-edit.ts",
     "src/simulation/**/*.ts",
     "src/lab/view.ts",
     "src/lab/objects.ts",

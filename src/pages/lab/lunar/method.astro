@@ -1,0 +1,57 @@
+---
+import LabLayout from '../../../layouts/LabLayout.astro';
+import { LUNAR_MODEL, MOON_ENV } from '../../../simulation/engine';
+const sections = [['experiment','The experiment'],['handoffs','Two handoffs'],['recovery','Recovery & limits'],['lunavator','The lunavator concept'],['sources','Constants & sources']];
+---
+<LabLayout title="Lunar model & assumptions · Tether Lab" description="How the lunar Flight Studio calculates rotating-tether orbital transfers, finite recovery and clearance above a spherical Moon." active="method">
+  <main class="guide" id="lab-content">
+    <header class="guide-header">
+      <p class="micro">LUNAR FLIGHT STUDIO / MODEL GUIDE</p>
+      <h1>A new world. The same bill for momentum.</h1>
+      <p>Catch a payload above the Moon, release it into a higher orbit, then recover the facility for another handoff. Every trajectory and load comes from the calculated flight.</p>
+      <div class="guide-actions"><a class="button-link primary" href="/lab/lunar/">Fly the lunar experiment →</a><a href="/lab/architectures/">Architecture catalogue</a></div>
+      <div class="guide-meta"><span>{LUNAR_MODEL}</span><span>Orbital transfers</span><span>Planar rigid-body model</span></div>
+    </header>
+    <div class="guide-layout">
+      <nav class="guide-nav" aria-label="On this page"><span>IN THIS GUIDE</span>{sections.map(([id,title])=><a href={`#${id}`}>{title}</a>)}</nav>
+      <div class="guide-body">
+        <section class="guide-section" id="experiment">
+          <h2>A rotating facility in lunar orbit.</h2>
+          <p>The two equal arms, hub and terminal modules move under distributed spherical-Moon gravity. Orbital translation and tether rotation evolve together. The shared solver also powers the Earth Studio, with a separate environment and model identifier for each experiment.</p>
+          <div class="scope-grid"><div class="scope-box"><h3>The starting design</h3><ul><li>200 km total span; fixed length</li><li>250 km initial center altitude</li><li>0.4 km/s initial spin-tip speed</li><li>3 t per payload; two deliveries</li><li>50 mm² uniform Zylon fiber section</li><li>10 t propellant; 3,000 N force budget</li></ul></div><div class="scope-box"><h3>What you can investigate</h3><ul><li>Release phase and delivered lunar orbit</li><li>Material, section, mass and axial margin</li><li>Full-segment clearance during the flight</li><li>Chemical recovery versus Coast</li><li>Distinct approaches and numerical capture residuals</li><li>Pinned flights and actual worker trade studies</li></ul></div></div>
+          <p>The 30 t hub and two 2 t tip modules are scenario mass budgets. Material inputs, taper rules, capture bookkeeping and chemical propellant accounting are shared with the <a href="/lab/method/">Earth model guide</a>. They do not establish qualified lunar hardware.</p>
+        </section>
+        <section class="guide-section" id="handoffs">
+          <h2>Arrive. Release. Recover. Repeat.</h2>
+          <p>Each payload starts on a constructed in-flight trajectory with a 90-second approach. That particle is propagated independently in lunar gravity. Capture requires less than 2 m of position error and 0.02 m/s of relative-velocity error at the working tip. Matching is ideal; guidance, grappling shock and the payload’s earlier launch are not calculated.</p>
+          <p>At attachment the center-of-mass description changes while physical points and momentum remain continuous. Release adds no invented impulse: the payload keeps its instantaneous position and velocity and follows its own lunar trajectory.</p>
+          <p>A successful delivery gains specific orbital energy and has a perigee at least 10 km above the mean sphere. The lunar flight-school mission additionally requires two bound orbits with apogees of at least 500 km, no modeled limit violation, dry facility mass at most 60 t and loaded propellant at most 10 t. Escape trajectories remain visible in the sandbox but do not pass that mission.</p>
+        </section>
+        <section class="guide-section" id="recovery">
+          <h2>The second delivery has a cost.</h2>
+          <p>Chemical recovery uses finite carried propellant and bounded force and torque to seek the original orbit and reference spin. Coast carries no hidden propellant. The Moon experiment has no electrodynamic mode: Earth’s assumed dipole and plasma circuit do not apply here.</p>
+          <p>For the next handoff, radius error must be below 2 km, radial speed below 2 m/s, tangential-speed error below 3 m/s and spin error below 0.5%. The state must remain ready for 60 seconds before planning another approach and must pass readiness again at capture. These are experiment tolerances, not flight requirements.</p>
+          <div class="guide-note"><p><strong>The 10 km clearance cutoff is a model boundary above a mean sphere.</strong> It is not a terrain-clearance guarantee. The whole straight segment is checked, including its closest interior point. A clearance crossing, excess axial stress or required cable compression stops the calculation.</p></div>
+          <p>The simulation records up to four minutes after the second qualifying release, within a six-hour horizon. A reported success covers that interval; it does not demonstrate long-term stationkeeping. The default numerical step is at most 2 seconds, with 48 mass cells. Tests check finer steps and quadrature, coast conservation, ideal exchange accounting and independent particle propagation.</p>
+        </section>
+        <section class="guide-section" id="lunavator">
+          <h2>The orbital part of a larger idea.</h2>
+          <p>The historical lunar tether discussed in the <a href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">1999 Cislunar Tether Transport System study</a> uses changes in tether configuration and central ballast to connect incoming traffic with the lunar surface. This fixed-length, equal-arm experiment explores orbital exchange and recovery; it does not reproduce that complete lunavator.</p>
+          <div class="scope-box omitted"><h3>Outside this experiment</h3><ul><li>Surface pickup or delivery, terrain and lunar mascons</li><li>Reeling, movable ballast or flexible tether dynamics</li><li>Earth/Sun perturbations and Earth–Moon transfer targeting</li><li>Long-term orbital stability, eclipse, thermal and power-system engineering</li><li>Campaign transport validation or automatic changes to Expeditions</li></ul></div>
+          <p>Moon shading and craters are procedurally drawn illustrations. The spherical radius sets the physical scale; the surface texture, markers and enlarged cable thickness supply visual context only.</p>
+          <p>Earth and Moon designs use separate browser save keys. Design JSON and share links identify the environment. Exploring this tether from Expeditions opens a separate tab and does not spend campaign resources or alter a saved world.</p>
+        </section>
+        <section class="guide-section" id="sources">
+          <h2>Frozen constants. Explicit assumptions.</h2>
+          <div class="guide-table-wrap"><table><thead><tr><th>Quantity</th><th>Value</th><th>Source</th></tr></thead><tbody>
+            <tr><td>Lunar GM</td><td>{MOON_ENV.mu.toExponential(9)} m³/s²</td><td><a href="https://ssd.jpl.nasa.gov/astro_par.html">JPL DE440 astrodynamic parameters</a></td></tr>
+            <tr><td>Mean radius</td><td>1,737.4 km</td><td><a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html">NASA Moon Fact Sheet</a></td></tr>
+            <tr><td>Sidereal rotation</td><td>655.720 h; display only</td><td><a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html">NASA Moon Fact Sheet</a></td></tr>
+            <tr><td>Clearance cutoff</td><td>10 km above mean radius</td><td>Experiment assumption</td></tr>
+          </tbody></table></div>
+          <p>Lunavator context: Hoyt, <a href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">Cislunar Tether Transport System</a>, 1999, section III.A.3 and Appendix B. The study motivates a future surface-transfer model; its performance is not claimed by this experiment.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+</LabLayout>

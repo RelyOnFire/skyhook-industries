@@ -42,6 +42,24 @@ jobs:
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
       - name: Exercise electrodynamic recovery and resource controls
         run: python3 tests/lab-electrodynamic.browser.py --require-webgl
+      - name: Exercise lunar Flight Studio and independent design storage
+        run: python3 tests/lab-lunar.browser.py --require-webgl
+      - name: Exercise Phobos anchored releases, loads and isolated design storage
+        run: python3 tests/lab-phobos.browser.py --require-webgl
+      - name: Exercise T4 coupled stages, phase comparison and isolated design storage
+        run: python3 tests/lab-t4.browser.py --require-webgl
+      - name: Check Flight Studio display units and campaign mass layout
+        run: python3 tests/studio-units.browser.py
+      - name: Capture and check responsive company pages
+        run: python3 tests/site-pages.browser.py
+      - name: Exercise campaign progression and durable saves
+        run: python3 tests/campaign.browser.py
+      - name: Exercise Ceres supply, water returns and v4 save migration
+        run: python3 tests/campaign-belt.browser.py
+      - name: Exercise expanded campaign traffic and v5 save continuity
+        run: python3 tests/campaign-traffic.browser.py
+      - name: Exercise industrial development, service editing and v6 save continuity
+        run: python3 tests/campaign-development.browser.py
       - name: Upload browser regression evidence
         if: always()
         uses: actions/upload-artifact@v4

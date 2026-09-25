@@ -73,6 +73,26 @@ def main():
             expect(page.locator('.lab-feedback.is-error')).to_have_count(0)
         def no_overflow():
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), f'Horizontal overflow at {page.viewport_size}'
+        def playback_fits():
+            assert page.locator('.transport').evaluate('''e=>{
+                const panel=e.closest('.flight-console').getBoundingClientRect();
+                return [...e.querySelectorAll('button,select,.mission-clock')].every(control=>{
+                    const r=control.getBoundingClientRect();
+                    return r.left>=panel.left && r.right<=panel.right && r.top>=panel.top && r.bottom<=panel.bottom;
+                });
+            }'''), f'Replay controls are clipped at {page.viewport_size}'
+        def initial_objects_visible():
+            if findings['webgl']:
+                expect(page.locator('.scene-three > .world-label:not(.cargo-label)')).to_be_visible()
+                expect(page.locator('.scene-three > .cargo-label').first).to_be_visible()
+        def drag_globe():
+            canvas=page.locator('#orbital-canvas')
+            before=canvas.screenshot()
+            box=canvas.bounding_box()
+            page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2)
+            page.mouse.down();page.mouse.move(box['x']+box['width']/2+80,box['y']+box['height']/2,steps=8);page.mouse.up()
+            page.evaluate('()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
+            assert canvas.screenshot()!=before, 'Dragging must visibly rotate the conceptual globe'
         def shot(name, full=True):
             # Flush the canvas/compositor after React updates; a DOM assertion
             # alone can succeed before the requested replay frame is painted.
@@ -137,7 +157,8 @@ def main():
                 dialog.get_by_role('button', name='Export flight report', exact=True).click()
             report=json.loads(Path(download.value.path()).read_text())
             assert report['format']=='tether-lab-flight-report' and len(report['deliveries'])==2
-            dialog.get_by_role('button', name='Pin this flight', exact=True).click();shot('flight-debrief')
+            dialog.get_by_role('button', name='Pin this flight', exact=True).click()
+            dialog.evaluate('e=>e.scrollTop=0');shot('flight-debrief')
             page.keyboard.press('Escape');done('full-run debrief and actual JSON flight-report download')
             # Distinct shipments and a persistent camera target at the second handoff.
             assert len(report['approaches']) == 2 and len(report['rendezvous']) == 2
@@ -252,18 +273,64 @@ def main():
                 expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_visible()
                 page.locator('.view-switch').get_by_role('button', name='Orbit plane', exact=True).click()
                 if findings['webgl']: page.locator('.view-switch').get_by_role('button', name='Globe', exact=True).click()
-                page.wait_for_timeout(120);shot(f'studio-{width}')
+                playback_fits();initial_objects_visible();page.wait_for_timeout(120);shot(f'studio-{width}')
                 page.get_by_role('button', name='Flight school', exact=True).click();no_overflow()
                 page.keyboard.press('Tab');assert page.evaluate("!!document.activeElement?.closest('dialog')")
                 shot(f'missions-{width}');page.keyboard.press('Escape')
                 if width<801:
                     choose_tab('Mission');expect(toggle).to_be_visible();toggle.check();toggle.uncheck()
             done('six viewport sizes, no page overflow, mobile panels and modal keyboard focus')
+            if not args.isolated:
+                # Use the existing CI artifact path for homepage visual review.
+                # These images cover both first-screen proportions and the complete page.
+                for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
+                    page.set_viewport_size({'width':width,'height':height});open_page('/');no_overflow()
+                    pause=page.get_by_role('button',name='Resume rotation',exact=True)
+                    expect(pause).to_have_attribute('aria-pressed','true')
+                    expect(page.locator('.hero-intro .launch-link')).to_have_attribute('href','/lab/')
+                    expect(page.locator('.lab-invite-copy .text-link')).to_have_attribute('href','/lab/architectures/')
+                    expect(page.locator('.new-closing .text-link')).to_have_attribute('href','/roadmap/')
+                    shot(f'homepage-{width}');shot(f'homepage-viewport-{width}',full=False)
+                    if width==390:
+                        menu=page.locator('.brand-mobile')
+                        menu.locator('summary').click()
+                        expect(menu.get_by_role('link',name='Tether Lab',exact=True)).to_be_visible()
+                        no_overflow();shot('homepage-mobile-menu',full=False)
+                        menu.locator('summary').click()
+                    if width==1440:
+                        drag_globe()
+                        page.get_by_role('button',name='Reset view',exact=True).click()
+                        # Browser cache eligibility varies by runner. Dispatch its
+                        # lifecycle explicitly as well as using real Back below.
+                        for _ in range(2):
+                            page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide', {persisted:true}))")
+                            page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
+                            expect(pause).to_have_attribute('aria-pressed','true')
+                            drag_globe()
+                        pause.click();expect(page.get_by_role('button',name='Pause rotation',exact=True)).to_have_attribute('aria-pressed','false')
+                done('homepage screenshots at six sizes, destinations, mobile menu and globe controls after repeated cached-page restores')
+                # Fresh first-visit views avoid carrying camera or share-panel state
+                # from the regression scenarios into the visual continuity comparison.
+                for width,height in [(1440,1000),(390,844),(320,800)]:
+                    page.set_viewport_size({'width':width,'height':height});open_page('/')
+                    page.locator('.hero-intro .launch-link').click();ready();fly();no_overflow();playback_fits()
+                    initial_objects_visible()
+                    if findings['webgl']:
+                        page.get_by_role('button',name='Reset camera',exact=True).click();initial_objects_visible()
+                    shot(f'homepage-to-lab-{width}')
+                    page.go_back(wait_until='networkidle')
+                    expect(page.locator('#orbital-canvas')).to_be_visible()
+                    expect(page.get_by_role('button',name='Resume rotation',exact=True)).to_have_attribute('aria-pressed','true')
+                    drag_globe();no_overflow()
+                done('homepage-to-lab navigation, visible initial tether/payload and unclipped replay controls on fresh desktop/mobile visits')
+                done('browser Back from the lab returns to a responsive homepage globe')
             for path in ['/lab/method/','/lab/architectures/']:
                 for width in [1440,390,320]:
                     page.set_viewport_size({'width':width,'height':900});open_page(path);no_overflow()
                     if path.endswith('method/'):
-                        page.locator('summary').first.click();expect(page.locator('details').first).to_have_attribute('open','')
+                        disclosure=page.locator('#lab-content details.guide-details').first
+                        disclosure.locator('summary').click();expect(disclosure).to_have_attribute('open','')
+                    page.evaluate('window.scrollTo(0,0)')
                     shot(f'{path.split("/")[2]}-{width}')
             done('Method and architecture catalogue responsive routes and disclosures')
             assert not findings['errors'], findings['errors']
