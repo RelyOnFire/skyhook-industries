@@ -34,7 +34,8 @@
   align-self: center;
   min-width: 0;
 }
-#orbital-canvas { display: block; }
+/* Leave a dedicated strip for the controls below the complete orbital view. */
+#orbital-canvas { display: block; height: calc(100% - 52px); }
 .globe-controls {
   left: 0; right: 0; bottom: 0;
   justify-content: center;

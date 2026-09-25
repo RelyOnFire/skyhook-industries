@@ -11,7 +11,12 @@ if (canvas) {
  const project=(lon:number,lat:number,r:number,cx:number,cy:number)=>{const a=lon*Math.PI/180+angle,b=lat*Math.PI/180;return [cx+r*Math.cos(b)*Math.sin(a),cy-r*Math.sin(b),Math.cos(b)*Math.cos(a)];};
  const render=(time:number)=>{
  const dt=Math.min((time-lastTime)/1000,.05);lastTime=time;if(!paused&&!drag&&!document.hidden){angle+=dt*.045;phase+=dt*.10;}
- ctx.clearRect(0,0,w,h);const cx=w*.57,cy=h*.53,r=Math.min(w*.34,h*.37);
+ // Fit the rotated orbit plus a full tether half-length, not just Earth.
+ // The fixed inset also contains the endpoint's 10 px tracking ring.
+ const orbitX=Math.hypot(1.4*Math.cos(.45),.53*Math.sin(.45));
+ const orbitY=Math.hypot(1.4*Math.sin(.45),.53*Math.cos(.45));
+ const cx=w/2,cy=h/2,r=Math.max(0,Math.min((w-32)/(2*(orbitX+.28)),(h-32)/(2*Math.max(1.22,orbitY+.28))));
+ ctx.clearRect(0,0,w,h);
  for(let i=0;i<90;i++){const x=((i*173.71)%997)/997*w,y=((i*97.37)%631)/631*h;ctx.fillStyle=`rgba(190,209,219,${.12+(i%4)*.07})`;ctx.fillRect(x,y,1,1);}
  const halo=ctx.createRadialGradient(cx,cy,r*.85,cx,cy,r*1.22);halo.addColorStop(0,'#4d8b9b00');halo.addColorStop(.48,'#669eaf22');halo.addColorStop(.7,'#6ebdd117');halo.addColorStop(1,'#29435400');ctx.fillStyle=halo;ctx.fillRect(cx-r*1.3,cy-r*1.3,r*2.6,r*2.6);
  const sea=ctx.createRadialGradient(cx-r*.5,cy-r*.55,0,cx,cy,r);sea.addColorStop(0,'#426573');sea.addColorStop(.5,'#18313e');sea.addColorStop(1,'#040a0e');ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=sea;ctx.fill();

@@ -120,6 +120,74 @@ def main():
             native.close()
             report['navigation'].append('native disclosure without JavaScript')
 
+            # Drive the real homepage canvas through a full orbit, measuring
+            # the paths it draws (including endpoint rings and its label).
+            globe = browser.new_page(reduced_motion='no-preference')
+            globe.add_init_script('''(() => {
+                let next = 0, time = 0;
+                const frames = new Map();
+                window.requestAnimationFrame = cb => { frames.set(++next, cb); return next; };
+                window.cancelAnimationFrame = id => frames.delete(id);
+                window.orbitStep = () => {
+                    window.orbitBounds = [];
+                    time += 50;
+                    const callbacks = [...frames.values()]; frames.clear();
+                    callbacks.forEach(cb => cb(time));
+                    return window.orbitBounds;
+                };
+                window.orbitBounds = [];
+                const proto = CanvasRenderingContext2D.prototype;
+                const arc = proto.arc, ellipse = proto.ellipse, text = proto.fillText;
+                const box = (ctx, x, y, rx, ry) => {
+                    if (ctx.canvas.id === 'orbital-canvas') window.orbitBounds.push([x-rx,y-ry,x+rx,y+ry]);
+                };
+                proto.arc = function(x,y,r,...rest) {
+                    if (r <= 10) box(this,x,y,r,r);
+                    return arc.call(this,x,y,r,...rest);
+                };
+                proto.ellipse = function(x,y,rx,ry,a,...rest) {
+                    box(this,x,y,Math.hypot(rx*Math.cos(a),ry*Math.sin(a)),Math.hypot(rx*Math.sin(a),ry*Math.cos(a)));
+                    return ellipse.call(this,x,y,rx,ry,a,...rest);
+                };
+                proto.fillText = function(value,x,y,...rest) {
+                    if (this.canvas.id === 'orbital-canvas') {
+                        const m=this.measureText(value);
+                        window.orbitBounds.push([x,y-m.actualBoundingBoxAscent,x+m.width,y+m.actualBoundingBoxDescent]);
+                    }
+                    return text.call(this,value,x,y,...rest);
+                };
+            })();''')
+            globe.goto(origin + '/', wait_until='networkidle')
+            for width, height in [(1440, 1000), (1000, 800), (768, 1024), (390, 844), (320, 800)]:
+                globe.set_viewport_size({'width': width, 'height': height})
+                globe.wait_for_timeout(100)
+                globe.locator('#orbit-reset').click()
+                sweep = globe.evaluate('''() => {
+                    const canvas = document.querySelector('#orbital-canvas');
+                    const r = canvas.getBoundingClientRect();
+                    let maxRight = 0, worstFrame = 1, samples = 0;
+                    for (let i=1; i<=1260; i++) {
+                        for (const [left,top,right,bottom] of window.orbitStep()) {
+                            samples++;
+                            if (left < 1 || top < 1 || right > r.width-1 || bottom > r.height-1)
+                                return {clipped: [left,top,right,bottom], width:r.width,height:r.height};
+                            if (right > maxRight) { maxRight=right; worstFrame=i; }
+                        }
+                    }
+                    return {samples,worstFrame};
+                }''')
+                assert 'clipped' not in sweep, f'Homepage orbit clipped at {width}px: {sweep}'
+                assert sweep['samples'] > 6000, 'full orbit must actually render'
+                globe.locator('#orbit-reset').click()
+                globe.evaluate('(n) => { for(let i=0;i<n;i++) window.orbitStep(); }', sweep['worstFrame'])
+                canvas_box = globe.locator('#orbital-canvas').bounding_box()
+                controls_box = globe.locator('.globe-controls').bounding_box()
+                assert canvas_box['y'] + canvas_box['height'] < controls_box['y'], 'controls overlap orbital view'
+                assert not globe.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                globe.locator('.new-hero').screenshot(path=str(out / f'homepage-orbit-rightmost-{width}.png'))
+            globe.close()
+            report['navigation'].append('homepage full orbit and tether fit at five widths')
+
             # The illustrated flight keeps every stage selectable with reduced
             # motion, and motion starts only when that visitor explicitly asks.
             page.set_viewport_size({'width': 1440, 'height': 1000})
