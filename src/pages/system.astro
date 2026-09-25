@@ -1,5 +1,6 @@
 ---
 import ProductionLayout from '../layouts/ProductionLayout.astro';
+import FlightStory from '../components/FlightStory.astro';
 ---
 <ProductionLayout title="The System — Skyhook Industries" description="How the Skyhook transportation concept works: orbital rotation, moving-tip rendezvous, momentum exchange, tether structure, reboost and failure management.">
   <section class="page-hero">
@@ -7,6 +8,8 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
     <h1>A machine in two motions.</h1>
     <p>The Skyhook orbits Earth while rotating around its own center of mass. That combination creates the handoff: a lower tip that can momentarily move much more slowly than the orbital center, and an upper tip that moves faster.</p>
   </section>
+
+  <FlightStory />
 
   <section class="dark-section">
     <div class="section-grid">

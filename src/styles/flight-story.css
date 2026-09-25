@@ -1,0 +1,195 @@
+.company-page .flight-story {
+  padding: clamp(48px, 6vw, 78px) var(--reading-gutter);
+  border-top: 1px solid #34444b;
+  background:
+    radial-gradient(ellipse 60% 85% at 88% 26%, rgb(101 62 53 / .16), transparent 75%),
+    #0c1115;
+}
+.flight-story-inner { max-width: 1240px; margin: auto; }
+.flight-story-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 36px;
+  margin-bottom: 30px;
+}
+.flight-story-heading h2 {
+  margin: 12px 0 0;
+  font: 400 clamp(34px, 3.6vw, 50px)/1.12 var(--sans);
+  letter-spacing: -.04em;
+}
+.flight-story-heading > p {
+  max-width: 40ch;
+  margin: 0 0 3px;
+  color: #b6c3c9;
+  font: 16px/1.6 var(--sans);
+}
+.flight-story-frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, .75fr);
+  min-height: 530px;
+  border: 1px solid #42525a;
+  background: #101a20;
+}
+.flight-story-scene {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 65% 65% at 45% 100%, rgb(47 97 120 / .25), transparent 75%),
+    #091116;
+}
+.flight-story-scene-top,
+.flight-story-scene-bottom {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  color: #a9bbc3;
+  font: 10px/1.5 var(--mono);
+  letter-spacing: .05em;
+}
+.flight-story-scene-top { border-bottom: 1px solid #2e414b; }
+.flight-story-scene-bottom { border-top: 1px solid #2e414b; }
+.flight-story-scene svg {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+}
+.flight-story-scene .story-stars { opacity: .55; }
+.flight-story-scene .story-map-label {
+  fill: #9eb6bf;
+  font: 12px var(--mono);
+  letter-spacing: .12em;
+}
+.flight-story-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-left: 1px solid #42525a;
+  background: linear-gradient(150deg, #182229, #10181d);
+}
+.flight-story-copy { padding: clamp(25px, 3vw, 42px); flex: 1; }
+.flight-story-step-number {
+  margin: 0 0 20px;
+  color: #efa477;
+  font: 11px/1.5 var(--mono);
+  letter-spacing: .1em;
+}
+.flight-story-copy h3 {
+  margin: 0 0 18px;
+  color: #eef3f4;
+  font: 400 clamp(26px, 2.5vw, 34px)/1.18 var(--sans);
+  letter-spacing: -.035em;
+}
+.flight-story-copy > p:not(.flight-story-step-number) {
+  max-width: 42ch;
+  min-height: 7.2em;
+  margin: 0;
+  color: #bccbd0;
+  font: 15px/1.62 var(--sans);
+}
+.flight-story-readout {
+  display: grid;
+  gap: 5px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #48555b;
+}
+.flight-story-readout span {
+  color: #f0af86;
+  font: 400 clamp(28px, 2.7vw, 38px)/1.2 var(--sans);
+  letter-spacing: -.025em;
+  white-space: nowrap;
+}
+.flight-story-readout small { color: #abbcc4; font: 12px/1.5 var(--sans); }
+.flight-story-controls { border-top: 1px solid #42525a; }
+.flight-story-step-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.flight-story-step-list button {
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  min-width: 0;
+  min-height: 66px;
+  padding: 11px 7px;
+  border: 0;
+  border-right: 1px solid #34434a;
+  border-bottom: 2px solid transparent;
+  color: #aebdc3;
+  background: #131d22;
+  font: 11px/1.35 var(--sans);
+  cursor: pointer;
+}
+.flight-story-step-list button:last-child { border-right: 0; }
+.flight-story-step-list button:disabled { cursor: default; }
+.flight-story-step-list button span { color: #8397a1; font: 10px/1 var(--mono); }
+.flight-story-step-list button:hover,
+.flight-story-step-list button[aria-current="step"] {
+  color: #fff;
+  background: #26323a;
+  border-bottom-color: #efa477;
+}
+.flight-story-step-list button[aria-current="step"] span { color: #efa477; }
+.flight-story-motion {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 0;
+  border-top: 1px solid #34434a;
+  color: #d9e3e6;
+  background: #141e23;
+  font: 11px/1.5 var(--mono);
+  letter-spacing: .05em;
+  text-align: left;
+  cursor: pointer;
+}
+.flight-story-motion:hover { color: #efa477; background: #1b2930; }
+.flight-story-nojs { padding: 10px 16px; color: #aebdc3; font: 13px/1.6 var(--sans); }
+.flight-story :is(button, a):focus-visible { outline: 2px solid #f6ba92; outline-offset: 2px; }
+.flight-story-foot {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 26px;
+  padding-top: 19px;
+}
+.flight-story-foot p {
+  max-width: 76ch;
+  margin: 0;
+  color: #aabac1;
+  font: 13px/1.65 var(--sans);
+}
+.company-page .flight-story-foot a { color: #efb18d; }
+.flight-story-foot > a {
+  flex: none;
+  font: 13px/1.6 var(--sans);
+  text-decoration: none;
+  border-bottom: 1px solid #efa477;
+}
+
+@media (max-width: 1000px) {
+  .flight-story-frame { grid-template-columns: minmax(0, 1fr); }
+  .flight-story-scene { min-height: 420px; }
+  .flight-story-side { border-left: 0; border-top: 1px solid #42525a; }
+  .flight-story-copy > p:not(.flight-story-step-number) { min-height: 0; }
+  .flight-story-step-list button { padding: 13px 17px; }
+}
+@media (max-width: 600px) {
+  .flight-story-heading, .flight-story-foot { display: block; }
+  .flight-story-heading > p { margin-top: 17px; }
+  .flight-story-scene { min-height: 275px; }
+  .flight-story-scene-top, .flight-story-scene-bottom { padding: 10px 12px; font-size: 9px; }
+  .flight-story-scene-top span:last-child, .flight-story-scene-bottom span:last-child { display: none; }
+  .flight-story-copy { padding: 25px 20px; }
+  .flight-story-copy h3 { min-height: 0; }
+  .flight-story-step-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .flight-story-step-list button { padding: 10px 3px; justify-items: center; text-align: center; font-size: 10px; }
+  .flight-story-foot > a { display: inline-block; margin-top: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flight-story * { scroll-behavior: auto; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

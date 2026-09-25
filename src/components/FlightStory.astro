@@ -1,0 +1,164 @@
+---
+import '../styles/flight-story.css';
+---
+<section class="flight-story" aria-labelledby="flight-story-title" data-flight-story>
+  <div class="flight-story-inner">
+    <div class="flight-story-heading">
+      <div>
+        <p class="chapter-label">One flight / five moments</p>
+        <h2 id="flight-story-title">Follow the handoff.</h2>
+      </div>
+      <p>A conceptual view of a payload meeting an Earth-orbiting tether. Choose a moment to see what changes.</p>
+    </div>
+
+    <div class="flight-story-frame">
+      <div class="flight-story-scene">
+        <div class="flight-story-scene-top"><span>EARTH TETHER / CONCEPT VIEW</span><span>ILLUSTRATION · NOT TO SCALE</span></div>
+        <svg viewBox="0 0 1000 560" role="img" aria-labelledby="flight-scene-title flight-scene-description">
+          <title id="flight-scene-title">A payload approaches, attaches to, and leaves a rotating Earth tether</title>
+          <desc id="flight-scene-description">A conceptual Earth and orbital path, with an animated tether and payload. The selected step is explained in text beside the scene.</desc>
+          <defs>
+            <radialGradient id="story-earth" cx="36%" cy="28%" r="75%"><stop offset="0" stop-color="#28546a"/><stop offset=".6" stop-color="#122d3d"/><stop offset="1" stop-color="#06131d"/></radialGradient>
+            <linearGradient id="story-air" x1="0" x2="1"><stop stop-color="#88adc0" stop-opacity=".03"/><stop offset=".6" stop-color="#9bcad6" stop-opacity=".38"/><stop offset="1" stop-color="#88adc0" stop-opacity=".02"/></linearGradient>
+            <marker id="story-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#efa477"/></marker>
+          </defs>
+          <g class="story-stars" fill="#c8d7dd">
+            <circle cx="70" cy="87" r="1"/><circle cx="157" cy="180" r="1.4"/><circle cx="246" cy="91" r="1"/><circle cx="324" cy="153" r="1.1"/><circle cx="645" cy="90" r="1"/><circle cx="786" cy="147" r="1.4"/><circle cx="889" cy="76" r="1"/><circle cx="933" cy="262" r="1.2"/>
+          </g>
+          <ellipse cx="450" cy="681" rx="350" ry="465" fill="none" stroke="#607783" stroke-width="1.4" stroke-dasharray="5 9" opacity=".65"/>
+          <circle cx="450" cy="681" r="305" fill="none" stroke="url(#story-air)" stroke-width="18"/>
+          <circle cx="450" cy="681" r="291" fill="url(#story-earth)" stroke="#618497" stroke-width="2"/>
+          <path d="M206 513c90-51 167-32 250-6 87 27 163 4 232-35M255 434c68 40 130 31 210 12 82-19 128-9 192 28" fill="none" stroke="#4d7790" stroke-width="1.4" opacity=".34"/>
+          <text x="95" y="528" class="story-map-label">EARTH</text>
+          <path d="M162 488Q260 396 370 350" fill="none" stroke="#efa477" stroke-width="2" stroke-dasharray="3 9" opacity=".72"/>
+          <path d="M607 172Q729 90 866 72" fill="none" stroke="#efa477" stroke-width="2" stroke-dasharray="3 9" marker-end="url(#story-arrow)" opacity=".55"/>
+          <g data-story-tether>
+            <line x1="0" y1="-134" x2="0" y2="134" stroke="#e9eff1" stroke-width="5" stroke-linecap="round"/>
+            <line x1="0" y1="-134" x2="0" y2="134" stroke="#efa477" stroke-width="1" opacity=".75"/>
+            <circle cy="-134" r="7" fill="#dce9ed"/><circle cy="134" r="7" fill="#dce9ed"/>
+            <circle r="12" fill="#0b1419" stroke="#efa477" stroke-width="2"/><circle r="3" fill="#efa477"/>
+          </g>
+          <circle data-story-capture r="25" fill="none" stroke="#efa477" stroke-width="2" opacity="0"/>
+          <g data-story-payload><circle r="11" fill="#efa477"/><circle r="3" fill="#28170f"/></g>
+          <g data-story-recovery opacity="0"><circle r="24" fill="none" stroke="#efa477" stroke-width="2"/><circle r="41" fill="none" stroke="#efa477" stroke-width="1" stroke-dasharray="3 7"/></g>
+          <text x="712" y="512" class="story-map-label">ORBIT + ROTATION</text>
+        </svg>
+        <div class="flight-story-scene-bottom"><span>01—05 / MOMENTUM EXCHANGE</span><span>SCROLL FOR THE ENGINEERING ↓</span></div>
+      </div>
+
+      <div class="flight-story-side">
+        <div class="flight-story-copy" id="flight-story-copy">
+          <p class="flight-story-step-number" data-story-number>01 / APPROACH</p>
+          <h3 data-story-title>Meet the moving tip.</h3>
+          <p data-story-description>A vehicle climbs toward a timed rendezvous. It has to reach the lower tip with a manageable relative speed; the tether is already orbiting and rotating.</p>
+          <div class="flight-story-readout"><span data-story-value>100 km</span><small data-story-readout>Lower-tip altitude in the reference comparison</small></div>
+        </div>
+        <div class="flight-story-controls">
+          <div class="flight-story-step-list" aria-label="Flight moments">
+            <button type="button" data-story-step="0" aria-current="step" disabled><span>01</span>Approach</button>
+            <button type="button" data-story-step="1" disabled><span>02</span>Capture</button>
+            <button type="button" data-story-step="2" disabled><span>03</span>Swing</button>
+            <button type="button" data-story-step="3" disabled><span>04</span>Release</button>
+            <button type="button" data-story-step="4" disabled><span>05</span>Recover</button>
+          </div>
+          <button type="button" class="flight-story-motion" data-story-motion hidden>Pause animation</button>
+          <noscript><p class="flight-story-nojs">The full sequence is explained in the sections below.</p></noscript>
+        </div>
+      </div>
+    </div>
+    <div class="flight-story-foot">
+      <p>The motion is illustrative. The 100 km comparison altitude and 4.1 km/s lower-tip speed come from the <a href="/reference-architecture/">screening reference architecture</a>; they are not a validated rendezvous or flight profile.</p>
+      <a href="/lab/">Explore a flight in the Tether Lab ↗</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  const steps = [
+    { number: '01 / APPROACH', title: 'Meet the moving tip.', description: 'A vehicle climbs toward a timed rendezvous. It has to reach the lower tip with a manageable relative speed; the tether is already orbiting and rotating.', value: '100 km', readout: 'Lower-tip altitude in the reference comparison' },
+    { number: '02 / CAPTURE', title: 'Catch without breaking the machine.', description: 'A capture system would have to absorb position and speed errors, hold the payload, and transfer its load into the tether. That mechanism is still an open engineering problem.', value: '4.1 km/s', readout: 'Lower-tip inertial speed in the comparison case' },
+    { number: '03 / SWING', title: 'Pass momentum to the payload.', description: 'The attached payload rises as the tether turns. It gains energy from the orbital facility, changing the tether’s center of mass and motion in return.', value: '61.4 MJ/kg', readout: 'Ideal full lower-to-upper reference energy gain' },
+    { number: '04 / RELEASE', title: 'Leave on a new trajectory.', description: 'A precisely timed release sends the payload onward. Real targeting must account for the tether’s changed state after capture; this illustration does not solve that trajectory.', value: 'TARGETING', readout: 'A future system-level closure' },
+    { number: '05 / RECOVER', title: 'Get ready to do it again.', description: 'The tether has surrendered momentum. Electrical reboost is one candidate for restoring its orbit before another transfer, but power, plasma conditions and recovery time govern the rate.', value: '0.71 MW/t', readout: 'Ideal one-day recovery rate for the aggressive reference transfer' },
+  ];
+
+  document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) => {
+    const buttons = Array.from(story.querySelectorAll<HTMLButtonElement>('[data-story-step]'));
+    const motionButton = story.querySelector<HTMLButtonElement>('[data-story-motion]')!;
+    const tether = story.querySelector<SVGGElement>('[data-story-tether]')!;
+    const payload = story.querySelector<SVGGElement>('[data-story-payload]')!;
+    const capture = story.querySelector<SVGCircleElement>('[data-story-capture]')!;
+    const recovery = story.querySelector<SVGGElement>('[data-story-recovery]')!;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    let current = 0;
+    let moving = !reducedMotion.matches;
+    let visible = true;
+    let phaseStart = performance.now();
+    let frame = 0;
+
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const setText = (selector: string, value: string) => {
+      const node = story.querySelector<HTMLElement>(selector);
+      if (node) node.textContent = value;
+    };
+    const render = (now: number) => {
+      const elapsed = (now - phaseStart) / 1000;
+      const t = moving && visible && !document.hidden ? (elapsed % 4.8) / 4.8 : .62;
+      const ease = t * t * (3 - 2 * t);
+      const hubX = [446, 454, 464, 504, 547][current] + (moving ? t * 12 : 7);
+      const hubY = [229, 227, 226, 229, 240][current];
+      const fromAngle = [-28, -28, -10, 120, 150][current];
+      const toAngle = [-28, -10, 120, 150, 215][current];
+      const angle = lerp(fromAngle, toAngle, ease);
+      const rad = angle * Math.PI / 180;
+      const tipX = hubX + Math.sin(rad) * 134;
+      const tipY = hubY + Math.cos(rad) * 134;
+      tether.setAttribute('transform', `translate(${hubX} ${hubY}) rotate(${-angle})`);
+
+      let x = tipX;
+      let y = tipY;
+      let opacity = 1;
+      if (current === 0) { x = lerp(176, tipX, ease); y = lerp(468, tipY, ease); }
+      if (current === 3) { x = lerp(tipX, 870, ease); y = lerp(tipY, 76, ease); opacity = 1 - .3 * ease; }
+      if (current === 4) { x = 870; y = 76; opacity = 0; }
+      payload.setAttribute('transform', `translate(${x} ${y})`);
+      payload.setAttribute('opacity', String(opacity));
+      capture.setAttribute('cx', String(tipX));
+      capture.setAttribute('cy', String(tipY));
+      capture.setAttribute('opacity', current === 1 ? String(.65 - .3 * t) : '0');
+      capture.setAttribute('r', String(current === 1 ? 18 + 15 * t : 25));
+      recovery.setAttribute('transform', `translate(${hubX} ${hubY})`);
+      recovery.setAttribute('opacity', current === 4 ? String(.4 + .4 * Math.sin(t * Math.PI)) : '0');
+      if (moving && visible && !document.hidden) frame = requestAnimationFrame(render);
+    };
+    const refresh = () => { cancelAnimationFrame(frame); phaseStart = performance.now(); render(phaseStart); };
+    const select = (index: number) => {
+      current = index;
+      const step = steps[index];
+      setText('[data-story-number]', step.number);
+      setText('[data-story-title]', step.title);
+      setText('[data-story-description]', step.description);
+      setText('[data-story-value]', step.value);
+      setText('[data-story-readout]', step.readout);
+      buttons.forEach((button, i) => i === index ? button.setAttribute('aria-current', 'step') : button.removeAttribute('aria-current'));
+      refresh();
+    };
+    buttons.forEach((button, index) => { button.disabled = false; button.addEventListener('click', () => select(index)); });
+    motionButton.addEventListener('click', () => {
+      moving = !moving;
+      motionButton.textContent = moving ? 'Pause animation' : 'Play animation';
+      refresh();
+    });
+    reducedMotion.addEventListener('change', (event) => {
+      moving = !event.matches;
+      motionButton.textContent = moving ? 'Pause animation' : 'Play animation';
+      refresh();
+    });
+    document.addEventListener('visibilitychange', refresh);
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; refresh(); }, { threshold: .05 });
+    observer.observe(story);
+    motionButton.hidden = false;
+    motionButton.textContent = moving ? 'Pause animation' : 'Play animation';
+    render(phaseStart);
+  });
+</script>

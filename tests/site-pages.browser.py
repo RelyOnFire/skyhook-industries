@@ -119,6 +119,34 @@ def main():
             expect(native).to_have_url(origin + '/contact/')
             native.close()
             report['navigation'].append('native disclosure without JavaScript')
+
+            # The illustrated flight keeps every stage selectable with reduced
+            # motion, and motion starts only when that visitor explicitly asks.
+            page.set_viewport_size({'width': 1440, 'height': 1000})
+            page.goto(origin + '/system/', wait_until='networkidle')
+            story = page.locator('[data-flight-story]')
+            expect(story.get_by_role('heading', name='Follow the handoff.')).to_be_visible()
+            expect(story.locator('[data-story-motion]')).to_have_text('Play animation')
+            story.get_by_role('button', name='Swing').click()
+            expect(story.locator('[data-story-title]')).to_have_text('Pass momentum to the payload.')
+            expect(story.locator('[data-story-value]')).to_have_text('61.4 MJ/kg')
+            expect(story.get_by_role('button', name='Swing')).to_have_attribute('aria-current', 'step')
+            still = story.locator('[data-story-tether]').get_attribute('transform')
+            page.wait_for_timeout(120)
+            assert story.locator('[data-story-tether]').get_attribute('transform') == still
+            story.locator('[data-story-motion]').click()
+            expect(story.locator('[data-story-motion]')).to_have_text('Pause animation')
+            page.wait_for_timeout(120)
+            assert story.locator('[data-story-tether]').get_attribute('transform') != still
+            story.locator('[data-story-motion]').click()
+            expect(story.locator('[data-story-motion]')).to_have_text('Play animation')
+            story.screenshot(path=str(out / 'system-flight-story-1440.png'))
+            page.set_viewport_size({'width': 390, 'height': 844})
+            story.get_by_role('button', name='Recover').click()
+            expect(story.locator('[data-story-title]')).to_have_text('Get ready to do it again.')
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            story.screenshot(path=str(out / 'system-flight-story-390.png'))
+            report['navigation'].append('flight story controls and reduced motion')
             report['status'] = 'failed' if report['errors'] else 'passed'
             assert not report['errors'], report['errors']
             print('PASS company pages at four widths; keyboard, dismissal, resize and native navigation; review qa/browser/company', flush=True)
