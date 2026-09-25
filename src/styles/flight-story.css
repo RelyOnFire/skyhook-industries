@@ -60,12 +60,19 @@
   min-height: 0;
   flex: 1;
 }
+.story-operating-orbit { fill: none; stroke: #7897a5; stroke-width: 1.5; stroke-dasharray: 5 9; opacity: .65; }
 .flight-story-scene .story-stars { opacity: .55; }
 .flight-story-scene .story-map-label {
   fill: #9eb6bf;
-  font: 12px var(--mono);
-  letter-spacing: .12em;
+  font: 15px var(--mono);
+  letter-spacing: .06em;
 }
+.flight-story-explanation { margin: 0; padding: 13px 20px; border-top: 1px solid #2e414b; color: #d0e0e5; font: 14px/1.5 var(--sans); }
+.flight-story-scrubber { display: flex; align-items: center; gap: 18px; padding: 10px 20px; border-top: 1px solid #2e414b; }
+.flight-story-scrubber[hidden] { display: none; }
+.flight-story-scrubber label { flex: none; color: #a9bbc3; font: 11px/1.5 var(--mono); }
+.flight-story-scrubber input { min-width: 0; width: 100%; min-height: 30px; accent-color: #efa477; cursor: pointer; }
+.flight-story-scrubber input:focus-visible { outline: 2px solid #f6ba92; outline-offset: 3px; }
 .flight-story-side {
   display: flex;
   flex-direction: column;
@@ -85,10 +92,11 @@
   color: #eef3f4;
   font: 400 clamp(26px, 2.5vw, 34px)/1.18 var(--sans);
   letter-spacing: -.035em;
+  min-height: 3.54em;
 }
 .flight-story-copy > p:not(.flight-story-step-number) {
   max-width: 42ch;
-  min-height: 7.2em;
+  min-height: 11.34em;
   margin: 0;
   color: #bccbd0;
   font: 15px/1.62 var(--sans);
@@ -104,9 +112,10 @@
   color: #f0af86;
   font: 400 clamp(28px, 2.7vw, 38px)/1.2 var(--sans);
   letter-spacing: -.025em;
-  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .flight-story-readout small { color: #abbcc4; font: 12px/1.5 var(--sans); }
+.flight-story[data-stage="4"] .flight-story-readout span { font-size: 28px; }
 .flight-story-controls { border-top: 1px solid #42525a; }
 .flight-story-step-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .flight-story-step-list button {
@@ -175,7 +184,7 @@
   .flight-story-frame { grid-template-columns: minmax(0, 1fr); }
   .flight-story-scene { min-height: 420px; }
   .flight-story-side { border-left: 0; border-top: 1px solid #42525a; }
-  .flight-story-copy > p:not(.flight-story-step-number) { min-height: 0; }
+  .flight-story-copy > p:not(.flight-story-step-number) { min-height: 8.1em; }
   .flight-story-step-list button { padding: 13px 17px; }
 }
 @media (max-width: 600px) {
@@ -183,9 +192,12 @@
   .flight-story-heading > p { margin-top: 17px; }
   .flight-story-scene { min-height: 275px; }
   .flight-story-scene-top, .flight-story-scene-bottom { padding: 10px 12px; font-size: 9px; }
-  .flight-story-scene-top span:last-child, .flight-story-scene-bottom span:last-child { display: none; }
+  .flight-story-scene-top { flex-direction: column; gap: 4px; }
   .flight-story-copy { padding: 25px 20px; }
   .flight-story-copy h3 { min-height: 0; }
+  .flight-story-explanation { padding: 12px; min-height: 4.5em; }
+  .flight-story-scrubber { flex-wrap: wrap; gap: 3px; padding: 10px 12px; }
+  .flight-story-scrubber input { min-height: 36px; }
   .flight-story-step-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .flight-story-step-list button { padding: 10px 3px; justify-items: center; text-align: center; font-size: 10px; }
   .flight-story-foot > a { display: inline-block; margin-top: 18px; }

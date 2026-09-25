@@ -128,8 +128,8 @@ def main():
             expect(story.get_by_role('heading', name='Follow the handoff.')).to_be_visible()
             expect(story.locator('[data-story-motion]')).to_have_text('Play animation')
             story.get_by_role('button', name='Swing').click()
-            expect(story.locator('[data-story-title]')).to_have_text('Pass momentum to the payload.')
-            expect(story.locator('[data-story-value]')).to_have_text('61.4 MJ/kg')
+            expect(story.locator('[data-story-title]')).to_have_text('Carry the payload outward.')
+            expect(story.locator('[data-story-value]')).to_have_text('Momentum')
             expect(story.get_by_role('button', name='Swing')).to_have_attribute('aria-current', 'step')
             still = story.locator('[data-story-tether]').get_attribute('transform')
             page.wait_for_timeout(120)
@@ -138,12 +138,69 @@ def main():
             expect(story.locator('[data-story-motion]')).to_have_text('Pause animation')
             page.wait_for_timeout(120)
             assert story.locator('[data-story-tether]').get_attribute('transform') != still
-            story.locator('[data-story-motion]').click()
+            # Pause freezes the current frame, including at the instant of the
+            # click; it must not jump to an unrelated representative pose.
+            paused = story.evaluate('''s => {
+                const tether = s.querySelector('[data-story-tether]');
+                const before = tether.getAttribute('transform');
+                s.querySelector('[data-story-motion]').click();
+                return {before, after: tether.getAttribute('transform')};
+            }''')
+            assert paused['before'] == paused['after']
             expect(story.locator('[data-story-motion]')).to_have_text('Play animation')
-            story.screenshot(path=str(out / 'system-flight-story-1440.png'))
+            page.wait_for_timeout(120)
+            assert story.locator('[data-story-tether]').get_attribute('transform') == paused['after']
+
+            def scrub(value):
+                story.locator('[data-story-progress]').evaluate('''(input, value) => {
+                    input.value = String(value); input.dispatchEvent(new Event('input', {bubbles: true}));
+                }''', value)
+
+            # Scrub the actual rendered scene to catch coordinate or transform
+            # mistakes, not just errors in the numerical drawing helper.
+            prior_end = None
+            for stage, name in enumerate(['Approach', 'Capture', 'Swing', 'Release', 'Recover']):
+                story.get_by_role('button', name=name).click()
+                positions = []
+                for value in range(0, 1001, 50):
+                    scrub(value)
+                    positions.append(story.evaluate('''s => {
+                        const earth = s.querySelector('[data-story-earth]');
+                        const cx = +earth.getAttribute('cx'), cy = +earth.getAttribute('cy');
+                        const point = (el, x=0, y=0) => new DOMPoint(x,y).matrixTransform(el.transform.baseVal.consolidate().matrix);
+                        const payload = point(s.querySelector('[data-story-payload]'));
+                        const tether = s.querySelector('[data-story-tether]');
+                        const arm = +tether.querySelector('line').getAttribute('y2');
+                        const tip = point(tether, 0, arm), other = point(tether, 0, -arm);
+                        return {radius: Math.hypot(payload.x-cx,payload.y-cy), x: payload.x, y:payload.y,
+                          attached: Math.hypot(payload.x-tip.x,payload.y-tip.y),
+                          tipRadius: Math.hypot(tip.x-cx,tip.y-cy), otherRadius: Math.hypot(other.x-cx,other.y-cy)};
+                    }'''))
+                if stage < 3:
+                    assert all(b['radius'] >= a['radius'] - 1e-7 for a, b in zip(positions, positions[1:])), f'Payload descends in {name}'
+                if stage in [1, 2]:
+                    assert all(p['attached'] < .001 for p in positions), f'Payload detaches during {name}'
+                if 0 < stage < 4:
+                    assert abs(positions[0]['x'] - prior_end['x']) < .001
+                    assert abs(positions[0]['y'] - prior_end['y']) < .001
+                assert all(min(p['tipRadius'], p['otherRadius']) > 359 for p in positions)
+                prior_end = positions[-1]
+                scrub(650)
+                story.screenshot(path=str(out / f'system-flight-{name.lower()}-1440.png'))
+
+            expect(story.locator('[data-story-explanation]')).to_contain_text('magnetic thrust')
+            expect(story.locator('[data-story-timescale]')).to_have_text('LATER ORBITS · TIME COMPRESSED')
+            # One-shot stages finish and hold; they never rewind automatically.
+            scrub(999)
+            story.locator('[data-story-motion]').click()
+            expect(story.locator('[data-story-motion]')).to_have_text('Replay stage')
+            end = story.locator('[data-story-tether]').get_attribute('transform')
+            page.wait_for_timeout(180)
+            assert story.locator('[data-story-tether]').get_attribute('transform') == end
             page.set_viewport_size({'width': 390, 'height': 844})
             story.get_by_role('button', name='Recover').click()
-            expect(story.locator('[data-story-title]')).to_have_text('Get ready to do it again.')
+            scrub(650)
+            expect(story.locator('[data-story-title]')).to_have_text('Power the orbit back up.')
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
             story.screenshot(path=str(out / 'system-flight-story-390.png'))
             report['navigation'].append('flight story controls and reduced motion')
