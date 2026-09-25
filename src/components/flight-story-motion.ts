@@ -19,8 +19,8 @@ export const STORY = {
   coastDuration: 1.1,
   recoveryOrbit: 505,
 } as const;
-export const STAGE_MS = [6000, 2500, 7000, 6000, 8000];
-export const STILL_PROGRESS = [.72, 1, .65, .6, .7];
+export const STAGE_MS = [6000, 6000, 7000, 6000, 8000];
+export const STILL_PROGRESS = [.72, .55, .65, .6, .7];
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const add = (a: Point, b: Point): Point => ({ x: a.x + b.x, y: a.y + b.y });
@@ -99,4 +99,16 @@ export function storyPath(stage: number): string {
     const f = storyFrame(stage, i / 100), p = stage === 4 ? f.hub : f.payload!;
     return `${i ? 'L' : 'M'}${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
   }).join(' ');
+}
+
+/** Schematic Lorentz force for a uniform field into the drawing. Switch
+ * conventional current with spin phase to keep the along-orbit force positive.
+ * Gate it near perpendicular alignment; this is not a plasma/current solver.
+ */
+export function electrodynamicDrive(angle: number, prograde: Point) {
+  const normal = { x: Math.cos(angle), y: Math.sin(angle) };
+  const alignment = normal.x * prograde.x + normal.y * prograde.y;
+  const direction = alignment >= 0 ? 1 : -1;
+  const strength = smooth(clamp((Math.abs(alignment) - .08) / .12));
+  return { direction, strength, force: scale(normal, direction * strength) };
 }

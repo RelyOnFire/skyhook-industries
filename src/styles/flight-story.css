@@ -205,3 +205,10 @@
 @media (prefers-reduced-motion: reduce) {
   .flight-story * { scroll-behavior: auto; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.flight-story-reboost { padding: 12px 14px; border-bottom: 1px solid #42525a; }
+.flight-story-reboost[hidden] { display: none; }
+.flight-story-reboost > span { display: block; margin-bottom: 8px; color: #abbcc4; font: 11px var(--mono); }
+.flight-story-reboost > div { display: flex; gap: 6px; }
+.flight-story-reboost button { flex: 1; min-height: 44px; padding: 8px 5px; border: 1px solid #42525a; background: #131d22; color: #bccbd0; font: 12px var(--sans); cursor: pointer; }
+.flight-story-reboost button[aria-pressed="true"] { color: #f0af86; border-color: #bb8465; background: #2a2827; }

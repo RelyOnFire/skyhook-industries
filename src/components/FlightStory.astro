@@ -4,7 +4,7 @@ import { STORY, RELEASE, storyFrame, storyPath } from './flight-story-motion';
 const initial = storyFrame(0, .72);
 const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
 ---
-<section class="flight-story" aria-labelledby="flight-story-title" data-flight-story data-stage="0">
+<section class="flight-story" aria-labelledby="flight-story-title" data-flight-story data-stage="0" data-reboost="electrical">
   <div class="flight-story-inner">
     <div class="flight-story-heading">
       <div><p class="chapter-label">One flight / five moments</p><h2 id="flight-story-title">Follow the handoff.</h2></div>
@@ -40,6 +40,11 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             <line x1="0" y1={-STORY.arm} x2="0" y2={STORY.arm} stroke="#e9eff1" stroke-width="5" stroke-linecap="round"/>
             <line x1="0" y1={-STORY.arm} x2="0" y2={STORY.arm} stroke="#efa477" stroke-width="1" opacity=".75"/>
             <circle cy={-STORY.arm} r="7" fill="#dce9ed"/><circle cy={STORY.arm} r="7" fill="#dce9ed"/>
+            <g data-story-conductor opacity="0">
+              <line x1="0" y1={-STORY.arm} x2="0" y2={STORY.arm} stroke="#efa477" stroke-width="4"/>
+              <g data-story-current fill="#fff0d8">{Array.from({length: 8}, () => <circle cx="0" cy="0" r="3.5"/>)}</g>
+              <g fill="#234854" stroke="#9fced8" stroke-width="1.5"><rect x="-43" y="-17" width="25" height="34"/><rect x="18" y="-17" width="25" height="34"/><path d="M-31 -17V17M31 -17V17M-43 0H-18M18 0H43"/></g>
+            </g>
             <rect x="-9" y="-9" width="18" height="18" rx="3" fill="#15222b" stroke="#efa477" stroke-width="2"/>
           </g>
           <path data-story-capture d="M-18 -8V-18H-8M8 -18H18V-8M18 8V18H8M-8 18H-18V8" fill="none" stroke="#efa477" stroke-width="2" opacity="0"/>
@@ -49,14 +54,17 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             <text x={RELEASE.tip.x + 14} y={RELEASE.tip.y - 47} class="story-map-label">VELOCITY AT RELEASE</text>
           </g>
           <g data-story-recovery opacity="0">
-            <g fill="#234854" stroke="#9fced8" stroke-width="1.5"><rect x="-43" y="-17" width="25" height="34"/><rect x="18" y="-17" width="25" height="34"/><path d="M-31 -17V17M31 -17V17M-43 0H-18M18 0H43"/></g>
-            <path d="M0 0H58V66" fill="none" stroke="#efa477" stroke-width="2"/>
-            <g data-story-current fill="#efa477"><circle cx="58" cy="12" r="4"/><circle cx="58" cy="34" r="4"/><circle cx="58" cy="56" r="4"/></g>
-            <path d="M-116 -83L-42 -23M58 66L70 85" fill="none" stroke="#829da9"/>
-            <text x="-250" y="-90" class="story-map-label">SOLAR POWER</text>
-            <text x="75" y="101" class="story-map-label">CURRENT</text>
-            <line data-story-thrust x1="0" y1="-87" x2="130" y2="-87" stroke="#9fced8" stroke-width="3" marker-end="url(#story-thrust-arrow)"/>
-            <text x="13" y="-110" class="story-map-label">FORWARD THRUST</text>
+            <g data-story-engine opacity="0">
+              <path data-story-exhaust d="M-28 -10Q-63 -16 -100 0Q-63 16 -28 10Z" fill="#efa477" opacity=".7"/>
+              <path d="M-8 -5L-28 -12V12L-8 5Z" fill="#253742" stroke="#dce9ed" stroke-width="2"/>
+              <circle r="8" fill="#15222b" stroke="#efa477" stroke-width="2"/>
+            </g>
+            <line data-story-thrust x1="0" y1="0" x2="130" y2="0" stroke="#9fced8" stroke-width="3" marker-end="url(#story-thrust-arrow)"/>
+          </g>
+          <g data-story-recovery-key opacity="0">
+            <text x="665" y="300" class="story-map-label" data-story-drive-label>CURRENT IN TETHER</text>
+            <text x="665" y="330" class="story-map-label" data-story-force-label>MAGNETIC FORCE</text>
+            <text x="665" y="360" class="story-map-label" data-story-drive-note>CONTROLLED WITH SPIN</text>
           </g>
         </svg>
         <p class="flight-story-explanation" data-story-explanation>Climb from Earth → meet the lower tip</p>
@@ -70,6 +78,10 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
           <div class="flight-story-readout"><span data-story-value>100 km</span><small data-story-readout>Pickup altitude in the reference comparison</small></div>
         </div>
         <div class="flight-story-controls">
+          <div class="flight-story-reboost" data-story-reboost hidden role="group" aria-label="Reboost method">
+            <span>Reboost method</span>
+            <div><button type="button" data-story-method="electrical" aria-pressed="true">Electrodynamic</button><button type="button" data-story-method="chemical" aria-pressed="false">Chemical rocket</button></div>
+          </div>
           <div class="flight-story-step-list" aria-label="Flight moments">
             <button type="button" data-story-step="0" aria-current="step" disabled><span>01</span>Approach</button>
             <button type="button" data-story-step="1" disabled><span>02</span>Capture</button>

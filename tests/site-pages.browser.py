@@ -156,6 +156,15 @@ def main():
                     input.value = String(value); input.dispatchEvent(new Event('input', {bubbles: true}));
                 }''', value)
 
+            story.get_by_role('button', name='Capture', exact=False).click()
+            scrub(0)
+            story.locator('[data-story-motion]').click()
+            page.wait_for_timeout(1100)
+            capture_progress = int(story.locator('[data-story-progress]').input_value())
+            assert 100 < capture_progress < 400, f'Capture rushes past: {capture_progress}'
+            expect(story.locator('[data-story-timescale]')).to_have_text('CAPTURE · SLOW MOTION')
+            scrub(500)
+
             # Scrub the actual rendered scene to catch coordinate or transform
             # mistakes, not just errors in the numerical drawing helper.
             prior_end = None
@@ -190,6 +199,32 @@ def main():
 
             expect(story.locator('[data-story-explanation]')).to_contain_text('magnetic thrust')
             expect(story.locator('[data-story-timescale]')).to_have_text('LATER ORBITS · TIME COMPRESSED')
+            # Current is embedded in the rotating tether, not on a hanging boom.
+            assert story.locator('[data-story-tether] [data-story-current] circle').count() == 8
+            for value in [0, 250, 500, 750, 1000]:
+                scrub(value)
+                assert story.evaluate("s => [...s.querySelectorAll('[data-story-current] circle')].every(c => +c.getAttribute('cx') === 0 && Math.abs(+c.getAttribute('cy')) < 145)")
+            scrub(650)
+            before = story.locator('[data-story-tether]').get_attribute('transform')
+            story.get_by_role('button', name='Chemical rocket').click()
+            expect(story.get_by_role('button', name='Chemical rocket')).to_have_attribute('aria-pressed', 'true')
+            expect(story.locator('[data-story-value]')).to_have_text('Chemical reboost')
+            expect(story.locator('[data-story-conductor]')).to_have_attribute('opacity', '0')
+            expect(story.locator('[data-story-engine]')).to_have_attribute('opacity', '1')
+            assert story.locator('[data-story-tether]').get_attribute('transform') == before
+            assert story.locator('[data-story-progress]').input_value() == '650'
+            for value in [0, 500, 1000]:
+                scrub(value)
+                assert story.evaluate('''s => {
+                    const m = s.querySelector('[data-story-engine]').transform.baseVal.consolidate().matrix;
+                    const exhaust = new DOMPoint(-100,0).matrixTransform(m);
+                    const thrust = s.querySelector('[data-story-thrust]');
+                    const x = +thrust.getAttribute('x2'), y = +thrust.getAttribute('y2');
+                    return exhaust.x*x + exhaust.y*y < 0 && Math.abs(exhaust.x*y-exhaust.y*x) < .001;
+                }''')
+            scrub(650)
+            story.screenshot(path=str(out / 'system-flight-chemical-1440.png'))
+            story.get_by_role('button', name='Electrodynamic').click()
             # One-shot stages finish and hold; they never rewind automatically.
             scrub(999)
             story.locator('[data-story-motion]').click()
@@ -203,6 +238,9 @@ def main():
             expect(story.locator('[data-story-title]')).to_have_text('Power the orbit back up.')
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
             story.screenshot(path=str(out / 'system-flight-story-390.png'))
+            story.get_by_role('button', name='Chemical rocket').click()
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            story.screenshot(path=str(out / 'system-flight-chemical-390.png'))
             report['navigation'].append('flight story controls and reduced motion')
             report['status'] = 'failed' if report['errors'] else 'passed'
             assert not report['errors'], report['errors']

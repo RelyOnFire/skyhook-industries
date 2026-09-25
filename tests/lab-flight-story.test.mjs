@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth } from '../.lab-test/components/flight-story-motion.js';
+import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth, electrodynamicDrive } from '../.lab-test/components/flight-story-motion.js';
 const near = (a, b, tol = 1e-7) => assert.ok(Math.abs(a - b) < tol, `${a} != ${b}`);
 const same = (a, b, tol) => { near(a.x, b.x, tol); near(a.y, b.y, tol); };
 
@@ -65,4 +65,21 @@ test('recovery raises the schematic orbit and its thrust arrow is tangential', (
   }
   near(distanceFromEarth(storyFrame(4, 0).hub), STORY.recoveryOrbit);
   near(distanceFromEarth(storyFrame(4, 1).hub), STORY.orbit);
+});
+
+test('controlled tether current gives perpendicular magnetic force with a nonnegative prograde component', () => {
+  const prograde = { x: Math.cos(.3), y: Math.sin(.3) };
+  const directions = new Set();
+  let gated = false;
+  for (let i = 0; i <= 720; i++) {
+    const angle = i / 720 * 2 * Math.PI;
+    const d = electrodynamicDrive(angle, prograde);
+    directions.add(d.direction);
+    near(d.force.x * -Math.sin(angle) + d.force.y * Math.cos(angle), 0);
+    assert.ok(d.force.x * prograde.x + d.force.y * prograde.y >= -1e-10);
+    assert.ok(d.strength >= 0 && d.strength <= 1);
+    if (d.strength === 0) gated = true;
+  }
+  assert.equal(directions.size, 2, 'current reverses during rotation');
+  assert.ok(gated, 'current switches off near unfavorable alignment');
 });
