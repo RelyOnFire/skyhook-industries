@@ -47,7 +47,15 @@ Source context:
 - [NASA: electrodynamic tether power and thrust](https://ntrs.nasa.gov/citations/19850005592)
 - [NASA TEPCE: current interacting with Earth's magnetic field](https://www.nasa.gov/smallsat-institute/community-of-practice/tether-electrodynamics-propulsion-cubesat-experiment-tepce/)
 
-Capture plays for six seconds, like approach and release, with an explicit slow-motion label. Playback lengths are chosen for readability, not physical phase durations.
+Capture uses its six-second playback for a camera move: zoom to 6× around the
+same moving tip, close two hinged grapple jaws around the illustrated fitting,
+confirm the latch, then return exactly to the normal view. The detailed hardware
+fades in with magnification; it is a conceptual mechanism, not a qualified
+capture design or contact-dynamics solve. Alignment, closure and latch captions
+follow the same progress clock. Pausing, scrubbing and reduced-motion stills
+therefore preserve both the camera and mechanism state. Leaving Capture restores
+the wide camera immediately. Playback lengths serve readability, not physical
+phase durations.
 
 Stages play once and hold at the end. Pause and offscreen/hidden-page suspension
 preserve the current frame. A slider provides keyboard-accessible scrubbing.
@@ -57,4 +65,4 @@ Reduced-motion visitors start with a still frame and can opt into playback.
 continuity at stage boundaries, tether clearance, release velocity and coast
 conservation, recovery radius, and the controlled magnetic force's direction through a full spin. The
 company-page browser suite also samples the rendered SVG transforms and checks
-scrubbing, exact pause behavior, end-frame hold, capture pacing, current placement, chemical thrust/exhaust direction, method switching without a playback reset, and reduced-motion controls.
+scrubbing, exact pause behavior, end-frame hold, capture pacing, current placement, chemical thrust/exhaust direction, method switching without a playback reset, close-up framing and return, grapple/latch ordering, and reduced-motion controls.

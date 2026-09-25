@@ -212,3 +212,6 @@
 .flight-story-reboost > div { display: flex; gap: 6px; }
 .flight-story-reboost button { flex: 1; min-height: 44px; padding: 8px 5px; border: 1px solid #42525a; background: #131d22; color: #bccbd0; font: 12px var(--sans); cursor: pointer; }
 .flight-story-reboost button[aria-pressed="true"] { color: #f0af86; border-color: #bb8465; background: #2a2827; }
+
+.story-capture-labels { fill: #b9cbd2; font: 14px var(--mono); letter-spacing: .04em; pointer-events: none; }
+.story-capture-labels [data-story-capture-status] { fill: #f0af86; font: 21px var(--sans); letter-spacing: 0; }

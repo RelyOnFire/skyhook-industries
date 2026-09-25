@@ -22,6 +22,7 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             <marker id="story-thrust-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7" fill="#9fced8"/></marker>
             <clipPath id="story-earth-clip"><circle cx={STORY.earth.x} cy={STORY.earth.y} r={STORY.radius}/></clipPath>
           </defs>
+          <g data-story-world>
           <g class="story-stars" fill="#c8d7dd"><circle cx="70" cy="87" r="1"/><circle cx="157" cy="180" r="1.4"/><circle cx="246" cy="91" r="1"/><circle cx="645" cy="90" r="1"/><circle cx="786" cy="147" r="1.4"/><circle cx="889" cy="76" r="1"/><circle cx="933" cy="262" r="1.2"/></g>
           <circle cx={STORY.earth.x} cy={STORY.earth.y} r={STORY.orbit} class="story-operating-orbit"/>
           <g data-story-recovery-orbits opacity="0">
@@ -47,8 +48,22 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             </g>
             <rect x="-9" y="-9" width="18" height="18" rx="3" fill="#15222b" stroke="#efa477" stroke-width="2"/>
           </g>
-          <path data-story-capture d="M-18 -8V-18H-8M8 -18H18V-8M18 8V18H8M-8 18H-18V8" fill="none" stroke="#efa477" stroke-width="2" opacity="0"/>
           <g data-story-payload transform={`translate(${initial.payload!.x} ${initial.payload!.y})`}><circle r="9" fill="#efa477"/><circle r="3" fill="#28170f"/></g>
+          <g data-story-capture opacity="0">
+            <rect x="-3" y="-20" width="6" height="10" fill="#091116"/>
+            <g fill="#1b2b34" stroke="#dce9ed" stroke-width="1.5">
+              <path d="M-8 15L-11 21V32L-6 36H6L11 32V21L8 15Z" fill="#263945"/>
+              <path d="M-4 9V15H4V9M-7 23H7M-7 29H7"/>
+              <rect x="-17" y="-23" width="34" height="7" rx="2"/>
+            </g>
+            <circle r="10.5" fill="none" stroke="#f6ba92" stroke-width="1.5"/>
+            <g fill="none" stroke="#dce9ed" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path data-story-jaw="left" d="M0 0L-3 13L0 27L9 31" transform="translate(-14 -18) rotate(36)"/>
+              <path data-story-jaw="right" d="M0 0L3 13L0 27L-9 31" transform="translate(14 -18) rotate(-36)"/>
+            </g>
+            <circle cx="-14" cy="-18" r="2.7" fill="#efa477"/><circle cx="14" cy="-18" r="2.7" fill="#efa477"/>
+            <path data-story-latch d="M-5 13H5" fill="none" stroke="#9fced8" stroke-width="3" opacity="0"/>
+          </g>
           <g data-story-velocity opacity="0">
             <line x1={RELEASE.tip.x} y1={RELEASE.tip.y} x2={RELEASE.tip.x + v.x / speed * 120} y2={RELEASE.tip.y + v.y / speed * 120} stroke="#efa477" stroke-width="2.5" marker-end="url(#story-arrow)"/>
             <text x={RELEASE.tip.x + 14} y={RELEASE.tip.y - 47} class="story-map-label">VELOCITY AT RELEASE</text>
@@ -65,6 +80,14 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             <text x="665" y="300" class="story-map-label" data-story-drive-label>CURRENT IN TETHER</text>
             <text x="665" y="330" class="story-map-label" data-story-force-label>MAGNETIC FORCE</text>
             <text x="665" y="360" class="story-map-label" data-story-drive-note>CONTROLLED WITH SPIN</text>
+          </g>
+          </g>
+          <g data-story-closeup-labels opacity="0" class="story-capture-labels">
+            <text x="58" y="62">TIP CAMERA / CAPTURE DETAIL</text>
+            <text x="680" y="190">CONCEPTUAL GRAPPLE</text>
+            <text x="680" y="230" data-story-capture-status>Match motion</text>
+            <path d="M680 246H885" stroke="#42525a"/>
+            <text x="680" y="274">Align · close · secure</text>
           </g>
         </svg>
         <p class="flight-story-explanation" data-story-explanation>Climb from Earth → meet the lower tip</p>

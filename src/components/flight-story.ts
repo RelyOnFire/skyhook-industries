@@ -1,8 +1,8 @@
-import { STAGE_MS, STILL_PROGRESS, STORY, electrodynamicDrive, storyFrame, storyPath } from './flight-story-motion';
+import { STAGE_MS, STILL_PROGRESS, STORY, captureDetail, electrodynamicDrive, storyFrame, storyPath } from './flight-story-motion';
 
 const steps = [
   { title: 'Climb to the meeting point.', description: 'The vehicle approaches from below, gaining altitude until it meets the lower tip. At pickup, its position and velocity must closely match the tip. The tip is moving with the orbit, slowed by the tether’s opposing rotation.', value: '100 km', readout: 'Pickup altitude in the reference comparison', explanation: 'Climb from Earth → meet the lower tip' },
-  { title: 'Secure the payload.', description: 'Capture takes place at the bottom of this pass. The same tip then starts carrying the payload upward. A real capture mechanism must absorb small errors and transfer the load without damaging either vehicle or tether.', value: '4.1 km/s', readout: 'Tip speed relative to Earth in the comparison case; closing speed must be much smaller', explanation: 'Match position + speed → secure the payload' },
+  { title: 'Secure the payload.', description: 'At the bottom of the pass, payload and tip meet with closely matched motion. Watch the grapple’s jaws close around the capture fitting, then latch before the swing. This illustrates the handoff; real hardware must absorb small errors and transfer the load gently.', value: '4.1 km/s', readout: 'Tip speed relative to Earth in the comparison case; closing speed must be much smaller', explanation: 'Match position + speed → secure the payload' },
   { title: 'Carry the payload outward.', description: 'Follow the copper marker: it stays on the same end of the tether and rises away from Earth. Momentum exchange gives the payload energy while changing the facility’s orbit and rotation.', value: 'Momentum', readout: 'Energy gained by the payload comes from the facility', explanation: 'The same tip carries the payload outward' },
   { title: 'Let its velocity carry it onward.', description: 'Release adds no extra kick. The payload keeps its velocity from the orbit and the tether’s spin, then gravity curves its path. This example releases partway through the swing; the right moment depends on the destination.', value: 'Orbit + spin', readout: 'The two velocity vectors set the departure direction', explanation: 'Orbit velocity + spin velocity → departure direction' },
   { title: 'Power the orbit back up.', description: 'Solar power drives current through a conductor built into the spinning tether. Its interaction with Earth’s magnetic field produces thrust. Current is controlled through the spin to add orbital energy over many passes; spin recovery also needs control.', value: 'Electrical reboost', readout: 'The highlighted path shows an orbit being raised over later passes', explanation: 'Current within the tether → magnetic thrust' },
@@ -17,7 +17,7 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
   const scrubber = node<HTMLInputElement>('[data-story-progress]');
   const tether = node<SVGGElement>('[data-story-tether]');
   const payload = node<SVGGElement>('[data-story-payload]');
-  const capture = node<SVGPathElement>('[data-story-capture]');
+  const capture = node<SVGGElement>('[data-story-capture]');
   const recovery = node<SVGGElement>('[data-story-recovery]');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let method: 'electrical' | 'chemical' = 'electrical';
@@ -25,13 +25,28 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
   let wantsMotion = !reducedMotion.matches, visible = false;
   let lastTime: number | null = null, frame = 0;
 
-  const text = (selector: string, value: string) => { node<HTMLElement>(selector).textContent = value; };
+  const text = (selector: string, value: string) => { const element = node<HTMLElement>(selector); if (element.textContent !== value) element.textContent = value; };
   const draw = () => {
     const f = storyFrame(current, progress);
     tether.setAttribute('transform', `translate(${f.hub.x} ${f.hub.y}) rotate(${f.angle * 180 / Math.PI})`);
     payload.setAttribute('opacity', f.payload ? '1' : '0');
     if (f.payload) payload.setAttribute('transform', `translate(${f.payload.x} ${f.payload.y})`);
-    capture.setAttribute('transform', `translate(${f.tip.x} ${f.tip.y}) scale(${1.4 - progress * .4})`);
+    const detail = captureDetail(progress);
+    const capturing = current === 1;
+    capture.setAttribute('opacity', capturing ? String(detail.detailOpacity) : '0');
+    node<SVGGElement>('[data-story-world]').setAttribute('transform', capturing ? `translate(${detail.x} ${detail.y}) scale(${detail.scale})` : 'translate(0 0) scale(1)');
+    capture.setAttribute('transform', `translate(${f.tip.x} ${f.tip.y}) rotate(${f.angle * 180 / Math.PI})`);
+    const jawAngle = capturing ? detail.jawAngle : current === 2 ? 0 : 36;
+    node<SVGPathElement>('[data-story-jaw="left"]').setAttribute('transform', `translate(-14 -18) rotate(${jawAngle})`);
+    node<SVGPathElement>('[data-story-jaw="right"]').setAttribute('transform', `translate(14 -18) rotate(${-jawAngle})`);
+    node<SVGPathElement>('[data-story-latch]').setAttribute('opacity', capturing && detail.locked ? '1' : '0');
+    node<SVGGElement>('[data-story-closeup-labels]').setAttribute('opacity', capturing ? String(detail.detailOpacity) : '0');
+    node<SVGGElement>('[data-story-pickup]').setAttribute('opacity', current === 0 ? '1' : capturing ? String(Math.max(0, 1 - 4 * detail.detailOpacity)) : '0');
+    if (capturing) {
+      const phases = ['Match motion', 'Grapple closing', 'Latch confirmed', 'Ready to swing'];
+      text('[data-story-capture-status]', phases[detail.phase]);
+      text('[data-story-explanation]', ['Match motion → align the capture fitting', 'Grapple jaws close around the fitting', 'Latch confirmed → payload secured', 'Payload secured → pull back for the swing'][detail.phase]);
+    }
     recovery.setAttribute('transform', `translate(${f.hub.x} ${f.hub.y})`);
     const drive = electrodynamicDrive(f.angle, f.prograde);
     const electrical = current === 4 && method === 'electrical';
@@ -77,7 +92,7 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
     text('[data-story-number]', `0${index + 1} / ${names[index]}`);
     for (const key of ['title', 'description', 'value', 'readout', 'explanation'] as const) text(`[data-story-${key}]`, step[key]);
     text('[data-story-scene-description]', step.explanation + '. ' + step.description);
-    text('[data-story-timescale]', index === 4 ? 'LATER ORBITS · TIME COMPRESSED' : index === 1 ? 'CAPTURE · SLOW MOTION' : 'ILLUSTRATION · NOT TO SCALE');
+    text('[data-story-timescale]', index === 4 ? 'LATER ORBITS · TIME COMPRESSED' : index === 1 ? 'CAPTURE · CLOSE-UP' : 'ILLUSTRATION · NOT TO SCALE');
     node<SVGPathElement>('[data-story-path]').setAttribute('d', storyPath(index));
     node<SVGGElement>('[data-story-pickup]').setAttribute('opacity', index < 2 ? '1' : '0');
     capture.setAttribute('opacity', index === 1 ? '1' : '0');

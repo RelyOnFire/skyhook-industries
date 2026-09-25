@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth, electrodynamicDrive } from '../.lab-test/components/flight-story-motion.js';
+import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth, captureDetail, electrodynamicDrive } from '../.lab-test/components/flight-story-motion.js';
 const near = (a, b, tol = 1e-7) => assert.ok(Math.abs(a - b) < tol, `${a} != ${b}`);
 const same = (a, b, tol) => { near(a.x, b.x, tol); near(a.y, b.y, tol); };
 
@@ -82,4 +82,25 @@ test('controlled tether current gives perpendicular magnetic force with a nonneg
   }
   assert.equal(directions.size, 2, 'current reverses during rotation');
   assert.ok(gated, 'current switches off near unfavorable alignment');
+});
+
+test('capture close-up returns to the wide frame and closes before latching', () => {
+  for (const p of [0, 1]) {
+    const c = captureDetail(p);
+    near(c.scale, 1); near(c.x, 0); near(c.y, 0); near(c.detailOpacity, 0);
+  }
+  let previousAngle = 36;
+  for (let i = 0; i <= 1000; i++) {
+    const p = i / 1000, c = captureDetail(p), tip = storyFrame(1, p).tip;
+    assert.ok(c.scale >= 1 && c.scale <= 6);
+    assert.ok(c.jawAngle <= previousAngle + 1e-9);
+    if (c.locked) near(c.jawAngle, 0);
+    const x = tip.x * c.scale + c.x, y = tip.y * c.scale + c.y;
+    assert.ok(x >= Math.min(tip.x, 440) - 1e-8 && x <= Math.max(tip.x, 440) + 1e-8, 'camera tracks without a sideways overshoot');
+    assert.ok(y >= Math.min(tip.y, 298) - 1e-8 && y <= Math.max(tip.y, 298) + 1e-8, 'camera tracks without a vertical overshoot');
+    previousAngle = c.jawAngle;
+  }
+  near(captureDetail(.4).scale, 6);
+  assert.ok(captureDetail(.4).jawAngle > 0);
+  assert.equal(captureDetail(.68).locked, true);
 });

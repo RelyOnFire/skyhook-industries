@@ -162,8 +162,33 @@ def main():
             page.wait_for_timeout(1100)
             capture_progress = int(story.locator('[data-story-progress]').input_value())
             assert 100 < capture_progress < 400, f'Capture rushes past: {capture_progress}'
-            expect(story.locator('[data-story-timescale]')).to_have_text('CAPTURE · SLOW MOTION')
+            expect(story.locator('[data-story-timescale]')).to_have_text('CAPTURE · CLOSE-UP')
             scrub(500)
+
+            # The close-up is a camera move, not a change in the trajectory.
+            for value, name in [(0, 'wide'), (280, 'aligned'), (450, 'grappling'), (680, 'latched'), (1000, 'returned')]:
+                scrub(value)
+                camera = story.locator('[data-story-world]').evaluate('(el) => { const m = el.transform.baseVal.consolidate().matrix; return {scale: m.a, x: m.e, y: m.f}; }')
+                if value in [0, 1000]:
+                    assert camera == {'scale': 1, 'x': 0, 'y': 0}
+                else:
+                    assert camera['scale'] > 5.9
+                expect(story.locator('[data-story-latch]')).to_have_attribute('opacity', '1' if value >= 620 else '0')
+                story.screenshot(path=str(out / f'system-capture-{name}-1440.png'))
+            scrub(450)
+            stationary = story.locator('[data-story-world]').get_attribute('transform')
+            page.wait_for_timeout(120)
+            assert story.locator('[data-story-world]').get_attribute('transform') == stationary
+            # Switching stages during a close-up must restore the normal camera.
+            story.get_by_role('button', name='Swing').click()
+            expect(story.locator('[data-story-world]')).to_have_attribute('transform', 'translate(0 0) scale(1)')
+            for width in [390, 320]:
+                page.set_viewport_size({'width': width, 'height': 844})
+                story.get_by_role('button', name='Capture').click()
+                scrub(450)
+                assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                story.screenshot(path=str(out / f'system-capture-grappling-{width}.png'))
+            page.set_viewport_size({'width': 1440, 'height': 1000})
 
             # Scrub the actual rendered scene to catch coordinate or transform
             # mistakes, not just errors in the numerical drawing helper.

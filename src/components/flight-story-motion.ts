@@ -112,3 +112,21 @@ export function electrodynamicDrive(angle: number, prograde: Point) {
   const strength = smooth(clamp((Math.abs(alignment) - .08) / .12));
   return { direction, strength, force: scale(normal, direction * strength) };
 }
+
+/** Camera and illustrative grapple choreography share the scrubber clock.
+ * The camera returns exactly to the wide frame before Swing; it never changes
+ * the trajectory. Jaw geometry illustrates a capture concept, not hardware.
+ */
+export function captureDetail(progress: number) {
+  const p = clamp(progress);
+  const zoom = smooth(clamp(p / .24)) * (1 - smooth(clamp((p - .74) / .26)));
+  const closure = smooth(clamp((p - .28) / .3));
+  const tip = storyFrame(1, p).tip;
+  const scale = 1 + 5 * zoom;
+  return {
+    scale, x: zoom * (440 - 6 * tip.x), y: zoom * (298 - 6 * tip.y),
+    jawAngle: 36 * (1 - closure), locked: p >= .62,
+    detailOpacity: zoom,
+    phase: p < .28 ? 0 : p < .62 ? 1 : p < .78 ? 2 : 3,
+  };
+}
