@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 import re
 import threading
+from urllib.parse import quote
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
 class Quiet(SimpleHTTPRequestHandler):
@@ -25,6 +26,7 @@ def main():
             exercise_reference(page,out)
             exercise_reference_release(page,out)
             exercise_reference_phases(page,out)
+            exercise_reference_files(page,origin,out)
             page.get_by_text('Explore uncontrolled dynamics',exact=True).click()
             run=page.get_by_role('button',name='Compare pickup',exact=True)
             expect(run).to_be_enabled(timeout=90000)
@@ -80,7 +82,7 @@ def main():
             # Old passive designs preserve every numerical input, normalizing only the model version.
             legacy={**saved,'model':'C1p-0.1.0','phaseDeg':12,'payloadT':23}
             legacy_path=out/'legacy-cardio-design.json';legacy_path.write_text(json.dumps(legacy))
-            page.locator('input[type=file]').set_input_files(str(legacy_path));expect(run).to_be_enabled(timeout=90000)
+            page.locator('.cardio-diagnostics input[type=file]').set_input_files(str(legacy_path));expect(run).to_be_enabled(timeout=90000)
             expect(page.get_by_label('Apogee phase offset value',exact=True)).to_have_value('12')
             expect(page.get_by_label('Matched payload value',exact=True)).to_have_value('23')
             with page.expect_download() as info:page.get_by_role('button',name='Export design',exact=True).click()
@@ -88,7 +90,7 @@ def main():
             normalized=json.loads(normalized_path.read_text());assert normalized=={**legacy,'model':'C1p-0.1.1'}
             assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==raw,'Import overwrote the saved passive design'
             bad=out/'wrong-design.json';bad.write_text(json.dumps({'schema':2,'architecture':'single-stage-rotovator','model':'D1p-0.4.0'}))
-            page.locator('input[type=file]').set_input_files(str(bad));expect(page.get_by_role('alert')).to_contain_text('CardioRotovator designs only')
+            page.locator('.cardio-diagnostics input[type=file]').set_input_files(str(bad));expect(page.get_by_role('alert')).to_contain_text('CardioRotovator designs only')
             assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')")=='earth-kept'
             assert page.evaluate("localStorage.getItem('skyhook-lab-t4-design-v1')")=='t4-kept'
             assert await_free_databases(page)==[],'Cardio opened a campaign database'
@@ -101,7 +103,7 @@ def main():
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS synchronized Cardio geometry, ideal releases, phase comparison and reports, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
+            print('PASS synchronized Cardio geometry, reference save/share/import, ideal releases, phase comparison and reports, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
             browser.close()
     finally:server.shutdown()
 def exercise_release(page,out,run):
@@ -365,6 +367,97 @@ def exercise_reference_phases(page,out):
     comparison.get_by_text('Compare release phases',exact=True).click()
     assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==saved
     page.set_viewport_size({'width':1440,'height':1000})
+
+def exercise_reference_files(page,origin,out):
+    reference=page.get_by_test_id('cardio-reference')
+    files=reference.get_by_role('region',name='Reference files and sharing')
+    key='skyhook-lab-cardio-reference-v1'
+    page.evaluate("localStorage.setItem('skyhook-lab-cardio-design-v1','passive-kept')")
+    files.get_by_role('button',name='Load reference',exact=True).click()
+    expect(files.get_by_role('alert')).to_contain_text('No reference has been saved')
+    reference.get_by_label('Station apogee value',exact=True).fill('2800')
+    reference.get_by_label('Pickup altitude value',exact=True).fill('120')
+    slider=reference.get_by_role('slider',name='Synchronized reference time',exact=True)
+    slider.fill(str(round(float(slider.get_attribute('max'))*.25123456789,6)))
+    reference.get_by_role('button',name='Trace release here',exact=True).click()
+    phase_time=reference.get_by_test_id('cardio-reference-scene').get_attribute('data-time')
+    files.get_by_role('button',name='Save reference',exact=True).click()
+    expect(files.get_by_role('status')).to_have_text('Reference saved in this browser.')
+    raw=page.evaluate('(key)=>localStorage.getItem(key)',key);saved=json.loads(raw)
+    assert saved['format']=='skyhook-cardio-reference' and saved['version']==1 and saved['showTrace']
+    assert saved['design']=={'perigeeKm':200,'apogeeKm':2800,'pickupKm':120} and abs(saved['phase']-.25123456789)<1e-9
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
+    files.get_by_role('button',name='Load reference',exact=True).click()
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    expect(reference.get_by_test_id('cardio-reference-scene')).to_have_attribute('data-time',phase_time)
+    expect(reference.get_by_test_id('cardio-reference-release-path')).to_be_visible()
+    files.get_by_text('Reference files',exact=True).click()
+    with page.expect_download() as info:files.get_by_role('button',name='Export reference',exact=True).click()
+    exported=out/'reference-setup.json';info.value.save_as(exported);assert json.loads(exported.read_text())==saved
+    files.get_by_role('button',name='Share reference',exact=True).click()
+    share=files.get_by_label('Shareable reference link');expect(share).to_be_visible();shared=share.input_value()
+    assert '#cardio-reference=' in shared and '#cardio=' not in shared
+    page.goto(shared,wait_until='networkidle')
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    expect(reference.get_by_test_id('cardio-reference-scene')).to_have_attribute('data-time',phase_time)
+    expect(reference.get_by_test_id('cardio-reference-release-path')).to_be_visible()
+    expect(reference.get_by_role('button',name='Play synchronized reference')).to_be_enabled()
+    stopped=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==stopped
+    assert not page.locator('.cardio-diagnostics').evaluate('(el)=>el.open')
+    assert page.evaluate('(key)=>localStorage.getItem(key)',key)==raw,'Shared link overwrote the saved reference'
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
+    assert 'cardio-reference=' not in page.url
+    files.get_by_label('Import reference file').set_input_files(str(exported))
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    expect(reference.get_by_test_id('cardio-reference-scene')).to_have_attribute('data-time',phase_time)
+    assert page.evaluate('(key)=>localStorage.getItem(key)',key)==raw,'Import wrote browser storage'
+    for name,value in [('wrong',{'schema':1,'model':'C1p-0.1.1'}),('future',{**saved,'version':2}),('bad-phase',{**saved,'phase':2})]:
+        bad=out/f'reference-{name}.json';bad.write_text(json.dumps(value))
+        files.get_by_label('Import reference file').set_input_files(str(bad));expect(files.get_by_role('alert')).to_be_visible()
+        expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+        expect(reference.get_by_test_id('cardio-reference-scene')).to_have_attribute('data-time',phase_time)
+        assert page.evaluate('(key)=>localStorage.getItem(key)',key)==raw
+    big=out/'reference-too-large.json';big.write_text('x'*16385)
+    files.get_by_label('Import reference file').set_input_files(str(big));expect(files.get_by_role('alert')).to_contain_text('16 KB')
+    reference.get_by_label('Station apogee value',exact=True).fill('3000')
+    page.evaluate("()=>{window.referenceSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='skyhook-lab-cardio-reference-v1')throw Error('injected storage failure');return window.referenceSetItem.call(this,key,value)}}")
+    files.get_by_role('button',name='Save reference',exact=True).click()
+    expect(files.get_by_role('alert')).to_contain_text('injected storage failure')
+    page.evaluate('Storage.prototype.setItem=window.referenceSetItem;delete window.referenceSetItem')
+    assert page.evaluate('(key)=>localStorage.getItem(key)',key)==raw
+    files.get_by_role('button',name='Load reference',exact=True).click()
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    reference.get_by_label('Pickup altitude value',exact=True).fill('')
+    for name in ['Save reference','Share reference']:expect(files.get_by_role('button',name=name,exact=True)).to_be_disabled()
+    files.get_by_role('button',name='Load reference',exact=True).click()
+    for width in [1440,768,320]:
+        page.set_viewport_size({'width':width,'height':1000});assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+        files.screenshot(path=str(out/f'reference-files-{width}.png'))
+    files.get_by_role('button',name='Share reference',exact=True).click();expect(share).to_be_visible()
+    files.screenshot(path=str(out/'reference-share-320.png'))
+    reference.get_by_label('Station apogee value',exact=True).fill('2900');expect(share).to_have_count(0)
+    assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")=='passive-kept'
+    page.goto(origin+'/lab/cardio/#cardio-reference='+quote(json.dumps({**saved,'version':9})),wait_until='networkidle')
+    expect(files.get_by_role('alert')).to_contain_text('Shared reference rejected')
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2900')
+    page.reload(wait_until='networkidle')
+    expect(files.get_by_role('alert')).to_contain_text('Shared reference rejected')
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2200')
+    assert page.evaluate('(key)=>localStorage.getItem(key)',key)==raw
+    page.goto(origin+'/lab/cardio/#cardio-reference='+quote(json.dumps(saved)),wait_until='networkidle')
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    expect(reference.get_by_test_id('cardio-reference-scene')).to_have_attribute('data-time',phase_time)
+    expect(files.get_by_role('alert')).to_have_count(0)
+    page.goto(origin+'/lab/cardio/',wait_until='networkidle')
+    files.get_by_role('button',name='Load reference',exact=True).click()
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2800')
+    reference.get_by_role('button',name='Play synchronized reference').click();page.wait_for_timeout(150)
+    files.get_by_role('button',name='Save reference',exact=True).click()
+    expect(reference.get_by_role('button',name='Play synchronized reference')).to_be_enabled()
+    stopped=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==stopped
+    assert not json.loads(page.evaluate('(key)=>localStorage.getItem(key)',key))['showTrace']
+    page.evaluate("localStorage.removeItem('skyhook-lab-cardio-design-v1')")
+    page.goto(origin+'/lab/cardio/',wait_until='networkidle');page.set_viewport_size({'width':1440,'height':1000})
 
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')
 if __name__=='__main__':main()

@@ -72,6 +72,32 @@ release-state analysis type, exact geometry, period and every sample's initial
 state, orbit elements and outcome. It contains no implied control, loading or
 continuous-window result and does not modify any saved design or campaign.
 
+## Save and share the synchronized reference
+
+The reference has one explicit browser save slot at
+`skyhook-lab-cardio-reference-v1`. Save replaces that slot; Load restores it.
+There is no automatic write or automatic local restore. A shared URL uses the
+separate `cardio-reference` fragment parameter and opens on page load or when
+navigating to another reference link on the same page.
+
+Version-1 `skyhook-cardio-reference` JSON contains the C1k model identifier,
+validated geometry in km, orbital phase from 0 through 1, and a boolean
+`showTrace`. It stores inputs rather than computed trajectories. Loading,
+importing or opening a share link pauses playback and recalculates a selected
+trace using those inputs. Display units stay in the separate Studio preference.
+
+Imports and links validate completely before replacing the current reference.
+Unknown formats/models/versions, malformed values and files over 16 KiB of
+UTF-8 are rejected. Passive C1p designs and exported result reports are distinct
+formats. A file import or shared link never writes browser storage; Save is
+explicit. Storage failures preserve the previous stored value, and exporting
+remains available. This slot belongs to the browser origin; use a link or JSON
+file to carry a setup elsewhere.
+
+The passive key `skyhook-lab-cardio-design-v1` and `cardio` share parameter retain
+their existing behavior. Each reset removes only its own share parameter and
+changes no stored reference, passive design or campaign.
+
 ## Passive mass and state
 
 State is `[Rx,Ry,Vx,Vy,theta,omega]`, using Earth-inertial SI coordinates and

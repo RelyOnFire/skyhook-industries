@@ -2,6 +2,8 @@ import {useEffect,useMemo,useState} from 'react';
 import {EARTH} from '../simulation/engine.js';
 import {CARDIO_REFERENCE_DEFAULT,CARDIO_REFERENCE_BOUNDS,validateCardioReference,cardioReferenceOrbit,cardioReferenceSample,cardioReferenceSummary} from '../simulation/cardio-reference.js';
 import {traceCardioReferenceRelease,type CardioReferenceRelease} from '../simulation/cardio-reference-release.js';
+import CardioReferenceFiles from './CardioReferenceFiles.js';
+import {createCardioReferenceSetup,type CardioReferenceSetup,CARDIO_REFERENCE_FRAGMENT} from '../simulation/cardio-reference-design.js';
 import CardioReferencePhases from './CardioReferencePhases.js';
 import NumericField from './StudioField.js';
 import {displayNumber,modelNumber,type StudioUnits} from './StudioUnits.js';
@@ -62,9 +64,20 @@ export default function CardioReference({units}:{units:StudioUnits}){
     const url=URL.createObjectURL(new Blob([JSON.stringify({format:'skyhook-cardio-reference-release',version:1,...trace},null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download='cardio-reference-release.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
+  const setup=geometry&&!invalid?createCardioReferenceSetup(geometry.design,trace?.fraction??Math.max(0,Math.min(1,time/geometry.orbit.period)),!!trace):null;
+  const loadSetup=(saved:CardioReferenceSetup)=>{
+    const nextTrace=saved.showTrace?traceCardioReferenceRelease(saved.design,saved.phase):null;
+    setPlaying(false);setDraft(saved.design);setBad([]);setGeneration(value=>value+1);
+    setTime(cardioReferenceOrbit(saved.design).period*saved.phase);setTrace(nextTrace);setTraceError('');
+  };
+  const reset=()=>{
+    const url=new URL(location.href),hash=new URLSearchParams(url.hash.slice(1));hash.delete(CARDIO_REFERENCE_FRAGMENT);url.hash=hash.toString();history.replaceState(null,'',url);
+    clearTrace();setDraft({...CARDIO_REFERENCE_DEFAULT});setBad([]);setGeneration(value=>value+1);setPlaying(false);setTime(0);
+  };
   const outcomes={'below-cutoff':'Release point is below the 120 km cutoff','crosses-cutoff':'Trajectory crosses the 120 km cutoff',bound:'Earth-bound trajectory',escape:'Earth escape trajectory'};
   return <section className="cardio-reference" data-testid="cardio-reference" aria-labelledby="cardio-reference-title">
     <header className="cardio-reference-heading"><p className="micro">THE SYNCHRONIZED ARCHITECTURE</p><h2 id="cardio-reference-title">Inward for pickup. Outward at perigee.</h2><p>The station follows an ellipse while the arm makes two full turns per orbit. At apogee, the arm reaches down to the pickup altitude. Half an orbit later, it points away from Earth as the station makes its closest pass.</p></header>
+    <CardioReferenceFiles setup={setup} onLoad={loadSetup} onPause={()=>setPlaying(false)}/>
     <div className="cardio-reference-layout">
       <aside className="lab-panel cardio-reference-controls" aria-label="Synchronized reference geometry"><div className="panel-heading"><h3>Shape the reference</h3></div><div className="cardio-reference-fields">
         {field('perigeeKm','Station perigee')}{field('apogeeKm','Station apogee')}{field('pickupKm','Pickup altitude')}
@@ -72,7 +85,7 @@ export default function CardioReference({units}:{units:StudioUnits}){
         <dl className="cardio-reference-derived"><div><dt>Station-to-tip arm</dt><dd data-testid="cardio-reference-arm-length">{geometry?distance(geometry.orbit.length):'—'}<span>{units.distance}</span></dd></div><div><dt>Spin / orbit</dt><dd>2<span>turns / orbit</span></dd></div><div><dt>Nominal orbit</dt><dd>{geometry?number(geometry.orbit.period/60):'—'}<span>min</span></dd></div></dl>
         <p>The arm length follows from apogee minus pickup altitude. Spin and phase are prescribed to preserve this pattern.</p>
         {geometry&&<p className={geometry.summary.minClearance<0?'cardio-reference-ground-crossing':''}>Lowest sampled cable clearance over the orbit: <strong className="cardio-reference-quantity">{distance(geometry.summary.minClearance)} {units.distance}</strong>.{geometry.summary.minClearance<0?' This geometry intersects Earth.':''}</p>}
-        <button className="cardio-reference-reset" onClick={()=>{clearTrace();setDraft({...CARDIO_REFERENCE_DEFAULT});setBad([]);setGeneration(value=>value+1);setPlaying(false);setTime(0);}}>Reset reference geometry</button>
+        <button className="cardio-reference-reset" onClick={reset}>Reset reference geometry</button>
       </div></aside>
       <div className="lab-panel cardio-reference-view">
         <div className="cardio-reference-view-heading"><span className="tag">PRESCRIBED GEOMETRY</span><span>{invalid?'Check geometry inputs':phase}</span></div>
