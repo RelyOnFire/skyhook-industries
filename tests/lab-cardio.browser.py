@@ -23,6 +23,7 @@ def main():
             page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(origin+'/lab/cardio/',wait_until='networkidle')
             exercise_reference(page,out)
+            exercise_reference_release(page,out)
             page.get_by_text('Explore uncontrolled dynamics',exact=True).click()
             run=page.get_by_role('button',name='Compare pickup',exact=True)
             expect(run).to_be_enabled(timeout=90000)
@@ -99,7 +100,7 @@ def main():
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS synchronized Cardio geometry, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
+            print('PASS synchronized Cardio geometry, ideal reference releases and reports, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
             browser.close()
     finally:server.shutdown()
 def exercise_release(page,out,run):
@@ -264,6 +265,56 @@ def exercise_reference(page,out):
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'reference metre overflow at320px'
     page.screenshot(path=str(out/'reference-metres-320.png'),full_page=True)
     page.get_by_role('combobox',name='Distance unit').select_option('km')
+    page.set_viewport_size({'width':1440,'height':1000})
+
+def exercise_reference_release(page,out):
+    reference=page.get_by_test_id('cardio-reference')
+    result=reference.get_by_role('region',name='Reference release trajectory')
+    trace=reference.get_by_role('button',name='Trace release here',exact=True)
+    path=reference.get_by_test_id('cardio-reference-release-path')
+    slider=reference.get_by_role('slider',name='Synchronized reference time',exact=True)
+    stored=page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")
+    trace.click();expect(result.get_by_role('status')).to_have_text('Release point is below the 120 km cutoff')
+    expect(path).to_have_count(0)
+    reference.get_by_role('button',name='Perigee clearance',exact=True).click();expect(result).to_have_count(0)
+    trace.click();expect(result.get_by_role('status')).to_have_text('Earth escape trajectory')
+    expect(path).to_be_visible()
+    start=path.locator('polyline').evaluate('(el)=>el.getAttribute("points").split(" ")[0].split(",").map(Number)')
+    tip=reference.get_by_test_id('cardio-reference-moving-arm').locator('line').evaluate('(el)=>[+el.getAttribute("x2"),+el.getAttribute("y2")]')
+    assert all(abs(a-b)<1e-6 for a,b in zip(start,tip)),'Release must start at the visible tip'
+    assert path.locator('polyline').evaluate('(el)=>el.getAttribute("points").split(" ").every(pair=>{const [x,y]=pair.split(",").map(Number);return x>0&&x<800&&y>0&&y<620;})'),'Release trace clipped'
+    with page.expect_download() as info:result.get_by_role('button',name='Export reference release').click()
+    download=out/'reference-release-report.json';info.value.save_as(download);report=json.loads(download.read_text())
+    assert report['format']=='skyhook-cardio-reference-release' and report['model']=='C1k-0.1.0'
+    assert report['fraction']==.5 and report['design']=={'perigeeKm':200,'apogeeKm':2200,'pickupKm':100}
+    assert report['initial']==report['frames'][0]['state'] and report['elements']['energy']>0
+    assert report['status']=='horizon' and report['duration']==1800 and report['energyError']<1e-8
+    for width in [1440,768,320]:
+        page.set_viewport_size({'width':width,'height':1000})
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'reference release overflow {width}'
+        reference.screenshot(path=str(out/f'reference-release-{width}.png'))
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    assert result.locator('dd').evaluate_all('(nodes)=>nodes.every(el=>el.getBoundingClientRect().right<=el.closest("section").getBoundingClientRect().right-5)'), 'Release quantities cropped at320px'
+    result.screenshot(path=str(out/'reference-release-metres-320.png'))
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    selected=slider.input_value();result.get_by_role('button',name='Clear release trace').click()
+    expect(path).to_have_count(0);expect(result).to_have_count(0);assert slider.input_value()==selected
+    slider.fill(str(round(float(slider.get_attribute('max'))/4,3)));trace.click()
+    expect(result.get_by_role('status')).to_have_text('Earth-bound trajectory')
+    slider.fill(str(round(float(slider.get_attribute('max'))/8,3)));expect(result).to_have_count(0);trace.click()
+    expect(result.get_by_role('status')).to_have_text('Trajectory crosses the 120 km cutoff')
+    expect(result).to_contain_text('The drawn coast stops at 120 km')
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    assert result.locator('dd').evaluate_all('(nodes)=>nodes.every(el=>el.getBoundingClientRect().right<=el.closest("section").getBoundingClientRect().right-5)')
+    result.screenshot(path=str(out/'reference-crossing-metres-320.png'))
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    reference.get_by_label('Station apogee value',exact=True).fill('2400');expect(result).to_have_count(0)
+    reference.get_by_role('button',name='Perigee clearance',exact=True).click();trace.click()
+    reference.get_by_role('button',name='Play synchronized reference').click();expect(result).to_have_count(0)
+    reference.get_by_role('button',name='Pause synchronized reference').click()
+    reference.get_by_label('Pickup altitude value',exact=True).fill('');expect(trace).to_be_disabled()
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
+    assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==stored
     page.set_viewport_size({'width':1440,'height':1000})
 
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')

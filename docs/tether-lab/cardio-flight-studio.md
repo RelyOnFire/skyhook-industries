@@ -21,6 +21,37 @@ tests alone cannot validate that architectural claim. New regressions explicitly
 check both apsides, the two-turn closure, derived pickup reach and velocity.
 The independent passive design controls and saves remain in a disclosure.
 
+## Release from the synchronized reference: C1k-0.1.0
+
+`Trace release here` freezes the selected reference phase and starts an ideal
+test particle at the exact tip position and inertial velocity. There is no
+release impulse. The particle follows `rddot = -mu*r/|r|³` for at most 1800 s,
+using the existing point-cargo RK4 stepper (default 2 s). A crossing of the
+120 km cutoff is bracketed 32 times; the drawn coast ends on the upper side.
+A reference tip already below the cutoff produces no propagated segment.
+
+The plot fits both the reference orbit and the particle trace at one physical
+scale. It holds the tether at its release configuration while drawing the
+particle's future path; this is a static trace, not a coupled tether replay.
+Scrubbing, playing, changing phase or editing geometry clears the trace.
+Display units leave the accepted calculation intact. Export retains exact
+geometry, release fraction/time, initial state, sampled coast, orbit elements,
+cutoff/horizon status and numerical invariant residuals.
+
+Orbit classification uses the full release state, independently of the finite
+drawn horizon: bound orbits return to perigee; only incoming unbound trajectories
+have a future perigee. A future crossing remains flagged even if it lies beyond
+30 minutes. Excess escape speed is `sqrt(2*epsilon)` for nonnegative specific
+energy. The reported energy error is scaled by `max(mu/r_initial, |epsilon|, 1)`
+to remain well-conditioned near escape, and angular error by the initial
+specific angular momentum with a 1-unit floor.
+
+This diagnostic excludes payload mass, tether recoil, loading, active control,
+reboost and destination targeting. It cannot qualify a tether or commission an
+Expeditions design. It does not change the independent C1p/C1r design or saves.
+Regressions check initial-state continuity, distinct phase outcomes, cutoff
+termination, future-crossing classification, invariants and timestep refinement.
+
 ## Passive mass and state
 
 State is `[Rx,Ry,Vx,Vy,theta,omega]`, using Earth-inertial SI coordinates and

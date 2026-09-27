@@ -44,7 +44,7 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     id: 'cardiorotovator', name: 'CardioRotovator', category: 'Mechanical configuration', availability: 'runnable',
     summary: 'A rotating tether in an elliptical orbit, with spin phased to the orbit so pickup can occur near apogee.',
     topology: 'Elliptical orbit · phase-coupled rotation',
-    missing: 'Available: synchronized kinematic geometry with derived pickup reach, plus separate passive pickup/release and synchronization-loss studies. Active control, atmospheric approach and repeatable service remain unmodeled.',
+    missing: 'Available: synchronized kinematic geometry with derived pickup reach and ideal particle-release traces, plus separate passive pickup/release and synchronization-loss studies. Active control, atmospheric approach and repeatable service remain unmodeled.',
     source: { title: 'HASTOL Phase I', url: `${hastol}#page=21`, locator: '2000 · pp. 17–19' },
   },
   {
