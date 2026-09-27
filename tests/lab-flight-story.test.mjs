@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth, captureDetail, electrodynamicDrive } from '../.lab-test/components/flight-story-motion.js';
+import { STORY, RELEASE, STORY_MU, approachAt, tetherAt, coastAt, storyFrame, distanceFromEarth, captureDetail, returnStoryFrame, electrodynamicDrive } from '../.lab-test/components/flight-story-motion.js';
 const near = (a, b, tol = 1e-7) => assert.ok(Math.abs(a - b) < tol, `${a} != ${b}`);
 const same = (a, b, tol) => { near(a.x, b.x, tol); near(a.y, b.y, tol); };
 
@@ -103,4 +103,17 @@ test('capture close-up returns to the wide frame and closes before latching', ()
   near(captureDetail(.4).scale, 6);
   assert.ok(captureDetail(.4).jawAngle > 0);
   assert.equal(captureDetail(.68).locked, true);
+});
+
+test('return illustration attaches to the same tip and leaves continuously', () => {
+  for (const event of [.14, .78]) {
+    const a=returnStoryFrame(event-1e-7),b=returnStoryFrame(event+1e-7);
+    assert.ok(Math.hypot(a.payload.x-b.payload.x,a.payload.y-b.payload.y)<.001);
+  }
+  for(let i=0;i<=100;i++) {
+    const f=returnStoryFrame(i/100);
+    if(f.phase==='attached')same(f.payload,f.tip);
+    assert.ok(f.payload.x>0&&f.payload.x<1000&&f.payload.y>0&&f.payload.y<620);
+    assert.ok(distanceFromEarth(f.tip)>STORY.atmosphere+9);
+  }
 });

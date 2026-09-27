@@ -130,3 +130,35 @@ export function captureDetail(progress: number) {
     phase: p < .28 ? 0 : p < .62 ? 1 : p < .78 ? 2 : 3,
   };
 }
+
+// Return-traffic illustration: prescribed hub/rotor motion, separate from R1.
+// The same endpoint accepts a velocity-matched approach and releases without a
+// kick. Only the attached interval raises the schematic facility orbit.
+function returningTether(time:number) {
+  const p=clamp(time/1.6), radius=505+25*smooth(p), phi=-.07+.32*time, angle=Math.PI+time;
+  const hub=add(STORY.earth,{x:radius*Math.sin(phi),y:-radius*Math.cos(phi)});
+  const arm={x:-STORY.arm*Math.sin(angle),y:STORY.arm*Math.cos(angle)};
+  return {hub,angle,tip:add(hub,arm),otherTip:add(hub,scale(arm,-1)),prograde:{x:Math.cos(phi),y:Math.sin(phi)}};
+}
+function returnTipState(time:number):CoastState {
+  const h=1e-5,a=returningTether(time-h).tip,b=returningTether(time+h).tip;
+  return {position:returningTether(time).tip,velocity:{x:(b.x-a.x)/(2*h),y:(b.y-a.y)/(2*h)}};
+}
+function returnCoast(start:CoastState,duration:number) {
+  let s=start;const dt=duration/80;
+  for(let i=0;i<80;i++) {
+    const a=derivative(s),b=derivative(shifted(s,a,dt/2)),c=derivative(shifted(s,b,dt/2)),d=derivative(shifted(s,c,dt));
+    const sum=(key:keyof CoastState)=>scale(add(add(a[key],scale(b[key],2)),add(scale(c[key],2),d[key])),dt/6);
+    s={position:add(s.position,sum('position')),velocity:add(s.velocity,sum('velocity'))};
+  }
+  return s.position;
+}
+const RETURN_CAPTURE=returnTipState(0),RETURN_RELEASE=returnTipState(1.6);
+export function returnStoryFrame(progress:number) {
+  const time=-.35+clamp(progress)*2.5,f=returningTether(time);
+  const phase=time<0?'approach':time<1.6?'attached':'released';
+  return {...f,payload:phase==='approach'?returnCoast(RETURN_CAPTURE,time):phase==='released'?returnCoast(RETURN_RELEASE,time-1.6):f.tip,phase};
+}
+export function returnStoryPath() {
+  return Array.from({length:101},(_,i)=>{const p=returnStoryFrame(i/100).payload;return `${i?'L':'M'}${p.x.toFixed(3)} ${p.y.toFixed(3)}`;}).join(' ');
+}

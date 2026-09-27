@@ -1,3 +1,4 @@
+import ReturnStudy from './ReturnStudy.js';
 import ElectricalPanel from './ElectricalPanel.js';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Scene, { Plane, type View } from './Scene.js';
@@ -54,7 +55,7 @@ function Field({ label, unit, value, min, max, step, onChange, onValidity }: {
 
 export default function Lab({initialArchitecture='single-stage-rotovator'}:{initialArchitecture?:Design['architecture']}) {
   const initialDesign=initialArchitecture==='lunar-rotovator'?LUNAR_DEFAULT:DEFAULT;
-  const [modal, setModal] = useState<'missions'|'brief'|'debrief'|'study'|null>(null);
+  const [modal, setModal] = useState<'missions'|'brief'|'debrief'|'study'|'return'|null>(null);
   const [challenge, setChallenge] = useState<Challenge|null>(null), [brief, setBrief] = useState<Challenge>(CHALLENGES.find(c=>c.start.architecture===initialArchitecture)!);
   const [completed, setCompleted] = useState<string[]>([]), [guide, setGuide] = useState<number|null>(null);
   const [baseline, setBaseline] = useState<Result|null>(null), [studyRows, setStudyRows] = useState<StudyRow[]>([]);
@@ -249,6 +250,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     {modal==='debrief'&&result&&<Debrief result={result} baseline={baseline} challenge={challenge} units={units} onClose={()=>setModal(null)} onEdit={openEdit}
       onJump={t=>{setModal(null);setGuide(null);seek(t);setMobile('fly');}}
       onPin={pin} onCompare={()=>setModal('study')} canStudy={!hasInvalidInput} onRestore={inspectResult}/>}
+    {modal==='return'&&result&&!lunar&&<ReturnStudy design={result.design} units={units} onClose={()=>setModal(null)}/>}
     {modal==='study'&&<Studies design={design} rows={studyRows} onRows={setStudyRows} onClose={()=>setModal(null)} onSelect={r=>{if(result&&!baseline)setBaseline(result);inspectResult(r);}}/>}
     {error && <div className="lab-feedback is-error" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
     {notice && <div className="lab-feedback" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notification">×</button></div>}
@@ -311,7 +313,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
               <p className="control-hint">Hardware mass is a user budget, not a power-system sizing result. No battery, eclipse, thermal or plasma-density model. Generating intervals dump electricity; no free refill.</p>
               <a className="text-link" href="/lab/method/#electrodynamic">Inspect E0 assumptions & equations ↗</a>
             </div> : <div className="coast-explainer"><span className="tag">NO ACTIVE RECOVERY</span><h4>Let the trajectory play out.</h4><p>Propellant mass is zero. Thrusters are inactive. The second handoff still requires the same orbit and spin tolerances.</p><p>Your chemical budget is remembered only for switching back; it is not carried in this run.</p></div>}
-            <a className="next-architecture" href="/lab/architectures/#recovery"><span>Other recovery concepts</span><b>Incoming-traffic exchange ↗</b><small>Reference only in this build</small></a>
+            <button className="next-architecture" disabled={lunar||!result||busy||dirty||!result.deliveries.some(d=>d.gain>0&&d.perigee>=env.cutoff)} onClick={()=>setModal('return')}><span>Recover with returning cargo</span><b>Compare return exchange ↗</b><small>{lunar?'Earth experiment available in the Earth Studio':'Uses the last flown design after its first delivery'}</small></button>
           </>}
         </div>
         <div className="design-summary"><div><span>Dry facility</span><b>{draft ? fmt(draft.body.mass / 1000, 1) : '—'} <small>t</small></b></div><p>{draft ? fmt(draft.body.structural / 1000, 1) : '—'} t tether + 34 t hub & terminals{design.recovery==='electrodynamic'&&<> + {draft?fmt((draft.body.conductorMass+draft.body.electricalHardwareMass)/1000,1):'—'} t electrical system</>}</p>
@@ -335,7 +337,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
         <div className="flight-console">
           {result && frame && <ObjectTracker result={result} frame={frame} selected={selectedObject} following={view==='follow'} onSelect={setSelectedObject} onSeek={t=>{setGuide(null);seek(t);}}/>}
           <div className="scene-caption"><span>{view === 'structure' ? 'Load distribution · same calculated state' : view === 'plane' ? 'Same trajectory · flat orbital view' : view === 'follow' ? 'Locked to selected object · zoom to inspect' : lunar?'Drag to orbit · illustrative lunar surface':'Drag to orbit · scroll to zoom'}</span><span>Markers & cable width enlarged</span></div>
-          <div className="replay-actions"><button onClick={()=>showCheckpoint(0)} disabled={!result||busy||dirty}>Guided replay</button><button onClick={()=>{setPlaying(false);setModal('debrief');}} disabled={!result||busy}>Full-run debrief</button>{baseline&&<span>Pinned flight available in debrief</span>}</div>
+          <div className="replay-actions">{!lunar&&<button disabled={!result||busy||dirty||!result.deliveries.some(d=>d.gain>0&&d.perigee>=env.cutoff)} onClick={()=>setModal('return')}>Return-traffic recovery</button>}<button onClick={()=>showCheckpoint(0)} disabled={!result||busy||dirty}>Guided replay</button><button onClick={()=>{setPlaying(false);setModal('debrief');}} disabled={!result||busy}>Full-run debrief</button>{baseline&&<span>Pinned flight available in debrief</span>}</div>
           <div className="transport"><button className="play-button" onClick={play} disabled={!result || busy || dirty} aria-label={playing ? 'Pause replay' : 'Play replay'}>{playing ? 'Ⅱ' : '▶'}</button><button className="icon-button" onClick={() => { setGuide(null); seek(0); }} disabled={!result} aria-label="Restart replay">↺</button><button className="icon-button" onClick={nextEvent} disabled={!result} aria-label="Next mission event">▸|</button><span className="mission-clock">T+ <b>{elapsed(time)}</b></span><label className="speed-label">Playback<select aria-label="Playback speed" value={speed} onChange={e => setSpeed(Number(e.target.value))}><option value={10}>10× · handoff</option><option value={60}>60×</option><option value={240}>240×</option><option value={600}>600×</option></select></label></div>
           <input className="timeline-scrub" aria-label="Mission time" type="range" min={0} max={max || 1} step={1} value={time} disabled={!result} onChange={e => { setGuide(null); seek(Number(e.target.value)); }} />
           <div className="timeline-scale"><span>00:00:00</span><span>{max ? elapsed(max) : 'Awaiting calculation'}</span></div>

@@ -1,4 +1,4 @@
-import { STAGE_MS, STILL_PROGRESS, STORY, captureDetail, electrodynamicDrive, storyFrame, storyPath } from './flight-story-motion';
+import { STAGE_MS, STILL_PROGRESS, STORY, returnStoryFrame, returnStoryPath, captureDetail, electrodynamicDrive, storyFrame, storyPath } from './flight-story-motion';
 
 const steps = [
   { title: 'Climb to the meeting point.', description: 'The vehicle approaches from below, gaining altitude until it meets the lower tip. At pickup, its position and velocity must closely match the tip. The tip is moving with the orbit, slowed by the tether’s opposing rotation.', value: '100 km', readout: 'Pickup altitude in the reference comparison', explanation: 'Climb from Earth → meet the lower tip' },
@@ -8,6 +8,7 @@ const steps = [
   { title: 'Power the orbit back up.', description: 'Solar power drives current through a conductor built into the spinning tether. Its interaction with Earth’s magnetic field produces thrust. Current is controlled through the spin to add orbital energy over many passes; spin recovery also needs control.', value: 'Electrical reboost', readout: 'The highlighted path shows an orbit being raised over later passes', explanation: 'Current within the tether → magnetic thrust' },
 ];
 const chemical = { title: 'Power the orbit back up.', description: 'A rocket engine on the hub burns stored propellant. A gimbaled mount keeps thrust pointed along the orbit as the tether rotates, sending exhaust backward. Reboost restores orbital energy; propellant needs resupply, and spin recovery needs separate control.', value: 'Chemical reboost', readout: 'Forward thrust raises the orbit; stored propellant is consumed', explanation: 'Propellant → backward exhaust → forward thrust' };
+const traffic = { title: 'Let returning cargo give back.', description: 'Meet a returning payload at the upper tip. As the tether carries it toward a lower-energy release, the payload gives energy and angular momentum to the facility. The amount depends on mass and timing; orbit and spin may still need powered recovery.', value: 'Return traffic', readout: 'A useful return shipment can help restore the facility', explanation: 'Returning cargo → momentum exchange → partial recovery' };
 const names = ['APPROACH', 'CAPTURE', 'SWING', 'RELEASE', 'RECOVER'];
 
 document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) => {
@@ -20,14 +21,19 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
   const capture = node<SVGGElement>('[data-story-capture]');
   const recovery = node<SVGGElement>('[data-story-recovery]');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let method: 'electrical' | 'chemical' = 'electrical';
+  let method: 'electrical' | 'chemical' | 'traffic' = 'electrical';
   let current = 0, progress = reducedMotion.matches ? STILL_PROGRESS[0] : 0;
   let wantsMotion = !reducedMotion.matches, visible = false;
   let lastTime: number | null = null, frame = 0;
 
   const text = (selector: string, value: string) => { const element = node<HTMLElement>(selector); if (element.textContent !== value) element.textContent = value; };
   const draw = () => {
-    const f = storyFrame(current, progress);
+    const returning = current === 4 && method === 'traffic';
+    const returned = returning ? returnStoryFrame(progress) : null;
+    const f = returned ?? storyFrame(current, progress);
+    node<SVGCircleElement>('[data-story-return-grapple]').setAttribute('opacity', returning && returned?.phase === 'attached' ? '1' : '0');
+    node<SVGCircleElement>('[data-story-return-grapple]').setAttribute('transform', `translate(${f.tip.x} ${f.tip.y})`);
+    if(returning) text('[data-story-explanation]', returned?.phase === 'approach' ? 'Match the returning payload at the upper tip' : returned?.phase === 'attached' ? 'Carry it inward → transfer energy to the facility' : 'Release into a lower-energy path → retain the gain');
     tether.setAttribute('transform', `translate(${f.hub.x} ${f.hub.y}) rotate(${f.angle * 180 / Math.PI})`);
     payload.setAttribute('opacity', f.payload ? '1' : '0');
     if (f.payload) payload.setAttribute('transform', `translate(${f.payload.x} ${f.payload.y})`);
@@ -63,10 +69,10 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
     const thrust = node<SVGLineElement>('[data-story-thrust]');
     thrust.setAttribute('x2', String(force.x * 130));
     thrust.setAttribute('y2', String(force.y * 130));
-    thrust.setAttribute('opacity', method === 'electrical' ? String(drive.strength) : '1');
-    text('[data-story-drive-label]', method === 'electrical' ? 'CURRENT IN TETHER' : 'GIMBALED HUB ENGINE');
-    text('[data-story-force-label]', method === 'electrical' ? (drive.strength < .1 ? 'CURRENT SWITCHING' : 'MAGNETIC FORCE') : 'FORWARD THRUST');
-    text('[data-story-drive-note]', method === 'electrical' ? 'CONTROLLED WITH SPIN' : 'EXHAUST BACKWARD');
+    thrust.setAttribute('opacity', method === 'traffic' ? '0' : method === 'electrical' ? String(drive.strength) : '1');
+    text('[data-story-drive-label]', method === 'traffic' ? 'RETURNING PAYLOAD' : method === 'electrical' ? 'CURRENT IN TETHER' : 'GIMBALED HUB ENGINE');
+    text('[data-story-force-label]', method === 'traffic' ? 'ENERGY TO FACILITY' : method === 'electrical' ? (drive.strength < .1 ? 'CURRENT SWITCHING' : 'MAGNETIC FORCE') : 'FORWARD THRUST');
+    text('[data-story-drive-note]', method === 'traffic' ? 'LOWER-ENERGY RELEASE' : method === 'electrical' ? 'CONTROLLED WITH SPIN' : 'EXHAUST BACKWARD');
     scrubber.value = String(Math.round(progress * 1000));
     scrubber.setAttribute('aria-valuetext', `${Math.round(progress * 100)}% through ${names[current].toLowerCase()}`);
     motionButton.textContent = progress >= 1 ? 'Replay stage' : wantsMotion ? 'Pause animation' : 'Play animation';
@@ -74,7 +80,7 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
   const tick = (now: number) => {
     frame = 0;
     if (!wantsMotion || !visible || document.hidden || progress >= 1) { lastTime = null; return; }
-    if (lastTime !== null) progress = Math.min(1, progress + Math.max(0, now - lastTime) / STAGE_MS[current]);
+    if (lastTime !== null) progress = Math.min(1, progress + Math.max(0, now - lastTime) / (current === 4 && method === 'traffic' ? 12000 : STAGE_MS[current]));
     lastTime = now;
     draw();
     if (progress < 1) frame = requestAnimationFrame(tick);
@@ -87,13 +93,13 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
   const select = (index: number) => {
     current = index;
     progress = wantsMotion ? 0 : STILL_PROGRESS[index];
-    const step = index === 4 && method === 'chemical' ? chemical : steps[index];
+    const step = index === 4 ? method === 'traffic' ? traffic : method === 'chemical' ? chemical : steps[4] : steps[index];
     story.dataset.stage = String(index);
     text('[data-story-number]', `0${index + 1} / ${names[index]}`);
     for (const key of ['title', 'description', 'value', 'readout', 'explanation'] as const) text(`[data-story-${key}]`, step[key]);
     text('[data-story-scene-description]', step.explanation + '. ' + step.description);
-    text('[data-story-timescale]', index === 4 ? 'LATER ORBITS · TIME COMPRESSED' : index === 1 ? 'CAPTURE · CLOSE-UP' : 'ILLUSTRATION · NOT TO SCALE');
-    node<SVGPathElement>('[data-story-path]').setAttribute('d', storyPath(index));
+    text('[data-story-timescale]', index === 4 ? method === 'traffic' ? 'RETURN EXCHANGE · CONCEPT VIEW' : 'LATER ORBITS · TIME COMPRESSED' : index === 1 ? 'CAPTURE · CLOSE-UP' : 'ILLUSTRATION · NOT TO SCALE');
+    node<SVGPathElement>('[data-story-path]').setAttribute('d', index === 4 && method === 'traffic' ? returnStoryPath() : storyPath(index));
     node<SVGGElement>('[data-story-pickup]').setAttribute('opacity', index < 2 ? '1' : '0');
     capture.setAttribute('opacity', index === 1 ? '1' : '0');
     node<SVGGElement>('[data-story-velocity]').setAttribute('opacity', index === 3 ? '1' : '0');
@@ -110,7 +116,9 @@ document.querySelectorAll<HTMLElement>('[data-flight-story]').forEach((story) =>
       method = button.dataset.storyMethod as typeof method;
       story.dataset.reboost = method;
       story.querySelectorAll<HTMLButtonElement>('[data-story-method]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
-      const step = method === 'chemical' ? chemical : steps[4];
+      const step = method === 'traffic' ? traffic : method === 'chemical' ? chemical : steps[4];
+      text('[data-story-timescale]', method === 'traffic' ? 'RETURN EXCHANGE · CONCEPT VIEW' : 'LATER ORBITS · TIME COMPRESSED');
+      node<SVGPathElement>('[data-story-path]').setAttribute('d', method === 'traffic' ? returnStoryPath() : storyPath(4));
       for (const key of ['title', 'description', 'value', 'readout', 'explanation'] as const) text(`[data-story-${key}]`, step[key]);
       text('[data-story-scene-description]', step.explanation + '. ' + step.description);
       draw();

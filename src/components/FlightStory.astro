@@ -64,6 +64,7 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
             <circle cx="-14" cy="-18" r="2.7" fill="#efa477"/><circle cx="14" cy="-18" r="2.7" fill="#efa477"/>
             <path data-story-latch d="M-5 13H5" fill="none" stroke="#9fced8" stroke-width="3" opacity="0"/>
           </g>
+          <circle data-story-return-grapple r="14" fill="none" stroke="#9fced8" stroke-width="2" opacity="0"/>
           <g data-story-velocity opacity="0">
             <line x1={RELEASE.tip.x} y1={RELEASE.tip.y} x2={RELEASE.tip.x + v.x / speed * 120} y2={RELEASE.tip.y + v.y / speed * 120} stroke="#efa477" stroke-width="2.5" marker-end="url(#story-arrow)"/>
             <text x={RELEASE.tip.x + 14} y={RELEASE.tip.y - 47} class="story-map-label">VELOCITY AT RELEASE</text>
@@ -103,7 +104,7 @@ const v = RELEASE.velocity, speed = Math.hypot(v.x, v.y);
         <div class="flight-story-controls">
           <div class="flight-story-reboost" data-story-reboost hidden role="group" aria-label="Reboost method">
             <span>Reboost method</span>
-            <div><button type="button" data-story-method="electrical" aria-pressed="true">Electrodynamic</button><button type="button" data-story-method="chemical" aria-pressed="false">Chemical rocket</button></div>
+            <div><button type="button" data-story-method="electrical" aria-pressed="true">Electrodynamic</button><button type="button" data-story-method="chemical" aria-pressed="false">Chemical rocket</button><button type="button" data-story-method="traffic" aria-pressed="false">Returning payload</button></div>
           </div>
           <div class="flight-story-step-list" aria-label="Flight moments">
             <button type="button" data-story-step="0" aria-current="step" disabled><span>01</span>Approach</button>

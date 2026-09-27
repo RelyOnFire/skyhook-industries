@@ -66,3 +66,8 @@ continuity at stage boundaries, tether clearance, release velocity and coast
 conservation, recovery radius, and the controlled magnetic force's direction through a full spin. The
 company-page browser suite also samples the rendered SVG transforms and checks
 scrubbing, exact pause behavior, end-frame hold, capture pacing, current placement, chemical thrust/exhaust direction, method switching without a playback reset, close-up framing and return, grapple/latch ordering, and reduced-motion controls.
+
+Returning payload is a third Recover option. It illustrates an upper-tip matched
+arrival, an attached inward swing and an impulse-free lower-energy departure.
+Its prescribed orbit rises only during attachment. This remains drawing-unit
+geometry, separate from the R1 return experiment in the Earth Studio.

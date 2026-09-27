@@ -334,6 +334,19 @@ def main():
             story.get_by_role('button', name='Chemical rocket').click()
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
             story.screenshot(path=str(out / 'system-flight-chemical-390.png'))
+            story.get_by_role('button', name='Returning payload').click()
+            expect(story.locator('[data-story-value]')).to_have_text('Return traffic')
+            expect(story.locator('[data-story-thrust]')).to_have_attribute('opacity', '0')
+            expect(story.locator('[data-story-engine]')).to_have_attribute('opacity', '0')
+            expect(story.locator('[data-story-conductor]')).to_have_attribute('opacity', '0')
+            for value, attached in [(50, False), (400, True), (950, False)]:
+                scrub(value)
+                expect(story.locator('[data-story-payload]')).to_have_attribute('opacity', '1')
+                expect(story.locator('[data-story-return-grapple]')).to_have_attribute('opacity', '1' if attached else '0')
+            scrub(450)
+            story.screenshot(path=str(out / 'system-flight-return-390.png'))
+            page.set_viewport_size({'width': 1440, 'height': 1000})
+            story.screenshot(path=str(out / 'system-flight-return-1440.png'))
             report['navigation'].append('flight story controls and reduced motion')
             report['status'] = 'failed' if report['errors'] else 'passed'
             assert not report['errors'], report['errors']
