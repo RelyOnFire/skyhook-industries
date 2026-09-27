@@ -1,6 +1,6 @@
 import EarthDesign from './EarthDesign.js';
 import { useEffect, useRef, useState } from 'react';
-import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
+import { tetherCapacity, addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
 import SolarChapter from './SolarChapter.js';
 import BeltChapter from './BeltChapter.js';
@@ -119,7 +119,7 @@ export default function Campaign() {
   };
   const prepare=(origin:SiteId,destination:SiteId,resource:CargoKind,requestedT=10)=>{
     const tether=!!(world?.ports[origin].level&&world?.ports[destination].level);
-    const capacity=tether?10*Math.min(world!.ports[origin].level,world!.ports[destination].level):10;
+    const capacity=tether?Math.min(tetherCapacity(world!,origin),tetherCapacity(world!,destination)):10;
     setFrom(origin);setTo(destination);setKind(resource);setCargo(String(Math.max(1,Math.min(Math.ceil(requestedT),capacity))));setSelected(destination);
     setMode(tether?'tether':'tug');
     setIntervalDays(destination==='ceres'?'200':resource==='water'?'90':destination==='moon'?'90':destination==='mercury'?'60':'100');

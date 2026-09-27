@@ -148,8 +148,8 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 7 / network-0.7.0 exports in a skyhook-campaign
-version-7 envelope. The validator accepts schemas 1, 2, 3, 4, 5 and 6 with their matching
+store. Current state schema 8 / network-0.8.0 exports in a skyhook-campaign
+version-8 envelope. The validator accepts schemas 1, 2, 3, 4, 5, 6 and 7 with their matching
 models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
@@ -524,31 +524,63 @@ Moon and Phobos outpost links open those experiments without mutating the world.
 - JPL, Where Is the Ice on Ceres? New NASA Dawn Findings (2016): https://www.jpl.nasa.gov/news/where-is-the-ice-on-ceres-new-nasa-dawn-findings/
 
 
-## Optional Earth Flight Studio design
+## Performance-based Earth Flight Studio design
 
-The Earth Studio offers “Use this design in Expeditions” after two successful
-higher-energy deliveries, both accepted rendezvous checks, clearance at least
-120 km and minimum axial load margin at least one. Dirty inputs cannot transfer
-a previous result. The URL fragment carries the exact design inputs, not claimed
-performance. A campaign worker reruns the current Earth model before enabling
-commissioning. Nothing is written or spent by reviewing a design.
+After two successful deliveries, the Earth Studio offers “Use this design in
+Expeditions.” Both rendezvous must pass, minimum clearance must be at least
+120 km and axial load margin at least one. Dirty inputs cannot transfer an old
+result. The URL carries inputs only; a worker reruns the numerical model before
+showing a candidate. Reviewing changes no saved state and pauses time.
 
-The review displays payload, delivery interval, clearance, load margin, propellant
-used and specific energy gain as **local numerical results**. The pilot grants a
-fixed **campaign bonus**: Earth reservations after future tether bookings last
-`0.8 × 2 / Earth tier` days, in either direction. Other endpoints retain their
-own reservations; both must be available. The one-time cost is 40 t construction
-and 10 t equipment at Earth. This bonus does not scale with measured performance.
-Campaign payload ratings, support propellant, coast/handling times and existing
-reservations are unchanged. It is not a solved Moon/planet encounter or a hardware
-qualification. Opening the review pauses the campaign clock.
+The version-2 report stores the exact design, payload, delivery interval,
+recovery propellant, clearance, load margin, specific energy gain and dry mass.
+Dry structure/hardware mass is computed at the same 48-cell reference resolution;
+validation checks it against the stored design. No claimed URL ratings are trusted.
 
-Schema 7 adds `earthDesign`, initially null for every earlier world, and stores
-only a bounded version-1 report with its exact design and model provenance after
-explicit commissioning. The existing revision/checkpoint transaction protects
-this action. It cannot be purchased twice. Backups retain the design; there is no
-new local-storage dependency. Reading a schema-6 world does not rewrite it, grant
-an upgrade or add production. Its first write preserves the old checkpoint and
-advances the writer revision. `tests/fixtures/campaign-v6.json` was produced by
-loading the tracked v5 world with the preceding network-0.6.0 validator/exporter.
-It is a migration fixture, not a newly collected player save.
+The reference is the default D1p-0.4.0 two-delivery run: **3 t**, **17,319.84471845627 s**
+between releases, **13.615127521277605 t** recovery propellant and **108.88 t** dry mass.
+These constants and the following mappings are frozen for network-0.8.0:
+
+| Campaign property | Mapping from measured report |
+| --- | --- |
+| Earth payload rating | floor(10 × tier × min(3, tested payload / 3)), minimum 1 t |
+| Earth recovery reservation | (2 / tier) × clamp(delivery interval / reference interval, 0.25, 4) days |
+| Earth corridor fuel multiplier | (1 + clamp((propellant / payload) / reference propellant-per-payload, 0, 4)) / 2 |
+| Construction material cost | ceil(40 × dry mass / 108.88), minimum 1 t |
+| Equipment cost | ceil(10 × dry mass / 108.88), minimum 1 t |
+
+The reference receives **no import bonus**. Smaller or less efficient designs may
+perform worse than the standard fleet. The preview compares current/candidate
+capabilities, construction costs and services that would exceed capacity.
+Changing design can trade mass throughput against cadence, fuel and cost.
+
+Each route still uses the smaller endpoint capacity, and both endpoints must be
+ready. Earth's measured performance is applied symmetrically to bookings involving
+Earth as a campaign assumption. Only Earth's half of a tether corridor's support
+fuel allocation scales; the remote half, tugs and routes excluding Earth are
+unchanged. Coast and handling times remain frozen. A daily recurring service may
+not exploit every fractional recovery improvement because it retries daily.
+Manual dispatch and Next event can use the actual fractional readiness time.
+These ratios model a fleet operational profile; they are not a physical conversion
+of a local release into an interplanetary encounter. Electrical energy use is
+reported by the Lab but is not a campaign resource or additional fuel charge.
+
+Schema 8 preserves older resources, traffic, services and clocks. Older worlds
+without a design keep standard performance. Schema-7/version-1 commissioned reports
+retain their paid 20% recovery benefit and original fuel/capacity terms until the
+player explicitly converts them. Recalculation is read-only. Conversion credits
+40 t material and 10 t equipment once against the new cost, with no cash/refund for
+unused credit. Subsequent replacements pay the full displayed cost. Restoring the
+standard fleet is free but refunds nothing and retires any unused legacy credit.
+
+Commissioning, replacing or restoring never changes in-flight cargo or existing
+reservations. Oversized scheduled payloads are preserved and wait until the player
+changes the service, port or design. Atomic saves, revisions and old-head checkpoints
+remain in use. Exports retain the report; imports accept versions 1–8.
+
+`tests/fixtures/campaign-v7.json` was made by the prior network-0.7.0 model from
+the tracked v6 migration fixture, with construction stock supplied before its paid
+commissioning. It is a regression fixture, not a newly collected player save.
+Actual solver variants exercise different payload, engine and structure choices;
+tests verify dispatch fuel/capacity, changed service frequency, cost, remote-port
+limits, step determinism, legacy conversion, replacement and standard restoration.

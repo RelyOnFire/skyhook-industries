@@ -73,7 +73,7 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']=={**old, 'schema':7, 'earthDesign':None, 'model':'network-0.7.0', 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
+            assert migrated['state']=={**old, 'schema':8, 'earthDesign':None, 'model':'network-0.8.0', 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
             assert migrated['checkpoints']==[old]
             action('Save now')
             assert record()==migrated

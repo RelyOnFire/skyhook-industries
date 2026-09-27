@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { type Campaign, type Service } from './model.js';
+import { tetherCapacity, type Campaign, type Service } from './model.js';
 import { updateService } from './service-edit.js';
 import './service-editor.css';
 
@@ -43,7 +43,7 @@ export default function ServiceEditor({world, service, busy, act}: Props) {
         <label htmlFor={id+'-interval'}>Interval · days<input id={id+'-interval'} type="number" inputMode="numeric" required min={1} max={3650} step={1} value={interval} disabled={busy} onChange={event => setInterval(event.target.value)}/></label>
       </div>
       <p id={id+'-timing'}>{attempt} The new interval starts after its next successful departure. Cargo in flight keeps its arrival.</p>
-      {service.mode === 'tether' && Number(cargo) > 10 * Math.min(world.ports[service.from].level, world.ports[service.to].level) && <p className="service-editor-capacity">This payload needs tier {Math.ceil(Number(cargo)/10)} tethers at both ends before it can depart.</p>}
+      {service.mode === 'tether' && Number(cargo) > Math.min(tetherCapacity(world,service.from),tetherCapacity(world,service.to)) && <p className="service-editor-capacity">This payload exceeds the current corridor capacity of {Math.min(tetherCapacity(world,service.from),tetherCapacity(world,service.to))} t. Upgrade the limiting port, change its design or reduce the payload.</p>}
       <div className="service-editor-actions"><button type="button" disabled={busy} onClick={close}>Cancel</button><button type="submit" className="primary" disabled={busy}>Save service</button></div>
     </form>}
   </>;

@@ -95,14 +95,14 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']['schema']==7 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==8 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints']==[old]
             for key in old:
                 if key not in ['schema','model','revision']: assert migrated['state'][key]==old[key], key
             assert migrated['state']['development']=={'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}
             action('Save now')
             assert record()==migrated
-            done('native v5 load is read-only; schema 7 checkpoints every old field once and starts with no development upgrades')
+            done('native v5 load is read-only; schema 8 checkpoints every old field once and starts with no development upgrades')
 
             chapter = page.locator('#development-operations')
             launch = chapter.locator('[data-project="launch"]')
@@ -261,7 +261,7 @@ def main():
             backup = out/'industrial-backup.json'
             event.value.save_as(backup)
             envelope = json.loads(backup.read_text())
-            assert envelope['version']==7 and envelope['state']==frozen
+            assert envelope['version']==8 and envelope['state']==frozen
             page.locator('input[type=file]').set_input_files(str(backup))
             saved()
             copy = next(r['state'] for r in records() if r['id'] not in [old['id'], active_id])

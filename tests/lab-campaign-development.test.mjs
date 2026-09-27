@@ -30,10 +30,10 @@ function ledger(w) {
 test('development: real v5 migration preserves all balances, traffic, clocks and history without grants',()=>{
   const old=fixture.state,before=structuredClone(fixture),w=validateCampaign(old);
   for(const key of Object.keys(old).filter(k=>!['schema','model'].includes(k)))assert.deepEqual(w[key],old[key],key);
-  assert.equal(w.schema,7);assert.equal(w.model,CAMPAIGN_MODEL);
+  assert.equal(w.schema,8);assert.equal(w.model,CAMPAIGN_MODEL);
   assert.deepEqual(w.development,{launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0});
   assert.deepEqual(fixture,before);ledger(w);
-  const encoded=exportCampaign(w);assert.equal(JSON.parse(encoded).version,7);
+  const encoded=exportCampaign(w);assert.equal(JSON.parse(encoded).version,8);
   assert.deepEqual(importCampaign(encoded,'copy'),{...w,id:'copy',revision:0});
   for(const version of [1,2,3,4,5]){
     const earlier=JSON.parse(readFileSync(new URL(`./fixtures/campaign-v${version}.json`,import.meta.url)));
@@ -53,7 +53,7 @@ test('development: v5 traffic versions retain their respective bounds during mig
   w.schema=5;w.model='network-0.5.1';delete w.development;
   assert.equal(validateCampaign(w).flights.length,w.flights.length);
   const encoded={format:'skyhook-campaign',version:5,state:w};
-  assert.equal(importCampaign(JSON.stringify(encoded),'copy').schema,7);
+  assert.equal(importCampaign(JSON.stringify(encoded),'copy').schema,8);
   w.model='network-0.5.0';assert.throws(()=>validateCampaign(w),/size limit|deployments/);
 });
 
