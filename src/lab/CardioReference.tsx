@@ -1,3 +1,4 @@
+import PlanetDisc from '../visuals/PlanetDisc.js';
 import {useEffect,useMemo,useState} from 'react';
 import {EARTH} from '../simulation/engine.js';
 import {CARDIO_REFERENCE_DEFAULT,CARDIO_REFERENCE_BOUNDS,validateCardioReference,cardioReferenceOrbit,cardioReferenceSample,cardioReferenceSummary} from '../simulation/cardio-reference.js';
@@ -90,9 +91,8 @@ export default function CardioReference({units}:{units:StudioUnits}){
       <div className="lab-panel cardio-reference-view">
         <div className="cardio-reference-view-heading"><span className="tag">PRESCRIBED GEOMETRY</span><span>{invalid?'Check geometry inputs':phase}</span></div>
         {geometry&&frame?<svg className="cardio-reference-scene" viewBox="0 0 800 620" role="img" aria-label="Synchronized CardioRotovator: elliptical station orbit and calculated tip path" data-testid="cardio-reference-scene" data-time={time.toFixed(3)} data-arm-radial-dot={(Math.cos(frame.angle)*frame.station[0]+Math.sin(frame.angle)*frame.station[1]).toFixed(3)}>
-          <defs><radialGradient id="cardio-reference-earth" cx="32%" cy="28%"><stop stopColor="#416577"/><stop offset=".7" stopColor="#203a48"/><stop offset="1" stopColor="#0b1a23"/></radialGradient></defs>
           <circle cx="400" cy="306" r={(EARTH+100000)*geometry.scale} fill="none" stroke="#8b725b" strokeDasharray="3 6" opacity=".7"/>
-          <circle cx="400" cy="306" r={EARTH*geometry.scale} fill="url(#cardio-reference-earth)" stroke="#68838e" strokeWidth=".8"/>
+          <PlanetDisc body="earth" cx={400} cy={306} r={EARTH*geometry.scale}/>
           <ellipse cx="400" cy="306" rx={EARTH*geometry.scale*.42} ry={EARTH*geometry.scale} fill="none" stroke="#91acb6" opacity=".12"/>
           <ellipse cx="400" cy="306" rx={EARTH*geometry.scale} ry={EARTH*geometry.scale*.27} fill="none" stroke="#91acb6" opacity=".12"/>
           <text x="400" y="312" textAnchor="middle" className="cardio-reference-earth-label">EARTH</text>

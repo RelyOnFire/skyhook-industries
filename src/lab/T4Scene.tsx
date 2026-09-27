@@ -3,13 +3,14 @@ import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EARTH } from '../simulation/engine.js';
 import { t4Geometry,t4Sample,type T4Result } from '../simulation/t4.js';
-import { earthTexture } from './Scene.js';
+import { planetMaterial, earthClouds } from '../visuals/planetMaterial.js';
+import PlanetDisc from '../visuals/PlanetDisc.js';
 type Mode='stages'|'orbit'|'cargo'|'plane';
 function ThreeView({result,clock,mode,onFailure}:{result:T4Result;clock:RefObject<number>;mode:Mode;onFailure:()=>void}){
   const host=useRef<HTMLDivElement>(null),label=useRef<HTMLSpanElement>(null),current=useRef(result),view=useRef(mode),api=useRef<{reset:()=>void;zoom:(f:number)=>void}|null>(null);
   current.current=result;view.current=mode;
   useEffect(()=>{
-    const root=host.current!;let renderer:T.WebGLRenderer;
+    const root=host.current!;root.dataset.surface='loading';delete root.dataset.clouds;let renderer:T.WebGLRenderer;
     try{renderer=new T.WebGLRenderer({antialias:true,alpha:true});}catch{onFailure();return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x080b0d,0);renderer.outputColorSpace=T.SRGBColorSpace;
     renderer.domElement.setAttribute('aria-label','3D two-tier tether above Earth. The secondary rotor turns about the moving pivot. Drag to rotate or use camera controls.');root.appendChild(renderer.domElement);
@@ -21,8 +22,9 @@ function ThreeView({result,clock,mode,onFailure}:{result:T4Result;clock:RefObjec
     };
     const reset=()=>{const r=current.current,span=(r.design.primaryKm+2*r.design.secondaryKm)*1000/EARTH;controls.target.copy(target());camera.position.copy(controls.target).add(view.current==='orbit'?new T.Vector3(.7,2.9,4.5).multiplyScalar((EARTH+r.design.altitudeKm*1000)/EARTH):new T.Vector3(.15,1,.35).normalize().multiplyScalar(span*1.8));controls.update();dirty=true;};
     api.current={reset,zoom:f=>{camera.position.sub(controls.target).multiplyScalar(f).add(controls.target);controls.update();dirty=true;}};reset();
-    const texture=earthTexture(),earth=new T.Mesh(new T.SphereGeometry(1,96,64),new T.MeshPhongMaterial({map:texture,shininess:12}));scene.add(earth);
-    const sun=new T.DirectionalLight(0xeaf1ff,2.2);sun.position.set(-2,4,5);scene.add(sun,new T.AmbientLight(0x849da6,.7));
+    const earth=new T.Mesh(new T.SphereGeometry(1,96,64),planetMaterial('earth',renderer,()=>{dirty=true;root.dataset.surface='ready';}));scene.add(earth);
+    earth.add(earthClouds(renderer,()=>{dirty=true;root.dataset.clouds='ready';}));
+    const sun=new T.DirectionalLight(0xeaf1ff,2.2);sun.position.set(-2,4,5);scene.add(sun,new T.AmbientLight(0xdbe4ed,.22));
     const line=(color:number,opacity=1)=>{const l=new T.Line(new T.BufferGeometry(),new T.LineBasicMaterial({color,transparent:true,opacity}));scene.add(l);return l;};
     const primary=line(0xb7cdcf),secondary=line(0xefa477),path=line(0xc9a4e4,.5),track=line(0xb7cdcf,.22);
     const setLine=(l:T.Line,p:T.Vector3[])=>{l.geometry.dispose();l.geometry=new T.BufferGeometry().setFromPoints(p);};
@@ -39,6 +41,10 @@ function ThreeView({result,clock,mode,onFailure}:{result:T4Result;clock:RefObjec
       if(last===t&&!dirty)return;
       const f=t4Sample(r,t),p=t4Geometry(f.s,r.design),focus=target();
       camera.position.add(focus.clone().sub(controls.target));controls.target.copy(focus);controls.update();
+      // Preserve depth precision in the wide orbit view as well as the tiny pivot close-up.
+      // A fixed tiny near plane at planet scale makes the cloud/surface layers z-fight.
+      const near=Math.max(.00001,Math.min(camera.position.distanceTo(controls.target)*.005,Math.max(.00001,camera.position.length()-1)*.25));
+      if(camera.near!==near){camera.near=near;camera.updateProjectionMatrix();}
       hub.position.copy(point(p.hub));pivot.position.copy(point(p.pivot));ends[0].position.copy(point(p.minus));ends[1].position.copy(point(p.plus));cargo.position.copy(point(f.cargo??p.plus));
       setLine(primary,[hub.position,pivot.position]);setLine(secondary,ends.map(x=>x.position));
       const scale=camera.position.distanceTo(controls.target)*.006;hub.scale.setScalar(scale);pivot.scale.setScalar(scale*.65);ends.forEach(e=>e.scale.setScalar(scale*.45));cargo.scale.setScalar(scale*.7);
@@ -46,7 +52,7 @@ function ThreeView({result,clock,mode,onFailure}:{result:T4Result;clock:RefObjec
       if(label.current){const v=pivot.position.clone().project(camera),ray=pivot.position.clone().sub(camera.position),along=Math.max(0,Math.min(1,-camera.position.dot(ray)/ray.lengthSq())),occluded=camera.position.clone().addScaledVector(ray,along).length()<1;
         label.current.hidden=occluded||Math.abs(v.x)>.9||Math.abs(v.y)>.85||v.z>1||v.z< -1;label.current.style.left=`${Math.max(8,Math.min(root.clientWidth-label.current.offsetWidth-8,(v.x+1)*root.clientWidth/2+12))}px`;label.current.style.top=`${(1-v.y)*root.clientHeight/2-30}px`;}
       renderer.render(scene,camera);last=t;dirty=false;
-    };draw();return()=>{cancelAnimationFrame(raf);resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.Line||o instanceof T.Points){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});texture.dispose();renderer.dispose();renderer.domElement.remove();api.current=null;};
+    };draw();return()=>{cancelAnimationFrame(raf);resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.Line||o instanceof T.Points){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});renderer.dispose();renderer.domElement.remove();api.current=null;};
   },[]);
   return <div className="phobos-three t4-three" ref={host}><span className="phobos-world-label" ref={label}>PIVOT <small>Free hinge · two stages</small></span><div className="phobos-camera"><button onClick={()=>api.current?.zoom(.75)} aria-label="Zoom in">+</button><button onClick={()=>api.current?.zoom(1.33)} aria-label="Zoom out">−</button><button onClick={()=>api.current?.reset()}>Reset camera</button></div></div>;
 }
@@ -58,7 +64,7 @@ export default function T4Scene({result:r,clock,time}:{result:T4Result;clock:Ref
   const xy=(v:number[])=>[300+(v[0]-focus[0])*scale,240-(v[1]-focus[1])*scale],a=xy(p.hub),b=xy(p.pivot),minus=xy(p.minus),plus=xy(p.plus),cargo=xy(f.cargo??p.plus),earth=xy([0,0]);
   return <><div className="phobos-scene-toolbar" role="group" aria-label="Scene view"><span>EARTH / T4</span>{([['stages','Two stages'],['orbit','Earth orbit'],['cargo','Follow cargo'],['plane','Orbit plane']] as [Mode,string][]).map(([id,label])=><button key={id} aria-pressed={mode===id} disabled={!gpu&&(id==='orbit'||id==='cargo')} onClick={()=>setMode(id)}>{label}</button>)}</div>
     <div className="phobos-viewport t4-viewport">{gpu&&mode!=='plane'?<ThreeView result={r} clock={clock} mode={mode} onFailure={()=>{setGpu(false);setMode('stages');}}/>:<svg viewBox="0 0 600 480" className="phobos-plane" role="img" aria-label="Calculated two-stage geometry and cargo trajectory">
-      <circle cx={earth[0]} cy={earth[1]} r={EARTH*scale} fill="#233d48"/>
+      <PlanetDisc body="earth" cx={earth[0]} cy={earth[1]} r={EARTH*scale}/>
       {plane&&<polyline points={r.frames.filter(f=>f.cargo).map(f=>xy(f.cargo!).join(',')).join(' ')} fill="none" stroke="#c9a4e4" strokeWidth="1" opacity=".5"/>}
       <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#b7cdcf" strokeWidth="2"/><line x1={minus[0]} y1={minus[1]} x2={plus[0]} y2={plus[1]} stroke="#efa477" strokeWidth="3"/>
       <circle cx={a[0]} cy={a[1]} r="5" fill="#b7cdcf"/><circle cx={b[0]} cy={b[1]} r="4" fill="#fff"/><circle cx={cargo[0]} cy={cargo[1]} r="4" fill="#c9a4e4"/><text x={b[0]+10} y={b[1]-12} fill="#e4ebed" fontSize="12">Pivot</text>

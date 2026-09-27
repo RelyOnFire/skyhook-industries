@@ -1,3 +1,4 @@
+import PlanetDisc from '../visuals/PlanetDisc.js';
 import {useMemo} from 'react';
 import {cardioReleaseSample,type CardioRelease} from '../simulation/cardio-release.js';
 import {EARTH} from '../simulation/engine.js';
@@ -25,10 +26,8 @@ export default function CardioScene({result,time,loaded,reference,release}:{resu
   const scale=270/extent,xy=(v:number[])=>[400+v[0]*scale,310-v[1]*scale],points=(v:number[][])=>v.map(q=>xy(q).join(',')).join(' ');
   const hub=xy(cardioPoint(frame.state,body,0)),tip=xy(cardioPoint(frame.state,body,body.length)),com=xy(frame.state),earth=EARTH*scale;
   return <svg className="cardio-scene" viewBox="0 0 800 620" role="img" aria-label={release?'Payload release and tether coast in the orbital plane':(loaded?'After ideal pickup':'Empty tether')+' in the orbital plane; actual and prescribed-spin paths'} data-time={frame.t.toFixed(2)}>
-    <defs><radialGradient id={release?"cardio-release-earth":"cardio-earth"} cx="30%" cy="30%"><stop stopColor="#3c6979"/><stop offset=".65" stopColor="#1c3544"/><stop offset="1" stopColor="#0d1821"/></radialGradient></defs>
     <circle cx="400" cy="310" r={(EARTH+120000)*scale} fill="none" stroke="#af865b" strokeDasharray="2 5" opacity=".7"/>
-    <circle cx="400" cy="310" r={earth} fill={release?"url(#cardio-release-earth)":"url(#cardio-earth)"} stroke="#618696" strokeWidth=".7"/>
-    <ellipse cx="400" cy="310" rx={earth*.45} ry={earth} fill="none" stroke="#8aa6ad" opacity=".12"/><ellipse cx="400" cy="310" rx={earth} ry={earth*.3} fill="none" stroke="#8aa6ad" opacity=".12"/>
+    <PlanetDisc body="earth" cx={400} cy={310} r={earth}/>
     <text x="400" y="315" textAnchor="middle" fill="#9eb6bf" fontSize="12" letterSpacing="4">EARTH</text>
     {reference&&<polyline points={points(ideal)} fill="none" stroke="#c7bca5" strokeDasharray="5 6" opacity=".4" strokeWidth="1.5"/>}
     {paths.map((v,i)=><polyline key={i} points={points(v)} fill="none" stroke={i?'#efa477':'#9ec3cc'} strokeWidth={release||loaded===!!i?2.1:1} opacity={release||loaded===!!i?.9:.35}/>)}

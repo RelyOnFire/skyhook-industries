@@ -1,9 +1,23 @@
+import PlanetDisc from '../visuals/PlanetDisc.js';
 import type { Campaign, SiteId } from './model.js';
 import { ROUTES, SITE, SITES, swarmPower } from './model.js';
-import { trafficItems, type TrafficId } from './traffic.js';
+import { trafficItems, type TrafficId, type TrafficItem } from './traffic.js';
 
 const POINTS = { earth:[460,290], moon:[595,130], phobos:[840,320], mercury:[180,420], ceres:[840,110] } as const;
-const SWARM = [95,310] as const;
+const SWARM = [52,285] as const;
+// Schematic deployment lanes keep dense mirror traffic separate from returned power.
+// Stable IDs assign the lane; arrivals never reshuffle the remaining flights.
+const mirrorLane = (id:TrafficId) => Number(id.slice(7))%3-1;
+const mirrorControl = (lane:number) => [12+lane*16,417-lane*9];
+const mirrorPath = (lane:number) => `M${POINTS.mercury.join(' ')}Q${mirrorControl(lane).join(' ')} ${SWARM.join(' ')}`;
+function flightPosition(f:TrafficItem,day:number) {
+  const t=Math.min(1,Math.max(0,(day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=f.to==='swarm'?SWARM:POINTS[f.to];
+  if(f.to==='swarm'){
+    const c=mirrorControl(mirrorLane(f.id)),u=1-t;
+    return {x:u*u*a[0]+2*u*t*c[0]+t*t*b[0],y:u*u*a[1]+2*u*t*c[1]+t*t*b[1],angle:Math.atan2(u*(c[1]-a[1])+t*(b[1]-c[1]),u*(c[0]-a[0])+t*(b[0]-c[0]))*180/Math.PI};
+  }
+  return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,angle:Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI};
+}
 const number = (value:number) => value.toLocaleString('en-US',{maximumFractionDigits:1});
 function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site:SiteId;cx:number;cy:number;radius:number;seconds:number;phase:number;commissioned?:boolean}) {
   return <g transform={`translate(${cx} ${cy})`} className="map-tether" data-site={site} aria-label={site==='phobos'?(commissioned?'Phobos and its anchored tethers orbit Mars':'Phobos orbits Mars'):SITE[site].facility+' in free orbit'}>
@@ -12,7 +26,7 @@ function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site
       <g transform={`translate(0 ${-radius})`}>
         {site==='phobos'?<>
           {commissioned&&<path d="M0 -31V29" stroke={SITE.phobos.color} strokeWidth="2"/>}
-          <path d="M-10 -6L3 -10 12 3 1 12-12 3Z" fill="#bfae98"/>
+          <PlanetDisc body="phobos" cx={0} cy={0} r={13}/>
           <circle r="3" fill="#ffe0b7"/>
           {commissioned&&<><circle cy="-31" r="2.5" fill="#f1c08e"/><circle cy="29" r="2.5" fill="#f1c08e"/></>}
         </>:<g className="map-rotor-motion">
@@ -37,16 +51,9 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
     <div className="map-visual">
     <svg key={world?.id??'preview'} viewBox="0 0 1000 550" role="group" aria-label="Transport network connecting Earth, the Moon and Phobos, with Mercury available through the solar swarm expedition and Ceres through Phobos. Orbital motion is illustrative and follows Play and Pause.">
       <defs>
-        <radialGradient id="earth-light" cx="28%" cy="28%" r="75%"><stop stopColor="#93b9bf"/><stop offset=".42" stopColor="#426e7b"/><stop offset=".78" stopColor="#173540"/><stop offset="1" stopColor="#081218"/></radialGradient>
-        <radialGradient id="mars-light" cx="25%" cy="25%" r="80%"><stop stopColor="#d0a285"/><stop offset=".45" stopColor="#845c49"/><stop offset=".8" stopColor="#392923"/><stop offset="1" stopColor="#100f11"/></radialGradient>
-        <radialGradient id="moon-light" cx="28%" cy="28%" r="75%"><stop stopColor="#dedac9"/><stop offset=".6" stopColor="#8b908a"/><stop offset="1" stopColor="#292f30"/></radialGradient>
-        <radialGradient id="mercury-light" cx="23%" cy="24%" r="80%"><stop stopColor="#baad94"/><stop offset=".6" stopColor="#766e61"/><stop offset="1" stopColor="#28292a"/></radialGradient>
-        <radialGradient id="ceres-light" cx="23%" cy="24%" r="80%"><stop stopColor="#b9cecb"/><stop offset=".5" stopColor="#697e80"/><stop offset="1" stopColor="#202c30"/></radialGradient>
         <radialGradient id="map-sun" cx="40%" cy="35%"><stop stopColor="#fff6d8"/><stop offset=".6" stopColor="#efc38e"/><stop offset="1" stopColor="#c77b47"/></radialGradient>
         <radialGradient id="sun-halo"><stop stopColor="#e7ab64" stopOpacity=".2"/><stop offset=".35" stopColor="#c88343" stopOpacity=".08"/><stop offset="1" stopColor="#c88343" stopOpacity="0"/></radialGradient>
         <radialGradient id="earth-halo"><stop offset=".55" stopColor="#83c4d9" stopOpacity=".14"/><stop offset="1" stopColor="#83c4d9" stopOpacity="0"/></radialGradient>
-        <linearGradient id="earth-shade"><stop stopColor="#06121b" stopOpacity="0"/><stop offset=".55" stopColor="#06121b" stopOpacity=".1"/><stop offset="1" stopColor="#04090d" stopOpacity=".9"/></linearGradient>
-        <clipPath id="earth-disc"><circle cx="460" cy="290" r="56"/></clipPath>
       </defs>
       <g aria-hidden="true">{Array.from({length:80},(_,i)=><circle key={i} cx={(i*137.508)%1000} cy={(i*i*31.7+23)%550} r={i%7===0?1.1:.6} fill="#bfd0d8" opacity={i%3===0?.45:.2}/>)}</g>
       <circle cx="95" cy="215" r="200" fill="url(#sun-halo)"/>
@@ -55,7 +62,7 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
       <ellipse cx="460" cy="290" rx="212" ry="155" transform="rotate(-27 460 290)" className="map-orbit"/>
       <ellipse cx="95" cy="215" rx="140" ry="217" transform="rotate(-24 95 215)" className="map-orbit"/>
       {ROUTES.filter(r=>(r.b!=='mercury'||world?.solar.unlocked)&&(r.b!=='ceres'||world?.belt.unlocked)).map(r=><line key={r.id} x1={POINTS[r.a][0]} y1={POINTS[r.a][1]} x2={POINTS[r.b][0]} y2={POINTS[r.b][1]} className={route&&((route.from===r.a&&route.to===r.b)||(route.from===r.b&&route.to===r.a))?'map-route route-planned':'map-route'}/>)}
-      {followed&&destination&&<line x1={POINTS[followed.from][0]} y1={POINTS[followed.from][1]} x2={destination[0]} y2={destination[1]} className={'map-tracked-route '+followed.kind}/>}
+      {followed&&destination&&(followed.to==='swarm'?<path d={mirrorPath(mirrorLane(followed.id))} className="map-tracked-route mirrors"/>:<line x1={POINTS[followed.from][0]} y1={POINTS[followed.from][1]} x2={destination[0]} y2={destination[1]} className={'map-tracked-route '+followed.kind}/>)}
       <g className="map-swarm" aria-label="Solar swarm, schematic mirror batches" transform="translate(95 215)">
         {shells.map(ring=><g key={ring} data-shell={ring} transform="scale(.75 1)">
           {swarmCount>0&&<circle r={78+ring*22} className="map-swarm-track"/>}
@@ -64,15 +71,14 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
           </g>
         </g>)}
       </g>
-      {world?.solar.powerLink&&<g className="map-power-link"><path className="map-power-conduit" d="M111 274Q119 342 174 391"/><path className="map-power-flow" d="M111 274Q119 342 174 391"/><text x="101" y="335">POWER RETURN</text></g>}
+      {world?.solar.launchArray&&<g className="map-mirror-lanes" aria-label="Mirror deployments from Mercury to the swarm"><path d={mirrorPath(0)}/><text x="24" y="415">MIRRORS ↗</text></g>}
+      {world?.solar.powerLink&&<g className="map-power-link" aria-label="Power returned to Mercury, schematic energy flow"><path className="map-power-conduit" d="M111 274Q119 342 174 391"/><path className="map-power-flow" d="M111 274Q119 342 174 391"/><text x="101" y="335">POWER RETURN</text></g>}
       <circle cx="95" cy="215" r="35" fill="url(#map-sun)"/><text x="95" y="271" textAnchor="middle" className="map-body-label">SOL</text>
-      <g opacity={world?.solar.unlocked?1:.5}><circle cx="180" cy="420" r="25" fill="url(#mercury-light)"/><circle cx="172" cy="412" r="5" fill="#5f594f" opacity=".45"/><circle cx="185" cy="428" r="3" fill="#454339" opacity=".35"/></g>
-      <circle cx="460" cy="290" r="56" fill="url(#earth-light)" stroke="#79afbd" strokeOpacity=".45"/>
-      <g clipPath="url(#earth-disc)" fill="#a2b8a2" opacity=".6"><path d="M408 267l15-24 26-11 14 7-7 10-15 2 6 9-6 14-12 3-3 10-8-5zM434 287l14 1 7 10 17 8-4 15-10 8-4 15-8 3-4-19-9-15zM479 246l18-4 11 15-9 12-19-3-8 12-9-6 3-11zM480 276l13-4 12 12-1 21-11 20-8-7 1-17-12-10z"/></g>
-      <circle cx="460" cy="290" r="56" fill="url(#earth-shade)"/>
-      <circle cx="595" cy="130" r="24" fill="url(#moon-light)"/><circle cx="587" cy="123" r="6" fill="#616964" opacity=".4"/><circle cx="602" cy="137" r="4" fill="#555e5b" opacity=".3"/>
-      {world?.solar.powerLink&&<g opacity={world.belt.unlocked?1:.5}><circle cx="840" cy="110" r="25" fill="url(#ceres-light)"/><circle cx="831" cy="102" r="6" fill="#39494b" opacity=".4"/><circle cx="847" cy="119" r="4" fill="#dbe8df" opacity=".3"/></g>}
-      <circle cx="855" cy="403" r="50" fill="url(#mars-light)"/><path d="M825 386q25-10 48 18l-12 8-29-12z" fill="#533f34" opacity=".25"/><text x="913" y="438" className="map-body-label">MARS</text>
+      <g opacity={world?.solar.unlocked?1:.5}><PlanetDisc body="mercury" cx={180} cy={420} r={25}/></g>
+      <PlanetDisc body="earth" cx={460} cy={290} r={56}/>
+      <PlanetDisc body="moon" cx={595} cy={130} r={24}/>
+      {world?.solar.powerLink&&<g opacity={world.belt.unlocked?1:.5}><PlanetDisc body="ceres" cx={840} cy={110} r={25}/></g>}
+      <PlanetDisc body="mars" cx={855} cy={403} r={50}/><text x="913" y="438" className="map-body-label">MARS</text>
       {(!world||world.ports.earth.level>0)&&<OrbitalTether site="earth" cx={460} cy={290} radius={86} seconds={30} phase={-30}/>}
       {!!world?.ports.moon.level&&<OrbitalTether site="moon" cx={595} cy={130} radius={50} seconds={38} phase={-24}/>}
       <OrbitalTether site="phobos" cx={855} cy={403} radius={88} seconds={42} phase={-10} commissioned={!!world?.ports.phobos.level}/>
@@ -82,8 +88,8 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
       {visibleSites.map(id=><g key={id} role="button" tabIndex={0} aria-label={'Locate '+SITE[id].name} aria-pressed={selected===id} onClick={()=>onSelect(id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(id);}}}><rect x={POINTS[id][0]-75} y={POINTS[id][1]-75} width="150" height={id==='phobos'?260:150} fill="transparent"/><circle cx={id==='phobos'?855:POINTS[id][0]} cy={id==='phobos'?403:POINTS[id][1]} r={id==='phobos'?112:id==='earth'?69:36} className={selected===id?'map-selected':'map-ring'} stroke={SITE[id].color}/><text x={POINTS[id][0]} y={id==='moon'||id==='ceres'?30:id==='mercury'?516:POINTS[id][1]+(id==='earth'?114:-68)} textAnchor="middle" className="map-label">{SITE[id].name.toUpperCase()}</text><text x={POINTS[id][0]} y={id==='moon'||id==='ceres'?47:id==='mercury'?535:POINTS[id][1]+(id==='earth'?134:-49)} textAnchor="middle" className="map-site-state">{id==='ceres'&&!world?.belt.unlocked?'CHAPTER 05':id==='mercury'&&!world?.solar.unlocked?'CHAPTER 03':world?.ports[id].level?'TIER '+world.ports[id].level+' / '+SITE[id].facility.toUpperCase():'AWAITING CONSTRUCTION'}</text></g>)}
     </svg>
     <svg key={'traffic-'+(world?.id??'preview')} className="map-traffic-layer" viewBox="0 0 1000 550" aria-hidden="true">
-      {world&&[...traffic.filter(f=>f.id!==tracked),...(followed?[followed]:[])].map(f=>{const t=Math.min(1,Math.max(0,(world.day-f.departed)/(f.arrival-f.departed))),a=POINTS[f.from],b=f.to==='swarm'?SWARM:POINTS[f.to],angle=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;return <g key={f.id} className={'map-flight '+f.kind+(tracked===f.id?' tracked':'')} data-traffic-id={f.id} style={{transform:`translate(${a[0]+(b[0]-a[0])*t}px,${a[1]+(b[1]-a[1])*t}px)`}}>
-        {tracked===f.id&&<circle r="14" className="map-flight-halo"/>}<path transform={`rotate(${angle})`} d={f.kind==='mirrors'?'M0-5L7 0 0 5-7 0Z':f.kind==='water'?'M8 0Q0-8-5-4Q-11 0-5 4Q0 8 8 0Z':f.kind==='equipment'?'M7 0L-1-5-6-3-6 3-1 5Z':'M8 0L-6-5-3 0-6 5Z'}/><title>{f.label+': '+f.mass+' t '+f.cargo.toLowerCase()+' to '+f.toName}</title>
+      {world&&[...traffic.filter(f=>f.id!==tracked),...(followed?[followed]:[])].map(f=>{const {x,y,angle}=flightPosition(f,world.day);return <g key={f.id} className={'map-flight '+f.kind+(tracked===f.id?' tracked':'')} data-traffic-id={f.id} style={{transform:`translate(${x}px,${y}px)`}}>
+        {tracked===f.id&&<circle r="14" className="map-flight-halo"/>}<path transform={`rotate(${angle})`} d={f.kind==='mirrors'?(f.id===tracked?'M0-5L7 0 0 5-7 0Z':'M0-2L2.8 0 0 2-2.8 0Z'):f.kind==='water'?'M8 0Q0-8-5-4Q-11 0-5 4Q0 8 8 0Z':f.kind==='equipment'?'M7 0L-1-5-6-3-6 3-1 5Z':'M8 0L-6-5-3 0-6 5Z'}/><title>{f.label+': '+f.mass+' t '+f.cargo.toLowerCase()+' to '+f.toName}</title>
       </g>;})}
     </svg>
     </div>

@@ -3,25 +3,15 @@ import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MARS, PHOBOS, MARS_X, PHOBOS_X, RATE, marsState, phobosSample, tipX, type PhobosResult } from '../simulation/phobos.js';
 
+import { planetMaterial } from '../visuals/planetMaterial.js';
+import PlanetDisc from '../visuals/PlanetDisc.js';
+
 type Props={result:PhobosResult;clock:RefObject<number>;time:number};
-/** Procedural colors only: no claim to geographic or terrain data. */
-function marsTexture(){
-  const c=document.createElement('canvas');c.width=1024;c.height=512;const g=c.getContext('2d')!;
-  g.fillStyle='#a2694b';g.fillRect(0,0,1024,512);
-  let seed=401;const random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
-  for(let i=0;i<190;i++){
-    const x=random()*1024,y=random()*512,r=8+random()*90;
-    const glow=g.createRadialGradient(x,y,0,x,y,r);glow.addColorStop(0,i%3?'#412d2525':'#ddb88830');glow.addColorStop(1,'#a2694b00');
-    g.fillStyle=glow;g.fillRect(x-r,y-r,2*r,2*r);
-  }
-  const ice=g.createLinearGradient(0,0,0,512);ice.addColorStop(0,'#f5dfc5cc');ice.addColorStop(.08,'#dcbf9300');ice.addColorStop(.91,'#dcbf9300');ice.addColorStop(1,'#f5dfc5aa');g.fillStyle=ice;g.fillRect(0,0,1024,512);
-  const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;return texture;
-}
 function Flight3D({result,clock,follow,onFailure}:{result:PhobosResult;clock:RefObject<number>;follow:boolean;onFailure:()=>void}){
   const host=useRef<HTMLDivElement>(null),label=useRef<HTMLSpanElement>(null),current=useRef(result),following=useRef(follow);
   const api=useRef<{reset:()=>void;zoom:(factor:number)=>void}|null>(null);current.current=result;following.current=follow;
   useEffect(()=>{
-    const root=host.current!;let renderer:T.WebGLRenderer;
+    const root=host.current!;root.dataset.surface='loading';delete root.dataset.clouds;let renderer:T.WebGLRenderer;
     try{renderer=new T.WebGLRenderer({antialias:true,alpha:true});}catch{onFailure();return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x080b0d,0);renderer.outputColorSpace=T.SRGBColorSpace;
     renderer.domElement.setAttribute('aria-label','3D Mars, Phobos and anchored tethers. Drag to rotate. Zoom, reset and orbit-plane controls are also available.');root.appendChild(renderer.domElement);
@@ -36,9 +26,11 @@ function Flight3D({result,clock,follow,onFailure}:{result:PhobosResult;clock:Ref
       camera.position.copy(controls.target).add(following.current?new T.Vector3(.6,2,1):new T.Vector3(1,7.2,4.5).multiplyScalar(reach));controls.update();dirty=true;
     };
     api.current={reset,zoom:f=>{camera.position.sub(controls.target).multiplyScalar(f).add(controls.target);controls.update();dirty=true;}};reset();
-    const texture=marsTexture(),mars=new T.Mesh(new T.SphereGeometry(1,80,56),new T.MeshPhongMaterial({map:texture,shininess:3}));scene.add(mars);
-    const light=new T.DirectionalLight(0xffe9d0,2.5);light.position.set(-3,4,5);scene.add(light,new T.AmbientLight(0x81949e,.7));
-    const moon=new T.Mesh(new T.IcosahedronGeometry(.038,1),new T.MeshPhongMaterial({color:0xa49a87,flatShading:true}));scene.add(moon);
+    const mars=new T.Mesh(new T.SphereGeometry(1,96,64),planetMaterial('mars',renderer,()=>{dirty=true;root.dataset.surface='ready';}));scene.add(mars);
+    const light=new T.DirectionalLight(0xffffff,2.1);light.position.set(-3,4,5);scene.add(light,new T.AmbientLight(0xdbe4ed,.22));
+    const moonGeometry=new T.SphereGeometry(.038,48,32);
+    moonGeometry.scale(1.15,.85,.95); // Enlarged visual ellipsoid; dynamics retain the modeled radius.
+    const moon=new T.Mesh(moonGeometry,planetMaterial('phobos',renderer,()=>{dirty=true;}));scene.add(moon);
     const makeLine=(color:number,opacity=1)=>{const l=new T.Line(new T.BufferGeometry(),new T.LineBasicMaterial({color,transparent:true,opacity}));scene.add(l);return l;};
     const orbit=makeLine(0x798890,.3),predicted=makeLine(0xd49167,.25),trail=makeLine(0xffc098),arms=[makeLine(0xb6c9c9),makeLine(0xefa477)];
     const setLine=(l:T.Line,pts:T.Vector3[])=>{l.geometry.dispose();l.geometry=new T.BufferGeometry().setFromPoints(pts);};
@@ -76,7 +68,7 @@ function Flight3D({result,clock,follow,onFailure}:{result:PhobosResult;clock:Ref
       renderer.render(scene,camera);previous=t;dirty=false;
     };draw();
     return()=>{cancelAnimationFrame(raf);resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('webglcontextlost',lost);
-      scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.Line||o instanceof T.Points){o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>m.dispose());}});texture.dispose();renderer.dispose();renderer.domElement.remove();api.current=null;};
+      scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.Line||o instanceof T.Points){o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>m.dispose());}});renderer.dispose();renderer.domElement.remove();api.current=null;};
   },[]);
   return <div className="phobos-three" data-body="mars-phobos" ref={host}><span ref={label} className="phobos-world-label">PHOBOS <small>Central anchor</small></span><div className="phobos-camera"><button onClick={()=>api.current?.zoom(.75)} aria-label="Zoom in">+</button><button onClick={()=>api.current?.zoom(1.33)} aria-label="Zoom out">−</button><button onClick={()=>api.current?.reset()}>Reset camera</button></div></div>;
 }
@@ -92,8 +84,7 @@ export default function PhobosScene({result,clock,time}:Props){
     <div className="phobos-scene-toolbar" role="group" aria-label="Scene view"><span>MARS / PHOBOS</span><button aria-pressed={view==='system'&&gpu} disabled={!gpu} onClick={()=>setView('system')}>System</button><button aria-pressed={view==='follow'&&gpu} disabled={!gpu} onClick={()=>setView('follow')}>Follow cargo</button><button aria-pressed={view==='plane'||!gpu} onClick={()=>setView('plane')}>Orbit plane</button></div>
     <div className="phobos-viewport">
       {gpu&&view!=='plane'?<Flight3D result={r} clock={clock} follow={view==='follow'} onFailure={()=>setGpu(false)}/>:<svg className="phobos-plane" viewBox="0 0 600 480" role="img" aria-label="Calculated Mars orbit plane, with Phobos as the anchor between the inward and outward terminals">
-        <defs><radialGradient id="phobos-mars"><stop stopColor="#bd8761"/><stop offset="1" stopColor="#492d24"/></radialGradient></defs>
-        <circle cx="300" cy="240" r={MARS.radius*scale} fill="url(#phobos-mars)"/><circle cx="300" cy="240" r={PHOBOS.separation*scale} fill="none" stroke="#8a9ca34a" strokeDasharray="3 6"/>
+        <PlanetDisc body="mars" cx={300} cy={240} r={MARS.radius*scale}/><circle cx="300" cy="240" r={PHOBOS.separation*scale} fill="none" stroke="#8a9ca34a" strokeDasharray="3 6"/>
         <polyline points={path} fill="none" stroke="#eab08b" strokeWidth="1.2" opacity=".6"/>
         <line x1={tipI[0]} y1={tipI[1]} x2={anchor[0]} y2={anchor[1]} stroke="#b6c9c9" strokeWidth="2"/><line x1={anchor[0]} y1={anchor[1]} x2={tipO[0]} y2={tipO[1]} stroke="#efa477" strokeWidth="2"/>
         <circle cx={anchor[0]} cy={anchor[1]} r="5" fill="#c4baab"/><text x={anchor[0]} y={anchor[1]-15} textAnchor="middle" fill="#e7e6e0" fontSize="12">Phobos</text>

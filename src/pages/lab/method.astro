@@ -1,5 +1,6 @@
 ---
 import LabLayout from '../../layouts/LabLayout.astro';
+import PlanetCredits from '../../components/PlanetCredits.astro';
 import { MATERIALS, MODEL, PAYLOAD_LIMIT_T } from '../../simulation/engine';
 const sections = [['scope','Model scope'],['flight-school','Missions & studies'],['materials','Materials & sizing'],['recovery','Recovery modes'],['electrodynamic','Electrical experiment'],['return-traffic','Returning cargo'],['events','Capture & release'],['equations','Equations'],['limits','Success & limits'],['validation','Tests'],['sources','Sources & display']];
 ---
@@ -105,7 +106,7 @@ I θ̈ = Σ (rᵢ − R) × Fᵢ + thrust torque</pre><p>R and V locate the inst
         <section class="guide-section" id="sources">
           <h2>Track the object, not just an orange dot.</h2>
           <p>Globe, payload-follow and orbital-plane views read the same trajectory. Choose Facility, Payload 1 or Payload 2 in the object list, then select Follow. That identity remains selected through later captures and releases. Payload 1 stays orange; Payload 2 stays violet with a diamond marker. Both retain numbered labels in the globe and orbital-plane views. Before a selected shipment’s recorded approach begins, no substitute object is followed. Follow also works in the 2D fallback; approaching or attached payloads open at a closer scale. Marker size is a screen aid, not a physical spacecraft dimension. Velocity arrows use a shared display scale within each view; they are not force arrows. Cable width, markers and the visual atmosphere are enlarged. Sunlight is illustrative. Chemical and Coast retain a 28° illustrative display tilt, not a modeled inclination. E0 is drawn in the equatorial plane required by its magnetic-field approximation. Green outer cable sections show the two conductors; their thickness is exaggerated. Electrical recovery has no rocket plume.</p>
-          <p>Earth’s outline uses simplified, public-domain Natural Earth coastlines, without country borders. The colors are procedural illustration, not satellite photography or terrain data. <a href="https://www.naturalearthdata.com/about/terms-of-use/">Data terms ↗</a></p>
+          <PlanetCredits />
           <p>The <a href="/lab/architectures/">architecture catalogue</a> links to historical primary studies, including HASTOL, Tillotson’s T4 and MXER. Those studies describe other systems; their results are not passed off as validation of this lab.</p>
           <p>The older project sizing studies remain in the <a href="/reference-architecture/">reference archive</a>. Their estimates are not used as proof that a lab mission will work.</p>
           <a class="button-link" href="/lab/">Back to your experiment →</a>

@@ -90,3 +90,21 @@ not sufficient evidence of a polished running game.
 `tests/site-pages.browser.py` covers the public layout, navigation, guided first
 flight, share assets and the illustrated flight sequence. The separate Studio
 and campaign browser suites cover their actual workers, saves and interactions.
+
+## Planetary surfaces and dense map traffic
+
+Flight Studio and Expeditions share locally hosted photographic surface maps,
+with full attribution at `/lab/method/#imagery` and provenance in
+`public/textures/README.md`. WebGL loads textures asynchronously, repaints paused
+scenes on arrival and retains a neutral lit globe on failure. The game and 2D
+views use transparent globes rendered by `scripts/render-planets.py`; they do not
+create six additional WebGL contexts or reload textures on simulation ticks.
+Earth includes a separate cloud layer. T4 adjusts camera near clipping with the
+viewing distance to keep surface/cloud depth precision in both close and wide views.
+
+Mirror deployments follow three stable curved lanes left of the Mercury power
+return. Untracked batches use small gold symbols without dark outlines, so dense
+traffic does not form a black/yellow tessellated cable. Every batch remains present
+and trackable; the selected batch draws last with its full marker and correct
+curved route. Positions, bodies and lighting remain schematic; saves, event clocks,
+energy accounting and transport times are unchanged.

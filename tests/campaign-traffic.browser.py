@@ -164,6 +164,28 @@ def main():
             assert len(busy['flights'])>64 and len(busy['solar']['deployments'])>6
             assert len(busy['flights'])+len(busy['solar']['deployments'])>100
             assert page.locator('.flight-row').count()==len(busy['flights'])+len(busy['solar']['deployments'])
+            # Dense mirror traffic must never recreate the dark, tessellated cable.
+            mirrors=page.locator('.map-flight.mirrors')
+            expect(mirrors).to_have_count(len(busy['solar']['deployments']))
+            assert mirrors.count()>20, 'The visual regression needs a busy deployment corridor'
+            glyphs=mirrors.locator('path').evaluate_all("els=>els.map(e=>({stroke:getComputedStyle(e).stroke,width:e.getBBox().width}))")
+            assert all(g['stroke']=='none' and g['width']<6 for g in glyphs)
+            power_path=page.locator('.map-power-conduit').get_attribute('d')
+            before_mirror=record()
+            mirror_id=busy['solar']['deployments'][0]['id']
+            action('Track mirror launch '+str(mirror_id))
+            expect(page.locator('.map-flight.tracked')).to_have_attribute('data-traffic-id','mirror-'+str(mirror_id))
+            lane=page.locator('path.map-tracked-route').get_attribute('d')
+            assert 'Q' in lane and lane!=power_path
+            assert page.locator('.map-flight.tracked').evaluate("""e=>{
+                const m=new DOMMatrixReadOnly(getComputedStyle(e).transform),p=document.querySelector('path.map-tracked-route');
+                const length=p.getTotalLength();let nearest=Infinity;
+                for(let i=0;i<=400;i++){const q=p.getPointAtLength(length*i/400);nearest=Math.min(nearest,Math.hypot(m.e-q.x,m.f-q.y));}
+                return nearest<1;
+            }"""), 'Tracked mirror marker left its highlighted lane'
+            assert record()==before_mirror, 'Tracking a visual lane changed the world'
+            page.locator('.network-map').screenshot(path=str(out/'busy-mirror-lanes.png'))
+            done('dense mirror batches use small unoutlined symbols and a separately tracked curved deployment lane')
             arrivals = page.locator('.flight-row').evaluate_all('els=>els.map(e=>Number(e.dataset.arrival))')
             assert arrivals==sorted(arrivals)
             last = max(busy['flights'], key=lambda f:f['arrival'])

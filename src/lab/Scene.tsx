@@ -4,46 +4,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { environment, compile, forces, type Result } from '../simulation/engine.js';
 import { sample, positions } from './view.js';
 import { flightObjects, trackedObject, OBJECTS, type ObjectId } from './objects.js';
-import { LAND } from './land.js';
+import { planetMaterial, earthClouds } from '../visuals/planetMaterial.js';
+import { planetDisc } from '../visuals/PlanetDisc.js';
 export type View = 'earth' | 'plane' | 'follow' | 'structure';
 type Props = {result:Result;clock:RefObject<number>;view:View;selectedObject:ObjectId;vectors?:boolean;onFailure:(message:string)=>void};
 // Display-plane inclination only. The integrator uses the selected spherical body.
 
-export function earthTexture() {
-  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;const g=canvas.getContext('2d')!;
-  const ocean=g.createLinearGradient(0,0,0,1024);ocean.addColorStop(0,'#224859');ocean.addColorStop(.2,'#12344d');ocean.addColorStop(.5,'#0e2941');ocean.addColorStop(.8,'#12394d');ocean.addColorStop(1,'#294e5b');
-  g.fillStyle=ocean;g.fillRect(0,0,2048,1024);
-  // Geographic silhouettes from the credited land dataset. Surface coloring is
-  // illustrative, not a climate/terrain dataset or an Earth photograph.
-  for(const poly of LAND) {
-    g.save();g.beginPath();poly.forEach(([lon,lat],j)=>{const x=(lon+180)/360*2048,y=(90-lat)/180*1024;j?g.lineTo(x,y):g.moveTo(x,y);});g.closePath();
-    g.fillStyle='#59756f';g.fill();g.strokeStyle='#82a19b';g.lineWidth=.7;g.stroke();g.clip();
-    const land=g.createLinearGradient(0,0,0,1024);land.addColorStop(0,'#d7e7e2');land.addColorStop(.2,'#749992');land.addColorStop(.4,'#788b73');land.addColorStop(.55,'#476f65');land.addColorStop(.8,'#72958f');land.addColorStop(1,'#cadcdb');
-    g.fillStyle=land;g.fillRect(0,0,2048,1024);g.restore();
-  }
-  g.strokeStyle='rgba(155,205,226,.10)';g.lineWidth=1;
-  for(let x=0;x<2048;x+=2048/24){g.beginPath();g.moveTo(x,0);g.lineTo(x,1024);g.stroke();}
-  for(let y=0;y<1024;y+=1024/12){g.beginPath();g.moveTo(0,y);g.lineTo(2048,y);g.stroke();}
-  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;return texture;
-}
-/** Procedural, illustrative maria/craters; not a terrain map or height model. */
-function moonTexture() {
-  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
-  const g=canvas.getContext('2d')!;g.fillStyle='#a4a19a';g.fillRect(0,0,2048,1024);
-  let seed=17374;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
-  for(let i=0;i<26;i++){
-    const x=random()*2048,y=170+random()*650,rx=45+random()*115,ry=40+random()*75;
-    const shade=g.createRadialGradient(x,y,0,x,y,rx);shade.addColorStop(0,'#515b5d66');shade.addColorStop(.7,'#5c64644a');shade.addColorStop(1,'#777b7800');
-    g.save();g.translate(x,y);g.scale(1,ry/rx);g.translate(-x,-y);g.fillStyle=shade;g.fillRect(x-rx,y-rx,rx*2,rx*2);g.restore();
-  }
-  for(let i=0;i<850;i++){
-    const x=random()*2048,y=25+random()*974,r=2+Math.pow(random(),3)*24,stretch=1/Math.max(.2,Math.sin(y/1024*Math.PI));
-    g.save();g.translate(x,y);g.scale(stretch,1);
-    const shade=g.createRadialGradient(-r*.3,-r*.25,r*.1,0,0,r);shade.addColorStop(0,'#e1dcd23a');shade.addColorStop(.7,'#444b4c4a');shade.addColorStop(.85,'#696d6960');shade.addColorStop(1,'#d6d2c24a');
-    g.fillStyle=shade;g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fill();g.restore();
-  }
-  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;return texture;
-}
 export default function Scene({result,clock,view,selectedObject,vectors=false,onFailure}:Props) {
   const host=useRef<HTMLDivElement>(null),labelA=useRef<HTMLDivElement>(null),labelB=useRef<HTMLDivElement>(null),labelC=useRef<HTMLDivElement>(null);
   const selectionRef=useRef(selectedObject),viewRef=useRef(view),current=useRef(result),vectorRef=useRef(vectors),api=useRef<{reset:()=>void;zoom:(factor:number)=>void}|null>(null);
@@ -53,7 +19,7 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
     // E0 is actually equatorial. The other modes retain their illustrative tilt.
     const point=(p:number[])=>{const angle=current.current.design.recovery==='electrodynamic'?0:28*Math.PI/180;
       return new T.Vector3(p[0]/env.radius,p[1]/env.radius*Math.sin(angle),p[1]/env.radius*Math.cos(angle)*(current.current.design.recovery==='electrodynamic'?-1:1));};
-    const root=host.current!;let renderer:T.WebGLRenderer;
+    const root=host.current!;root.dataset.surface='loading';delete root.dataset.clouds;let renderer:T.WebGLRenderer;
     try{renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});}catch{onFailure('WebGL 2 is unavailable. The orbital-plane view uses the same calculated flight.');return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x070d17,0);renderer.outputColorSpace=T.SRGBColorSpace;
     renderer.domElement.setAttribute('aria-label',`3D ${env.name} and tether flight. Drag to rotate; keyboard-accessible zoom, reset and alternative views are provided.`);root.appendChild(renderer.domElement);
@@ -74,8 +40,9 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       camera.updateProjectionMatrix();controls.update();dirty=true;
     };
     api.current={reset,zoom:factor=>{camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);controls.update();dirty=true;}};reset();
-    const earth=new T.Mesh(new T.SphereGeometry(1,96,64),new T.MeshPhongMaterial({map:env.id==='moon'?moonTexture():earthTexture(),specular:env.id==='moon'?0x252525:0x244c66,shininess:env.id==='moon'?2:14}));scene.add(earth);
-    const sun=new T.DirectionalLight(0xe8f2ff,2.1);sun.position.set(-3,4,5);scene.add(sun,new T.AmbientLight(0x8299c2,.62));
+    const earth=new T.Mesh(new T.SphereGeometry(1,96,64),planetMaterial(env.id==='moon'?'moon':'earth',renderer,()=>{root.dataset.surface='ready';markDirty();}));scene.add(earth);
+    if(env.id==='earth')earth.add(earthClouds(renderer,()=>{dirty=true;root.dataset.clouds='ready';}));
+    const sun=new T.DirectionalLight(0xe8f2ff,2.1);sun.position.set(-3,4,5);scene.add(sun,new T.AmbientLight(0xdbe4ed,.22));
     const atmosphere=new T.Mesh(new T.SphereGeometry(1.018,64,48),new T.ShaderMaterial({transparent:true,side:T.BackSide,depthWrite:false,vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 n;varying vec3 v;void main(){float rim=pow(1.-abs(dot(normalize(n),normalize(v))),4.);gl_FragColor=vec4(.22,.55,.94,rim*.7);}'}));atmosphere.visible=env.id==='earth';scene.add(atmosphere);
     let seed=742;const rng=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const stars=[];
     for(let k=0;k<500;k++){const z=rng()*2-1,a=rng()*Math.PI*2,r=28;stars.push(r*Math.sqrt(1-z*z)*Math.cos(a),r*z,r*Math.sqrt(1-z*z)*Math.sin(a));}
@@ -131,7 +98,7 @@ export default function Scene({result,clock,view,selectedObject,vectors=false,on
       if(v==='follow'&&active.state&&!lastFollowAvailable)reset();
       if(v==='follow'&&t!==lastTime){const focus=focalPoint();if(focus){const shift=focus.clone().sub(controls.target);camera.position.add(shift);controls.target.copy(focus);}}
       if(t!==lastTime){
-        earth.rotation.y=t*env.rotationRate+.8;
+        earth.rotation.y=t*env.rotationRate+(env.id==='moon'?4.3:.8);
         tether.position.copy(a).add(z).multiplyScalar(.5);tether.scale.y=a.distanceTo(z);tether.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),z.clone().sub(a).normalize());ends[0].position.copy(a);ends[1].position.copy(z);hub.position.copy(h);
         cargo.forEach((m,j)=>{const object=objects[j+1];m.visible=!!object.state;if(object.state)m.position.copy(point(object.state));});
         conductorMeshes.forEach((m,j)=>{
@@ -185,6 +152,8 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
   const canvas=useRef<HTMLCanvasElement>(null),rref=useRef(result),zoom=useRef(1),vref=useRef(vectors),selectionRef=useRef(selectedObject),followRef=useRef(follow);rref.current=result;vref.current=vectors;selectionRef.current=selectedObject;followRef.current=follow;
   useEffect(()=>{
     const c=canvas.current!,g=c.getContext('2d')!,parent=c.parentElement!;let request=0,resized=true;
+    const discs=new Map<string,HTMLImageElement>();
+    const disc=(body:'earth'|'moon')=>{let img=discs.get(body);if(!img){img=new Image();img.onload=()=>{resized=true;};img.src=planetDisc(body);discs.set(body,img);}return img;};
     const resize=()=>{const w=Math.round(parent.clientWidth*Math.min(devicePixelRatio,2)),h=Math.round(parent.clientHeight*Math.min(devicePixelRatio,2));if(c.width!==w){c.width=w;resized=true;}if(c.height!==h){c.height=h;resized=true;}};const observer=new ResizeObserver(resize);observer.observe(parent);resize();
     let previous=-1,previousR:Result|null=null,previousW=0,previousH=0,previousZoom=0,previousVectors=false,previousSelected:ObjectId|null=null,previousFollow=false;
     let focusOrigin:number[]|null=null,focusSpan=120000;
@@ -207,8 +176,9 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
       const extent=following&&focusOrigin?focusSpan:2.7*(env.radius+r.design.altitudeKm*1000+r.design.spanKm*500);
       const s=Math.min(w,h)/extent*zoom.current,x=w/2-(focusOrigin?.[0]??0)*s,y=h/2+(focusOrigin?.[1]??0)*s;
       const xy=(p:number[])=>[x+p[0]*s,y-p[1]*s];g.clearRect(0,0,w,h);
-      const glow=g.createRadialGradient(x-env.radius*s*.35,y-env.radius*s*.4,0,x,y,env.radius*s);glow.addColorStop(0,env.id==='moon'?'#a4a29b':'#285168');glow.addColorStop(.65,env.id==='moon'?'#53595b':'#122f47');glow.addColorStop(1,env.id==='moon'?'#21272a':'#081925');g.fillStyle=glow;g.beginPath();g.arc(x,y,env.radius*s,0,Math.PI*2);g.fill();g.strokeStyle='#6ca7c5';g.lineWidth=1.2*dpr;g.stroke();
-      g.strokeStyle='#355369';g.lineWidth=.5*dpr;for(let j=1;j<=3;j++){g.beginPath();g.ellipse(x,y,env.radius*s*j/4,env.radius*s,0,0,Math.PI*2);g.stroke();}
+      const radius=env.radius*s,surface=disc(env.id==='moon'?'moon':'earth');
+      g.fillStyle=env.id==='moon'?'#252729':'#0d202c';g.beginPath();g.arc(x,y,radius,0,Math.PI*2);g.fill();
+      if(surface.complete&&surface.naturalWidth)g.drawImage(surface,x-radius,y-radius,2*radius,2*radius);
       g.strokeStyle='#69849d';g.setLineDash([4*dpr,6*dpr]);g.beginPath();g.arc(x,y,(env.radius+r.design.altitudeKm*1000)*s,0,Math.PI*2);g.stroke();g.setLineDash([]);
       const path=(pts:number[][],color:string)=>{g.strokeStyle=color;g.lineWidth=1.5*dpr;g.beginPath();pts.forEach((p,i)=>{const [a,b]=xy(p);i?g.lineTo(a,b):g.moveTo(a,b);});g.stroke();};
       path(r.frames.filter(f=>f.t<=t&&f.t>t-3200).map(f=>f.state),'#7de7ee');
@@ -250,7 +220,7 @@ export function Plane({result,clock,selectedObject,vectors=false,follow=false}:O
         if(!v)continue;const [a,b]=xy(v),vx=v[2]/1000*10*dpr,vy=-v[3]/1000*10*dpr,angle=Math.atan2(vy,vx);g.strokeStyle=color;g.lineWidth=1.5*dpr;g.beginPath();g.moveTo(a,b);g.lineTo(a+vx,b+vy);g.moveTo(a+vx-7*dpr*Math.cos(angle-.4),b+vy-7*dpr*Math.sin(angle-.4));g.lineTo(a+vx,b+vy);g.lineTo(a+vx-7*dpr*Math.cos(angle+.4),b+vy-7*dpr*Math.sin(angle+.4));g.stroke();
       }}
       g.fillStyle='#7fa1ba';g.font=`${11*dpr}px monospace`;g.textAlign='center';g.fillText(env.name.toUpperCase(),x,y+4*dpr);
-    };draw();return()=>{cancelAnimationFrame(request);observer.disconnect();};
+    };draw();return()=>{cancelAnimationFrame(request);observer.disconnect();discs.forEach(img=>{img.onload=null;});};
   },[]);
   return <div className="scene-plane" data-body={environment(result.design).id} data-recovery={result.design.recovery}><canvas ref={canvas} aria-label="Orbital-plane view of the calculated trajectory"/><div className="plane-zoom"><button onClick={()=>zoom.current=Math.min(4,zoom.current*1.25)} aria-label="Zoom in">+</button><button onClick={()=>zoom.current=Math.max(.3,zoom.current/1.25)} aria-label="Zoom out">−</button><button onClick={()=>zoom.current=1}>Fit</button></div></div>;
 }
