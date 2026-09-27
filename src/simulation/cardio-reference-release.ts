@@ -8,25 +8,43 @@ import {validateCardioReference,cardioReferenceOrbit,cardioReferenceSample,type 
 
 export const CARDIO_REFERENCE_RELEASE_MODEL='C1k-0.1.0';
 export const CARDIO_REFERENCE_COAST_SECONDS=1800;
-export interface CardioReferenceRelease {
-  model:typeof CARDIO_REFERENCE_RELEASE_MODEL;
+export interface CardioReferenceReleaseState {
   design:CardioReferenceDesign; fraction:number; releaseTime:number;
   initial:CargoState; elements:ReturnType<typeof orbit>;
   outcome:'below-cutoff'|'crosses-cutoff'|'bound'|'escape';
+}
+export interface CardioReferenceRelease extends CardioReferenceReleaseState {
+  model:typeof CARDIO_REFERENCE_RELEASE_MODEL;
   status:'cutoff'|'horizon'; duration:number; horizon:number;
   frames:{t:number;state:CargoState}[];
   energyError:number; angularError:number;
 }
 
-export function traceCardioReferenceRelease(input:unknown,fraction:number,options:{step?:number}={}):CardioReferenceRelease {
-  const design=validateCardioReference(input),step=options.step??2;
+/** Classify the future point orbit from the exact release state, without
+ * integrating a finite coast or implying that the tether can maintain it. */
+export function cardioReferenceReleaseState(input:unknown,fraction:number):CardioReferenceReleaseState {
+  const design=validateCardioReference(input);
   if(!Number.isFinite(fraction)||fraction<0||fraction>1)throw Error('Select a release within one reference orbit.');
-  if(!Number.isFinite(step)||step<.25||step>10)throw Error('Invalid particle integration step.');
   const releaseTime=cardioReferenceOrbit(design).period*fraction;
   const initial:CargoState=[...cardioReferenceSample(design,releaseTime).tip];
-  const elements=orbit(initial),altitude=(q:CargoState)=>Math.hypot(q[0],q[1])-EARTH;
-  const below=altitude(initial)<CARDIO_CUTOFF;
+  const elements=orbit(initial),below=Math.hypot(initial[0],initial[1])-EARTH<CARDIO_CUTOFF;
   const outcome=below?'below-cutoff':cardioCargoCrossesCutoff(initial,elements)?'crosses-cutoff':elements.energy<0?'bound':'escape';
+  return {design,fraction,releaseTime,initial,elements,outcome};
+}
+
+/** Discrete samples only: no interpolation or inferred interval boundaries. */
+export function compareCardioReferencePhases(input:unknown){
+  const design=validateCardioReference(input);
+  return {format:'skyhook-cardio-reference-phases' as const,version:1 as const,
+    model:CARDIO_REFERENCE_RELEASE_MODEL,analysis:'release-state orbit elements' as const,
+    design,period:cardioReferenceOrbit(design).period,
+    samples:Array.from({length:21},(_,i)=>cardioReferenceReleaseState(design,i/20))};
+}
+
+export function traceCardioReferenceRelease(input:unknown,fraction:number,options:{step?:number}={}):CardioReferenceRelease {
+  const launch=cardioReferenceReleaseState(input,fraction),{design,releaseTime,initial,elements,outcome}=launch;
+  const step=options.step??2,altitude=(q:CargoState)=>Math.hypot(q[0],q[1])-EARTH,below=outcome==='below-cutoff';
+  if(!Number.isFinite(step)||step<.25||step>10)throw Error('Invalid particle integration step.');
   const frames:CardioReferenceRelease['frames']=[{t:0,state:[...initial]}];
   const h0=initial[0]*initial[3]-initial[1]*initial[2];
   const energyScale=Math.max(MU/Math.hypot(initial[0],initial[1]),Math.abs(elements.energy),1);

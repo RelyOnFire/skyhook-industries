@@ -24,6 +24,7 @@ def main():
             page.goto(origin+'/lab/cardio/',wait_until='networkidle')
             exercise_reference(page,out)
             exercise_reference_release(page,out)
+            exercise_reference_phases(page,out)
             page.get_by_text('Explore uncontrolled dynamics',exact=True).click()
             run=page.get_by_role('button',name='Compare pickup',exact=True)
             expect(run).to_be_enabled(timeout=90000)
@@ -100,7 +101,7 @@ def main():
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS synchronized Cardio geometry, ideal reference releases and reports, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
+            print('PASS synchronized Cardio geometry, ideal releases, phase comparison and reports, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
             browser.close()
     finally:server.shutdown()
 def exercise_release(page,out,run):
@@ -315,6 +316,54 @@ def exercise_reference_release(page,out):
     reference.get_by_label('Pickup altitude value',exact=True).fill('');expect(trace).to_be_disabled()
     reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
     assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==stored
+    page.set_viewport_size({'width':1440,'height':1000})
+
+def exercise_reference_phases(page,out):
+    reference=page.get_by_test_id('cardio-reference')
+    comparison=reference.get_by_test_id('cardio-reference-phases')
+    result=reference.get_by_role('region',name='Reference release trajectory')
+    saved=page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")
+    reference.get_by_role('button',name='Perigee clearance',exact=True).click()
+    reference.get_by_role('button',name='Trace release here',exact=True).click()
+    before=reference.get_by_test_id('cardio-reference-release-path').locator('polyline').get_attribute('points')
+    comparison.get_by_text('Compare release phases',exact=True).click()
+    samples=comparison.locator('.cardio-reference-phase-grid button')
+    expect(samples).to_have_count(21)
+    assert reference.get_by_test_id('cardio-reference-release-path').locator('polyline').get_attribute('points')==before
+    expect(result.get_by_role('status')).to_have_text('Earth escape trajectory')
+    with page.expect_download() as info:comparison.get_by_role('button',name='Export phase comparison').click()
+    download=out/'reference-phases.json';info.value.save_as(download);report=json.loads(download.read_text())
+    assert report['format']=='skyhook-cardio-reference-phases' and report['analysis']=='release-state orbit elements'
+    assert report['design']=={'perigeeKm':200,'apogeeKm':2200,'pickupKm':100} and len(report['samples'])==21
+    assert report['samples'][5]['outcome']=='bound' and report['samples'][10]['outcome']=='escape'
+    selected=comparison.get_by_role('button',name='Trace at 25%: Earth-bound',exact=True)
+    selected.focus();page.keyboard.press('Enter');expect(selected).to_be_focused();expect(selected).to_have_attribute('aria-pressed','true')
+    expect(result.get_by_role('status')).to_have_text('Earth-bound trajectory')
+    with page.expect_download() as info:result.get_by_role('button',name='Export reference release').click()
+    download=out/'reference-phase-selected.json';info.value.save_as(download);coast=json.loads(download.read_text())
+    assert coast['fraction']==.25 and coast['initial']==report['samples'][5]['initial'] and coast['elements']==report['samples'][5]['elements']
+    for width in [1440,768,320]:
+        page.set_viewport_size({'width':width,'height':1000})
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'phase comparison overflow {width}'
+        assert samples.evaluate_all('(nodes)=>nodes.every(el=>el.scrollWidth<=el.clientWidth+1&&el.getBoundingClientRect().width>=44&&el.getBoundingClientRect().height>=44)'),f'phase target size {width}'
+        comparison.screenshot(path=str(out/f'reference-phases-{width}.png'))
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    expect(selected).to_have_attribute('aria-pressed','true');expect(result.get_by_role('status')).to_have_text('Earth-bound trajectory')
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    reference.get_by_label('Station apogee value',exact=True).fill('2800');expect(result).to_have_count(0)
+    expect(comparison.locator('button[aria-pressed=true]')).to_have_count(0)
+    with page.expect_download() as info:comparison.get_by_role('button',name='Export phase comparison').click()
+    download=out/'reference-phases-edited.json';info.value.save_as(download);edited=json.loads(download.read_text())
+    assert edited['design']['apogeeKm']==2800 and edited['samples'][10]['elements']['energy']!=report['samples'][10]['elements']['energy']
+    reference.get_by_label('Pickup altitude value',exact=True).fill('')
+    expect(samples).to_have_count(0);expect(comparison.get_by_role('button',name='Export phase comparison')).to_have_count(0)
+    expect(comparison).to_contain_text('Enter valid reference geometry')
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click();expect(samples).to_have_count(21)
+    comparison.get_by_role('button',name='Trace at 0%: Below cutoff',exact=True).click()
+    expect(result.get_by_role('status')).to_have_text('Release point is below the 120 km cutoff')
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
+    comparison.get_by_text('Compare release phases',exact=True).click()
+    assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==saved
     page.set_viewport_size({'width':1440,'height':1000})
 
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')

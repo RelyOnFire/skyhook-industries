@@ -2,6 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {EARTH} from '../simulation/engine.js';
 import {CARDIO_REFERENCE_DEFAULT,CARDIO_REFERENCE_BOUNDS,validateCardioReference,cardioReferenceOrbit,cardioReferenceSample,cardioReferenceSummary} from '../simulation/cardio-reference.js';
 import {traceCardioReferenceRelease,type CardioReferenceRelease} from '../simulation/cardio-reference-release.js';
+import CardioReferencePhases from './CardioReferencePhases.js';
 import NumericField from './StudioField.js';
 import {displayNumber,modelNumber,type StudioUnits} from './StudioUnits.js';
 import './cardio-reference.css';
@@ -49,12 +50,13 @@ export default function CardioReference({units}:{units:StudioUnits}){
   const frame=geometry?cardioReferenceSample(geometry.design,time):null;
   const jump=(fraction:number)=>{if(!geometry)return;clearTrace();setPlaying(false);setTime(geometry.orbit.period*fraction);};
   const phase=time===0||geometry&&Math.abs(time-geometry.orbit.period)<1e-6?'Apogee · arm inward':geometry&&Math.abs(time-geometry.orbit.period/2)<.01?'Perigee · arm outward':'Between apsides';
-  const traceHere=()=>{
+  const traceAt=(fraction:number)=>{
     if(!geometry||invalid)return;
-    setPlaying(false);setTraceError('');
-    try{setTrace(traceCardioReferenceRelease(geometry.design,Math.max(0,Math.min(1,time/geometry.orbit.period))));}
+    setPlaying(false);setTraceError('');setTime(geometry.orbit.period*fraction);
+    try{setTrace(traceCardioReferenceRelease(geometry.design,fraction));}
     catch(error){setTrace(null);setTraceError((error as Error).message);}
   };
+  const traceHere=()=>{if(geometry)traceAt(Math.max(0,Math.min(1,time/geometry.orbit.period)));};
   const exportTrace=()=>{
     if(!trace)return;
     const url=URL.createObjectURL(new Blob([JSON.stringify({format:'skyhook-cardio-reference-release',version:1,...trace},null,2)],{type:'application/json'}));
@@ -95,6 +97,7 @@ export default function CardioReference({units}:{units:StudioUnits}){
         <div className="cardio-reference-jumps"><button disabled={invalid} onClick={()=>jump(0)}>Apogee pickup</button><button disabled={invalid} onClick={()=>jump(.5)}>Perigee clearance</button><button disabled={invalid} onClick={traceHere}>Trace release here</button></div>
         <dl className="cardio-reference-readout"><div><dt>Tip altitude now</dt><dd data-testid="cardio-reference-tip-altitude">{frame?distance(frame.tipAltitude):'—'} {units.distance}</dd></div><div><dt>Tip inertial speed</dt><dd>{frame?speed(frame.tipSpeed):'—'} {units.speed}</dd></div><div><dt>Lowest cable point now</dt><dd>{frame?distance(frame.clearance):'—'} {units.distance}</dd></div></dl>
         <div className="cardio-reference-release-help">Pause or scrub to a phase, then trace a test particle released with the tip’s velocity. The plot fits the next 30 minutes of free flight; changing phase clears the trace.</div>
+        <CardioReferencePhases design={checked.design} disabled={invalid} selected={trace?.fraction??null} onSelect={traceAt}/>
         {traceError&&<p role="alert" className="cardio-reference-release-help">{traceError}</p>}
         {trace&&<section className="cardio-reference-release" aria-label="Reference release trajectory">
           <p className="micro">IDEAL TEST PARTICLE · C1k</p>

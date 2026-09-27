@@ -52,6 +52,26 @@ Expeditions design. It does not change the independent C1p/C1r design or saves.
 Regressions check initial-state continuity, distinct phase outcomes, cutoff
 termination, future-crossing classification, invariants and timestep refinement.
 
+## Compare synchronized release phases
+
+The reference comparison classifies 21 exact release states at fractions
+`i/20`, from 0 through 1. It uses the same release-state calculation as the
+single-particle trace, including future cutoff crossings; it does not integrate
+21 coasts or interpolate a continuous release window. Both endpoints represent
+apogee, at different times in the same completed orbit.
+
+Opening the disclosure leaves the current trace unchanged. Choosing a sample
+pauses the reference, selects its exact phase and integrates that one coast.
+Keyboard focus stays on the selected sample for further comparison. Symbols,
+text labels and color distinguish below-cutoff, future crossing, bound and
+escape outcomes. Geometry edits recompute the comparison and clear the prior
+trace; invalid input hides its actions. Display units preserve the comparison.
+
+The version-1 `skyhook-cardio-reference-phases` JSON export records the C1k model,
+release-state analysis type, exact geometry, period and every sample's initial
+state, orbit elements and outcome. It contains no implied control, loading or
+continuous-window result and does not modify any saved design or campaign.
+
 ## Passive mass and state
 
 State is `[Rx,Ry,Vx,Vy,theta,omega]`, using Earth-inertial SI coordinates and

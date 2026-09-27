@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EARTH,MU} from '../.lab-test/simulation/engine.js';
 import {CARDIO_REFERENCE_DEFAULT as D,cardioReferenceOrbit,cardioReferenceSample} from '../.lab-test/simulation/cardio-reference.js';
-import {traceCardioReferenceRelease as trace} from '../.lab-test/simulation/cardio-reference-release.js';
+import {traceCardioReferenceRelease as trace,compareCardioReferencePhases as compare} from '../.lab-test/simulation/cardio-reference-release.js';
 const near=(a,b,tol)=>assert.ok(Math.abs(a-b)<=tol,`${a} differs from ${b} by more than ${tol}`);
 
 test('reference particle inherits the complete tip state without a release kick',()=>{
@@ -60,4 +60,25 @@ test('geometry changes affect the actual release state and invalid inputs are re
   for(const fraction of [-.1,1.1,NaN,Infinity])assert.throws(()=>trace(D,fraction));
   for(const step of [0,.1,11,Infinity,NaN])assert.throws(()=>trace(D,.5,{step}));
   assert.throws(()=>trace({...D,pickupKm:Infinity},.5));
+});
+
+test('phase comparison spans the orbit in exact samples and retains the state used by each trace',()=>{
+  for(const design of [D,{...D,perigeeKm:400,apogeeKm:2800}]){
+    const report=compare(design);
+    assert.equal(report.format,'skyhook-cardio-reference-phases');assert.equal(report.version,1);
+    assert.equal(report.analysis,'release-state orbit elements');assert.deepEqual(report.design,design);
+    assert.equal(report.samples.length,21);
+    for(const [i,sample] of report.samples.entries()){
+      assert.equal(sample.fraction,i/20);near(sample.releaseTime,report.period*i/20,1e-9);
+      const coast=trace(design,sample.fraction);
+      assert.deepEqual(sample.initial,coast.initial);assert.deepEqual(sample.elements,coast.elements);
+      assert.equal(sample.outcome,coast.outcome);assert.deepEqual(sample.design,design);
+    }
+    assert.deepEqual(report.samples[0].initial,report.samples[20].initial);
+  }
+  const report=compare(D);
+  assert.deepEqual(new Set(report.samples.map(s=>s.outcome)),new Set(['below-cutoff','crosses-cutoff','bound','escape']));
+  assert.equal(report.samples[5].outcome,'bound');assert.equal(report.samples[10].outcome,'escape');
+  assert.notEqual(report.samples[10].elements.energy,compare({...D,apogeeKm:2800}).samples[10].elements.energy);
+  assert.throws(()=>compare({...D,apogeeKm:NaN}));
 });
