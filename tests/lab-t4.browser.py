@@ -264,9 +264,9 @@ def main():
                         expect(guide.get_by_text('The gaps between samples are untested.',exact=True)).to_be_visible()
                         expect(guide.get_by_text('Paths end where each calculation ends.',exact=True)).to_be_visible()
                     else:
-                        expect(guide.get_by_text('4 RUNNABLE EXPERIMENTS',exact=True)).to_be_visible();expect(guide.get_by_role('link',name='Open the T4 experiment →',exact=True)).to_have_attribute('href','/lab/t4/')
+                        expect(guide.get_by_text(f"{guide.locator('.architecture-card.runnable').count()} RUNNABLE EXPERIMENTS",exact=True)).to_be_visible();expect(guide.get_by_role('link',name='Open the T4 experiment →',exact=True)).to_have_attribute('href','/lab/t4/')
                     guide.screenshot(path=str(out/f'{"method" if "method" in path else "catalogue"}-{width}.png'),full_page=True)
-            static.close();done('static assumptions and four-experiment catalogue remain readable without JavaScript')
+            static.close();done('static assumptions and architecture catalogue remain readable without JavaScript')
             assert not report['errors'],report['errors'];report['status']='passed'
         except Exception as e:
             report['status']='failed';report['failure']=str(e);shot('failure');raise

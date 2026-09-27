@@ -42,8 +42,8 @@ before pickup include the incoming cargo; the closure residual is reported.
 Neither energy nor orbital momentum is granted for free.
 
 Both bodies then coast for one **original nominal period**, stopping separately
-if a limit is encountered. Cargo remains attached. No separation, reeling or
-recovery is implemented. Initial osculating COM perigees are diagnostics under a
+if a limit is encountered. Cargo remains attached in this baseline comparison. The separate C1r release
+experiment below changes that condition; neither experiment implements reeling or recovery. Initial osculating COM perigees are diagnostics under a
 point-orbit approximation; the extended body does not subsequently obey an exact
 Kepler ellipse. Unwrapped drift is θ(t)−[θ(0)+ω(0)t]; a full missing rotation is
 not hidden by wrapping to ±180°. The dashed drawing is explicitly a prescribed
@@ -78,4 +78,39 @@ model `C1p-0.1.0`. Designs are ≤16 KB. Importing another architecture is rejec
 The original Earth solver, schemas and campaign bridge are untouched. Cardio has
 no repeatable two-delivery or recovery proof and cannot commission an expedition
 profile. Atmosphere, guidance, capture hardware, flexure, reeling, active phase
-control, release and reboost remain unmodeled.
+control and reboost remain unmodeled.
+
+## C1r-0.1.0: selectable release
+
+`cardio-release.ts` reuses the C1p body and gravity-gradient integrator, starting
+from the same exact matched pickup. Release time is 5–90% of the original nominal
+period, supplied separately from the unchanged C1p design. The worker has its
+own cancelable lifetime. Reports record the exact design and timing.
+
+At release, `q = cardioPoint(y_loaded, loaded, L)` supplies the cargo state.
+`cardioCapture(y_loaded, loaded, empty)` performs the inverse COM transformation;
+all retained material points keep their velocities. This is impulse-free
+separation, not an imposed change of spin, launch kick or recovery burn.
+Energy/angular closure includes the cargo at separation. Subsequent diagnostics
+sum both the remaining extended body and the point cargo.
+
+Free cargo follows `rddot = -mu*r/|r|³` with RK4, sharing the tether's ≤5 s step.
+Steps split exactly at release and stop at the first cargo/tether cutoff or
+structural failure, refined with the same 24-step bracket. An unreachable
+release has `release: null`, never invented orbit diagnostics. Frames at the
+separation instant store both mass frames; replay selects the post-release state
+at that exact time and interpolates only within each phase.
+
+The cargo's osculating orbit determines its perigee/apogee. An orbit with perigee
+below 120 km is flagged even if the replay ends before reaching the boundary.
+Unbound trajectories have no apogee. The remaining tether's osculating COM orbit
+is diagnostic; whole-segment clearance and loads continue to be screened.
+No mutual cargo/tether gravity, collision detection, atmosphere, targeting,
+release mechanism, controller or repeatable traffic service is solved.
+
+Regression tests check separation continuity, mass and conserved quantities,
+independent circular point-cargo motion, timestep/quadrature refinement, failure
+before release, cargo cutoff, timing sensitivity, and replay across the event.
+The default 25% release crosses the cutoff; a 2.75 initial spin ratio with the
+otherwise unchanged default at 25% produces a clear bound cargo orbit. This is
+a reproducible experiment setting, not an optimized or qualified vehicle.

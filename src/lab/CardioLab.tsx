@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import CardioScene from './CardioScene.js';
+import CardioRelease from './CardioRelease.js';
 import NumericField from './StudioField.js';
 import UnitPicker,{displayNumber,modelNumber,useStudioUnits} from './StudioUnits.js';
 import {CARDIO_DEFAULT,CARDIO_MODEL,CARDIO_BOUNDS,CARDIO_ALLOWABLE,cardioFragment,readCardio,validateCardio,cardioSample,type CardioDesign,type CardioResult} from '../simulation/cardio.js';
@@ -67,6 +68,7 @@ export default function CardioLab(){
       <p>Axial allowable: {n(CARDIO_ALLOWABLE/1e9)} GPa. Each coast stops at clearance, load or compression limits. Completion means surviving one nominal orbit, not a repeatable pickup. Perigee is a point-orbit diagnostic of the center of mass; cable clearance is checked separately.</p>
       <details><summary>Numerical accounting & report</summary><p>Matched attachment adds the incoming payload's energy and angular momentum without an impulse. Closure residuals: {n(result.captureEnergyResidual,3)} J and {n(result.captureAngularResidual,2)} kg·m²/s. Maximum relative energy drift: {Math.max(result.empty.energyDrift,result.loaded.energyDrift).toExponential(2)}; angular momentum drift: {Math.max(result.empty.angularDrift,result.loaded.angularDrift).toExponential(2)}.</p><p>Peak transverse constraint force: {n(Math.max(result.empty.peakTransverse,result.loaded.peakTransverse)/(units.force==='kN'?1000:1))} {units.force}. A straight rigid arm needs these forces; the axial check does not establish flexible-cable stability or bending strength.</p><button onClick={()=>download('cardiorotovator-report.json',result)}>Export comparison report</button></details>
     </div></section>}
-    <footer className="phobos-boundary">C1p · planar single-arm experiment · no atmospheric pickup, release, reeling or reboost. <a href="/lab/cardio/method/">Read the equations & source ↗</a>. This experiment does not commission a campaign design.</footer>
+    {result&&<CardioRelease key={JSON.stringify(result.design)} source={result} disabled={busy||dirty} units={units}/>}
+    <footer className="phobos-boundary">C1p + C1r · planar pickup and release experiments · no atmospheric pickup, reeling or reboost. <a href="/lab/cardio/method/">Read the equations & source ↗</a>. This experiment does not commission a campaign design.</footer>
   </main>;
 }

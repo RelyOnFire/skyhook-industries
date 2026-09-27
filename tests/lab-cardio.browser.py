@@ -26,6 +26,7 @@ def main():
             expect(page.get_by_test_id('cardio-empty-status')).to_have_text('One nominal orbit completed')
             expect(page.get_by_test_id('cardio-loaded-status')).to_have_text('One nominal orbit completed')
             page.evaluate("localStorage.setItem('skyhook-lab-design-v2','earth-kept');localStorage.setItem('skyhook-lab-t4-design-v1','t4-kept')")
+            exercise_release(page,out,run)
             slider=page.get_by_role('slider',name='CardioRotovator replay time',exact=True)
             before=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==before
             page.get_by_role('button',name='Play CardioRotovator replay').click();page.wait_for_timeout(200)
@@ -83,8 +84,54 @@ def main():
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS Cardio worker, replay, limit stop, phase/payload editing, isolated save/share/import, display units, cancellation, report, catalogue and five widths')
+            print('PASS Cardio pickup/release workers, safe/unsafe orbits, separation replay, reports, limit stop, phase/payload editing, isolated save/share/import, display units, cancellation, report, catalogue and five widths')
             browser.close()
     finally:server.shutdown()
+def exercise_release(page,out,run):
+    panel=page.get_by_role('region',name='Payload release experiment',exact=True)
+    calculate=panel.get_by_role('button',name='Calculate release',exact=True)
+    page.evaluate("()=>{window.savedReleaseWorker=window.Worker;window.Worker=class{constructor(){throw Error('injected worker startup failure')}};}")
+    calculate.click();expect(panel.get_by_role('alert')).to_have_text('Release calculation could not start. Try again.')
+    expect(calculate).to_be_enabled();page.evaluate('window.Worker=window.savedReleaseWorker;delete window.savedReleaseWorker')
+    calculate.click();expect(calculate).to_be_enabled(timeout=90000)
+    expect(panel.get_by_text('Cargo orbit crosses the 120 km cutoff',exact=True)).to_be_visible()
+    expect(panel.get_by_text('Stopped: cargo reached the 120 km cutoff.',exact=False)).to_be_visible()
+    panel.get_by_role('button',name='Jump to release').click()
+    expect(panel.get_by_text('Free cargo coast',exact=True)).to_be_visible()
+    expect(panel.get_by_test_id('released-cargo')).to_be_visible()
+    slider=panel.get_by_role('slider',name='Payload release replay time')
+    before=float(slider.input_value());panel.get_by_role('button',name='Play release replay').click();page.wait_for_timeout(200)
+    panel.get_by_role('button',name='Pause release replay').click();assert float(slider.input_value())>before
+    stopped=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==stopped
+    panel.get_by_label('Release after pickup value',exact=True).fill('')
+    expect(calculate).to_be_disabled();expect(panel.get_by_role('button',name='Play release replay')).to_be_disabled()
+    panel.get_by_label('Release after pickup value',exact=True).fill('90');calculate.click();expect(calculate).to_be_enabled(timeout=90000)
+    expect(panel.get_by_text('Reached the end of the nominal orbit.',exact=False)).to_be_visible()
+    expect(panel.get_by_text('Cargo orbit crosses the 120 km cutoff',exact=True)).to_be_visible()
+    page.get_by_label('Initial spins per orbit value',exact=True).fill('2.75')
+    expect(calculate).to_be_disabled();run.click();expect(run).to_be_enabled(timeout=90000)
+    expect(panel.get_by_label('Release after pickup value',exact=True)).to_have_value('25')
+    calculate.click();expect(calculate).to_be_enabled(timeout=90000)
+    expect(panel.get_by_text('Cargo orbit clears the 120 km cutoff',exact=True)).to_be_visible()
+    slider.fill(slider.get_attribute('max'))
+    expect(panel.get_by_test_id('released-cargo')).to_be_visible()
+    for width in [1440,768,320]:
+        page.set_viewport_size({'width':width,'height':1000})
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'release overflow {width}'
+        panel.screenshot(path=str(out/f'release-{width}.png'))
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'release metre overflow'
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    panel.get_by_text('Release accounting & report',exact=True).click()
+    with page.expect_download() as info:panel.get_by_role('button',name='Export release report').click()
+    path=out/'release-download.json';info.value.save_as(path);report=json.loads(path.read_text())
+    assert report['model']=='C1r-0.1.0' and report['fraction']==.25 and report['design']['spinRatio']==2.75
+    assert report['release']['cargoOrbit']['perigee']>120000 and report['energyDrift']<1e-8
+    assert report['frames'][-1]['released'] and report['frames'][-1]['cargo']
+    # The old design format and pickup defaults are independent of release timing.
+    page.get_by_role('button',name='Reference scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
+    expect(panel.get_by_label('Release after pickup value',exact=True)).to_have_value('25')
+    expect(panel.get_by_role('button',name='Jump to release')).to_have_count(0)
+
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')
 if __name__=='__main__':main()
