@@ -5,14 +5,16 @@ import {cardioReleaseSample,type CardioRelease as ReleaseResult} from '../simula
 import type {StudioUnits} from './StudioUnits.js';
 import CardioScene from './CardioScene.js';
 import NumericField from './StudioField.js';
+import CardioTimingStudy from './CardioTimingStudy.js';
 
 const descriptions={complete:'Reached the end of the nominal orbit.',clearance:'Stopped: tether reached the 120 km cutoff.',load:'Stopped: tether exceeded its axial load limit.',compression:'Stopped: a tether section requires compression.','cargo-clearance':'Stopped: cargo reached the 120 km cutoff.'};
 export default function CardioRelease({source,disabled,units}:{source:CardioResult;disabled:boolean;units:StudioUnits}){
   const [percent,setPercent]=useState(25),[invalid,setInvalid]=useState(false),[busy,setBusy]=useState(false);
   const [result,setResult]=useState<ReleaseResult|null>(null),[error,setError]=useState('');
-  const [time,setTime]=useState(0),[playing,setPlaying]=useState(false);
+  const [time,setTime]=useState(0),[playing,setPlaying]=useState(false),[studyBusy,setStudyBusy]=useState(false),[fieldKey,setFieldKey]=useState(0);
+  const verdictRef=useRef<HTMLDivElement>(null);
   const worker=useRef<Worker|null>(null),request=useRef(0);
-  const stale=!!result&&(invalid||percent/100!==result.fraction),blocked=disabled||invalid||busy;
+  const stale=!!result&&(invalid||percent/100!==result.fraction),blocked=disabled||invalid||busy||studyBusy;
   const n=(v:number,d=1)=>v.toLocaleString('en-US',{maximumFractionDigits:d});
   const distance=(v:number)=>`${n(v/(units.distance==='km'?1000:1))} ${units.distance}`;
   const speed=(v:number)=>`${n(v/(units.speed==='km/s'?1000:1),2)} ${units.speed}`;
@@ -44,13 +46,14 @@ export default function CardioRelease({source,disabled,units}:{source:CardioResu
     <div className="cardio-results-body">
       <p>Choose when to release after pickup. Cargo inherits the tip’s velocity; the unloaded tether continues under gravity. Neither receives a thrust impulse.</p>
       <div className="cardio-release-controls">
-        <NumericField name="release-percent" label="Release after pickup" unit="% of nominal orbit" min={5} max={90} step={1} value={percent} onChange={v=>{setPercent(v);setPlaying(false);}} onValidity={v=>{setInvalid(v);if(v)setPlaying(false);}}/>
+        <NumericField key={fieldKey} name="release-percent" label="Release after pickup" unit="% of nominal orbit" min={5} max={90} step={1} value={percent} onChange={v=>{setPercent(v);setPlaying(false);}} onValidity={v=>{setInvalid(v);if(v)setPlaying(false);}}/>
         <div><button className="primary" disabled={blocked} onClick={run}>Calculate release</button>{busy&&<button onClick={cancel}>Cancel release calculation</button>}<p>{n(source.period*percent/6000)} minutes after pickup. Changing this timing does not alter the saved tether design; the release report includes it.</p></div>
       </div>
       {disabled&&<p className="cardio-message">Compare the current pickup design before calculating its release.</p>}
       {error&&<p role="alert">{error}</p>}
+      <CardioTimingStudy design={source.design} current={percent/100} disabled={disabled||invalid||busy} units={units} onBusy={value=>{setStudyBusy(value);if(value)setPlaying(false);}} onSelect={r=>{cancel();setPercent(r.fraction*100);setInvalid(false);setFieldKey(k=>k+1);setResult(r);setTime(r.release?.t??0);setPlaying(false);requestAnimationFrame(()=>{verdictRef.current?.focus();verdictRef.current?.scrollIntoView({block:'nearest'});});}}/>
       {result&&<>
-        <div className="cardio-release-verdict" role="status"><strong>{verdict}</strong><p>{descriptions[result.status]} {event?'Orbit clearance describes the ideal cargo path; it does not certify the tether or a destination encounter.':'The loaded tether hit a limit before the selected release time.'}</p></div>
+        <div ref={verdictRef} tabIndex={-1} className="cardio-release-verdict" role="status"><strong>{verdict}</strong><p>{descriptions[result.status]} {event?'Orbit clearance describes the ideal cargo path; it does not certify the tether or a destination encounter.':'The loaded tether hit a limit before the selected release time.'}</p></div>
         {(stale||disabled)&&<p className="cardio-message">Release inputs changed. These results belong to the previous calculation.</p>}
         <CardioScene result={source} release={result} time={time} loaded reference={false}/>
         <div className="cardio-playback">

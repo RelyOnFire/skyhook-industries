@@ -114,3 +114,24 @@ before release, cargo cutoff, timing sensitivity, and replay across the event.
 The default 25% release crosses the cutoff; a 2.75 initial spin ratio with the
 otherwise unchanged default at 25% produces a clear bound cargo orbit. This is
 a reproducible experiment setting, not an optimized or qualified vehicle.
+
+## Release timing comparison
+
+The session-only comparison streams 18 full C1r flights at 5% increments from
+5% through 90%, including the exact currently selected fraction as a nineteenth
+sample when it differs from the grid. Only timing varies; every sample retains
+the same validated C1p design. The worker can be terminated; generation tokens
+reject late messages, and completed samples remain available after stopping.
+
+A clear result requires both a completed coast and cargo perigee ≥120 km.
+Cargo alone clearing the cutoff cannot override a failed tether. Unreached
+releases carry no invented orbit. Sampling does not prove the intervening
+intervals or a repeatable service. Selecting a completed row restores its exact
+result and timing in the main release replay, focusing the verdict. Comparisons
+do not replace the accepted flight until a row is selected.
+
+Summary exports include exact design, model, ordered plan, solved rows, orbit
+diagnostics, limits, and a completion flag. Partial runs cannot appear complete.
+Full-precision timings are retained in reports and accessible labels; compact
+cards round the headline to three decimal places and mark off-grid selections.
+The main design's save and shared-link formats remain unchanged.

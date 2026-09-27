@@ -84,7 +84,7 @@ def main():
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS Cardio pickup/release workers, safe/unsafe orbits, separation replay, reports, limit stop, phase/payload editing, isolated save/share/import, display units, cancellation, report, catalogue and five widths')
+            print('PASS Cardio pickup/release/timing workers, complete and partial studies, exact inspection, safe/unsafe orbits, separation replay, reports, limit stop, phase/payload editing, isolated save/share/import, display units, cancellation, report, catalogue and five widths')
             browser.close()
     finally:server.shutdown()
 def exercise_release(page,out,run):
@@ -128,10 +128,60 @@ def exercise_release(page,out,run):
     assert report['model']=='C1r-0.1.0' and report['fraction']==.25 and report['design']['spinRatio']==2.75
     assert report['release']['cargoOrbit']['perigee']>120000 and report['energyDrift']<1e-8
     assert report['frames'][-1]['released'] and report['frames'][-1]['cargo']
+    exercise_timing(page,panel,out,report)
     # The old design format and pickup defaults are independent of release timing.
     page.get_by_role('button',name='Reference scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
     expect(panel.get_by_label('Release after pickup value',exact=True)).to_have_value('25')
     expect(panel.get_by_role('button',name='Jump to release')).to_have_count(0)
+
+def exercise_timing(page,panel,out,accepted):
+    study=panel.get_by_role('region',name='Release timing comparison',exact=True)
+    compare=study.get_by_role('button',name='Compare release times',exact=True)
+    field=panel.get_by_label('Release after pickup value',exact=True)
+    field.fill('25.123456789');compare.click();expect(compare).to_be_enabled(timeout=90000)
+    expect(study.locator('.cardio-timing-grid button')).to_have_count(19)
+    expect(study.get_by_role('status')).to_contain_text('Comparison complete.')
+    # Running a comparison leaves the accepted single-flight replay untouched.
+    expect(panel.get_by_role('slider',name='Payload release replay time')).to_have_value(str(accepted['duration']))
+    with page.expect_download() as info:study.get_by_role('button',name='Export timing comparison').click()
+    path=out/'timing-study.json';info.value.save_as(path);report=json.loads(path.read_text())
+    assert report['complete'] and len(report['results'])==19 and len(report['plan'])==19
+    assert report['design']==accepted['design'] and any(abs(f-.25123456789)<1e-14 for f in report['plan'])
+    assert any(r['outcome']['clear'] for r in report['results']) and any(not r['outcome']['clear'] for r in report['results'])
+    for width in [1440,768,320]:
+        page.set_viewport_size({'width':width,'height':1000});assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+        assert study.locator('.cardio-timing-grid button').evaluate_all('(buttons)=>buttons.every(b=>b.scrollWidth<=b.clientWidth+1)'),f'timing card overflow {width}'
+        study.screenshot(path=str(out/f'timing-{width}.png'))
+    chosen=study.get_by_role('button',name='Open release at 25%: Clear bound coast',exact=True)
+    chosen.focus();page.keyboard.press('Enter');expect(panel.locator('.cardio-release-verdict')).to_be_focused()
+    expect(field).to_have_value('25');expect(panel.get_by_role('slider',name='Payload release replay time')).to_have_value(str(accepted['release']['t']))
+    with page.expect_download() as info:panel.get_by_role('button',name='Export release report').click()
+    path=out/'timing-selected-flight.json';info.value.save_as(path);assert json.loads(path.read_text())==accepted
+    # Preserve a partial run and reject late queued results after cancellation.
+    page.evaluate("""()=>{
+      window.timingStopWorker=window.Worker;
+      window.Worker=class extends window.timingStopWorker{
+        set onmessage(handler){let stopped=false;super.onmessage=e=>{
+          handler.call(this,e);
+          if(e.data.result&&!stopped){stopped=true;queueMicrotask(()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Stop timing comparison')?.click());}
+        };}
+      };
+    }""")
+    compare.click();expect(study.get_by_role('status')).to_contain_text('Comparison stopped.',timeout=90000)
+    page.evaluate('window.Worker=window.timingStopWorker;delete window.timingStopWorker')
+    count=study.locator('.cardio-timing-grid button').count();assert 0<count<18
+    page.wait_for_timeout(200);expect(study.locator('.cardio-timing-grid button')).to_have_count(count)
+    with page.expect_download() as info:study.get_by_role('button',name='Export timing comparison').click()
+    path=out/'timing-partial.json';info.value.save_as(path);partial=json.loads(path.read_text());assert not partial['complete'] and len(partial['results'])==count
+    expect(panel.get_by_role('slider',name='Payload release replay time')).to_have_value(str(accepted['release']['t']))
+    study.get_by_role('button',name='Clear comparison').click();expect(compare).to_be_focused()
+    page.evaluate("()=>{window.savedTimingWorker=window.Worker;window.Worker=class{constructor(){throw Error('injected timing startup failure')}};}")
+    compare.click();expect(study.get_by_role('alert')).to_have_text('Timing comparison could not start. Try again.')
+    expect(compare).to_be_enabled();page.evaluate('window.Worker=window.savedTimingWorker;delete window.savedTimingWorker')
+    compare.click();expect(compare).to_be_enabled(timeout=90000);expect(study.locator('.cardio-timing-grid button')).to_have_count(18)
+    field.fill('');expect(compare).to_be_disabled();expect(study.get_by_role('button',name='Export timing comparison')).to_be_disabled()
+    expect(chosen).to_be_disabled();field.fill('25')
+    page.get_by_label('Initial spins per orbit value',exact=True).fill('2.8');expect(compare).to_be_disabled();expect(chosen).to_be_disabled()
 
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')
 if __name__=='__main__':main()
