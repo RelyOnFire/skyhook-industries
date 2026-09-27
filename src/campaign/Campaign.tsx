@@ -1,4 +1,5 @@
 import EarthDesign from './EarthDesign.js';
+import ServicePreview from './ServicePreview.js';
 import { useEffect, useRef, useState } from 'react';
 import { tetherCapacity, addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
@@ -98,6 +99,7 @@ export default function Campaign() {
   const latest=slots.find(s=>s.valid), event=world?nextEventDay(world):null;
   let plan:ReturnType<typeof flightPlan>|undefined;
   if(world){try{plan=flightPlan(world,from,to,Number(cargo),mode,kind);}catch{/* A destination selection is incomplete. */}}
+  const serviceDisabled=!world||!plan||siteLocked(world,from)||siteLocked(world,to)||world.services.length>=LIMITS.services||world.day+1>LIMITS.days||!Number.isInteger(Number(intervalDays))||Number(intervalDays)<1||Number(intervalDays)>3650||!Number.isInteger(Number(cargo))||Number(cargo)<1||Number(cargo)>(mode==='tug'?10:30);
   const connected=(a:SiteId,b:SiteId)=>ROUTES.some(r=>(r.a===a&&r.b===b)||(r.b===a&&r.a===b));
   const chooseFrom=(id:SiteId)=>{
     const destination=connected(id,to)?to:SITES.find(s=>connected(id,s)&&world&&!siteLocked(world,s))!;
@@ -165,7 +167,8 @@ export default function Campaign() {
           <fieldset className="campaign-service"><legend className="sr-only">Transport service</legend><label><input type="radio" name="service" value="tug" checked={mode==='tug'} onChange={()=>setMode('tug')}/><span><b>Bootstrap tug</b><small>10 t capacity</small></span></label><label><input type="radio" name="service" value="tether" checked={mode==='tether'} onChange={()=>setMode('tether')}/><span><b>Tether corridor</b><small>Both tethers required</small></span></label></fieldset>
           {plan&&<div className="campaign-flight-estimate"><div><span>COAST + HANDLING</span><b>{number(plan.duration)} days</b></div><div><span>SUPPORT PROPELLANT</span><b>{Number.isFinite(plan.fuelT)?number(plan.fuelT):'—'} t</b></div><div><span>ARRIVAL</span><b>{day(world.day+plan.duration)}</b></div></div>}
           <div className="dispatch-action"><p id="flight-reason" className={'campaign-hint'+(plan?.reason?' dispatch-blocked':'')}>{plan?.reason||'Ready for departure'}</p><button className="primary" type="submit" disabled={busy||!!plan?.reason||!plan} aria-describedby="flight-reason">Dispatch cargo <span aria-hidden="true">↗</span></button></div>
-          <div className="campaign-schedule-form"><label htmlFor="service-interval">Repeat every (simulation days)</label><div><input id="service-interval" type="number" min="1" max="3650" step="1" value={intervalDays} onChange={e=>setIntervalDays(e.target.value)}/><button type="button" disabled={busy||!plan||siteLocked(world,from)||siteLocked(world,to)||world.services.length>=LIMITS.services||!Number.isInteger(Number(intervalDays))||Number(intervalDays)<1||Number(intervalDays)>3650||!Number.isInteger(Number(cargo))||Number(cargo)<1||Number(cargo)>(mode==='tug'?10:30)} onClick={()=>act(w=>addService(w,from,to,Number(cargo),mode,kind,Number(intervalDays)))}>Schedule service</button></div><p className="campaign-hint">First attempt tomorrow. Blocked departures retry daily.</p></div>
+          <div className="campaign-schedule-form"><label htmlFor="service-interval">Repeat every (simulation days)</label><div><input id="service-interval" type="number" min="1" max="3650" step="1" value={intervalDays} onChange={e=>setIntervalDays(e.target.value)}/><button type="button" disabled={busy||serviceDisabled} onClick={()=>act(w=>addService(w,from,to,Number(cargo),mode,kind,Number(intervalDays)))}>Schedule service</button></div><p className="campaign-hint">First attempt tomorrow. Blocked departures retry daily.</p></div>
+          <ServicePreview key={world.id} world={world} draft={{from,to,kind,mode,cargoT:Number(cargo),intervalDays:Number(intervalDays)}} disabled={serviceDisabled}/>
         </form>
           </section>
           <SolarChapter world={world} busy={busy} act={act}/>

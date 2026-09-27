@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { forecastNetwork } from '../.lab-test/campaign/forecast.js';
-import { addService, advance, createCampaign, validateCampaign } from '../.lab-test/campaign/model.js';
+import { forecastNetwork, previewService } from '../.lab-test/campaign/forecast.js';
+import { addService, advance, createCampaign, LIMITS, validateCampaign } from '../.lab-test/campaign/model.js';
 import { updateService } from '../.lab-test/campaign/service-edit.js';
 
 test('outlook uses the real engine without changing the saved world or its revision', () => {
@@ -78,4 +78,36 @@ test('a service schedule can be compared on a copy before changing the real worl
   assert.equal(baseline.serviceDepartures,Object.values(baseline.serviceDeparturesById).reduce((a,b)=>a+b,0));
   assert.equal(alternative.serviceDepartures,Object.values(alternative.serviceDeparturesById).reduce((a,b)=>a+b,0));
   assert.deepEqual(validateCampaign(proposal),proposal);
+});
+
+test('new service preview matches actual scheduling, competition and arrivals without mutating its source',()=>{
+  const world=addService(createCampaign('preview','Preview'),'earth','moon',10,'tug','equipment',2);
+  const original=structuredClone(world),draft={from:'earth',to:'phobos',cargoT:10,mode:'tug',kind:'equipment',intervalDays:1};
+  const result=previewService(world,draft,365),scheduled=addService(world,draft.from,draft.to,draft.cargoT,draft.mode,draft.kind,draft.intervalDays),actual=advance(scheduled,365);
+  assert.deepEqual(world,original);
+  assert.equal(result.serviceId,world.nextService);
+  assert.deepEqual(result.current,forecastNetwork(world,365));
+  const service=actual.services.find(s=>s.id===result.serviceId);
+  assert.equal(result.proposed.serviceDeparturesById[service.id],service.dispatched);
+  assert.equal(result.proposed.serviceReceivedTById[service.id],service.deliveredT);
+  assert.equal(result.proposed.fuelLater,actual.fuelT);
+  assert.ok(result.proposed.delayed.some(item=>item.id===service.id&&item.reason.includes('equipment')));
+  assert.ok(result.proposed.delayed.some(item=>item.id===world.services[0].id));
+  assert.ok(service.deliveredT>0);
+  assert.equal(service.deliveredT+actual.flights.filter(f=>f.serviceId===service.id).reduce((sum,f)=>sum+f.cargoT,0),service.dispatched*draft.cargoT);
+  const short=previewService(world,draft,30);
+  assert.ok(short.proposed.serviceDeparturesById[service.id]>0);
+  assert.equal(short.proposed.serviceReceivedTById[service.id],0,'in-flight cargo is not received cargo');
+});
+
+test('new service preview enforces scheduling limits and clips both plans to the same horizon',()=>{
+  const world=createCampaign('preview-limits','Preview limits'),original=structuredClone(world);
+  const draft={from:'earth',to:'moon',cargoT:10,mode:'tug',kind:'equipment',intervalDays:30};
+  for(const invalid of [{...draft,cargoT:11},{...draft,intervalDays:0},{...draft,to:'mercury'},{...draft,to:'earth'},{...draft,kind:'water'}])assert.throws(()=>previewService(world,invalid,30));
+  let full=world;for(let i=0;i<LIMITS.services;i++)full=addService(full,draft.from,draft.to,draft.cargoT,draft.mode,draft.kind,draft.intervalDays);
+  assert.throws(()=>previewService(full,draft,30),/12 scheduled/);
+  const ending={...world,day:LIMITS.days-1.5},end=previewService(ending,draft,365);
+  assert.equal(end.current.days,1.5);assert.equal(end.proposed.toDay,LIMITS.days);
+  assert.throws(()=>previewService({...world,day:LIMITS.days-.5},draft,30),/horizon/);
+  assert.deepEqual(world,original);
 });

@@ -1,4 +1,4 @@
-import { advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type SiteId } from './model.js';
+import { addService, advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type CargoKind, type Shipment, type SiteId } from './model.js';
 
 export interface ServiceDelay {
   id: number;
@@ -44,6 +44,9 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     return [service.id,service.dispatched-(original?.dispatched??0)];
   })) as Record<number,number>;
   const serviceDepartures=Object.values(serviceDeparturesById).reduce((sum,count)=>sum+count,0);
+  const serviceReceivedTById=Object.fromEntries(projected.services.map(service=>[
+    service.id,service.deliveredT-(world.services.find(candidate=>candidate.id===service.id)?.deliveredT??0),
+  ])) as Record<number,number>;
   const ports = SITES.filter(id => !siteLocked(world, id)).map((id: SiteId) => ({
     id,
     name: SITE[id].name,
@@ -65,6 +68,7 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     activeServices: world.services.filter(service => service.enabled).length,
     serviceDepartures,
     serviceDeparturesById,
+    serviceReceivedTById,
     mirrorLaunches: projected.solar.nextDeployment - world.solar.nextDeployment,
     delayed: serviceDelays,
     mirrorDelayed: mirrorDelays,
@@ -72,4 +76,15 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
       .sort((a,b)=>b.attempts-a.attempts||a.firstDay-b.firstDay),
     ports,
   };
+}
+
+export interface ServiceProposal {
+  from:SiteId;to:SiteId;kind:CargoKind;mode:Shipment['mode'];cargoT:number;intervalDays:number;
+}
+
+/** Compare a new service at its real queue position, without saving either run. */
+export function previewService(world:Campaign,draft:ServiceProposal,days:number) {
+  const proposal=addService(world,draft.from,draft.to,draft.cargoT,draft.mode,draft.kind,draft.intervalDays);
+  const current=forecastNetwork(world,days),proposed=forecastNetwork(proposal,days);
+  return {current,proposed,serviceId:world.nextService};
 }

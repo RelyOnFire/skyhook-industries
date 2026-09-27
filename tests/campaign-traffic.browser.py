@@ -85,7 +85,43 @@ def main():
             done('native v5 migration preserves all progress, checkpoints once, keeps unchanged saves idle and invalidates stale writers')
 
             cargo('earth','phobos','equipment')
+            preview=page.get_by_role('region',name='New service preview',exact=True)
+            preview_button=preview.get_by_role('button',name='Preview service',exact=True)
+            preview_result=preview.locator('.service-preview-result')
+            frozen_preview=record()
+            page.get_by_label('Cargo (t)',exact=True).fill('30')
+            page.get_by_role('radio',name='Tether corridor').check()
+            expect(page.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_disabled()
+            preview_button.click()
+            expect(preview_result.locator('.service-preview-metrics dd').nth(0)).to_have_text('0')
+            expect(preview_result.locator('.service-preview-metrics dd').nth(2)).to_have_text('365')
+            expect(preview.get_by_label('New service departure holds')).to_be_visible()
+            assert record()==frozen_preview, 'Preview changed saved state or history'
+            preview.get_by_label('Service preview horizon').select_option('30')
+            expect(preview_result).to_have_count(0)
+            preview_button.click()
+            expect(preview_result.locator('.service-preview-metrics dd').nth(2)).to_have_text('30')
+            page.get_by_label('Cargo (t)',exact=True).fill('')
+            expect(preview_button).to_be_disabled();expect(preview_result).to_have_count(0)
+            cargo('earth','phobos','equipment')
+            preview_button.click()
+            assert int(preview_result.locator('.service-preview-metrics dd').nth(0).inner_text())>0
+            expect(preview_result.locator('.service-preview-metrics dd').nth(1)).to_have_text('0 t')
+            preview.get_by_label('Service preview horizon').select_option('365');preview_button.click()
+            assert float(preview_result.locator('.service-preview-metrics dd').nth(1).inner_text().replace(' t','').replace(',',''))>0
+            for width in [1440,768,320]:
+                page.set_viewport_size({'width':width,'height':1000})
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+                preview.screenshot(path=str(out/f'new-service-preview-{width}.png'))
+            assert record()==frozen_preview, 'Forecast horizon and viewport changed the save'
+            page.set_viewport_size({'width':1440,'height':1000})
             action('Dispatch cargo')
+            expect(preview_result).to_have_attribute('data-stale','true')
+            expect(preview.get_by_role('status')).to_contain_text('Network changed')
+            preview_button.click();expect(preview_result).to_have_attribute('data-stale','false')
+            preview.get_by_role('button',name='Close service preview',exact=True).click()
+            expect(preview_result).to_have_count(0)
+            done('new service previews expose blocked plans, distinguish transit from delivery, preserve saves and flag changed networks')
             after = state()
             assert len(after['flights'])==len(old['flights'])+1
             assert after['flights'][:-1]==old['flights'] and after['day']==old['day']
@@ -147,10 +183,13 @@ def main():
             cargo_filter.select_option('mirrors');destination_filter.select_option('swarm')
             page.get_by_label('Simulation speed',exact=True).select_option('1')
             action('Play simulation')
+            preview_button.click()
+            expect(page.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
             cargo_filter.select_option('cargo');cargo_filter.select_option('mirrors')
             expect(page.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
             page.wait_for_function("day=>Number(document.querySelector('[data-testid=campaign-day]').textContent.replace(/[^0-9.]/g,''))>day",arg=busy['day']+.5)
             action('Pause simulation');busy=state()
+            expect(preview_result).to_have_attribute('data-stale','true')
             expect(cargo_filter).to_have_value('mirrors');expect(destination_filter).to_have_value('swarm')
             expect(rows).to_have_count(len(busy['solar']['deployments']))
             for width in [1440,768,320]:
@@ -163,6 +202,7 @@ def main():
             page.get_by_role('button', name='Continue Open corridors').click()
             saved()
             expect(cargo_filter).to_have_value('all');expect(destination_filter).to_have_value('all')
+            expect(preview_result).to_have_count(0)
             assert state()==busy
             page.locator('.network-outlook>summary').click()
             expect(page.get_by_label('Forecast horizon')).to_have_value('90')

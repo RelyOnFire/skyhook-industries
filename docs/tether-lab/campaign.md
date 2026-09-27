@@ -49,6 +49,20 @@ their links lead to the affected service or mirror controls. The hold list has a
 bounded keyboard-scrollable region. One chronological projection avoids cloning
 the world separately for every forecast day.
 
+The cargo composer also offers **Preview service** before creating a new recurring
+line. It runs the current network and a copy with the proposed service over the
+same 30/90/365-day window, including its actual tomorrow-first attempt and queue
+priority. The report shows new departures, that service's received cargo and
+hold reasons, plus network receipts, remaining fuel, existing-service holds and
+mirror launches with/without the proposal. Flights still in transit are excluded
+from receipts. A valid schedule that currently lacks stocks, recovery or endpoint
+capacity can still be previewed, so its future blockers are visible.
+Previewing never dispatches, schedules or saves. It computes only when requested;
+changing inputs hides the report, while advancing the network marks the retained
+snapshot out of date until Preview service is clicked again. Play continues.
+The report resets on world changes and reload. The existing Schedule service
+button remains the explicit commit action, using the normal scheduling checks.
+
 The same outlook can compare a draft payload and interval for one existing
 service against the current plan at the selected horizon. Both sides use the
 same event engine; it shows that service's departures and blocked attempts,
