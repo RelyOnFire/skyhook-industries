@@ -13,6 +13,7 @@
     "src/campaign/model.ts",
     "src/campaign/forecast.ts",
     "src/campaign/service-edit.ts",
+    "src/campaign/supply.ts",
     "src/simulation/**/*.ts",
     "src/lab/view.ts",
     "src/lab/objects.ts",

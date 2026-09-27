@@ -10,9 +10,19 @@ free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
 The campaign is one operations workspace: all outposts and their local stocks,
 inbound cargo, industry rates and tether availability stay exposed. Choosing a
-destination highlights it without hiding other depots. Each outpost has supply
-shortcuts that prepare the cargo form, choose tug/tether based on commissioned
-endpoints, and suggest a maintenance interval; they never dispatch automatically.
+destination highlights it without hiding other depots. Outpost supply shortcuts
+consider unlocked, directly connected depots with the selected resource. They
+prefer a ready departure, then the largest available whole-tonne shipment up to
+10 t and the actual corridor capacity, then lower fuel per tonne and shorter
+transit. Both commissioned endpoints use a tether; otherwise the form uses a
+tug. Recovering tethers remain tether suggestions if no ready supplier exists;
+this does not silently switch transport mode or spend extra fuel. If no depot
+has a whole tonne, the ordinary Earth/Phobos replenishment source remains with
+its visible dispatch blocker. Locked routes and reverse water routes are never
+suggested. Earth's explicit Ship buttons retain their Earth→Moon route.
+Shortcuts only prepare the cargo form and maintenance interval: no dispatch,
+resource change or save occurs until the player takes an action. The chosen
+origin, payload and any blocker are visible in the cargo form.
 
 The map is the largest desktop panel, highlights the planned corridor, supports
 keyboard destination selection, and shows the swarm around the same Sun. Cargo

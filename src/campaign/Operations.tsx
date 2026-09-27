@@ -5,6 +5,7 @@ import { forecastNetwork } from './forecast.js';
 import { trafficItems, type TrafficId, type TrafficItem } from './traffic.js';
 import NetworkOutlook from './NetworkOutlook.js';
 import ServiceEditor from './ServiceEditor.js';
+import { suggestSupply } from './supply.js';
 
 export const n = (v:number,digits=1) => v.toLocaleString('en-US',{maximumFractionDigits:digits});
 export const date = (v:number) => 'Day '+n(v);
@@ -34,7 +35,9 @@ export function Outposts({world,busy,selected,onSelect,act,prepare,onEarthDesign
       const p=world.ports[id], locked=siteLocked(world,id), cost=buildCost(world,id);
       const incoming=world.flights.filter(f=>f.to===id).sort((a,b)=>a.arrival-b.arrival);
       const material=incoming.filter(f=>f.kind==='materials').reduce((a,f)=>a+f.cargoT,0),equipment=incoming.filter(f=>f.kind==='equipment').reduce((a,f)=>a+f.cargoT,0),water=incoming.filter(f=>f.kind==='water').reduce((a,f)=>a+f.cargoT,0);
-      const hasWater=world.belt.unlocked&&(id==='ceres'||id==='phobos'),supplier=id==='ceres'?'phobos':'earth';
+      const hasWater=world.belt.unlocked&&(id==='ceres'||id==='phobos');
+      const materialSupply=id==='earth'?null:suggestSupply(world,id,'materials');
+      const equipmentSupply=id==='earth'?null:suggestSupply(world,id,'equipment');
       const status=industryStatus(world,id),waiting=status.startsWith('Waiting')||status.includes('exhausted')||status.includes('full');
       const production=mercuryProduction(world);
       const rate=id==='earth'?'+0.5 t equipment · +1 t fuel / day':id==='moon'?'+1 t material · −0.05 t equipment / day':id==='phobos'?'+1 Mars point · −0.5 t material · −0.02 t equipment / day':id==='ceres'?'+'+n(beltProduction(world).waterCapacity)+' t water · −'+n(beltProduction(world).waterCapacity*BELT.mineEquipmentPerT,2)+' t equipment / day':'Refinery '+n(production.mineCapacity)+' t/d · mirrors '+n(production.mirrorCapacity)+' t/d';
@@ -47,7 +50,7 @@ export function Outposts({world,busy,selected,onSelect,act,prepare,onEarthDesign
           {p.industry&&<p className={'outpost-industry'+(waiting?' needs-supply':'')}><span className="status-dot"/>{waiting?status:'Industry active'}</p>}
           {p.industry&&<p className="outpost-rate">{rate}{id==='mercury'&&<span>{world.solar.powerLink?'Local tooling replaces maintenance':'Up to '+n(production.equipmentDemand,2)+' t equipment / day'}</span>}</p>}
           <p className="outpost-rating">{!p.level?'Tether not commissioned':p.readyDay>world.day?'Tether ready in '+n(p.readyDay-world.day)+' days':'Tether ready for departure'}</p>
-          <div className="outpost-supply"><span>{id==='earth'?'Ship':'Supply'}</span><button aria-label={(id==='earth'?'Ship Earth material to Moon':'Supply '+SITE[id].name+' with material')} onClick={()=>prepare(supplier,id==='earth'?'moon':id,'materials')}>Material ↗</button><button aria-label={id==='earth'?'Ship Earth equipment to Moon':'Supply '+SITE[id].name+' with equipment'} onClick={()=>prepare(supplier,id==='earth'?'moon':id,'equipment')}>Equipment ↗</button></div>
+          <div className="outpost-supply"><span>{id==='earth'?'Ship':'Supply'}</span><button aria-label={(id==='earth'?'Ship Earth material to Moon':'Supply '+SITE[id].name+' with material')} title={materialSupply?`${materialSupply.cargoT} t from ${SITE[materialSupply.from].name}${materialSupply.reason?' · '+materialSupply.reason:''}`:undefined} onClick={()=>prepare(materialSupply?.from??'earth',id==='earth'?'moon':id,'materials',materialSupply?.cargoT)}>Material ↗</button><button aria-label={id==='earth'?'Ship Earth equipment to Moon':'Supply '+SITE[id].name+' with equipment'} title={equipmentSupply?`${equipmentSupply.cargoT} t from ${SITE[equipmentSupply.from].name}${equipmentSupply.reason?' · '+equipmentSupply.reason:''}`:undefined} onClick={()=>prepare(equipmentSupply?.from??'earth',id==='earth'?'moon':id,'equipment',equipmentSupply?.cargoT)}>Equipment ↗</button></div>
           {p.level===0&&<button className="outpost-build" disabled={busy||p.materialsT<cost} onClick={()=>act(w=>build(w,id))}>{p.level?'Upgrade':'Commission'} {machine} · {cost} t</button>}
           {p.level>0&&!p.industry&&<><button className="outpost-build" disabled={busy||p.materialsT<20||p.equipmentT<5} onClick={()=>act(w=>installIndustry(w,id))}>Install {INDUSTRY[id].name.toLowerCase()}</button><p className="tiny">20 t material + 5 t equipment</p></>}
           {id==='earth'&&<div className="earth-allocation"><button disabled={busy||world.day<world.nextSupplyDay} onClick={()=>act(resupply)}>{world.day<world.nextSupplyDay?'Next allocation: '+date(world.nextSupplyDay):'Request supply allocation'}</button><p>+60 t material +60 t fuel · every 30 days</p></div>}
