@@ -19,7 +19,9 @@ test('exact inputs and bounded version-2 measurements; failed flights cannot tra
 });
 test('real designs produce distinct capacity, cadence, fuel and cost; reference gets no import bonus',()=>{
   const standard=earthDesignPerformance(report,1),light=earthDesignPerformance(small,1),cargo=earthDesignPerformance(heavy,1),economical=earthDesignPerformance(efficient,1);
-  assert.deepEqual(standard,{capacity:10,recoveryDays:2,fuelFactor:1,materialsT:40,equipmentT:10});
+  // Continuous solver ratios can differ by a few ULPs across Node/V8 versions.
+  assert.deepEqual({capacity:standard.capacity,materialsT:standard.materialsT,equipmentT:standard.equipmentT},{capacity:10,materialsT:40,equipmentT:10});
+  near(standard.recoveryDays,2);near(standard.fuelFactor,1);
   assert.equal(light.capacity,3);assert.ok(light.recoveryDays<1);assert.ok(light.materialsT<standard.materialsT);assert.ok(light.equipmentT<standard.equipmentT);
   assert.equal(cargo.capacity,16);assert.ok(cargo.recoveryDays<standard.recoveryDays);assert.ok(cargo.fuelFactor<standard.fuelFactor);assert.ok(cargo.materialsT>standard.materialsT);assert.ok(cargo.equipmentT>standard.equipmentT);
   assert.ok(economical.fuelFactor<standard.fuelFactor);assert.equal(economical.capacity,standard.capacity);

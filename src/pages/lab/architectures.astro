@@ -10,9 +10,9 @@ import { designFragment } from '../../simulation/design-io';
       <p class="micro">ARCHITECTURE CATALOGUE</p>
       <h1>More than one way to build a tether.</h1>
       <p>Start with a spinning cable. Then explore two-tier machines, atmospheric pickup concepts and orbital transport networks.</p>
-      <div class="guide-meta"><span>4 RUNNABLE EXPERIMENTS</span><span>6 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
+      <div class="guide-meta"><span>5 RUNNABLE EXPERIMENTS</span><span>5 REFERENCE CONCEPTS</span><span>PRIMARY-SOURCE LINKS</span></div>
     </header>
-    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>Start with an Earth or lunar rotovator, Phobos anchored release or T4 compound rotor. Reference entries explain the extra physics needed for other configurations and connected transport networks.</p></div>
+    <div class="catalogue-intro"><h2>Choose a question to investigate.</h2><p>Start with an Earth or lunar rotovator, Phobos anchored release, T4 compound rotor or CardioRotovator timing study. Reference entries explain the extra physics needed for other configurations and connected transport networks.</p></div>
     <div class="architecture-grid">
       {ARCHITECTURES.map(record => <article id={record.id} class:list={['architecture-card', {runnable: record.availability === 'runnable'}]}>
         <div class="architecture-art">
@@ -35,7 +35,7 @@ import { designFragment } from '../../simulation/design-io';
           <p class="micro">{record.category.toUpperCase()}</p><h3>{record.name}</h3><p>{record.summary}</p>
           <dl><dt>Configuration</dt><dd>{record.topology}</dd><dt>{record.availability === 'runnable' ? 'In the current lab' : 'Before it can run'}</dt><dd>{record.missing}</dd></dl>
           <a class="source-link" href={record.source.url}>{record.source.title} ↗<br/><span>{record.source.locator}</span></a>
-          {record.availability === 'runnable' && <a class="button-link primary" href={record.id === 't4' ? '/lab/t4/' : record.id === 'phobos-anchored' ? '/lab/phobos/' : record.id === 'lunar-rotovator' ? `/lab/lunar/${designFragment(LUNAR_DEFAULT)}` : `/lab/${designFragment(DEFAULT)}`}>Open the {record.id === 't4' ? 'T4' : record.id === 'phobos-anchored' ? 'Phobos' : record.id === 'lunar-rotovator' ? 'Moon' : 'Earth'} experiment →</a>}
+          {record.availability === 'runnable' && <a class="button-link primary" href={record.id === 'cardiorotovator' ? '/lab/cardio/' : record.id === 't4' ? '/lab/t4/' : record.id === 'phobos-anchored' ? '/lab/phobos/' : record.id === 'lunar-rotovator' ? `/lab/lunar/${designFragment(LUNAR_DEFAULT)}` : `/lab/${designFragment(DEFAULT)}`}>Open the {record.id === 'cardiorotovator' ? 'CardioRotovator' : record.id === 't4' ? 'T4' : record.id === 'phobos-anchored' ? 'Phobos' : record.id === 'lunar-rotovator' ? 'Moon' : 'Earth'} experiment →</a>}
         </div>
       </article>)}
     </div>

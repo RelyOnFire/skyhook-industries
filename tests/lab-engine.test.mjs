@@ -115,8 +115,9 @@ test('architecture catalogue never marks an unsupported solver as runnable', asy
   const runnable = ARCHITECTURES.filter(a => a.availability === 'runnable');
   const { PHOBOS_DEFAULT, validatePhobos } = await import('../.lab-test/simulation/phobos.js');
   const { T4_DEFAULT, validateT4 } = await import('../.lab-test/simulation/t4.js');
-  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture,PHOBOS_DEFAULT.architecture,T4_DEFAULT.architecture]);
-  for(const record of runnable) record.id===T4_DEFAULT.architecture?validateT4(T4_DEFAULT):record.id===PHOBOS_DEFAULT.architecture?validatePhobos(PHOBOS_DEFAULT):validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
+  const { CARDIO_DEFAULT, validateCardio } = await import('../.lab-test/simulation/cardio.js');
+  assert.deepEqual(runnable.map(a=>a.id), [DEFAULT.architecture,LUNAR_DEFAULT.architecture,PHOBOS_DEFAULT.architecture,T4_DEFAULT.architecture,CARDIO_DEFAULT.architecture]);
+  for(const record of runnable) record.id===CARDIO_DEFAULT.architecture?validateCardio(CARDIO_DEFAULT):record.id===T4_DEFAULT.architecture?validateT4(T4_DEFAULT):record.id===PHOBOS_DEFAULT.architecture?validatePhobos(PHOBOS_DEFAULT):validate(record.id===DEFAULT.architecture?DEFAULT:LUNAR_DEFAULT);
   assert.match(ARCHITECTURES.find(a => a.id === 't4').topology, /pivot/);
   assert.equal(ARCHITECTURES.find(a => a.id === 'hoytether').category, 'Structural construction');
   assert.equal(new Set(ARCHITECTURES.map(a => a.id)).size, ARCHITECTURES.length);

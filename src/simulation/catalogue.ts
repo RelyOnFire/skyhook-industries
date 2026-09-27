@@ -41,10 +41,10 @@ export const ARCHITECTURES: readonly ArchitectureRecord[] = [
     source: { title: 'HASTOL Phase I', url: `${hastol}#page=101`, locator: '2000 · p. 19 and Appendix 2, A2-15–17' },
   },
   {
-    id: 'cardiorotovator', name: 'CardioRotovator', category: 'Mechanical configuration', availability: 'reference-only',
+    id: 'cardiorotovator', name: 'CardioRotovator', category: 'Mechanical configuration', availability: 'runnable',
     summary: 'A rotating tether in an elliptical orbit, with spin phased to the orbit so pickup can occur near apogee.',
     topology: 'Elliptical orbit · phase-coupled rotation',
-    missing: 'Needs eccentric initial orbits, phase targeting and clearance checks over the complete trajectory.',
+    missing: 'Available: finite single-arm eccentric dynamics, empty/matched-pickup comparison, gravity-gradient spin drift and sampled clearance/load checks. No atmospheric approach, release, reeling or active synchronization.',
     source: { title: 'HASTOL Phase I', url: `${hastol}#page=21`, locator: '2000 · pp. 17–19' },
   },
   {
