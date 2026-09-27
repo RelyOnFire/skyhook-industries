@@ -148,8 +148,8 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 6 / network-0.6.0 exports in a skyhook-campaign
-version-6 envelope. The validator accepts schemas 1, 2, 3, 4 and 5 with their matching
+store. Current state schema 7 / network-0.7.0 exports in a skyhook-campaign
+version-7 envelope. The validator accepts schemas 1, 2, 3, 4, 5 and 6 with their matching
 models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
@@ -522,3 +522,33 @@ Moon and Phobos outpost links open those experiments without mutating the world.
 - NASA/JPL inverse-square solar power context: https://www.jpl.nasa.gov/edu/resources/lesson-plan/calculating-solar-power-in-space/
 - NASA Ceres facts (rounded 2.8 AU mean distance): https://science.nasa.gov/dwarf-planets/ceres/facts/
 - JPL, Where Is the Ice on Ceres? New NASA Dawn Findings (2016): https://www.jpl.nasa.gov/news/where-is-the-ice-on-ceres-new-nasa-dawn-findings/
+
+
+## Optional Earth Flight Studio design
+
+The Earth Studio offers “Use this design in Expeditions” after two successful
+higher-energy deliveries, both accepted rendezvous checks, clearance at least
+120 km and minimum axial load margin at least one. Dirty inputs cannot transfer
+a previous result. The URL fragment carries the exact design inputs, not claimed
+performance. A campaign worker reruns the current Earth model before enabling
+commissioning. Nothing is written or spent by reviewing a design.
+
+The review displays payload, delivery interval, clearance, load margin, propellant
+used and specific energy gain as **local numerical results**. The pilot grants a
+fixed **campaign bonus**: Earth reservations after future tether bookings last
+`0.8 × 2 / Earth tier` days, in either direction. Other endpoints retain their
+own reservations; both must be available. The one-time cost is 40 t construction
+and 10 t equipment at Earth. This bonus does not scale with measured performance.
+Campaign payload ratings, support propellant, coast/handling times and existing
+reservations are unchanged. It is not a solved Moon/planet encounter or a hardware
+qualification. Opening the review pauses the campaign clock.
+
+Schema 7 adds `earthDesign`, initially null for every earlier world, and stores
+only a bounded version-1 report with its exact design and model provenance after
+explicit commissioning. The existing revision/checkpoint transaction protects
+this action. It cannot be purchased twice. Backups retain the design; there is no
+new local-storage dependency. Reading a schema-6 world does not rewrite it, grant
+an upgrade or add production. Its first write preserves the old checkpoint and
+advances the writer revision. `tests/fixtures/campaign-v6.json` was produced by
+loading the tracked v5 world with the preceding network-0.6.0 validator/exporter.
+It is a migration fixture, not a newly collected player save.

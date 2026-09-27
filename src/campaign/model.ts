@@ -1,6 +1,7 @@
+import { validateEarthDesignReport, type EarthDesignReport } from '../simulation/expedition-design.js';
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.6.0';
+export const CAMPAIGN_MODEL = 'network-0.7.0';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -85,19 +86,19 @@ function freshBelt():BeltIndustry {return {unlocked:false,depositT:BELT.depositT
 function emptyPort(): Port {return {materialsT:0,equipmentT:0,waterT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 6; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 7; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
-  solar: SolarIndustry; belt:BeltIndustry; development:Development; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
+  earthDesign: EarthDesignReport | null; solar: SolarIndustry; belt:BeltIndustry; development:Development; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
 }
 // Independent transit budgets keep the growing swarm from crowding out supply lines.
 export const LIMITS = { days: 100000, stock: 1000000, cargoFlights: 256, mirrorDeployments: 128, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 6, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  return { schema: 7, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
     ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort(), ceres:emptyPort() }, flights: [],
-    solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
+    earthDesign:null, solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
     log: [{ day: 0, text: 'Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator.' }] };
 }
 export function routeFor(from: SiteId, to: SiteId) {
@@ -138,13 +139,31 @@ export function flightPlan(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
   else if (world.day + duration > LIMITS.days) reason = 'This campaign has reached its simulation horizon. Export it and start a new network.';
   return { route, capacity, fuelT, duration, reason };
 }
+/** Commissioning costs and the 20% turnaround bonus are campaign rules. */
+export const EARTH_DESIGN = { materialsT:40, equipmentT:10, recoveryFactor:.8 } as const;
+export function tetherRecoveryDays(world:Campaign,site:SiteId) {
+  return 2 / world.ports[site].level * (site==='earth'&&world.earthDesign?EARTH_DESIGN.recoveryFactor:1);
+}
+export function earthDesignCommissionReason(world:Campaign) {
+  if(world.earthDesign)return 'Earth already has a commissioned Lab design.';
+  if(!world.ports.earth.level)return 'Commission the Earth tether first.';
+  if(world.ports.earth.materialsT<EARTH_DESIGN.materialsT||world.ports.earth.equipmentT<EARTH_DESIGN.equipmentT)return 'Requires 40 t construction material and 10 t equipment at Earth.';
+  return '';
+}
+export function commissionEarthDesign(world:Campaign,report:EarthDesignReport):Campaign {
+  const clean=validateEarthDesignReport(report),reason=earthDesignCommissionReason(world);if(reason)throw Error(reason);
+  const next=edit(world);next.earthDesign=clean;
+  next.ports.earth.materialsT-=EARTH_DESIGN.materialsT;next.ports.earth.equipmentT-=EARTH_DESIGN.equipmentT;
+  note(next,'Lab design commissioned at Earth. Future Earth tether bookings recover 20% sooner; current reservations remain unchanged.');
+  return next;
+}
 function edit(world: Campaign) { const next = structuredClone(world); next.revision++; return next; }
 function note(world: Campaign, text: string) { world.log.push({ day: world.day, text }); world.log = world.log.slice(-60); }
 function launch(next: Campaign, from: SiteId, to: SiteId, cargoT: number, mode: Shipment['mode'], kind: CargoKind, serviceId: number | null) {
   const plan = flightPlan(next,from,to,cargoT,mode,kind); if (plan.reason) throw Error(plan.reason);
   next.ports[from][key(kind)] = Math.max(0,stock(next,from,kind)-cargoT);
   next.ports[from].sentT += cargoT; next.fuelT = Math.max(0,next.fuelT-plan.fuelT);
-  if (mode === 'tether') for (const id of [from,to]) next.ports[id].readyDay = next.day + 2 / next.ports[id].level;
+  if (mode === 'tether') for (const id of [from,to]) next.ports[id].readyDay = next.day + tetherRecoveryDays(next,id);
   const flight: Shipment = { id: next.nextShipment++, from, to, cargoT, fuelT: plan.fuelT, mode, kind, serviceId, departed: next.day, arrival: next.day + plan.duration };
   next.flights.push(flight);
   note(next,'Flight '+flight.id+': '+cargoT+' t '+CARGO[kind].toLowerCase()+' dispatched from '+SITE[from].name+' to '+SITE[to].name+(serviceId?' by service '+serviceId:'')+'.');
@@ -580,7 +599,8 @@ export function validateCampaign(value: unknown): Campaign {
   const powerLoop=raw.schema===4&&raw.model==='network-0.4.0',oldSchema=migrate||firstLight||powerLoop;
   const firstBelt=raw.schema===5&&raw.model==='network-0.5.0',expandedTraffic=raw.schema===5&&raw.model==='network-0.5.1',oldTraffic=oldSchema||firstBelt;
   const beforeDevelopment=oldTraffic||expandedTraffic;
-  if (!beforeDevelopment && (raw.schema !== 6 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const beforeDesign=beforeDevelopment||raw.schema===6&&raw.model==='network-0.6.0';
+  if (!beforeDesign && (raw.schema !== 7 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   let development=freshDevelopment();
   if(!beforeDevelopment){const d=object(raw.development);development={
     launchLevel:num(d.launchLevel,0,DEVELOPMENT.maxLevel,true),waterLevel:num(d.waterLevel,0,DEVELOPMENT.maxLevel,true),fuelLevel:num(d.fuelLevel,0,DEVELOPMENT.maxLevel,true),
@@ -673,17 +693,18 @@ export function validateCampaign(value: unknown): Campaign {
     if(Math.abs(ceresReserve-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
   }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  const world:Campaign={ schema:6, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  const world:Campaign={ schema:7, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
-    solar,belt,development,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
+    earthDesign:beforeDesign?null:raw.earthDesign===null?null:validateEarthDesignReport(raw.earthDesign),solar,belt,development,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
   if(Object.values(development).some(v=>v>0)&&developmentUnlockReason(world))throw Error('Industrial development requires the established Mercury and Ceres network.');
+  if(world.earthDesign&&!ports.earth.level)throw Error('An Earth design requires a commissioned tether.');
   return world;
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:6, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:7, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6,7].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

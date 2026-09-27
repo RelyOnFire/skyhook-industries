@@ -41,8 +41,8 @@ test('belt: the real v4 export preserves every old field and starts an empty Cer
   for(const id of Object.keys(old.ports))assert.deepEqual(w.ports[id],{...old.ports[id],waterT:0});
   const fresh=createCampaign('fresh','Fresh');
   assert.deepEqual(w.ports.ceres,fresh.ports.ceres);assert.deepEqual(w.belt,fresh.belt);
-  assert.equal(w.schema,6);assert.equal(w.model,'network-0.6.0');assert.deepEqual(fixture,before);
-  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,6);
+  assert.equal(w.schema,7);assert.equal(w.model,'network-0.7.0');assert.deepEqual(fixture,before);
+  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,7);
   const restored=importCampaign(JSON.stringify(envelope),'copy');assert.deepEqual(restored,{...w,id:'copy',revision:0});
   checkLedger(w);
 });

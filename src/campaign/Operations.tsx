@@ -26,7 +26,7 @@ function Stock({value,testId}:{value:number;testId?:string}) {
   return <dd data-testid={testId} className={text.length>6?'stock-long':undefined}><span>{text}</span> <small>t</small></dd>;
 }
 
-export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campaign;busy:boolean;selected:SiteId;onSelect:(site:SiteId)=>void;act:Act;prepare:Prepare}) {
+export function Outposts({world,busy,selected,onSelect,act,prepare,onEarthDesign}:{world:Campaign;busy:boolean;selected:SiteId;onSelect:(site:SiteId)=>void;act:Act;prepare:Prepare;onEarthDesign:()=>void}) {
   const visibleSites=SITES.filter(s=>s!=='ceres'||world.solar.powerLink);
   return <section className="ops-outposts" id="outposts" aria-labelledby="outposts-heading">
     <header className="panel-title"><h2 id="outposts-heading">Outposts</h2><span>{visibleSites.filter(s=>world.ports[s].level).length} / {visibleSites.length} online</span></header>
@@ -51,6 +51,7 @@ export function Outposts({world,busy,selected,onSelect,act,prepare}:{world:Campa
           {p.level===0&&<button className="outpost-build" disabled={busy||p.materialsT<cost} onClick={()=>act(w=>build(w,id))}>{p.level?'Upgrade':'Commission'} {machine} · {cost} t</button>}
           {p.level>0&&!p.industry&&<><button className="outpost-build" disabled={busy||p.materialsT<20||p.equipmentT<5} onClick={()=>act(w=>installIndustry(w,id))}>Install {INDUSTRY[id].name.toLowerCase()}</button><p className="tiny">20 t material + 5 t equipment</p></>}
           {id==='earth'&&<div className="earth-allocation"><button disabled={busy||world.day<world.nextSupplyDay} onClick={()=>act(resupply)}>{world.day<world.nextSupplyDay?'Next allocation: '+date(world.nextSupplyDay):'Request supply allocation'}</button><p>+60 t material +60 t fuel · every 30 days</p></div>}
+      {id==='earth'&&<button className="earth-design-open" onClick={onEarthDesign}>{world.earthDesign?'Lab design · commissioned':'Earth design · Flight Studio'} ↗</button>}
       {(id==='moon'||id==='phobos')&&<a className="outpost-experiment" href={id==='moon'?'/lab/lunar/':'/lab/phobos/'} target="_blank" rel="noopener" aria-label={`Explore the ${id==='moon'?'lunar':'Phobos'} tether in Flight Studio (opens a new tab)`}>Explore this tether <span>↗</span><small>Flight Studio · separate {id==='moon'?'orbital':'anchored'} experiment</small></a>}
         </>}
       </article>;

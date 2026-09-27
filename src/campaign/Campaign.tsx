@@ -1,3 +1,4 @@
+import EarthDesign from './EarthDesign.js';
 import { useEffect, useRef, useState } from 'react';
 import { addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
@@ -13,13 +14,17 @@ const number = (n:number) => n.toLocaleString('en-US',{maximumFractionDigits:1})
 const day = (n:number) => `Day ${number(n)}`;
 
 export default function Campaign() {
+  const [designSource,setDesignSource]=useState<string|null>(null),[designOpen,setDesignOpen]=useState(false);
+  useEffect(()=>{const read=()=>setDesignSource(new URLSearchParams(location.hash.slice(1)).get('earth-design'));read();window.addEventListener('hashchange',read);return()=>window.removeEventListener('hashchange',read);},[]);
   const [world,setWorld]=useState<World|null>(null), [slots,setSlots]=useState<SaveSummary[]>([]);
+  useEffect(()=>{if(world&&designSource)setDesignOpen(true);},[world?.id,designSource]);
   const [loading,setLoading]=useState(true), [busy,setBusy]=useState(false), lock=useRef(false);
   const [error,setError]=useState(''), [notice,setNotice]=useState(''), [saveStatus,setSaveStatus]=useState('');
   const [selected,setSelected]=useState<SiteId>('moon'), [from,setFrom]=useState<SiteId>('earth'), [to,setTo]=useState<SiteId>('moon');
   const [cargo,setCargo]=useState('10'), [mode,setMode]=useState<Shipment['mode']>('tug'), [name,setName]=useState('First light');
   const [kind,setKind]=useState<CargoKind>('materials'), [intervalDays,setIntervalDays]=useState('30');
   const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<TrafficId|null>(null);
+  useEffect(()=>{if(designOpen)setPlaying(false);},[designOpen]);
   const [arrivals,setArrivals]=useState<string[]>([]);
   const milestonePanel=useRef<HTMLDetailsElement>(null), savePanel=useRef<HTMLDetailsElement>(null);
   const playButton=useRef<HTMLButtonElement>(null);
@@ -55,7 +60,7 @@ export default function Campaign() {
   },[]);
   useEffect(()=>{
     const space=(event:KeyboardEvent)=>{
-      if((event.code!=='Space'&&event.key!==' ')||event.defaultPrevented||event.isComposing||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.hidden)return;
+      if((event.code!=='Space'&&event.key!==' ')||event.defaultPrevented||event.isComposing||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.hidden||document.querySelector('dialog[open]'))return;
       const target=event.target;
       // Keep native Space activation and text editing inside focused controls.
       if(target instanceof Element&&(target.closest('input,textarea,select,button,a,summary,[role="button"],[role="link"]')||(target instanceof HTMLElement&&target.isContentEditable)))return;
@@ -69,12 +74,12 @@ export default function Campaign() {
     return()=>window.removeEventListener('keydown',space);
   },[]);
   useEffect(()=>{
-    if(!playing||!world||busy)return;
+    if(!playing||!world||busy||designOpen)return;
     if(world.day>=LIMITS.days){setPlaying(false);return;}
     const timer=window.setTimeout(()=>act(w=>advance(w,Math.min(speed,LIMITS.days-w.day))),1000);
     return()=>window.clearTimeout(timer);
-  },[playing,speed,world,busy]);
-  const changeWorld=()=>{setPlaying(false);setTracked(null);setArrivals([]);setSelected('moon');setFrom('earth');setTo('moon');setKind('materials');setCargo('10');setMode('tug');setIntervalDays('30');};
+  },[playing,speed,world,busy,designOpen]);
+  const changeWorld=()=>{setDesignOpen(false);setPlaying(false);setTracked(null);setArrivals([]);setSelected('moon');setFrom('earth');setTo('moon');setKind('materials');setCargo('10');setMode('tug');setIntervalDays('30');};
   const start=(candidate?:World)=>void task(async()=>{
     changeWorld();const next=candidate || createCampaign(crypto.randomUUID(),name);revision.current=null;setWorld(next);setSelected('moon');
     setFrom('earth');setTo('moon');setMode('tug');setCargo('10');setKind('materials');await persist(next);main.current?.focus();
@@ -125,6 +130,8 @@ export default function Campaign() {
       {world&&<div className="campaign-save"><span role="status">{saveStatus}</span><button onClick={()=>reveal(savePanel.current)}>Your saves <span aria-hidden="true">↗</span></button></div>}
     </header>
     {error&&<div className="campaign-message error" role="alert"><span>{error}</span>{world&&saveStatus.startsWith('Not saved')&&<div><button disabled={busy} onClick={()=>void task(async()=>persist(world))}>Retry save</button> <button onClick={download}>Export unsaved progress</button></div>}</div>}{notice&&<div className="campaign-message" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice('')}>Dismiss</button></div>}
+    {!world&&designSource&&<p className="campaign-message">A Flight Studio design is ready to review. Continue a saved network or start one to see its report and commissioning cost.</p>}
+    {world&&designOpen&&<EarthDesign key={world.id} world={world} source={designSource} busy={busy} saveError={error} act={act} onClose={()=>setDesignOpen(false)}/>}
     {!world&&<><section className="campaign-welcome" aria-label="Start or continue"><div><p className="campaign-eyebrow">BUILD AN INTERPLANETARY SUPPLY CHAIN</p><h2>Start at Earth.<br/>Build toward the Sun.</h2><p>Supply a lunar lunavator. Anchor your Mars network at Phobos. Grow a solar swarm from Mercury, then reach into the belt for water and propellant.</p><p>Your outposts, routes and cargo share one operations view. Time moves when you choose.</p></div><div className="campaign-start">
       {loading?<p role="status">Checking saved networks…</p>:latest&&<button className="primary" disabled={busy} onClick={()=>resume(latest.id)}>Continue {latest.name} <small>{day(latest.day)}</small></button>}
       <label htmlFor="campaign-name">Name your network</label><input id="campaign-name" maxLength={48} value={name} onChange={e=>setName(e.target.value)} autoComplete="off"/>
@@ -146,7 +153,7 @@ export default function Campaign() {
       }}/>
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#dispatch">Send cargo</a></nav>
       <div className="ops-grid">
-        <Outposts world={world} busy={busy} selected={selected} onSelect={setSelected} act={act} prepare={prepare}/>
+        <Outposts world={world} busy={busy} selected={selected} onSelect={setSelected} act={act} prepare={prepare} onEarthDesign={()=>setDesignOpen(true)}/>
         <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} onTrack={trackFlight} playing={playing} route={{from,to}}/></section>
           <section className="campaign-dispatch" id="dispatch" aria-labelledby="dispatch-heading"><header className="panel-title"><h2 id="dispatch-heading">Send cargo</h2><span>{SITE[from].name} → {SITE[to].name}</span></header>
         <form onSubmit={e=>{e.preventDefault();act(w=>dispatch(w,from,to,Number(cargo),mode,kind));}}>

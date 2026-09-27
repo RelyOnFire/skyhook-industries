@@ -24,7 +24,7 @@ function fullMirrors(w=resume()) {
 test('traffic: native 0.5.0 migration preserves Ceres and all pending events with empty industrial development',()=>{
   const before=structuredClone(fixture),w=resume();
   assert.equal(fixture.state.flights.length+fixture.state.solar.deployments.length,32);
-  assert.deepEqual(w,{...fixture.state,schema:6,model:CAMPAIGN_MODEL,development:{launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0}});
+  assert.deepEqual(w,{...fixture.state,schema:7,model:CAMPAIGN_MODEL,earthDesign:null,development:{launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0}});
   assert.deepEqual(fixture,before);
   assert.deepEqual(importCampaign(JSON.stringify(fixture),'copy'),{...w,id:'copy',revision:0});
   assert.deepEqual(validateCampaign(w),w);

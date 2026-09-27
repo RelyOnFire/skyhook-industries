@@ -135,3 +135,5 @@ a.button-link.primary:hover {background:#ffd1b3;border-color:#ffd1b3}
   .transport>button{flex-shrink:0}
   .speed-label{flex-basis:100%;justify-content:space-between;font-size:11px;margin-top:4px}
 }
+
+.expedition-design-link{display:inline-block;padding:10px 14px;margin-top:12px;border-radius:4px;text-decoration:none;font-size:12px}.expedition-design-card{border-block:1px solid var(--lab-line);padding:16px 0;margin-bottom:24px}.expedition-design-card h3{font-size:17px;line-height:1.35;margin:8px 0 13px}.expedition-design-card p{font-size:12px;line-height:1.6}

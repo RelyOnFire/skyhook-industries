@@ -40,6 +40,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Exercise native-origin Flight Studio and WebGL
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
+      - name: Exercise Earth Lab design commissioning and v6 migration
+        run: python3 tests/lab-earth-design.browser.py
       - name: Exercise returning-cargo recovery comparison
         run: python3 tests/lab-return.browser.py
       - name: Exercise electrodynamic recovery and resource controls
