@@ -340,7 +340,8 @@ def main():
                     assert abs(by_id['outposts-heading']['y']-by_id['traffic-heading']['y'])<5
                     assert 0<by_id['schedules-heading']['y']-by_id['traffic-heading']['y']<450
                     assert by_id['outposts-heading']['x']<by_id['network']['x']<by_id['schedules-heading']['x']
-                    assert by_id['schedules-heading']['y']<height
+                    schedules=solar.locator('#schedules-heading').bounding_box()
+                    assert schedules['y']+schedules['height']<height, 'Scheduled services title is clipped below the viewport'
                     assert solar.locator('#network').bounding_box()['width']>width*.49
                 solar.locator('.campaign-solar').screenshot(path=str(out/f'solar-{width}.png'))
                 if width in [1440,320]:solar.locator('.network-map').screenshot(path=str(out/f'solar-map-{width}.png'))
