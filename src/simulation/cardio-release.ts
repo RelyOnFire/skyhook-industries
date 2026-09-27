@@ -4,7 +4,7 @@ import {CARDIO_ALLOWABLE, CARDIO_CUTOFF, validateCardio, cardioBody, cardioIniti
   cardioCapture, cardioPoint, cardioStep, cardioClearance, cardioLoads, cardioInvariants,
   type CardioDesign, type CardioState, type CardioBody} from './cardio.js';
 
-export const CARDIO_RELEASE_MODEL = 'C1r-0.1.0';
+export const CARDIO_RELEASE_MODEL = 'C1r-0.1.1';
 export type CargoState = [number, number, number, number];
 export type ReleaseStatus = 'complete' | 'clearance' | 'load' | 'compression' | 'cargo-clearance';
 export interface ReleaseFrame {t:number; state:CardioState; cargo:CargoState|null; released:boolean}
@@ -16,6 +16,14 @@ export interface CardioRelease {
     energyResidual:number; angularResidual:number};
   minClearance:number; minCargoClearance:number|null; peakStress:number;
   energyDrift:number; angularDrift:number;
+}
+/** A bound orbit returns to perigee. On an unbound coast, a lower perigee is
+ * still ahead only while cargo is inbound; outbound escape does not return.
+ * Already being below the cutoff also disqualifies the cargo state. */
+export function cardioCargoCrossesCutoff(cargo:CargoState,elements=orbit(cargo)):boolean {
+  if(Math.hypot(cargo[0],cargo[1])-EARTH<CARDIO_CUTOFF)return true;
+  const inward=cargo[0]*cargo[2]+cargo[1]*cargo[3]<0;
+  return elements.perigee<CARDIO_CUTOFF&&(elements.energy<0||inward);
 }
 export function cardioCargoStep(y:CargoState,h:number):CargoState {
   const f=(q:CargoState):CargoState=>{const k=-MU/Math.hypot(q[0],q[1])**3;return [q[2],q[3],q[0]*k,q[1]*k];};

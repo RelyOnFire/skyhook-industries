@@ -30,7 +30,7 @@ Coast hides budget, thrust and specific-impulse controls. Switching back to Chem
 
 `src/simulation/catalogue.ts` separates reference records from executable Design values. The initial release supported only `single-stage-rotovator`. The current catalogue also runs `lunar-rotovator` and, through separate solvers, `phobos-anchored` and `t4`. Each validator rejects architectures it does not implement.
 
-CardioRotovator now has a separate bounded eccentric-orbit experiment (C1p). The reference-only entries are HyperSkyhook, LIFTether, MXER, Earth–Moon relay and Hoytether construction. Each identifies missing model work and a primary source. Mechanical configurations, mission systems and structural construction are distinct categories.
+CardioRotovator has a synchronized kinematic reference and separate passive eccentric-orbit diagnostics (C1p/C1r). The reference-only entries are HyperSkyhook, LIFTether, MXER, Earth–Moon relay and Hoytether construction. Each identifies missing model work and a primary source. Mechanical configurations, mission systems and structural construction are distinct categories.
 
 T4 is an attached compound rotor: the secondary two-arm tether turns about a pivot at the end of the primary tether. It is not simply a handoff between two independent orbital facilities. See HASTOL Phase I, p. 19 and Appendix 2 A2-15–17: https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf . Early idealized mass assumptions are not imported as a validated operating design.
 

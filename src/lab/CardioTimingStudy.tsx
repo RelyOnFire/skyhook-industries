@@ -34,7 +34,7 @@ export default function CardioTimingStudy({design,current,disabled,units,onSelec
   const distance=(v:number)=>`${n(v/(units.distance==='km'?1000:1))} ${units.distance}`;
   const clear=rows.filter(r=>cardioTimingOutcome(r).clear).length;
   return <section className="cardio-timing" aria-label="Release timing comparison">
-    <div className="cardio-timing-heading"><div><h3>Find a useful release time</h3><p>Compare 5–90% of the orbit in 5% steps, plus your exact selected timing. The tether design stays fixed.</p></div>
+    <div className="cardio-timing-heading"><div><h3>Compare passive release times</h3><p>Compare 5–90% of the orbit in 5% steps, plus your exact selected timing. The uncontrolled rotor design stays fixed; these are not synchronized CardioRotovator windows.</p></div>
       <button ref={runButton} disabled={disabled||busy} onClick={run}>Compare release times</button>
       {busy&&<button onClick={()=>{stop();setMessage('Comparison stopped. Completed samples are available.');}}>Stop timing comparison</button>}
     </div>
@@ -48,7 +48,7 @@ export default function CardioTimingStudy({design,current,disabled,units,onSelec
           {event?<><small className="cardio-timing-quantity"><span>Perigee</span><span>{distance(event.cargoOrbit.perigee)}</span></small><small className="cardio-timing-quantity">{event.cargoOrbit.apogee===null?'Unbound orbit':<><span>Apogee</span><span>{distance(event.cargoOrbit.apogee)}</span></>}</small></>:<small>{r.status==='load'?'Axial load limit':r.status==='compression'?'Cable requires compression':'Tether clearance limit'}</small>}
         </button>;
       })}</div>
-      <p>Clear means this sampled coast completed and the cargo orbit stays above 120 km. Gaps between samples are untested; this does not establish a repeatable service.</p>
+      <p>Clear means this sampled coast completed and the cargo’s future trajectory stays above 120 km. Gaps between samples are untested; this does not establish a repeatable service.</p>
       <div className="cardio-timing-actions"><button disabled={!rows.length||disabled||busy} onClick={download}>Export timing comparison</button><button disabled={busy} onClick={()=>{setRows([]);setPlan([]);setError('');setMessage('');runButton.current?.focus();}}>Clear comparison</button></div>
     </>}
   </section>;

@@ -1,12 +1,27 @@
-# CardioRotovator — C1p-0.1.0
+# CardioRotovator — synchronized reference and passive diagnostics
 
-`/lab/cardio/` runs a finite-mass, planar, single-arm rigid-body comparison.
+`/lab/cardio/` starts with the defining synchronized reference geometry. A separate disclosure contains the finite-mass, planar, uncontrolled rigid-body comparison.
 The historical topology comes from [HASTOL Phase I, pp. 17–19 / Figure 13](https://www.niac.usra.edu/files/studies/final_report/355Bogar.pdf#page=21):
 an eccentric station orbit, apogee pickup and two rotations per orbit, with
-pickup and resynchronization difficulties. This implementation is an independent
-orbital experiment, not the historical atmospheric-launch proposal.
+pickup and resynchronization difficulties. The main reference is kinematic; it does not simulate a controller. The passive diagnostics are independent orbital experiments, not a solved CardioRotovator service.
 
-## Mass and state
+## Correct architecture boundary
+
+The primary geometry uses the **station** Kepler ellipse and arm length derived
+from station apogee minus pickup altitude. It fixes two inertial arm turns per
+orbit and the phase: inward at apogee, outward at perigee. The SVG samples the
+analytic reference state at a common physical scale; it does not draw a stylized
+heart or substitute passive integration for synchronized motion. No actuator,
+structure or atmospheric feasibility is inferred from this prescribed path.
+
+The earlier passive default had an initial tip altitude about 1067 km and lost
+roughly a full spin of phase in one orbit. Its conservative integrator described
+an uncontrolled rotor, not the defining CardioRotovator architecture. Conservation
+tests alone cannot validate that architectural claim. New regressions explicitly
+check both apsides, the two-turn closure, derived pickup reach and velocity.
+The independent passive design controls and saves remain in a disclosure.
+
+## Passive mass and state
 
 State is `[Rx,Ry,Vx,Vy,theta,omega]`, using Earth-inertial SI coordinates and
 an unwrapped angle. A station point mass is at s=0, a 2 t grapple at s=L,
@@ -52,7 +67,7 @@ Kepler/constant-spin reference, not the integrated result.
 ## Loads and numerical guards
 
 Closest-segment clearance minimizes `|R+u e|−R_Earth` over `u∈[−c,L−c]`.
-At each cable cut, sum outboard `m(a−g)`; negative projection on e is tension,
+At each cable cut, including the tip left-limit with its grapple/cargo terminal mass, sum outboard `m(a−g)`; negative projection on e is tension,
 and the perpendicular projection is the transverse constraint force. The axial
 stress screen does not qualify a straight flexible cable or bending strength.
 Stops: clearance <120 km, axial stress >material allowable, or tension <−100 N.
@@ -65,7 +80,13 @@ Replay interpolation is presentation only and never drives the solver. Full-run
 energy and angular momentum include every node. Reported drifts are relative to
 the initial invariant, with a 1-unit denominator floor to avoid division by zero.
 
-Tests cover finite-mass attachment continuity/conservation, zero-gravity analytic
+Reference regressions check the apsidal orientations, two-turn orbit closure,
+derived pickup reach, analytic velocity against position differences, Kepler
+invariants and clearance along the whole arm. Browser checks cover the reference
+controls, replay, units, invalid geometry and responsive framing separately from
+the preserved passive design.
+
+Passive tests cover finite-mass attachment continuity/conservation, zero-gravity analytic
 motion, free-coast conservation, independent timestep and quadrature refinement,
 clearance and load stops, phase/payload sensitivity, finite values and strict
 versioned input. Browser checks use the actual worker, pause/scrub, controls,
@@ -74,13 +95,13 @@ invalid input, cancellation, isolated Save/Load, share reload and responsive vie
 ## Integration boundary
 
 Storage key `skyhook-lab-cardio-design-v1`; fragment parameter `cardio`; schema 1;
-model `C1p-0.1.0`. Designs are ≤16 KB. Importing another architecture is rejected.
+model `C1p-0.1.1`. Legacy `C1p-0.1.0` schema-1 designs normalize to the corrected model on read, preserving all numeric settings; reading does not rewrite storage. Designs are ≤16 KB. Importing another architecture is rejected.
 The original Earth solver, schemas and campaign bridge are untouched. Cardio has
 no repeatable two-delivery or recovery proof and cannot commission an expedition
 profile. Atmosphere, guidance, capture hardware, flexure, reeling, active phase
 control and reboost remain unmodeled.
 
-## C1r-0.1.0: selectable release
+## C1r-0.1.1: selectable release
 
 `cardio-release.ts` reuses the C1p body and gravity-gradient integrator, starting
 from the same exact matched pickup. Release time is 5–90% of the original nominal
@@ -101,8 +122,10 @@ release has `release: null`, never invented orbit diagnostics. Frames at the
 separation instant store both mass frames; replay selects the post-release state
 at that exact time and interpolates only within each phase.
 
-The cargo's osculating orbit determines its perigee/apogee. An orbit with perigee
+The cargo's osculating orbit determines its perigee/apogee. A future perigee
 below 120 km is flagged even if the replay ends before reaching the boundary.
+Outbound unbound cargo has its perigee in the past and is assessed by its current
+altitude rather than falsely treated as an incoming trajectory.
 Unbound trajectories have no apogee. The remaining tether's osculating COM orbit
 is diagnostic; whole-segment clearance and loads continue to be screened.
 No mutual cargo/tether gravity, collision detection, atmosphere, targeting,
@@ -123,7 +146,7 @@ sample when it differs from the grid. Only timing varies; every sample retains
 the same validated C1p design. The worker can be terminated; generation tokens
 reject late messages, and completed samples remain available after stopping.
 
-A clear result requires both a completed coast and cargo perigee ≥120 km.
+A clear passive result requires both a completed coast and no future cargo crossing of the 120 km cutoff.
 Cargo alone clearing the cutoff cannot override a failed tether. Unreached
 releases carry no invented orbit. Sampling does not prove the intervening
 intervals or a repeatable service. Selecting a completed row restores its exact

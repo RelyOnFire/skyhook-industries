@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {EARTH,MU,DEFAULT} from '../.lab-test/simulation/engine.js';
-import {CARDIO_DEFAULT as D,CARDIO_CUTOFF,CARDIO_ALLOWABLE,validateCardio,readCardio,cardioFragment,cardioBody,cardioInitial,cardioCapture,cardioPoint,cardioStep,cardioInvariants,cardioClearance,simulateCardio,cardioSample} from '../.lab-test/simulation/cardio.js';
+import {EARTH,MU,DEFAULT,MATERIALS} from '../.lab-test/simulation/engine.js';
+import {CARDIO_DEFAULT as D,CARDIO_MODEL,CARDIO_CUTOFF,CARDIO_ALLOWABLE,validateCardio,readCardio,cardioFragment,cardioBody,cardioInitial,cardioCapture,cardioPoint,cardioStep,cardioInvariants,cardioClearance,cardioLoads,simulateCardio,cardioSample} from '../.lab-test/simulation/cardio.js';
 const result=simulateCardio(D);
 const near=(a,b,tol)=>assert.ok(Math.abs(a-b)<=tol,`${a} ≠ ${b} (${tol})`);
 test('matched finite-mass pickup preserves all existing material states and closes total energy/angular momentum',()=>{
@@ -32,10 +32,34 @@ test('zero gravity produces inertial translation and constant spin',()=>{
  near(y[0],initial[0]+initial[2]*500,1e-6);near(y[1],initial[1]+initial[3]*500,1e-6);near(y[4],initial[4]+initial[5]*500,1e-12);
  const a=cardioInvariants(initial,body,0),b=cardioInvariants(y,body,0);near(a.energy/b.energy,1,1e-12);near(a.angular/b.angular,1,1e-12);
 });
+test('terminal stress uses the exact tip area and includes the grapple and payload independently of section resolution',()=>{
+ // In zero gravity the terminal's centripetal force is m*omega²*(L-COM).
+ // Integrate the linear taper analytically, independently of the body quadrature.
+ const d={...D,lengthKm:100,areaMm2:50,taper:10,payloadT:100},length=d.lengthKm*1000;
+ const density=MATERIALS.find(m=>m.id==='zylon').density,tipArea=d.areaMm2*1e-6,rootArea=tipArea*d.taper;
+ const terminal=2000+d.payloadT*1000,cableMass=density*length*(rootArea+tipArea)/2;
+ const firstMoment=density*length**2*(rootArea+2*tipArea)/6;
+ const center=(terminal*length+firstMoment)/(d.stationT*1000+terminal+cableMass),omega=.001;
+ const expected=terminal*omega**2*(length-center)/tipArea;
+ for(const cells of [16,48,96]){
+  const body=cardioBody(d,true,cells),loads=cardioLoads([EARTH+2000000,0,0,0,.7,omega],body,0);
+  assert.equal(body.cuts.at(-1),length);near(body.areas.at(-1),tipArea,1e-18);
+  near(loads.stress,expected,expected*1e-12);assert.ok(loads.minTension>0);
+ }
+});
 test('phase/ballast choices change the actual coast; design validation and storage stay isolated',()=>{
  const shifted=simulateCardio({...D,phaseDeg:15}),heavy=simulateCardio({...D,payloadT:100});assert.notEqual(shifted.empty.minClearance,result.empty.minClearance);assert.ok(heavy.loaded.initialPerigee<result.loaded.initialPerigee);
  assert.deepEqual(readCardio(decodeURIComponent(cardioFragment(D).split('=')[1])),D);
  for(const invalid of [DEFAULT,{...D,model:'future'},{...D,apogeeKm:600},{...D,phaseDeg:NaN},{...D,stationT:0}])assert.throws(()=>validateCardio(invalid));
  for(const options of [{step:0},{cells:1},{step:Infinity}])assert.throws(()=>simulateCardio(D,options));
  assert.throws(()=>readCardio(' '.repeat(16001)));assert.deepEqual(D,result.design);
+});
+test('legacy C1p schema-1 designs normalize their model without changing any numerical setting',()=>{
+ const legacy={...D,model:'C1p-0.1.0',perigeeKm:975.125,apogeeKm:2440.75,lengthKm:640.25,stationT:6500.5,payloadT:12.25,areaMm2:575.5,taper:4.25,spinRatio:2.375,phaseDeg:-13.5};
+ const before=structuredClone(legacy),expected={...legacy,model:CARDIO_MODEL};
+ assert.equal(CARDIO_MODEL,'C1p-0.1.1');assert.deepEqual(validateCardio(legacy),expected);
+ assert.deepEqual(readCardio(JSON.stringify(legacy)),expected);
+ assert.deepEqual(JSON.parse(decodeURIComponent(cardioFragment(legacy).split('=')[1])),expected);
+ assert.deepEqual(legacy,before);
+ for(const invalid of [{...legacy,schema:2},{...legacy,model:'C1p-0.1.2'},{...legacy,phaseDeg:Infinity}])assert.throws(()=>validateCardio(invalid));
 });

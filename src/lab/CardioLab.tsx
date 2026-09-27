@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import CardioScene from './CardioScene.js';
+import CardioReference from './CardioReference.js';
 import CardioRelease from './CardioRelease.js';
 import NumericField from './StudioField.js';
 import UnitPicker,{displayNumber,modelNumber,useStudioUnits} from './StudioUnits.js';
@@ -13,6 +14,7 @@ function download(name:string,data:unknown){const url=URL.createObjectURL(new Bl
 export default function CardioLab(){
   const [design,setDesign]=useState<CardioDesign>({...CARDIO_DEFAULT}),[result,setResult]=useState<CardioResult|null>(null),[busy,setBusy]=useState(true);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[share,setShare]=useState(''),[bad,setBad]=useState<string[]>([]),[fieldKey,setFieldKey]=useState(0);
+  const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [loaded,setLoaded]=useState(true),[reference,setReference]=useState(true),[time,setTime]=useState(0),[playing,setPlaying]=useState(false);
   const [units,setUnits]=useStudioUnits(),worker=useRef<Worker|null>(null),request=useRef(0),upload=useRef<HTMLInputElement>(null);
   let validation='';try{validateCardio(design);}catch(e){validation=(e as Error).message;}
@@ -24,7 +26,7 @@ export default function CardioLab(){
     w.onerror=()=>{if(id!==request.current)return;w.terminate();worker.current=null;setBusy(false);setError('The calculation worker could not start. Reload or try again.');};w.postMessage(clean);
   }catch(e){setBusy(false);setError((e as Error).message);}}
   function adopt(d:CardioDesign){setDesign(d);setBad([]);setFieldKey(k=>k+1);setShare('');run(d);}
-  useEffect(()=>{let d={...CARDIO_DEFAULT},message='';try{const raw=new URLSearchParams(location.hash.slice(1)).get('cardio');if(raw)d=readCardio(raw);}catch(e){message='Shared design rejected: '+(e as Error).message;}adopt(d);if(message)setError(message);return()=>worker.current?.terminate();},[]);
+  useEffect(()=>{let d={...CARDIO_DEFAULT},message='';try{const raw=new URLSearchParams(location.hash.slice(1)).get('cardio');if(raw){d=readCardio(raw);setDiagnosticsOpen(true);}}catch(e){message='Shared design rejected: '+(e as Error).message;}adopt(d);if(message)setError(message);return()=>worker.current?.terminate();},[]);
   useEffect(()=>{if(!playing||!coast)return;let raf=0,last=performance.now(),elapsed=time,paint=0;const tick=(now:number)=>{const dt=Math.min(.1,(now-last)/1000);last=now;if(!document.hidden)elapsed=Math.min(coast.duration,elapsed+dt*240);if(now-paint>60||elapsed>=coast.duration){setTime(elapsed);paint=now;}if(elapsed>=coast.duration){setPlaying(false);return;}raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);},[playing,coast]);
   useEffect(()=>{const hide=()=>{if(document.hidden)setPlaying(false);};document.addEventListener('visibilitychange',hide);return()=>document.removeEventListener('visibilitychange',hide);},[]);
   const field=(key:keyof typeof CARDIO_BOUNDS,label:string,unit:string,step:number)=>{const [lo,hi]=CARDIO_BOUNDS[key],scale=unit==='km'&&units.distance==='m'?1000:1;return <NumericField key={key+'-'+fieldKey+'-'+scale} name={'cardio-'+key} label={label} unit={unit==='km'?units.distance:unit} min={displayNumber(lo,scale)} max={displayNumber(hi,scale)} step={step*scale} value={displayNumber(design[key],scale)} onChange={v=>{setPlaying(false);setDesign(d=>({...d,[key]:modelNumber(v,scale)}));}} onValidity={v=>setBad(old=>v?[...new Set([...old,key])]:old.filter(k=>k!==key))}/>;};
@@ -33,10 +35,14 @@ export default function CardioLab(){
   const shareDesign=async()=>{const url=location.origin+'/lab/cardio/'+cardioFragment(design);setShare(url);history.replaceState(null,'',url);try{await navigator.clipboard.writeText(url);setNotice('Design link copied.');}catch{setNotice('Copy the design link below.');}};
   const acceptFile=async(file?:File)=>{if(!file)return;try{if(file.size>16000)throw Error('Design exceeds 16 KB.');adopt(readCardio(await file.text()));}catch(e){setError((e as Error).message);}finally{if(upload.current)upload.current.value='';}};
   return <main className="lab-app phobos-app cardio-app" id="lab-content">
-    <div className="workbench-bar"><div><p className="micro">EARTH / ECCENTRIC SINGLE-ARM ROTOR</p><h1>CardioRotovator <span className="model-tag">{CARDIO_MODEL}</span></h1></div><div className="workbench-actions"><button disabled={invalid} onClick={save}>Save</button><button onClick={load}>Load</button><button disabled={invalid} onClick={shareDesign}>Share design ↗</button></div></div>
+    <div className="workbench-bar"><div><p className="micro">EARTH / SYNCHRONIZED ECCENTRIC ROTOR</p><h1>CardioRotovator</h1></div><a href="/lab/cardio/method/">Model & assumptions ↗</a></div>
     <div className="studio-worlds" role="group" aria-label="Flight environment"><span>FLIGHT STUDIO</span><a href="/lab/">Earth</a><a href="/lab/lunar/">Moon</a><a href="/lab/phobos/">Phobos</a><a href="/lab/t4/">T4</a><a href="/lab/cardio/" aria-current="page">CardioRotovator</a><a href="/lab/cardio/method/">Model & assumptions ↗</a></div>
     <UnitPicker units={units} onChange={next=>{setUnits(next);setBad([]);setFieldKey(k=>k+1);}}/>
-    <div className="cardio-intro"><p className="micro">PICK UP AT APOGEE. KEEP CLEAR AT PERIGEE.</p><h2>Timing is part of the structure.</h2><p>A long, single arm starts with two spins per orbit. Compare its empty coast with a payload already matched to the tip. Gravity changes the spin; there is no controller keeping the pattern in sync.</p></div>
+    <CardioReference units={units}/>
+    <details className="cardio-diagnostics" open={diagnosticsOpen} onToggle={e=>setDiagnosticsOpen(e.currentTarget.open)}>
+      <summary>Explore uncontrolled dynamics</summary>
+      <div className="cardio-intro"><p className="micro">PASSIVE ROTOR / SYNCHRONIZATION LOSS</p><h2>What happens without phase control? <span className="model-tag">{CARDIO_MODEL}</span></h2><p>This separate rigid-body experiment lets gravity change the spin. Two initial spins per orbit do not keep it synchronized. Its pickup, release and timing studies describe this uncontrolled rotor, not a working CardioRotovator service.</p><p>These independent inputs and saved designs belong to the passive experiment. They do not change the synchronized geometry above.</p></div>
+      <div className="workbench-bar"><p className="micro">FREE-COAST DESIGN</p><div className="workbench-actions"><button disabled={invalid} onClick={save}>Save</button><button onClick={load}>Load</button><button disabled={invalid} onClick={shareDesign}>Share design ↗</button></div></div>
     {error&&<p className="cardio-message error" role="alert">{error}</p>}{notice&&<p className="cardio-message" role="status">{notice}</p>}{share&&<label className="cardio-share">Shareable design<input readOnly value={share} onFocus={e=>e.target.select()}/></label>}
     <div className="cardio-workspace">
       <aside className="lab-panel cardio-controls"><div className="panel-heading"><h2>Orbit & timing</h2></div><div className="cardio-fields">
@@ -45,7 +51,7 @@ export default function CardioLab(){
         {validation&&<p className="field-error">{validation}</p>}
         <button className="primary phobos-run" disabled={busy||invalid} onClick={()=>run(design)}>Compare pickup</button>{busy&&<button className="phobos-run" onClick={()=>{request.current++;worker.current?.terminate();worker.current=null;setBusy(false);setNotice('Calculation cancelled.');}}>Cancel calculation</button>}
         <div className="phobos-files"><button disabled={invalid} onClick={()=>download('cardiorotovator-design.json',validateCardio(design))}>Export design</button><button onClick={()=>upload.current?.click()}>Import design</button></div><input hidden type="file" accept=".json,application/json" ref={upload} onChange={e=>acceptFile(e.target.files?.[0])}/>
-        <button className="cardio-reset" onClick={()=>{history.replaceState(null,'','/lab/cardio/');adopt({...CARDIO_DEFAULT});}}>Reference scenario</button>
+        <button className="cardio-reset" onClick={()=>{history.replaceState(null,'','/lab/cardio/');adopt({...CARDIO_DEFAULT});}}>Reset passive scenario</button>
       </div></aside>
       <section className="lab-panel cardio-flight" aria-label="CardioRotovator replay"><div className="cardio-toolbar"><div role="group" aria-label="Replay comparison"><button aria-pressed={!loaded} onClick={()=>{setLoaded(false);setPlaying(false);setTime(0);}}>Empty coast</button><button aria-pressed={loaded} onClick={()=>{setLoaded(true);setPlaying(false);setTime(0);}}>After pickup</button></div><label><input type="checkbox" checked={reference} onChange={e=>setReference(e.target.checked)}/>Reference path</label></div>
         {result?<CardioScene result={result} loaded={loaded} time={time} reference={reference}/>:<div className="cardio-loading" role="status">Calculating both coasts…</div>}
@@ -69,6 +75,7 @@ export default function CardioLab(){
       <details><summary>Numerical accounting & report</summary><p>Matched attachment adds the incoming payload's energy and angular momentum without an impulse. Closure residuals: {n(result.captureEnergyResidual,3)} J and {n(result.captureAngularResidual,2)} kg·m²/s. Maximum relative energy drift: {Math.max(result.empty.energyDrift,result.loaded.energyDrift).toExponential(2)}; angular momentum drift: {Math.max(result.empty.angularDrift,result.loaded.angularDrift).toExponential(2)}.</p><p>Peak transverse constraint force: {n(Math.max(result.empty.peakTransverse,result.loaded.peakTransverse)/(units.force==='kN'?1000:1))} {units.force}. A straight rigid arm needs these forces; the axial check does not establish flexible-cable stability or bending strength.</p><button onClick={()=>download('cardiorotovator-report.json',result)}>Export comparison report</button></details>
     </div></section>}
     {result&&<CardioRelease key={JSON.stringify(result.design)} source={result} disabled={busy||dirty} units={units}/>}
-    <footer className="phobos-boundary">C1p + C1r · planar pickup and release experiments · no atmospheric pickup, reeling or reboost. <a href="/lab/cardio/method/">Read the equations & source ↗</a>. This experiment does not commission a campaign design.</footer>
+    </details>
+    <footer className="phobos-boundary">Synchronized reference geometry · separate passive C1p/C1r diagnostics · no controlled recovery or atmospheric physics. <a href="/lab/cardio/method/">Read the equations & source ↗</a>. This experiment does not commission a campaign design.</footer>
   </main>;
 }

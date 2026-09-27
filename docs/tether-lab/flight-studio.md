@@ -43,4 +43,4 @@ Earth E0 electrodynamic recovery, a separate spherical-Moon orbital experiment a
 
 The challenge evaluator and debrief interpretation live in `src/simulation/insights.ts`; they consume solver results. Changes to grading criteria should update the regression suite. Model changes require numerical review, not simply regenerating expected output. Display-only timing, camera behavior and derived explanations must never mutate a flight’s design or samples.
 
-C1p now provides the separate eccentric single-arm CardioRotovator experiment: empty and ideal matched-pickup coasts with free gravity-gradient motion. See `cardio-flight-studio.md`; no phase controller, atmosphere, reeling or repeatable pickup is implied.
+CardioRotovator shows synchronized reference geometry separately from C1p passive empty and matched-pickup coasts with free gravity-gradient motion. See `cardio-flight-studio.md`; no phase controller, atmosphere, reeling or repeatable pickup is implied.

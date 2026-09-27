@@ -1,18 +1,19 @@
 /** C1p: finite single-arm rigid rotor in an initially eccentric Earth orbit.
  * Free gravity-gradient dynamics; no imposed spin lock, reeling or controller. */
 import { EARTH, MU, MATERIALS, orbit } from './engine.js';
-export const CARDIO_MODEL='C1p-0.1.0';
+export const CARDIO_MODEL='C1p-0.1.1';
 export const CARDIO_CUTOFF=120000;
 export interface CardioDesign {schema:1;model:typeof CARDIO_MODEL;architecture:'cardiorotovator';perigeeKm:number;apogeeKm:number;lengthKm:number;stationT:number;payloadT:number;areaMm2:number;taper:number;spinRatio:number;phaseDeg:number}
 export const CARDIO_DEFAULT:CardioDesign={schema:1,model:CARDIO_MODEL,architecture:'cardiorotovator',perigeeKm:1200,apogeeKm:1800,lengthKm:800,stationT:5000,payloadT:10,areaMm2:500,taper:3,spinRatio:2,phaseDeg:0};
 export const CARDIO_BOUNDS={perigeeKm:[150,2000],apogeeKm:[500,6000],lengthKm:[100,5000],stationT:[100,20000],payloadT:[.1,100],areaMm2:[50,3000],taper:[1,10],spinRatio:[1,3],phaseDeg:[-90,90]} as const;
 export function validateCardio(value:unknown):CardioDesign {
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Expected a CardioRotovator design.');
-  const d=value as CardioDesign;
-  if(d.schema!==1||d.model!==CARDIO_MODEL||d.architecture!=='cardiorotovator')throw Error('This experiment accepts C1p-0.1.0 CardioRotovator designs only.');
+  const d=value as Record<string,unknown>;
+  // The corrected stress check changes calculated results, not design settings.
+  if(d.schema!==1||(d.model!==CARDIO_MODEL&&d.model!=='C1p-0.1.0')||d.architecture!=='cardiorotovator')throw Error('This experiment accepts C1p-0.1.0 or C1p-0.1.1 CardioRotovator designs only.');
   const clean:Record<string,unknown>={schema:1,model:CARDIO_MODEL,architecture:'cardiorotovator'};
   for(const [key,[lo,hi]] of Object.entries(CARDIO_BOUNDS)){const n=d[key as keyof typeof CARDIO_BOUNDS];if(typeof n!=='number'||!Number.isFinite(n)||n<lo||n>hi)throw Error(`${key} must be between ${lo} and ${hi}.`);clean[key]=n;}
-  if(d.apogeeKm<=d.perigeeKm)throw Error('Apogee must be above perigee.');
+  if((clean.apogeeKm as number)<=(clean.perigeeKm as number))throw Error('Apogee must be above perigee.');
   return clean as unknown as CardioDesign;
 }
 export function readCardio(text:string){if(text.length>16000)throw Error('Design exceeds 16 KB.');return validateCardio(JSON.parse(text));}
@@ -29,7 +30,7 @@ export function cardioBody(d:CardioDesign,loaded:boolean,cells=48):CardioBody {
   for(let i=0;i<cells;i++)for(const q of [-1,1]){const s=(i+.5+q/(2*Math.sqrt(3)))*ds;nodes.push({s,m:fiber.density*area(s)*ds/2});}
   nodes.sort((a,b)=>a.s-b.s);
   const mass=nodes.reduce((n,p)=>n+p.m,0),center=nodes.reduce((n,p)=>n+p.m*p.s,0)/mass;
-  return {nodes,mass,center,inertia:nodes.reduce((n,p)=>n+p.m*(p.s-center)**2,0),length,cuts:Array.from({length:cells},(_,i)=>i*ds),areas:Array.from({length:cells},(_,i)=>area(i*ds))};
+  return {nodes,mass,center,inertia:nodes.reduce((n,p)=>n+p.m*(p.s-center)**2,0),length,cuts:Array.from({length:cells+1},(_,i)=>i===cells?length:i*ds),areas:Array.from({length:cells+1},(_,i)=>area(i===cells?length:i*ds))};
 }
 export function cardioPoint(y:CardioState,b:CardioBody,s:number):[number,number,number,number]{const u=s-b.center,c=Math.cos(y[4]),v=Math.sin(y[4]);return [y[0]+u*c,y[1]+u*v,y[2]-u*y[5]*v,y[3]+u*y[5]*c];}
 export function cardioInitial(d:CardioDesign,b:CardioBody){
@@ -61,7 +62,9 @@ export function cardioClearance(y:CardioState,b:CardioBody){const c=Math.cos(y[4
 export function cardioLoads(y:CardioState,b:CardioBody,mu=MU){
   const f=motion(y,b,mu),c=Math.cos(y[4]),s=Math.sin(y[4]);let stress=0,minTension=Infinity,transverse=0,rx=0,ry=0,j=b.nodes.length-1;
   for(let i=b.cuts.length-1;i>=0;i--){
-    while(j>=0&&b.nodes[j].s>b.cuts[i]){const p=b.nodes[j],u=p.s-b.center;rx+=p.m*(f.ax-u*y[5]**2*c-u*f.alpha*s-f.gravity[j][0]);ry+=p.m*(f.ay-u*y[5]**2*s+u*f.alpha*c-f.gravity[j][1]);j--;}
+    // The tip section is its cable-side limit: the terminal/grapple and attached
+    // payload pull on the tip area even though their node lies exactly at L.
+    while(j>=0&&(b.nodes[j].s>b.cuts[i]||(b.cuts[i]===b.length&&b.nodes[j].s===b.length))){const p=b.nodes[j],u=p.s-b.center;rx+=p.m*(f.ax-u*y[5]**2*c-u*f.alpha*s-f.gravity[j][0]);ry+=p.m*(f.ay-u*y[5]**2*s+u*f.alpha*c-f.gravity[j][1]);j--;}
     const tension=-(rx*c+ry*s);minTension=Math.min(minTension,tension);stress=Math.max(stress,tension/b.areas[i]);transverse=Math.max(transverse,Math.abs(-rx*s+ry*c));
   }return {stress,minTension,transverse};
 }

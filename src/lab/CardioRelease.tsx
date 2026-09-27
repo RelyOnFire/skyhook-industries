@@ -1,7 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import type {CardioResult} from '../simulation/cardio.js';
-import {CARDIO_CUTOFF} from '../simulation/cardio.js';
-import {cardioReleaseSample,type CardioRelease as ReleaseResult} from '../simulation/cardio-release.js';
+import {cardioCargoCrossesCutoff,cardioReleaseSample,type CardioRelease as ReleaseResult} from '../simulation/cardio-release.js';
 import type {StudioUnits} from './StudioUnits.js';
 import CardioScene from './CardioScene.js';
 import NumericField from './StudioField.js';
@@ -19,7 +18,7 @@ export default function CardioRelease({source,disabled,units}:{source:CardioResu
   const distance=(v:number)=>`${n(v/(units.distance==='km'?1000:1))} ${units.distance}`;
   const speed=(v:number)=>`${n(v/(units.speed==='km/s'?1000:1),2)} ${units.speed}`;
   const event=result?.release,frame=result?cardioReleaseSample(result,time):null;
-  const verdict=!event?'Release not reached':event.cargoOrbit.perigee<CARDIO_CUTOFF?'Cargo orbit crosses the 120 km cutoff':event.cargoOrbit.energy>=0?'Cargo is on an escape trajectory':'Cargo orbit clears the 120 km cutoff';
+  const verdict=!event?'Release not reached':cardioCargoCrossesCutoff(event.cargo,event.cargoOrbit)?'Cargo orbit crosses the 120 km cutoff':event.cargoOrbit.energy>=0?'Cargo is on an escape trajectory':'Cargo orbit clears the 120 km cutoff';
   function cancel(){request.current++;worker.current?.terminate();worker.current=null;setBusy(false);}
   function run(){
     cancel();setPlaying(false);setError('');setBusy(true);
@@ -42,9 +41,9 @@ export default function CardioRelease({source,disabled,units}:{source:CardioResu
     const a=document.createElement('a');a.href=url;a.download='cardiorotovator-release.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   return <section className="lab-panel cardio-results cardio-release" aria-label="Payload release experiment">
-    <div className="panel-heading"><h2>Let the payload go</h2><span className="tag">RELEASE / C1r</span></div>
+    <div className="panel-heading"><h2>Release from the uncontrolled rotor</h2><span className="tag">RELEASE / C1r</span></div>
     <div className="cardio-results-body">
-      <p>Choose when to release after pickup. Cargo inherits the tip’s velocity; the unloaded tether continues under gravity. Neither receives a thrust impulse.</p>
+      <p>Choose when to release after pickup. Cargo inherits the passive rotor’s tip velocity; the unloaded tether continues under gravity. This does not model synchronized CardioRotovator operation. Neither receives a thrust impulse.</p>
       <div className="cardio-release-controls">
         <NumericField key={fieldKey} name="release-percent" label="Release after pickup" unit="% of nominal orbit" min={5} max={90} step={1} value={percent} onChange={v=>{setPercent(v);setPlaying(false);}} onValidity={v=>{setInvalid(v);if(v)setPlaying(false);}}/>
         <div><button className="primary" disabled={blocked} onClick={run}>Calculate release</button>{busy&&<button onClick={cancel}>Cancel release calculation</button>}<p>{n(source.period*percent/6000)} minutes after pickup. Changing this timing does not alter the saved tether design; the release report includes it.</p></div>
@@ -68,7 +67,7 @@ export default function CardioRelease({source,disabled,units}:{source:CardioResu
           <div><span>TETHER COM PERIGEE AT RELEASE</span><strong>{distance(event.tetherOrbit.perigee)}</strong></div>
           <div><span>RELEASE SPEED</span><strong>{speed(Math.hypot(event.cargo[2],event.cargo[3]))}</strong></div>
         </div>}
-        <p>Negative altitude means the mathematical orbit passes inside Earth. Propagation stops at the 120 km boundary; no atmospheric flight is drawn. {event&&event.cargoOrbit.perigee<CARDIO_CUTOFF&&source.design.spinRatio===2&&<>Try an initial spin of 2.75 and compare the pickup again before recalculating release.</>}</p>
+        <p>Negative altitude means the mathematical orbit passes inside Earth. Propagation stops at the 120 km boundary; no atmospheric flight is drawn.</p>
         <details><summary>Release accounting & report</summary>
           <p>Lowest tether clearance: {distance(result.minClearance)}. Peak axial stress: {n(result.peakStress/1e9,3)} GPa. {event&&<>Remaining tether’s COM perigee at release: {distance(event.tetherOrbit.perigee)}; this is a point-orbit diagnostic, not a cable-clearance guarantee.</>}</p>
           {event&&<p>Separation closure: {n(event.energyResidual,3)} J and {n(event.angularResidual,2)} kg·m²/s. Maximum relative drift for tether plus cargo: energy {result.energyDrift.toExponential(2)}, angular momentum {result.angularDrift.toExponential(2)}.</p>}

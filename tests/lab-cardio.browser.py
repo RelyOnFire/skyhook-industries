@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""CardioRotovator actual worker, independent storage and responsive replay."""
+"""Synchronized CardioRotovator geometry and separate passive diagnostics."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import json
+import re
 import threading
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
@@ -21,6 +22,8 @@ def main():
             context=browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce',accept_downloads=True)
             page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(origin+'/lab/cardio/',wait_until='networkidle')
+            exercise_reference(page,out)
+            page.get_by_text('Explore uncontrolled dynamics',exact=True).click()
             run=page.get_by_role('button',name='Compare pickup',exact=True)
             expect(run).to_be_enabled(timeout=90000)
             expect(page.get_by_test_id('cardio-empty-status')).to_have_text('One nominal orbit completed')
@@ -61,7 +64,7 @@ def main():
             page.get_by_role('combobox',name='Distance unit').select_option('km')
             page.get_by_label('Initial COM perigee value',exact=True).fill('1900');expect(run).to_be_disabled()
             expect(page.get_by_text('Apogee must be above perigee.',exact=True)).to_be_visible()
-            page.get_by_role('button',name='Reference scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
+            page.get_by_role('button',name='Reset passive scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
             page.get_by_label('Initial COM perigee value',exact=True).fill('700');page.get_by_label('Initial COM apogee value',exact=True).fill('1300');run.click();expect(run).to_be_enabled(timeout=90000)
             expect(page.get_by_test_id('cardio-loaded-status')).to_have_text('Stopped at the 120 km cutoff')
             page.get_by_text('Numerical accounting & report',exact=True).click()
@@ -72,19 +75,31 @@ def main():
             page.evaluate("""()=>{const run=[...document.querySelectorAll('button')].find(b=>b.textContent==='Compare pickup');run.click();setTimeout(()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Cancel calculation')?.click(),0)}""")
             expect(page.get_by_text('Calculation cancelled.',exact=True)).to_be_visible(timeout=10000)
             expect(run).to_be_enabled()
+            # Old passive designs preserve every numerical input, normalizing only the model version.
+            legacy={**saved,'model':'C1p-0.1.0','phaseDeg':12,'payloadT':23}
+            legacy_path=out/'legacy-cardio-design.json';legacy_path.write_text(json.dumps(legacy))
+            page.locator('input[type=file]').set_input_files(str(legacy_path));expect(run).to_be_enabled(timeout=90000)
+            expect(page.get_by_label('Apogee phase offset value',exact=True)).to_have_value('12')
+            expect(page.get_by_label('Matched payload value',exact=True)).to_have_value('23')
+            with page.expect_download() as info:page.get_by_role('button',name='Export design',exact=True).click()
+            normalized_path=out/'normalized-cardio-design.json';info.value.save_as(normalized_path)
+            normalized=json.loads(normalized_path.read_text());assert normalized=={**legacy,'model':'C1p-0.1.1'}
+            assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==raw,'Import overwrote the saved passive design'
             bad=out/'wrong-design.json';bad.write_text(json.dumps({'schema':2,'architecture':'single-stage-rotovator','model':'D1p-0.4.0'}))
             page.locator('input[type=file]').set_input_files(str(bad));expect(page.get_by_role('alert')).to_contain_text('CardioRotovator designs only')
             assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')")=='earth-kept'
             assert page.evaluate("localStorage.getItem('skyhook-lab-t4-design-v1')")=='t4-kept'
             assert await_free_databases(page)==[],'Cardio opened a campaign database'
             page.goto(origin+'/lab/architectures/',wait_until='networkidle')
-            page.get_by_role('link',name='Open the CardioRotovator experiment').click();expect(run).to_be_enabled(timeout=90000)
+            page.get_by_role('link',name='Open the CardioRotovator experiment').click()
+            expect(page.get_by_test_id('cardio-reference-scene')).to_be_visible()
+            expect(page.locator('.cardio-diagnostics')).not_to_have_attribute('open','')
             nojs=browser.new_context(java_script_enabled=False,viewport={'width':320,'height':800});guide=nojs.new_page();guide.goto(origin+'/lab/cardio/method/')
             expect(guide.get_by_role('heading',name='A long arm needs the right phase.')).to_be_visible()
             assert guide.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             assert not errors,errors
             (out/'report.json').write_text(json.dumps({'status':'passed','errors':errors},indent=2))
-            print('PASS Cardio pickup/release/timing workers, complete and partial studies, exact inspection, safe/unsafe orbits, separation replay, reports, limit stop, phase/payload editing, isolated save/share/import, display units, cancellation, report, catalogue and five widths')
+            print('PASS synchronized Cardio geometry, apsis orientation, full-period closure, explicit replay, units, derived length, responsive primary view; separate pickup/release/timing workers, reports, legacy imports, isolated saves and catalogue')
             browser.close()
     finally:server.shutdown()
 def exercise_release(page,out,run):
@@ -94,7 +109,11 @@ def exercise_release(page,out,run):
     calculate.click();expect(panel.get_by_role('alert')).to_have_text('Release calculation could not start. Try again.')
     expect(calculate).to_be_enabled();page.evaluate('window.Worker=window.savedReleaseWorker;delete window.savedReleaseWorker')
     calculate.click();expect(calculate).to_be_enabled(timeout=90000)
-    expect(panel.get_by_text('Cargo orbit crosses the 120 km cutoff',exact=True)).to_be_visible()
+    try:expect(panel.get_by_text('Cargo orbit crosses the 120 km cutoff',exact=True)).to_be_visible()
+    except Exception:
+        print('Unexpected release panel:',panel.inner_text(),flush=True)
+        panel.screenshot(path=str(out/'release-failure.png'))
+        raise
     expect(panel.get_by_text('Stopped: cargo reached the 120 km cutoff.',exact=False)).to_be_visible()
     panel.get_by_role('button',name='Jump to release').click()
     expect(panel.get_by_text('Free cargo coast',exact=True)).to_be_visible()
@@ -125,12 +144,12 @@ def exercise_release(page,out,run):
     panel.get_by_text('Release accounting & report',exact=True).click()
     with page.expect_download() as info:panel.get_by_role('button',name='Export release report').click()
     path=out/'release-download.json';info.value.save_as(path);report=json.loads(path.read_text())
-    assert report['model']=='C1r-0.1.0' and report['fraction']==.25 and report['design']['spinRatio']==2.75
+    assert report['model']=='C1r-0.1.1' and report['fraction']==.25 and report['design']['spinRatio']==2.75
     assert report['release']['cargoOrbit']['perigee']>120000 and report['energyDrift']<1e-8
     assert report['frames'][-1]['released'] and report['frames'][-1]['cargo']
     exercise_timing(page,panel,out,report)
     # The old design format and pickup defaults are independent of release timing.
-    page.get_by_role('button',name='Reference scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
+    page.get_by_role('button',name='Reset passive scenario',exact=True).click();expect(run).to_be_enabled(timeout=90000)
     expect(panel.get_by_label('Release after pickup value',exact=True)).to_have_value('25')
     expect(panel.get_by_role('button',name='Jump to release')).to_have_count(0)
 
@@ -182,6 +201,70 @@ def exercise_timing(page,panel,out,accepted):
     field.fill('');expect(compare).to_be_disabled();expect(study.get_by_role('button',name='Export timing comparison')).to_be_disabled()
     expect(chosen).to_be_disabled();field.fill('25')
     page.get_by_label('Initial spins per orbit value',exact=True).fill('2.8');expect(compare).to_be_disabled();expect(chosen).to_be_disabled()
+
+def numeric(locator):
+    match=re.search(r'-?[\d,]+(?:\.\d+)?',locator.inner_text())
+    assert match,locator.inner_text()
+    return float(match.group().replace(',',''))
+
+def exercise_reference(page,out):
+    reference=page.get_by_test_id('cardio-reference')
+    scene=reference.get_by_test_id('cardio-reference-scene')
+    expect(scene).to_be_visible()
+    expect(page.locator('.cardio-diagnostics')).not_to_have_attribute('open','')
+    slider=reference.get_by_role('slider',name='Synchronized reference time',exact=True)
+    arm=reference.get_by_test_id('cardio-reference-arm-length')
+    altitude=reference.get_by_test_id('cardio-reference-tip-altitude')
+    assert numeric(arm)==2100 and numeric(altitude)==100
+    assert float(scene.get_attribute('data-arm-radial-dot'))<0,'Apogee arm must point inward'
+    before=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==before,'Reference autoplayed'
+    line=reference.get_by_test_id('cardio-reference-moving-arm').locator('line')
+    initial=line.evaluate('(el)=>["x1","y1","x2","y2"].map(name=>+el.getAttribute(name))')
+    reference.get_by_role('button',name='Perigee clearance',exact=True).click()
+    assert float(scene.get_attribute('data-arm-radial-dot'))>0,'Perigee arm must point outward'
+    assert numeric(altitude)==2300
+    reference.screenshot(path=str(out/'reference-perigee-1440.png'))
+    slider.fill(str(round(float(slider.get_attribute('max'))/4,3)))
+    reference.screenshot(path=str(out/'reference-quarter-1440.png'))
+    reference.get_by_role('button',name='Apogee pickup',exact=True).click();expect(slider).to_have_value('0')
+    slider.press('End')
+    final=line.evaluate('(el)=>["x1","y1","x2","y2"].map(name=>+el.getAttribute(name))')
+    assert all(abs(a-b)<1e-6 for a,b in zip(initial,final)),'Synchronized orbit must close'
+    assert numeric(altitude)==100
+    reference.get_by_role('button',name='Play synchronized reference').click();page.wait_for_timeout(200)
+    reference.get_by_role('button',name='Pause synchronized reference').click();assert 0<float(slider.input_value())<float(slider.get_attribute('max'))
+    stopped=slider.input_value();page.wait_for_timeout(150);assert slider.input_value()==stopped
+    saved=page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")
+    reference.get_by_label('Station apogee value',exact=True).fill('2400');assert numeric(arm)==2300
+    reference.get_by_label('Pickup altitude value',exact=True).fill('120');assert numeric(arm)==2280 and numeric(altitude)==120
+    reference.get_by_role('button',name='Perigee clearance',exact=True).click();assert numeric(altitude)==2480
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    expect(reference.get_by_label('Station apogee value',exact=True)).to_have_value('2400000')
+    expect(reference.get_by_label('Pickup altitude value',exact=True)).to_have_value('120000')
+    assert numeric(arm)==2280000 and numeric(altitude)==2480000
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    reference.get_by_label('Pickup altitude value',exact=True).fill('')
+    expect(reference.get_by_role('button',name='Play synchronized reference')).to_be_disabled()
+    expect(slider).to_be_disabled()
+    reference.get_by_label('Pickup altitude value',exact=True).fill('120')
+    reference.get_by_label('Station apogee value',exact=True).fill('500')
+    reference.get_by_label('Station perigee value',exact=True).fill('600')
+    expect(reference.get_by_role('alert')).to_have_text('Station apogee must be above perigee.')
+    expect(reference.get_by_role('button',name='Play synchronized reference')).to_be_disabled()
+    reference.get_by_role('button',name='Reset reference geometry',exact=True).click()
+    expect(reference.get_by_role('button',name='Play synchronized reference')).to_be_enabled()
+    assert numeric(arm)==2100 and numeric(altitude)==100
+    assert page.evaluate("localStorage.getItem('skyhook-lab-cardio-design-v1')")==saved,'Reference edits touched a saved passive design'
+    for width in [1440,1000,768,390,320]:
+        page.set_viewport_size({'width':width,'height':1000})
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'reference overflow {width}'
+        assert reference.locator('.cardio-reference-readout dd').evaluate_all('(nodes)=>nodes.every(el=>el.scrollWidth<=el.clientWidth+1)'),f'reference quantity overflow {width}'
+        page.screenshot(path=str(out/f'reference-{width}.png'),full_page=True)
+    page.get_by_role('combobox',name='Distance unit').select_option('m')
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'reference metre overflow at320px'
+    page.screenshot(path=str(out/'reference-metres-320.png'),full_page=True)
+    page.get_by_role('combobox',name='Distance unit').select_option('km')
+    page.set_viewport_size({'width':1440,'height':1000})
 
 def await_free_databases(page):return page.evaluate('indexedDB.databases()')
 if __name__=='__main__':main()

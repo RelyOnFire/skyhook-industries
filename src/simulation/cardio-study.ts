@@ -1,5 +1,5 @@
-import {CARDIO_CUTOFF,validateCardio,type CardioDesign} from './cardio.js';
-import {CARDIO_RELEASE_MODEL,type CardioRelease} from './cardio-release.js';
+import {validateCardio,type CardioDesign} from './cardio.js';
+import {CARDIO_RELEASE_MODEL,cardioCargoCrossesCutoff,type CardioRelease} from './cardio-release.js';
 
 export function cardioTimingPlan(current:number):number[]{
   if(!Number.isFinite(current)||current<.05||current>.9)throw Error('Select a release timing between 5% and 90%.');
@@ -11,7 +11,7 @@ export function cardioTimingOutcome(r:CardioRelease){
   if(r.status==='clearance')return {clear:false,label:'Tether cutoff'};
   if(r.status==='load')return {clear:false,label:'Tether load limit'};
   if(r.status==='compression')return {clear:false,label:'Tether compression'};
-  if(r.status==='cargo-clearance'||r.release.cargoOrbit.perigee<CARDIO_CUTOFF)return {clear:false,label:'Cargo crosses cutoff'};
+  if(r.status==='cargo-clearance'||cardioCargoCrossesCutoff(r.release.cargo,r.release.cargoOrbit))return {clear:false,label:'Cargo crosses cutoff'};
   return {clear:true,label:r.release.cargoOrbit.apogee===null?'Clear escape coast':'Clear bound coast'};
 }
 export function cardioTimingReport(design:CardioDesign,plan:number[],results:CardioRelease[]){

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {EARTH,MU} from '../.lab-test/simulation/engine.js';
+import {EARTH,MU,orbit} from '../.lab-test/simulation/engine.js';
 import {CARDIO_DEFAULT as D,cardioBody,cardioPoint,cardioInvariants,cardioStep} from '../.lab-test/simulation/cardio.js';
-import {simulateCardioRelease,cardioReleaseSample,cardioCargoStep} from '../.lab-test/simulation/cardio-release.js';
+import {CARDIO_RELEASE_MODEL,simulateCardioRelease,cardioReleaseSample,cardioCargoStep,cardioCargoCrossesCutoff} from '../.lab-test/simulation/cardio-release.js';
 const near=(a,b,tol)=>assert.ok(Math.abs(a-b)<=tol,`${a} != ${b} (tolerance ${tol})`);
 const safeDesign={...D,spinRatio:2.75},safe=simulateCardioRelease(safeDesign,.25),unsafe=simulateCardioRelease(D,.25);
 
@@ -26,6 +26,24 @@ test('unsafe cargo stops at the atmosphere boundary; an unsafe future perigee st
  assert.equal(unsafe.status,'cargo-clearance');near(unsafe.minCargoClearance,120000,.01);assert.ok(unsafe.release.cargoOrbit.perigee<0);
  const late=simulateCardioRelease(D,.9);assert.equal(late.status,'complete');assert.ok(late.release.cargoOrbit.perigee<120000,'completion cannot be equated with safe delivery');
  const earlier=simulateCardioRelease(safeDesign,.5);assert.notEqual(earlier.release.cargoOrbit.perigee,safe.release.cargoOrbit.perigee);
+});
+test('future cargo cutoff distinguishes returning bound orbits and inbound escape from outbound escape',()=>{
+ const radius=EARTH+1000000;
+ for(const radial of [-1000,1000]){
+  const bound=[radius,0,radial,1000],elements=orbit(bound);
+  assert.ok(elements.energy<0&&elements.perigee<120000);
+  assert.equal(cardioCargoCrossesCutoff(bound),true,'bound cargo returns to its low perigee');
+ }
+ const inbound=[radius,0,-12000,1000],outbound=[radius,0,12000,1000];
+ assert.ok(orbit(inbound).energy>0&&orbit(inbound).perigee<120000);
+ assert.deepEqual(orbit(inbound),orbit(outbound));
+ assert.equal(cardioCargoCrossesCutoff(inbound),true);
+ assert.equal(cardioCargoCrossesCutoff(outbound),false,'outbound unbound perigee is in the past');
+ assert.equal(cardioCargoCrossesCutoff(outbound,orbit(outbound)),false);
+ const high=[radius,0,-1000,12000];assert.ok(orbit(high).perigee>120000);
+ assert.equal(cardioCargoCrossesCutoff(high),false,'inbound escape above the cutoff is clear');
+ assert.equal(cardioCargoCrossesCutoff([EARTH+100000,0,12000,1000]),true,'an existing cutoff violation remains unsafe');
+ assert.equal(CARDIO_RELEASE_MODEL,'C1r-0.1.1');
 });
 test('pre-release limit stops do not invent a release state or continue an unsafe tether',()=>{
  const r=simulateCardioRelease({...D,lengthKm:2200,perigeeKm:700,apogeeKm:2400},.25);
