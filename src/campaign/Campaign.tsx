@@ -172,7 +172,7 @@ export default function Campaign() {
           <BeltChapter world={world} busy={busy} act={act} prepare={prepare}/>
           <DevelopmentChapter key={world.id} world={world} busy={busy} act={act} prepare={prepare}/>
         </div>
-        <TrafficBoard world={world} busy={busy} act={act} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
+        <TrafficBoard key={world.id} world={world} busy={busy} act={act} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
       <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop → into the belt → industrial scale</span></summary><Milestones world={world}/></details>
     </>}

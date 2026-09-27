@@ -19,6 +19,14 @@ keyboard destination selection, and shows the swarm around the same Sun. Cargo
 and mirror deployments share an arrival-ordered traffic queue above scheduled
 services, so arrivals take precedence and recurring supply follows immediately.
 Both lists have bounded keyboard scrolling that tightens on shorter desktops.
+The arrival list can be filtered by cargo kind (including cargo-only and mirrors)
+and destination. Its mass and matching-flight count describe the visible subset;
+header and capacity counts still describe the whole network. Filters preserve
+arrival order and map tracking. If a filter hides the tracked flight, Show tracked
+clears the filters and focuses its row. Empty matches offer Show all traffic.
+Filters remain usable during Play and update with arrivals and departures; they
+are temporary view settings, reset on reload or world change, and never write a
+save or change a service.
 Construction, equipment, water and mirrors have distinct map glyphs and matching queue
 colors. Track any cargo flight or mirror launch to highlight its corridor and
 inspect its payload, destination and arrival in the fixed map footer. Tracking,

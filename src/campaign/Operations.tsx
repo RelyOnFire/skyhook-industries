@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { tetherCapacity, BELT, beltObjectives, beltProduction, developmentObjectives, developmentProjects, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, swarmPower, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
 import { forecastNetwork } from './forecast.js';
-import { trafficItems, type TrafficId } from './traffic.js';
+import { trafficItems, type TrafficId, type TrafficItem } from './traffic.js';
 import NetworkOutlook from './NetworkOutlook.js';
 import ServiceEditor from './ServiceEditor.js';
 
@@ -105,7 +105,22 @@ export function Milestones({world}:{world:Campaign}) {
 }
 
 export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}:{world:Campaign;busy:boolean;act:Act;tracked:TrafficId|null;onTrack:(id:TrafficId|null)=>void;arrivals:string[];onDismiss:()=>void}) {
+  const [kind,setKind]=useState<'all'|'cargo'|TrafficItem['kind']>('all');
+  const [destination,setDestination]=useState<'all'|TrafficItem['to']>('all');
+  const flightList=useRef<HTMLDivElement>(null),reveal=useRef<TrafficId|null>(null);
   const flights=trafficItems(world);
+  const filtered=kind!=='all'||destination!=='all';
+  const shown=flights.filter(f=>(kind==='all'||(kind==='cargo'?f.kind!=='mirrors':f.kind===kind))&&(destination==='all'||f.to===destination));
+  const hiddenTracked=tracked&&flights.some(f=>f.id===tracked)&&!shown.some(f=>f.id===tracked);
+  const clearFilters=()=>{setKind('all');setDestination('all');};
+  useEffect(()=>{
+    const list=flightList.current;if(!list)return;
+    list.scrollTop=0;
+    if(reveal.current){
+      const button=list.querySelector<HTMLButtonElement>(`[data-traffic-id="${reveal.current}"] button`);
+      button?.scrollIntoView({block:'nearest'});button?.focus({preventScroll:true});reveal.current=null;
+    }
+  },[kind,destination]);
   const services=<section className="campaign-schedules" aria-labelledby="schedules-heading"><header className="panel-title"><h2 id="schedules-heading">Scheduled services</h2><span>{world.services.length} / 12</span></header>
       <div className="traffic-scroll service-scroll" tabIndex={0} role="region" aria-label="Scheduled service list">{!world.services.length?<p className="campaign-empty">Start a regular supply line using the cargo controls. Your services and any shortages will appear here.</p>:world.services.map(s=>{
         const currentReason=flightPlan(world,s.from,s.to,s.cargoT,s.mode,s.kind).reason;
@@ -117,8 +132,13 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
   return <aside className="ops-traffic" id="traffic" aria-label="Live logistics">
     <section className="campaign-traffic" aria-labelledby="traffic-heading"><header className="panel-title"><h2 id="traffic-heading">In flight</h2><span>{flights.length} active</span></header>
       <div className="traffic-capacity" aria-label="Independent flight capacities"><span>Cargo <b data-testid="cargo-capacity">{world.flights.length} / {LIMITS.cargoFlights}</b></span>{world.solar.unlocked&&<span>Mirrors <b data-testid="mirror-capacity">{world.solar.deployments.length} / {LIMITS.mirrorDeployments}</b></span>}</div>
-      <div className="traffic-total"><b>{n(flights.reduce((a,f)=>a+f.mass,0))} t</b> in transit <span>Next arrivals first</span></div>
-      <div className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!flights.length?<p className="campaign-empty">No cargo in transit. Send a shipment and watch it cross the map.</p>:flights.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-arrival={f.arrival} data-kind={f.kind}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
+      <div className="traffic-filters">
+        <label>Cargo<select aria-label="Filter flights by cargo" value={kind} onChange={e=>setKind(e.target.value as typeof kind)}><option value="all">All traffic</option><option value="cargo">Cargo only</option><option value="materials">Material</option><option value="equipment">Equipment</option><option value="water">Water</option><option value="mirrors">Mirrors</option></select></label>
+        <label>Destination<select aria-label="Filter flights by destination" value={destination} onChange={e=>setDestination(e.target.value as typeof destination)}><option value="all">Everywhere</option>{SITES.filter(id=>!siteLocked(world,id)).map(id=><option key={id} value={id}>{SITE[id].name}</option>)}{world.solar.unlocked&&<option value="swarm">Solar swarm</option>}</select></label>
+      </div>
+      <div className="traffic-total" data-testid="traffic-summary"><b>{n(shown.reduce((a,f)=>a+f.mass,0))} t</b> {filtered?'matching':'in transit'} <span>{shown.length} / {flights.length} flights</span></div>
+      <div className="traffic-filter-status"><span>{hiddenTracked?'Tracked flight hidden':'Next arrivals first'}</span>{hiddenTracked?<button onClick={()=>{reveal.current=tracked;clearFilters();}}>Show tracked</button>:filtered?<button onClick={clearFilters}>Clear filters</button>:null}</div>
+      <div ref={flightList} className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list">{!shown.length?<div className="campaign-empty"><p>{!flights.length?'No cargo in transit. Send a shipment and watch it cross the map.':'No flights match these filters.'}</p>{filtered&&<button onClick={clearFilters}>Show all traffic</button>}</div>:shown.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-traffic-id={f.id} data-arrival={f.arrival} data-kind={f.kind} data-destination={f.to}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
     </section>
     {services}
     <NetworkOutlook key={world.id} world={world} busy={busy} act={act}/>
