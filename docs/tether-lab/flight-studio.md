@@ -5,6 +5,7 @@ Current numerical models: Earth D1p-0.4.0 and lunar L1p-0.1.0 / design schema 2.
 
 ## Experience
 
+- Public entry points at `/lab/?mission=second-delivery` and `/lab/lunar/?mission=lunar-relay` open the existing mission briefing. Starting remains explicit; Escape returns to the sandbox. Unknown or mismatched mission IDs are ignored, and an explicit shared design takes precedence. Opening or starting a mission never overwrites a saved design.
 - Three explicit, reproducible challenges: make the second delivery, carry two 5 t payloads below a 100 t dry facility, and deliver twice within a 12 t loaded propellant budget.
 - Guided, paused replay at actual calculated capture, release and readiness events.
 - Full-run debrief distinguishes clearance cutoff, stress exceedance, compression, failed release, exhausted fuel, incomplete recovery and completion. Suggestions are experiments, not guaranteed remedies.

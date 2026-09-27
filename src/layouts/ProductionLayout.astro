@@ -6,6 +6,7 @@ import '../styles/orbital.css';
 import '../styles/company.css';
 import '../styles/heritage.css';
 import SiteHeader from '../components/SiteHeader.astro';
+import PageMeta from '../components/PageMeta.astro';
 
 interface Props {
   title: string;
@@ -15,36 +16,13 @@ interface Props {
 
 const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const socialImage = new URL('/social-card.svg', Astro.site);
-const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#080b0d" />
-    <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    {noindex && <meta name="robots" content="noindex,follow" />}
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Skyhook Industries" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={socialImage} />
-    <meta property="og:image:type" content="image/svg+xml" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={socialImageAlt} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={socialImage} />
-    <meta name="twitter:image:alt" content={socialImageAlt} />
-    <title>{title}</title>
+    <PageMeta title={title} description={description} noindex={noindex} />
   </head>
   <body class:list={{ 'company-page': path !== '/' }}>
     <a class="skip" href="#content">Skip to content</a>
@@ -57,7 +35,7 @@ const socialImageAlt = 'Skyhook Industries — rotating orbital transportation';
           <p>Rotating orbital transportation and momentum-exchange infrastructure.</p>
         </div>
         <div class="footer-nav">
-          <a href="/system/">System</a><a href="/reference-architecture/">Reference Architecture</a><a href="/research/">Research</a><a href="/roadmap/">Roadmap</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/archive/">Archive</a>
+          <a href="/lab/">Tether Lab</a><a href="/lab/campaign/">Expeditions</a><a href="/system/">System</a><a href="/reference-architecture/">Reference Architecture</a><a href="/research/">Research</a><a href="/roadmap/">Roadmap</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/archive/">Archive</a>
         </div>
       </div>
       <div class="footer-bottom">

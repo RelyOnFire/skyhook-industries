@@ -1,130 +1,92 @@
 # Skyhook Industries visual standard
 
-This document records the visual decisions that define the current Skyhook Industries site. It exists so future redesigns, audits, automated tools and contributors can distinguish intentional design language from actual defects.
+Updated 27 September 2026. This records the approved science-inspired direction,
+superseding the early September paper/dark alternation and oversized typography.
+The user's current feedback and actual browser review take priority over older
+design notes.
 
-## Design read
+## Identity
 
-Skyhook Industries should feel like an orbital megastructure presented by an advanced aerospace program.
+Continuous charcoal surfaces, copper actions, restrained typography and a
+bounded reading width connect the public site, Flight Studio and Expeditions.
+The site should invite curiosity, explain mechanisms and offer something real
+to do. Preserve the project's research record, founder and mission history.
 
-The public site combines two modes:
+The homepage introduces three related activities:
 
-1. **Cinematic orbital scale** — near-black space, Earth limb, the tether as a large compositional object, large direct typography.
-2. **Technical program documentation** — warm paper surfaces, restrained rules, figure numbers, study values, source records and engineering gates.
+- Understand the mechanism and its research basis.
+- Design and fly a tether in Flight Studio.
+- Grow an interplanetary supply chain in Expeditions.
 
-Neither mode should take over the entire site. The contrast between them is part of the identity.
+Flight Studio calculates individual experiments with explicit model boundaries.
+Expeditions is a strategic logistics game. Illustrations and navigation must
+keep those roles clear. Commissioning a lab design uses the existing measured
+performance contract; a campaign route is not a solved laboratory encounter.
 
-## Priority order
+## Composition and typography
 
-When design rules conflict, use this order:
+- Use a shared reading measure around 1,240 px for public pages. Operational
+  workspaces may use more width when that keeps related controls together.
+- Lead with one clear heading and a useful action. Keep explanatory copy close
+  to the diagram or control it explains.
+- Preserve the homepage globe and its protected text region. The entire orbit,
+  tether, endpoint markers and annotations must remain inside the canvas.
+- Use restrained sans-serif headings and readable body copy. Small monospace
+  labels can identify models, figures and measured values.
+- Keep values and their units together. Allow controls and labels to reflow
+  without clipping or separating a unit onto its own line.
+- Use section numbering sparingly and consistently. Avoid a wall of equal cards
+  where a diagram, sequence or editorial layout would explain more.
 
-1. Skyhook's established visual identity and project-specific meaning.
-2. Real visual QA at representative viewport sizes.
-3. Technical clarity and credibility.
-4. Accessibility, usability and performance.
-5. Generic design checklists and external taste rules.
+## Colour and motion
 
-A checklist never overrules a composition that works for a specific reason.
+Near-black and charcoal are the main surfaces. Copper identifies primary
+actions and selected routes; cool pale blues support technical annotation.
+Hierarchy comes from spacing, type and fine rules rather than abrupt white
+sections, heavy shadows or oversized headings.
 
-## Deliberate elements — preserve
+Motion should explain orbit, sequence or changing state. Avoid scroll reveals,
+parallax and decorative animation. Respect reduced motion and preserve manual
+controls. Simulation ticks must not remount stable text or repaint the whole
+scene. Reserve space for intermittent arrival/status content so columns do not
+jump during play.
 
-### Dark / paper alternation
+## Diagrams and assets
 
-The transition between cinematic dark sections and warm technical-paper sections is intentional. It separates spectacle from engineering detail and gives long pages rhythm.
+Prefer repository-native SVG, canvas and calculated geometry to generic space
+art. Schematics should say when they are not to scale. Do not draw an Earth or
+lunar rotovator as a ground-anchored elevator; Phobos is intentionally an anchor.
+The CardioRotovator thumbnail uses the synchronized model's own geometry.
 
-Do not flatten the site into one continuous light or dark theme merely to satisfy a generic consistency rule.
+The shared line mark and wordmark remain in use. Do not silently replace them.
+Share images are authored diagrams, rendered by
+`python scripts/render-social-cards.py` using the existing Playwright setup.
+The script writes the three 1,200 × 630 PNG assets and the compatibility SVG.
+They contain no saved worlds, external images or remote fonts.
 
-### Numbered engineering sections
+`PageMeta.astro` supplies consistent titles, descriptions and share cards. The
+known Workers branch uses its stable origin for share URLs and image assets;
+canonical URLs still identify the public site. Other deployments can set
+`SKYHOOK_SHARE_ORIGIN`. Lab pages retain their existing `noindex,follow` policy.
+The branch is identified through Cloudflare's documented
+[`WORKERS_CI_BRANCH` build variable](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
 
-Labels such as `01 / Geometry`, `02 / Capture` and `Fig. 03 / Scale reference` are intentional. They borrow the language of aerospace reports and test documentation.
+## Quality gates
 
-They should remain sparse, useful and internally consistent. They are not decorative numbering for its own sake.
+Review actual screenshots and interaction, not only absence of page overflow.
+Check at 320, 390, 768, 1,001, 1,280 and 1,440 px, including a short laptop.
+The 1,001 px width is the shared header's first desktop layout. Navigation must
+not overlap the wordmark at that boundary.
 
-### Custom technical diagrams
+Public entry links must work without JavaScript. Interactive experiences need
+clear loading and no-JavaScript guidance. Keyboard navigation, visible focus,
+Escape dismissal, native mobile menus and reduced-motion controls are required.
 
-Orbital geometry, velocity vectors, scale comparisons and future structural diagrams should be custom to the actual Skyhook concept. A generic icon library or stock illustration is not a substitute for a technical figure.
+For game changes, inspect a developed saved network with active traffic. Keep
+scheduled services within the desktop workspace and preserve save compatibility,
+resource accounting and chronological determinism. A polished empty state is
+not sufficient evidence of a polished running game.
 
-Decorative icons should be rare. Mechanism diagrams should be physically meaningful.
-
-### Large homepage hero
-
-The homepage should communicate physical scale before it explains every subsystem. The large headline, Earth limb and diagonal tether are intentional.
-
-The hero may be dramatic, but text and annotations must always retain a protected readable region. No line, node, label or Earth detail may collide with the copy.
-
-### Restrained palette
-
-Core surfaces:
-- near-black orbital background;
-- warm technical paper;
-- cool steel / pale blue for aerospace annotations;
-- muted orange for risk, warning and hard-engineering emphasis.
-
-Do not introduce extra brand accents without a strong reason.
-
-### Sparse motion
-
-Motion is allowed only when it communicates orbital motion, sequence, state or interaction. The site should not acquire generic scroll reveals, parallax, cursor effects or animation simply to appear more expensive.
-
-## Things that are defects — fix
-
-- annotations or tether lines crossing readable copy;
-- clipped headlines or orphaned controls;
-- weak contrast on technical labels;
-- missing keyboard focus indication;
-- mobile layouts that merely shrink desktop composition rather than recompose;
-- source links or CTAs with unclear interactive state;
-- inconsistent figure numbering;
-- decorative detail that implies incorrect orbital geometry;
-- unexplained precision in study values;
-- stock imagery that makes the project look more generic or less technically credible;
-- page-specific styling that breaks the common wordmark, navigation or typographic hierarchy.
-
-## Viewport QA matrix
-
-Every major visual change should be checked at least conceptually against these classes before merge:
-
-- 360 × 800 — narrow phone
-- 390 × 844 — modern phone
-- 768 × 1024 — tablet portrait
-- 1024 × 768 — tablet / compact landscape
-- 1280 × 800 — compact laptop
-- 1366 × 768 — common laptop
-- 1440 × 900 — desktop
-- 1920 × 1080 — large desktop
-
-The hero deserves special review at intermediate laptop widths because the rotating tether crosses the composition diagonally.
-
-## Typography
-
-The current hierarchy matters more than fashion:
-
-- large, tight sans-serif display type for mechanism and thesis statements;
-- serif body copy where the site shifts into explanatory / report mode;
-- monospace for figures, technical labels, study values and program states.
-
-A future font change is welcome only if it improves the identity at all three levels. Do not replace fonts merely because a design checklist dislikes a particular family.
-
-## Images and generated art
-
-High-quality Earth / orbital imagery may eventually replace or supplement the CSS hero rendering, but it must preserve the current composition and cannot imply a ground anchor, giant ballast or incorrect tether geometry.
-
-Real diagrams outrank decorative space imagery when the page is explaining mechanism.
-
-## Brand mark
-
-The current line mark and favicon are temporary. The previously purchased Skyhook SVG may replace them when recovered, subject to its license and a visual check at favicon, wordmark and social-card scales.
-
-Do not silently redesign the logo or wordmark.
-
-## Anti-goals
-
-The site should not become:
-
-- a generic dark aerospace startup landing page;
-- an Awwwards-style interaction demo;
-- a wall of equal feature cards;
-- a grant proposal made visually timid by disclaimers;
-- science-fiction concept art with weak engineering explanation;
-- a technical report so dry that the scale and ambition disappear.
-
-The target is: **spectacular at first glance, mechanically legible on the second, technically serious on the third.**
+`tests/site-pages.browser.py` covers the public layout, navigation, guided first
+flight, share assets and the illustrated flight sequence. The separate Studio
+and campaign browser suites cover their actual workers, saves and interactions.

@@ -2,6 +2,7 @@
 import '../lab/lab.css';
 import '../lab/styles/orbital-theme.css';
 import SiteHeader from '../components/SiteHeader.astro';
+import PageMeta from '../components/PageMeta.astro';
 interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'campaign'; }
 const { title, description, active = 'lab' } = Astro.props;
 const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '/lab/campaign/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
@@ -11,11 +12,7 @@ const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#080b0d" />
-    <meta name="robots" content="noindex,follow" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <PageMeta title={title} description={description} noindex={true} experience={active === 'campaign' ? 'campaign' : 'lab'} />
   </head>
   <body class="lab-body">
     <a class="lab-skip" href="#lab-content">Skip to content</a>

@@ -143,6 +143,12 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
         if (imported.needsConfirmation) setPendingImport(imported); else initial = imported.design;
         const mission=CHALLENGES.find(c=>c.id===new URLSearchParams(location.hash.slice(1)).get('m'));
         if(mission&&mission.start.architecture===initial.architecture){setChallenge(mission);challengeRef.current=mission;}
+      } else {
+        // Public entry points open the same briefing as Flight school. Loading
+        // a shared design takes precedence; choosing a mission never saves it.
+        const requested = new URLSearchParams(location.search).get('mission');
+        const mission = CHALLENGES.find(c => c.id === requested && c.start.architecture === initial.architecture);
+        if (mission) { setBrief(mission); setModal('brief'); }
       }
     } catch (e) { message = `Shared design not loaded: ${(e as Error).message}`; }
     setDesign(initial); setExtended(initial.payloadT > STANDARD_PAYLOAD_T);

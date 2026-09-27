@@ -8,11 +8,13 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import struct
 import threading
+from urllib.parse import quote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTES = ['system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'archive', '404']
+ROUTES = ['', 'system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'archive', '404', 'lab/architectures']
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -33,21 +35,104 @@ def main():
         page.on('pageerror', lambda e: report['errors'].append(str(e)))
         try:
             for route in ROUTES:
-                for width, height in [(1440, 1000), (768, 1024), (390, 844), (320, 800)]:
+                sizes = [(1440, 1000), (768, 1024), (390, 844), (320, 800)]
+                if not route:
+                    sizes += [(1001, 844), (1280, 800)]
+                for width, height in sizes:
                     page.set_viewport_size({'width': width, 'height': height})
-                    path = '/404.html' if route == '404' else f'/{route}/'
+                    path = '/404.html' if route == '404' else f'/{route}/' if route else '/'
                     response = page.goto(origin + path, wait_until='networkidle')
                     assert response and response.ok, f'Failed to load {path}'
                     expect(page.locator('main h1')).to_have_count(1)
                     expect(page.locator('.brand-wordmark')).to_be_visible()
                     await_fonts = 'async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));}'
                     page.evaluate(await_fonts)
-                    page.screenshot(path=str(out / f'{route}-{width}.png'), full_page=True)
-                    page.screenshot(path=str(out / f'{route}-viewport-{width}.png'))
+                    name = route.replace('/', '-') or 'home'
+                    page.screenshot(path=str(out / f'{name}-{width}.png'), full_page=True)
+                    page.screenshot(path=str(out / f'{name}-viewport-{width}.png'))
+                    if not route:
+                        page.locator('#explore').screenshot(path=str(out / f'gateway-{width}.png'))
                     overflow = page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                     if overflow:
                         report['errors'].append(f'Horizontal page overflow: {route} at {width}px')
                     report['pages'].append({'route': path, 'width': width, 'overflow': overflow})
+
+            # A public entry point must lead to a usable first action. Open the
+            # actual worker-driven briefing and verify saved designs survive it.
+            page.set_viewport_size({'width': 1280, 'height': 800})
+            page.goto(origin + '/lab/', wait_until='networkidle')
+            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
+            page.get_by_role('button', name='Save', exact=True).click()
+            saved = page.evaluate("localStorage.getItem('skyhook-lab-design-v2')")
+            assert saved
+            page.goto(origin + '/', wait_until='networkidle')
+            gateway = page.locator('#explore')
+            expect(gateway.get_by_role('link', name='Play Expeditions')).to_have_attribute('href', '/lab/campaign/')
+            experiments = gateway.get_by_role('navigation', name='Choose a tether experiment')
+            assert experiments.locator('a').evaluate_all('(links) => links.map(a => a.pathname)') == [
+                '/lab/', '/lab/lunar/', '/lab/phobos/', '/lab/t4/', '/lab/cardio/']
+            for href in experiments.locator('a').evaluate_all('(links) => links.map(a => a.pathname)'):
+                assert page.request.get(origin + href).ok, f'Experiment entry does not resolve: {href}'
+            gateway.get_by_role('link', name='Try a guided flight').click()
+            briefing = page.get_by_role('dialog', name='Make the second delivery')
+            expect(briefing).to_be_visible()
+            expect(briefing.get_by_role('button', name='Start this mission')).to_be_visible()
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            # Briefing remains usable on a narrow phone and can be dismissed.
+            page.set_viewport_size({'width': 320, 'height': 800})
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            page.screenshot(path=str(out / 'first-flight-briefing-320.png'))
+            page.keyboard.press('Escape')
+            expect(briefing).to_have_count(0)
+            expect(page.get_by_role('region', name='Active challenge')).to_have_count(0)
+            page.set_viewport_size({'width': 1280, 'height': 800})
+            page.reload(wait_until='networkidle')
+            briefing.get_by_role('button', name='Start this mission').click()
+            expect(page.get_by_role('region', name='Active challenge')).to_contain_text('Make the second delivery')
+            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            # Explicit shared designs win over the public mission suggestion.
+            page.goto(origin + '/lab/?mission=second-delivery#d=' + quote(saved, safe=''), wait_until='networkidle')
+            # A fragment-only navigation does not remount the current Studio;
+            # reload as a recipient opening the full shared URL would do.
+            page.reload(wait_until='networkidle')
+            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
+            expect(page.get_by_role('dialog')).to_have_count(0)
+            expect(page.get_by_role('region', name='Active challenge')).to_have_count(0)
+            page.goto(origin + '/lab/?mission=lunar-relay', wait_until='networkidle')
+            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
+            expect(page.get_by_role('dialog')).to_have_count(0)
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            report['navigation'].append('homepage experiment links and guided mission; shared designs and saved designs preserved')
+
+            # A shared game link needs a usable image and the right navigation
+            # identity, including when opening its explanatory method page.
+            for path, card in [('/', 'social-card'), ('/lab/', 'social-flight-studio'), ('/lab/campaign/', 'social-expeditions')]:
+                page.goto(origin + path, wait_until='networkidle')
+                expect(page.locator('head meta[property="og:title"]')).to_have_attribute('content', page.title())
+                source = page.locator('head meta[property="og:image"]').get_attribute('content')
+                assert urlparse(source).scheme == 'https' and urlparse(source).path == f'/{card}.png'
+                response = page.request.get(origin + urlparse(source).path)
+                assert response.ok and response.headers['content-type'].startswith('image/png')
+                png = response.body()
+                assert png[:8] == b'\x89PNG\r\n\x1a\n' and struct.unpack('>II', png[16:24]) == (1200, 630)
+                expect(page.locator('head meta[name="twitter:image"]')).to_have_attribute('content', source)
+                if path.startswith('/lab/'):
+                    expect(page.locator('head meta[name="robots"]')).to_have_attribute('content', 'noindex,follow')
+            page.goto(origin + '/lab/campaign/method/', wait_until='networkidle')
+            expect(page.locator('.brand-links a.active')).to_have_count(1)
+            expect(page.locator('.brand-links a.active')).to_have_attribute('href', '/lab/campaign/')
+            report['navigation'].append('distinct share images and campaign navigation identity')
+
+            # Seven primary links must fit at the desktop breakpoint, not just
+            # avoid making the document wider by overlapping the wordmark.
+            for width in [1001, 1100, 1280, 1440]:
+                page.set_viewport_size({'width': width, 'height': 800})
+                assert page.locator('.brand-header').evaluate('''header => {
+                    const mark = header.querySelector('.brand-wordmark').getBoundingClientRect();
+                    const links = [...header.querySelectorAll('.brand-links a')].map(a => a.getBoundingClientRect());
+                    return links[0].left > mark.right + 8 && links.every((r, i) => r.right <= innerWidth && (!i || r.left > links[i - 1].right));
+                }'''), f'Primary navigation overlaps at {width}px'
             # Exercise the shared header in both layout families, with real
             # keyboard movement so closing a menu cannot strand keyboard focus.
             for path in ['/', '/research/', '/lab/method/']:
@@ -117,6 +202,10 @@ def main():
             native.locator('.brand-mobile summary').click()
             native.locator('.brand-mobile').get_by_role('link', name='Contact', exact=True).click()
             expect(native).to_have_url(origin + '/contact/')
+            native.goto(origin + '/', wait_until='networkidle')
+            expect(native.locator('#explore a[href="/lab/?mission=second-delivery"]')).to_be_visible()
+            native.locator('#explore').get_by_role('link', name='Play Expeditions').click()
+            expect(native.get_by_role('link', name='campaign guide and assumptions')).to_be_visible()
             native.close()
             report['navigation'].append('native disclosure without JavaScript')
 
@@ -350,7 +439,7 @@ def main():
             report['navigation'].append('flight story controls and reduced motion')
             report['status'] = 'failed' if report['errors'] else 'passed'
             assert not report['errors'], report['errors']
-            print('PASS company pages at four widths; keyboard, dismissal, resize and native navigation; review qa/browser/company', flush=True)
+            print('PASS public pages, homepage at six widths, guided entry, share cards and accessible navigation; review qa/browser/company', flush=True)
         except Exception as e:
             report['status'] = 'failed'
             report['failure'] = str(e)

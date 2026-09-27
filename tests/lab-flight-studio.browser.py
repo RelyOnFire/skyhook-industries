@@ -287,9 +287,9 @@ def main():
                     page.set_viewport_size({'width':width,'height':height});open_page('/');no_overflow()
                     pause=page.get_by_role('button',name='Resume rotation',exact=True)
                     expect(pause).to_have_attribute('aria-pressed','true')
-                    expect(page.locator('.hero-intro .launch-link')).to_have_attribute('href','/lab/')
-                    expect(page.locator('.lab-invite-copy .text-link')).to_have_attribute('href','/lab/architectures/')
-                    expect(page.locator('.new-closing .text-link')).to_have_attribute('href','/roadmap/')
+                    expect(page.get_by_role('link', name='Enter the Tether Lab', exact=True)).to_have_attribute('href','/lab/')
+                    expect(page.locator('.experiment-heading').get_by_role('link', name='Compare the models')).to_have_attribute('href','/lab/architectures/')
+                    expect(page.locator('.new-closing .text-link')).to_have_attribute('href','/lab/?mission=second-delivery')
                     shot(f'homepage-{width}');shot(f'homepage-viewport-{width}',full=False)
                     if width==390:
                         menu=page.locator('.brand-mobile')
@@ -313,7 +313,7 @@ def main():
                 # from the regression scenarios into the visual continuity comparison.
                 for width,height in [(1440,1000),(390,844),(320,800)]:
                     page.set_viewport_size({'width':width,'height':height});open_page('/')
-                    page.locator('.hero-intro .launch-link').click();ready();fly();no_overflow();playback_fits()
+                    page.get_by_role('link', name='Enter the Tether Lab', exact=True).click();ready();fly();no_overflow();playback_fits()
                     initial_objects_visible()
                     if findings['webgl']:
                         page.get_by_role('button',name='Reset camera',exact=True).click();initial_objects_visible()
