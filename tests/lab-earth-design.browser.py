@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Real worker performance, paid legacy conversion, replacements and saved flights."""
+import argparse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -12,13 +13,18 @@ class Quiet(SimpleHTTPRequestHandler):
     def log_message(self,*_): pass
 
 def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--executable')
+    args=parser.parse_args()
     server=ThreadingHTTPServer(('127.0.0.1',0),partial(Quiet,directory=str(ROOT/'dist')))
     threading.Thread(target=server.serve_forever,daemon=True).start()
     out=ROOT/'qa/browser/earth-design';out.mkdir(parents=True,exist_ok=True)
     errors=[]
     try:
         with sync_playwright() as p:
-            browser=p.chromium.launch(headless=True)
+            options={'headless':True}
+            if args.executable:options['executable_path']=args.executable
+            browser=p.chromium.launch(**options)
             page=browser.new_page(viewport={'width':1440,'height':1000},reduced_motion='reduce')
             page.on('pageerror',lambda e:errors.append(str(e)))
             origin=f'http://127.0.0.1:{server.server_port}'
@@ -66,11 +72,13 @@ def main():
             dialog.get_by_role('button',name='Replace Earth design',exact=True).click()
             expect(dialog.get_by_text('Commissioned · Earth recovery',exact=False)).to_be_visible();saved()
             commissioned=current();world=commissioned['state']
-            assert world['schema']==8 and world['revision']==old['revision']+1
+            assert world['schema']==9 and world['revision']==old['revision']+1
             assert world['earthDesign']['version']==2 and world['earthDesign']['payloadT']==5
             assert world['ports']['earth']['materialsT']==106 and world['ports']['earth']['equipmentT']==46
             assert world['ports']['earth']['readyDay']==old['ports']['earth']['readyDay']
-            assert world['flights']==old['flights'] and world['services']==old['services'] and commissioned['checkpoints']==[old]
+            assert world['flights']==[{**f,'contractId':None} for f in old['flights']]
+            assert world['services']==[{**s,'contractId':None} for s in old['services']] and commissioned['checkpoints']==[old]
+            assert world['commerce']=={'credits':0,'earnedCredits':0,'spentCredits':0,'nextContract':1,'contracts':[],'cooldowns':{'lunar-return':0,'mars-build':0,'mercury-tooling':0}}
             page.keyboard.press('Escape')
             # Manual dispatch uses the profile (remote Moon capacity is 20 t).
             page.get_by_label('Cargo (t)',exact=True).fill('16')

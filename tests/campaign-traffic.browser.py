@@ -9,6 +9,7 @@ import threading
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self, *_): pass
@@ -73,7 +74,7 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']=={**old, 'schema':8, 'earthDesign':None, 'model':'network-0.8.0', 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
+            assert migrated['state']=={**old, 'schema':9, 'earthDesign':None, 'model':'network-0.9.0', 'commerce':EMPTY_COMMERCE, 'flights':[{**f,'contractId':None} for f in old['flights']], 'services':[{**s,'contractId':None} for s in old['services']], 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
             assert migrated['checkpoints']==[old]
             action('Save now')
             assert record()==migrated
@@ -143,7 +144,7 @@ def main():
             done('new service previews expose blocked plans, distinguish transit from delivery, preserve saves and flag changed networks')
             after = state()
             assert len(after['flights'])==len(old['flights'])+1
-            assert after['flights'][:-1]==old['flights'] and after['day']==old['day']
+            assert after['flights'][:-1]==[{**f,'contractId':None} for f in old['flights']] and after['day']==old['day']
             action('Launch 30 t mirrors')
             assert len(state()['solar']['deployments'])==len(old['solar']['deployments'])+1
             cargo('ceres','phobos','water')
@@ -209,6 +210,9 @@ def main():
             expect(destination_filter).to_have_value('all')
             expect(page.get_by_role('button',name='Tracking flight '+str(last['id']),exact=True)).to_be_focused()
             cargo_filter.focus();cargo_filter.press('Home');cargo_filter.press('ArrowDown');cargo_filter.press('Enter')
+            # Chromium can leave the native select popup open after Enter.
+            # Close it before programmatic changes and the screenshot.
+            cargo_filter.press('Escape')
             expect(cargo_filter).to_have_value('cargo')
             cargo_filter.select_option('equipment');destination_filter.select_option('phobos')
             matching=[f for f in busy['flights'] if f['kind']=='equipment' and f['to']=='phobos']

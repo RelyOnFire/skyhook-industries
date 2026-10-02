@@ -1,7 +1,7 @@
 import { validateEarthDesignReport, type EarthDesignReport } from '../simulation/expedition-design.js';
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.8.0';
+export const CAMPAIGN_MODEL = 'network-0.9.0';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -69,8 +69,29 @@ export const INDUSTRY = {
   ceres: { name: 'Ceres water works', detail: 'Up to 2 t water / daily cycle, using 0.01 t equipment per tonne from a finite local deposit.' },
 } as const;
 export interface Port { materialsT: number; equipmentT: number; waterT:number; industry: boolean; level: number; readyDay: number; receivedT: number; sentT: number }
-export interface Shipment { id: number; from: SiteId; to: SiteId; cargoT: number; fuelT: number; mode: 'tug' | 'tether'; departed: number; arrival: number; kind: CargoKind; serviceId: number | null }
-export interface Service { id: number; from: SiteId; to: SiteId; cargoT: number; kind: CargoKind; mode: Shipment['mode']; intervalDays: number; nextDay: number; enabled: boolean; dispatched: number; deliveredT: number }
+export interface Shipment { id: number; from: SiteId; to: SiteId; cargoT: number; fuelT: number; mode: 'tug' | 'tether'; departed: number; arrival: number; kind: CargoKind; serviceId: number | null; contractId: number | null }
+export interface Service { id: number; from: SiteId; to: SiteId; cargoT: number; kind: CargoKind; mode: Shipment['mode']; intervalDays: number; nextDay: number; enabled: boolean; dispatched: number; deliveredT: number; contractId: number | null }
+export const CONTRACT_OFFERS = [
+  {id:'lunar-return',name:'Lunar construction imports',buyer:'Terran Orbital Works',from:'moon',to:'earth',kind:'materials',rate:4},
+  {id:'mars-build',name:'Mars habitat construction',buyer:'Ares Habitat Cooperative',from:'moon',to:'phobos',kind:'materials',rate:8},
+  {id:'mercury-tooling',name:'Mercury industrial tooling',buyer:'Helion Research Industries',from:'earth',to:'mercury',kind:'equipment',rate:20},
+] as const;
+export type ContractOfferId = typeof CONTRACT_OFFERS[number]['id'];
+export type ContractSize = 'standard' | 'industrial';
+export type ProcurementKind = 'materials' | 'equipment' | 'fuel';
+export const PROCUREMENT_PRICES = {materials:12,equipment:30,fuel:2} as const;
+const CONTRACT_TERMS = {standard:{quantityT:30,loadingWindowDays:30},industrial:{quantityT:300,loadingWindowDays:120}} as const;
+const CONTRACT_COOLDOWN = 90, CONTRACT_HISTORY = 20;
+export interface Contract {
+  id:number; offerId:ContractOfferId; size:ContractSize; acceptedDay:number; dueDay:number;
+  quantityT:number; deliveredT:number; earnedCredits:number;
+  status:'active'|'completed'|'expired'|'cancelled'; settledDay:number|null;
+}
+export interface Commerce {
+  credits:number; earnedCredits:number; spentCredits:number; nextContract:number;
+  contracts:Contract[]; cooldowns:Record<ContractOfferId,number>;
+}
+function freshCommerce():Commerce {return {credits:0,earnedCredits:0,spentCredits:0,nextContract:1,contracts:[],cooldowns:{'lunar-return':0,'mars-build':0,'mercury-tooling':0}};}
 export interface Deployment { id: number; massT: number; departed: number; arrival: number }
 export interface SolarIndustry {
   unlocked: boolean; depositT: number; nextCycleDay: number | null; mirrorWorks: boolean;
@@ -86,19 +107,19 @@ function freshBelt():BeltIndustry {return {unlocked:false,depositT:BELT.depositT
 function emptyPort(): Port {return {materialsT:0,equipmentT:0,waterT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 8; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 9; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
-  earthDesign: EarthDesignReport | null; solar: SolarIndustry; belt:BeltIndustry; development:Development; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
+  earthDesign: EarthDesignReport | null; solar: SolarIndustry; belt:BeltIndustry; development:Development; commerce:Commerce; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
 }
 // Independent transit budgets keep the growing swarm from crowding out supply lines.
 export const LIMITS = { days: 100000, stock: 1000000, cargoFlights: 256, mirrorDeployments: 128, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 8, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  return { schema: 9, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
     ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort(), ceres:emptyPort() }, flights: [],
-    earthDesign:null, solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
+    earthDesign:null, solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), commerce:freshCommerce(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
     log: [{ day: 0, text: 'Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator.' }] };
 }
 export function routeFor(from: SiteId, to: SiteId) {
@@ -192,17 +213,128 @@ export function restoreStandardEarth(world:Campaign):Campaign {
 }
 function edit(world: Campaign) { const next = structuredClone(world); next.revision++; return next; }
 function note(world: Campaign, text: string) { world.log.push({ day: world.day, text }); world.log = world.log.slice(-60); }
-function launch(next: Campaign, from: SiteId, to: SiteId, cargoT: number, mode: Shipment['mode'], kind: CargoKind, serviceId: number | null) {
+function launch(next: Campaign, from: SiteId, to: SiteId, cargoT: number, mode: Shipment['mode'], kind: CargoKind, serviceId: number | null, contractId: number | null = null) {
   const plan = flightPlan(next,from,to,cargoT,mode,kind); if (plan.reason) throw Error(plan.reason);
   next.ports[from][key(kind)] = Math.max(0,stock(next,from,kind)-cargoT);
   next.ports[from].sentT += cargoT; next.fuelT = Math.max(0,next.fuelT-plan.fuelT);
   if (mode === 'tether') for (const id of [from,to]) next.ports[id].readyDay = next.day + tetherRecoveryDays(next,id);
-  const flight: Shipment = { id: next.nextShipment++, from, to, cargoT, fuelT: plan.fuelT, mode, kind, serviceId, departed: next.day, arrival: next.day + plan.duration };
+  const flight: Shipment = { id: next.nextShipment++, from, to, cargoT, fuelT: plan.fuelT, mode, kind, serviceId, contractId, departed: next.day, arrival: next.day + plan.duration };
   next.flights.push(flight);
   note(next,'Flight '+flight.id+': '+cargoT+' t '+CARGO[kind].toLowerCase()+' dispatched from '+SITE[from].name+' to '+SITE[to].name+(serviceId?' by service '+serviceId:'')+'.');
 }
 export function dispatch(world: Campaign, from: SiteId, to: SiteId, cargoT: number, mode: Shipment['mode'], kind: CargoKind = 'materials'): Campaign {
   const next = edit(world); launch(next,from,to,cargoT,mode,kind,null); return next;
+}
+
+function contractOffer(id:ContractOfferId) {
+  const offer=CONTRACT_OFFERS.find(candidate=>candidate.id===id);
+  if(!offer)throw Error('Unknown commercial contract.');
+  return offer;
+}
+function contractById(w:Campaign,id:number) {
+  const contract=w.commerce.contracts.find(candidate=>candidate.id===id);
+  if(!contract)throw Error('Contract not found.');
+  return contract;
+}
+export function activeContract(w:Campaign) {return w.commerce.contracts.find(contract=>contract.status==='active')??null;}
+function contractEligibility(w:Campaign,offerId:ContractOfferId,size:ContractSize) {
+  const offer=contractOffer(offerId);
+  if(siteLocked(w,offer.from)||siteLocked(w,offer.to))return 'Open both route destinations first.';
+  if(!w.ports[offer.from].level||!w.ports[offer.to].level)return 'Commission tethers at both route endpoints first.';
+  if(!w.ports[offer.from].industry)return 'Install '+INDUSTRY[offer.from].name.toLowerCase()+' at the cargo origin first.';
+  if(size==='industrial'&&developmentUnlockReason(w))return 'Industrial orders require an established Mercury and Ceres industrial network.';
+  return '';
+}
+export function contractQuote(w:Campaign,offerId:ContractOfferId,size:ContractSize) {
+  const offer=contractOffer(offerId);
+  if(size!=='standard'&&size!=='industrial')throw Error('Choose a standard or industrial contract.');
+  const terms=CONTRACT_TERMS[size],route=routeFor(offer.from,offer.to),duration=route.coastDays+route.handlingDays;
+  const lastDepartureDay=w.day+terms.loadingWindowDays,dueDay=lastDepartureDay+duration;
+  const baseCredits=terms.quantityT*offer.rate,bonusCredits=baseCredits/4;
+  const reason=contractEligibility(w,offerId,size)||(activeContract(w)?'Finish or cancel your active contract first.':'')||
+    (w.commerce.cooldowns[offerId]>w.day+EPS?'This buyer will offer another order on day '+w.commerce.cooldowns[offerId].toFixed(1)+'.':'')||
+    (dueDay>LIMITS.days?'This order would finish beyond the campaign horizon.':'');
+  return {...offer,...terms,size,duration,acceptedDay:w.day,lastDepartureDay,dueDay,baseCredits,bonusCredits,totalCredits:baseCredits+bonusCredits,reason};
+}
+export function contractRemaining(w:Campaign,id:number) {
+  const contract=contractById(w,id),inFlightT=w.flights.filter(f=>f.contractId===id).reduce((sum,f)=>sum+f.cargoT,0);
+  return {unassignedT:Math.max(0,contract.quantityT-contract.deliveredT-inFlightT),inFlightT};
+}
+/** Customer freight reserves fallback storage but is not usable depot supply. */
+export function isCustomerFreight(w:Campaign,flight:Shipment) {
+  const contract=flight.contractId===null?null:w.commerce.contracts.find(c=>c.id===flight.contractId);
+  return !!contract&&contract.status==='active'&&flight.arrival<=contract.dueDay+EPS;
+}
+function pruneContracts(w:Campaign) {
+  const referenced=new Set([...w.flights.map(f=>f.contractId),...w.services.map(s=>s.contractId)]);
+  const recent=new Set(w.commerce.contracts.filter(c=>c.status!=='active').slice(-CONTRACT_HISTORY).map(c=>c.id));
+  w.commerce.contracts=w.commerce.contracts.filter(c=>c.status==='active'||referenced.has(c.id)||recent.has(c.id));
+}
+function stopContractServices(w:Campaign,id:number) {
+  for(const service of w.services)if(service.contractId===id)service.enabled=false;
+}
+function settleContract(w:Campaign,contract:Contract,status:'completed'|'expired'|'cancelled') {
+  contract.status=status;contract.settledDay=w.day;
+  w.commerce.cooldowns[contract.offerId]=w.day+CONTRACT_COOLDOWN;
+  stopContractServices(w,contract.id);
+  note(w,'Contract '+contract.id+' '+status+'. '+contract.deliveredT+' / '+contract.quantityT+' t delivered; '+contract.earnedCredits+' credits earned.');
+}
+export function acceptContract(w:Campaign,offerId:ContractOfferId,size:ContractSize):Campaign {
+  const quote=contractQuote(w,offerId,size);if(quote.reason)throw Error(quote.reason);
+  const next=edit(w),id=next.commerce.nextContract++;
+  next.commerce.contracts.push({id,offerId,size,acceptedDay:w.day,dueDay:quote.dueDay,quantityT:quote.quantityT,deliveredT:0,earnedCredits:0,status:'active',settledDay:null});
+  pruneContracts(next);
+  note(next,'Contract '+id+' accepted: '+quote.quantityT+' t '+CARGO[quote.kind].toLowerCase()+' for '+quote.buyer+', due day '+quote.dueDay.toFixed(1)+'.');
+  return next;
+}
+export function cancelContract(w:Campaign,id:number):Campaign {
+  if(contractById(w,id).status!=='active')throw Error('This contract is already settled.');
+  const next=edit(w);settleContract(next,contractById(next,id),'cancelled');pruneContracts(next);return next;
+}
+export function contractFlightPlan(w:Campaign,id:number,cargoT:number,mode:Shipment['mode']) {
+  const contract=contractById(w,id),offer=contractOffer(contract.offerId),plan=flightPlan(w,offer.from,offer.to,cargoT,mode,offer.kind);
+  const remaining=contractRemaining(w,id);
+  const reason=contract.status!=='active'?'This contract is already settled.':
+    remaining.unassignedT===0?'All remaining contract cargo is already in flight.':
+    cargoT>remaining.unassignedT?'Only '+remaining.unassignedT+' t remain unassigned to this contract.':
+    w.day+plan.duration>contract.dueDay+EPS?'A new departure would arrive after the contract deadline.':plan.reason;
+  return {...plan,reason};
+}
+export function dispatchContract(w:Campaign,id:number,cargoT:number,mode:Shipment['mode']):Campaign {
+  const plan=contractFlightPlan(w,id,cargoT,mode);if(plan.reason)throw Error(plan.reason);
+  const next=edit(w),offer=contractOffer(contractById(next,id).offerId);
+  launch(next,offer.from,offer.to,cargoT,mode,offer.kind,null,id);
+  if(contractRemaining(next,id).unassignedT===0)stopContractServices(next,id);
+  return next;
+}
+export function addContractService(w:Campaign,id:number,cargoT:number,mode:Shipment['mode'],intervalDays:number):Campaign {
+  const contract=contractById(w,id),offer=contractOffer(contract.offerId),route=routeFor(offer.from,offer.to);
+  if(contract.status!=='active')throw Error('This contract is already settled.');
+  if(contractRemaining(w,id).unassignedT===0)throw Error('All remaining contract cargo is already in flight.');
+  if(w.day+1+route.coastDays+route.handlingDays>contract.dueDay+EPS)throw Error('The first service departure would miss the contract deadline.');
+  const next=addService(w,offer.from,offer.to,cargoT,mode,offer.kind,intervalDays);
+  next.services[next.services.length-1].contractId=id;
+  return next;
+}
+export function serviceFlightPlan(w:Campaign,service:Service) {
+  if(service.contractId===null)return {...flightPlan(w,service.from,service.to,service.cargoT,service.mode,service.kind),cargoT:service.cargoT};
+  const cargoT=Math.min(service.cargoT,contractRemaining(w,service.contractId).unassignedT);
+  return {...contractFlightPlan(w,service.contractId,cargoT,service.mode),cargoT};
+}
+export function procurementReason(w:Campaign,kind:ProcurementKind,amountT:number) {
+  if(!Object.hasOwn(PROCUREMENT_PRICES,kind))return 'Choose material, equipment or support fuel.';
+  if(!Number.isInteger(amountT)||amountT<1||amountT>LIMITS.stock)return 'Choose a whole procurement quantity from 1 to 1,000,000 tonnes.';
+  if(w.commerce.credits<amountT*PROCUREMENT_PRICES[kind])return 'Not enough commercial credits.';
+  if((kind==='fuel'?LIMITS.stock-w.fuelT:room(w,'earth',kind))+EPS<amountT)return kind==='fuel'?'The support fuel pool has no room.':'Earth storage has no room after incoming deliveries.';
+  return '';
+}
+export function procure(w:Campaign,kind:ProcurementKind,amountT:number):Campaign {
+  const reason=procurementReason(w,kind,amountT);if(reason)throw Error(reason);
+  const next=edit(w),cost=amountT*PROCUREMENT_PRICES[kind];
+  next.commerce.credits-=cost;next.commerce.spentCredits+=cost;
+  if(kind==='fuel')next.fuelT+=amountT;else next.ports.earth[key(kind)]+=amountT;
+  note(next,'Purchased '+amountT+' t '+(kind==='fuel'?'pooled support fuel':CARGO[kind].toLowerCase()+' at Earth')+' for '+cost+' credits.');
+  return next;
 }
 /** Continuous production between discrete events. Incoming cargo reserves
  * storage; a full producer pauses without consuming maintenance. */
@@ -260,14 +392,26 @@ function deploy(w: Campaign) {
 function arrive(w: Campaign) {
   const arrived=w.flights.filter(f=>f.arrival<=w.day+EPS).sort((a,b)=>a.arrival-b.arrival||a.id-b.id);
   for (const f of arrived) {
-    w.ports[f.to][key(f.kind)] += f.cargoT; w.ports[f.to].receivedT += f.cargoT;
-    if(f.from==='moon'&&f.to==='earth') w.lunarReturnedT += f.cargoT;
-    if(f.from==='moon'&&f.to==='phobos'&&f.kind==='materials') w.lunarPhobosDeliveredT += f.cargoT;
-    if(f.kind==='water')w.belt.returnedWaterT+=f.cargoT;
+    const contract=f.contractId===null?null:contractById(w,f.contractId);
+    if(contract?.status==='active'&&f.arrival<=contract.dueDay+EPS) {
+      const offer=contractOffer(contract.offerId);
+      contract.deliveredT+=f.cargoT;
+      const complete=contract.deliveredT===contract.quantityT;
+      const payment=f.cargoT*offer.rate+(complete?contract.quantityT*offer.rate/4:0);
+      contract.earnedCredits+=payment;w.commerce.earnedCredits+=payment;w.commerce.credits+=payment;
+      note(w,'Flight '+f.id+': '+f.cargoT+' t received by '+offer.buyer+' for contract '+contract.id+'. '+payment+' credits paid; cargo consumed by the customer.');
+      if(complete)settleContract(w,contract,'completed');
+    } else {
+      w.ports[f.to][key(f.kind)] += f.cargoT; w.ports[f.to].receivedT += f.cargoT;
+      if(f.from==='moon'&&f.to==='earth') w.lunarReturnedT += f.cargoT;
+      if(f.from==='moon'&&f.to==='phobos'&&f.kind==='materials') w.lunarPhobosDeliveredT += f.cargoT;
+      if(f.kind==='water')w.belt.returnedWaterT+=f.cargoT;
+      note(w,'Flight '+f.id+' arrived at '+SITE[f.to].name+'. '+f.cargoT+' t '+CARGO[f.kind].toLowerCase()+' added to the depot.');
+    }
     const service=w.services.find(s=>s.id===f.serviceId); if(service) service.deliveredT += f.cargoT;
-    note(w,'Flight '+f.id+' arrived at '+SITE[f.to].name+'. '+f.cargoT+' t '+CARGO[f.kind].toLowerCase()+' added to the depot.');
   }
   w.flights=w.flights.filter(f=>f.arrival>w.day+EPS);
+  pruneContracts(w);
 }
 export type BlockedDeparture =
   | { kind:'service'; serviceId:number; day:number; reason:string }
@@ -279,20 +423,25 @@ export function advance(world: Campaign, days: number, onBlocked?: (departure:Bl
   // Arrivals precede bookings at the same instant; older services get first use.
   while(next.day<target) {
     const events=[target,...next.flights.map(f=>f.arrival),...next.services.filter(s=>s.enabled).map(s=>s.nextDay),
+      ...next.commerce.contracts.filter(c=>c.status==='active').map(c=>c.dueDay),
       ...next.solar.deployments.map(d=>d.arrival),
       ...(next.solar.nextCycleDay===null?[]:[next.solar.nextCycleDay]),
       ...(next.belt.nextCycleDay===null?[]:[next.belt.nextCycleDay]),
       ...(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null?[next.solar.nextLaunchDay]:[])];
     const at=Math.min(...events); produce(next,Math.max(0,at-next.day)); next.day=at;
     arrive(next); deploy(next);
+    for(const contract of next.commerce.contracts)if(contract.status==='active'&&contract.dueDay<=at+EPS)settleContract(next,contract,'expired');
+    pruneContracts(next);
     if(next.solar.nextCycleDay!==null&&next.solar.nextCycleDay<=at+EPS)mercuryCycle(next);
     if(next.belt.nextCycleDay!==null&&next.belt.nextCycleDay<=at+EPS)beltCycle(next);
     for(const service of [...next.services].sort((a,b)=>a.id-b.id)) {
       if(!service.enabled||service.nextDay>at+EPS) continue;
-      const plan=flightPlan(next,service.from,service.to,service.cargoT,service.mode,service.kind);
+      if(service.contractId!==null&&(contractById(next,service.contractId).status!=='active'||contractRemaining(next,service.contractId).unassignedT===0)){service.enabled=false;continue;}
+      const plan=serviceFlightPlan(next,service);
       if(!plan.reason) {
-        launch(next,service.from,service.to,service.cargoT,service.mode,service.kind,service.id);
+        launch(next,service.from,service.to,plan.cargoT,service.mode,service.kind,service.id,service.contractId);
         service.dispatched++; service.nextDay=at+service.intervalDays;
+        if(service.contractId!==null&&contractRemaining(next,service.contractId).unassignedT===0)stopContractServices(next,service.contractId);
       } else {
         onBlocked?.({kind:'service',serviceId:service.id,day:at,reason:plan.reason});
         service.nextDay=at+1; // No backlog or log spam: retry tomorrow.
@@ -313,6 +462,7 @@ export function advance(world: Campaign, days: number, onBlocked?: (departure:Bl
 }
 export function nextEventDay(world: Campaign) {
   const days = [...world.flights.map(f => f.arrival), ...SITES.map(s => world.ports[s].readyDay), world.nextSupplyDay,
+    ...world.commerce.contracts.filter(c=>c.status==='active').map(c=>c.dueDay),
     ...world.services.filter(s=>s.enabled).map(s=>s.nextDay),...world.solar.deployments.map(d=>d.arrival),
     ...(world.solar.nextCycleDay===null?[]:[world.solar.nextCycleDay]),
     ...(world.belt.nextCycleDay===null?[]:[world.belt.nextCycleDay]),
@@ -365,18 +515,23 @@ export function addService(world: Campaign, from: SiteId, to: SiteId, cargoT: nu
   if(!['tug','tether'].includes(mode)||!Object.hasOwn(CARGO,kind)||!Number.isInteger(cargoT)||cargoT<1||cargoT>(mode==='tug'?10:30)) throw Error('Choose a valid cargo type, service and payload.');
   if(world.day+1>LIMITS.days) throw Error('This campaign has reached its simulation horizon.');
   const next=edit(world), id=next.nextService++;
-  next.services.push({id,from,to,cargoT,mode,kind,intervalDays,nextDay:world.day+1,enabled:true,dispatched:0,deliveredT:0});
+  next.services.push({id,from,to,cargoT,mode,kind,intervalDays,nextDay:world.day+1,enabled:true,dispatched:0,deliveredT:0,contractId:null});
   note(next,'Service '+id+' scheduled: '+cargoT+' t '+CARGO[kind].toLowerCase()+', '+SITE[from].name+' → '+SITE[to].name+', every '+intervalDays+' days.'); return next;
 }
 export function toggleService(world: Campaign, id: number): Campaign {
   const next=edit(world), service=next.services.find(s=>s.id===id);
   if(!service) throw Error('Service not found.');
+  if(!service.enabled&&service.contractId!==null) {
+    if(contractById(next,service.contractId).status!=='active')throw Error('This contract is already settled.');
+    if(contractRemaining(next,service.contractId).unassignedT===0)throw Error('All remaining contract cargo is already in flight.');
+  }
   service.enabled=!service.enabled; service.nextDay=Math.max(next.day+1,service.nextDay);
   note(next,'Service '+id+' '+(service.enabled?'resumed':'paused')+'.'); return next;
 }
 export function removeService(world: Campaign, id: number): Campaign {
   if(!world.services.some(s=>s.id===id)) throw Error('Service not found.');
   const next=edit(world); next.services=next.services.filter(s=>s.id!==id);
+  pruneContracts(next);
   note(next,'Service '+id+' removed. Its flights already in transit will still arrive.'); return next;
 }
 export function resupply(world: Campaign): Campaign {
@@ -634,7 +789,8 @@ export function validateCampaign(value: unknown): Campaign {
   const beforeDevelopment=oldTraffic||expandedTraffic;
   const beforeDesign=beforeDevelopment||raw.schema===6&&raw.model==='network-0.6.0';
   const fixedDesign=raw.schema===7&&raw.model==='network-0.7.0';
-  if (!beforeDesign && !fixedDesign && (raw.schema !== 8 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const beforeCommerce=beforeDesign||fixedDesign||raw.schema===8&&raw.model==='network-0.8.0';
+  if (!beforeCommerce && (raw.schema !== 9 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   let development=freshDevelopment();
   if(!beforeDevelopment){const d=object(raw.development);development={
     launchLevel:num(d.launchLevel,0,DEVELOPMENT.maxLevel,true),waterLevel:num(d.waterLevel,0,DEVELOPMENT.maxLevel,true),fuelLevel:num(d.fuelLevel,0,DEVELOPMENT.maxLevel,true),
@@ -666,7 +822,7 @@ export function validateCampaign(value: unknown): Campaign {
     if(cargoKind==='water'&&!waterRoute(from,to))throw Error('Invalid water route.');
     return {id,from,to,kind:cargoKind,mode:s.mode,cargoT:num(s.cargoT,1,s.mode==='tug'?10:30,true),
       intervalDays:num(s.intervalDays,1,3650,true),nextDay:num(s.nextDay,enabled?day+1e-9:0,LIMITS.days+3650),enabled,
-      dispatched:num(s.dispatched,0,1e9,true),deliveredT:num(s.deliveredT,0,1e9)};
+      dispatched:num(s.dispatched,0,1e9,true),deliveredT:num(s.deliveredT,0,1e9),contractId:beforeCommerce||s.contractId===null?null:num(s.contractId,1,1e9,true)};
   });
   const nextShipment = num(raw.nextShipment,1,1e9,true), ids = new Set<number>();
   const flights: Shipment[] = raw.flights.map((v): Shipment => {
@@ -681,7 +837,7 @@ export function validateCampaign(value: unknown): Campaign {
     const cargoKind=legacy?'materials':kind(f.kind);
     if(cargoKind==='water'&&!waterRoute(from,to))throw Error('Invalid water route.');
     return { id, from, to, cargoT, fuelT: num(f.fuelT,0,1000), mode: f.mode, departed, arrival,
-      kind:cargoKind,serviceId:legacy||f.serviceId===null?null:num(f.serviceId,1,nextService-1,true) };
+      kind:cargoKind,serviceId:legacy||f.serviceId===null?null:num(f.serviceId,1,nextService-1,true),contractId:beforeCommerce||f.contractId===null?null:num(f.contractId,1,1e9,true) };
   });
   for(const id of SITES) for(const resource of ['materials','equipment','water'] as CargoKind[]) {
     const inbound=flights.filter(f=>f.to===id&&f.kind===resource).reduce((sum,f)=>sum+f.cargoT,0);
@@ -727,19 +883,86 @@ export function validateCampaign(value: unknown): Campaign {
     if(Math.abs(ceresReserve-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
   }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  const world:Campaign={ schema:8, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  let commerce=freshCommerce();
+  if(!beforeCommerce) {
+    const c=object(raw.commerce),cooldowns=object(c.cooldowns),nextContract=num(c.nextContract,1,1e9,true);
+    if(!Array.isArray(c.contracts)||c.contracts.length>CONTRACT_HISTORY+LIMITS.cargoFlights+LIMITS.services+1)throw Error('Invalid commercial contract history.');
+    const contractIds=new Set<number>();
+    const contracts=c.contracts.map((value):Contract=>{
+      const record=object(value),id=num(record.id,1,nextContract-1,true);
+      if(contractIds.has(id))throw Error('Duplicate contract in save.');contractIds.add(id);
+      const offer=contractOffer(record.offerId as ContractOfferId);
+      if(record.size!=='standard'&&record.size!=='industrial')throw Error('Invalid contract size.');
+      const size=record.size,terms=CONTRACT_TERMS[size],acceptedDay=num(record.acceptedDay,0,day),dueDay=num(record.dueDay,acceptedDay,LIMITS.days);
+      const route=routeFor(offer.from,offer.to);
+      if(Math.abs(dueDay-acceptedDay-terms.loadingWindowDays-route.coastDays-route.handlingDays)>1e-6)throw Error('Invalid contract deadline.');
+      const quantityT=num(record.quantityT,terms.quantityT,terms.quantityT,true),deliveredT=num(record.deliveredT,0,quantityT,true);
+      if(!['active','completed','expired','cancelled'].includes(record.status as string))throw Error('Invalid contract status.');
+      const status=record.status as Contract['status'],settledDay=record.settledDay===null?null:num(record.settledDay,acceptedDay,day);
+      if(status==='active'?(settledDay!==null||dueDay<=day||deliveredT===quantityT):(settledDay===null||settledDay>dueDay+EPS))throw Error('Invalid contract settlement.');
+      if(status==='completed'&&deliveredT!==quantityT||status!=='completed'&&deliveredT===quantityT)throw Error('Invalid contract progress.');
+      if(status==='expired'&&(settledDay===null||Math.abs(settledDay-dueDay)>EPS))throw Error('Invalid contract expiry.');
+      const expected=deliveredT*offer.rate+(status==='completed'?quantityT*offer.rate/4:0);
+      const earnedCredits=num(record.earnedCredits,expected,expected,true);
+      return {id,offerId:offer.id,size,acceptedDay,dueDay,quantityT,deliveredT,earnedCredits,status,settledDay};
+    });
+    const money=(value:unknown)=>num(value,0,Number.MAX_SAFE_INTEGER,true);
+    commerce={credits:money(c.credits),earnedCredits:money(c.earnedCredits),spentCredits:money(c.spentCredits),nextContract,contracts,cooldowns:{
+      'lunar-return':num(cooldowns['lunar-return'],0,day+CONTRACT_COOLDOWN),
+      'mars-build':num(cooldowns['mars-build'],0,day+CONTRACT_COOLDOWN),
+      'mercury-tooling':num(cooldowns['mercury-tooling'],0,day+CONTRACT_COOLDOWN),
+    }};
+    if(commerce.earnedCredits-commerce.spentCredits!==commerce.credits||commerce.earnedCredits<contracts.reduce((sum,c)=>sum+c.earnedCredits,0)||commerce.earnedCredits>(nextContract-1)*7500)throw Error('Commercial credit ledger does not balance.');
+  }
+  const world:Campaign={ schema:9, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
-    earthDesign:beforeDesign?null:raw.earthDesign===null?null:validateEarthDesignReport(raw.earthDesign),solar,belt,development,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
+    earthDesign:beforeDesign?null:raw.earthDesign===null?null:validateEarthDesignReport(raw.earthDesign),solar,belt,development,commerce,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
   if(Object.values(development).some(v=>v>0)&&developmentUnlockReason(world))throw Error('Industrial development requires the established Mercury and Ceres network.');
   if(fixedDesign&&world.earthDesign&&world.earthDesign.version!==1)throw Error('Invalid design report for the saved campaign version.');
   if(world.earthDesign&&!ports.earth.level)throw Error('An Earth design requires a commissioned tether.');
+  if(commerce.contracts.filter(c=>c.status==='active').length>1)throw Error('Only one commercial contract can be active.');
+  let prior:Contract|undefined;
+  for(const contract of commerce.contracts) {
+    if(prior&&(contract.id<=prior.id||prior.settledDay===null||contract.acceptedDay+EPS<prior.settledDay))throw Error('Invalid contract chronology.');
+    prior=contract;
+    if(contractEligibility(world,contract.offerId,contract.size))throw Error('Contract requires its commissioned route and industry.');
+    const offer=contractOffer(contract.offerId),related=flights.filter(f=>f.contractId===contract.id);
+    if(contract.deliveredT+related.reduce((sum,f)=>sum+f.cargoT,0)>contract.quantityT)throw Error('Contract cargo exceeds its order quantity.');
+    const route=routeFor(offer.from,offer.to),duration=route.coastDays+route.handlingDays;
+    if(contract.deliveredT>0&&(contract.settledDay??day)+EPS<contract.acceptedDay+duration)throw Error('Contract paid before cargo could arrive.');
+    for(const f of related) {
+      if(f.from!==offer.from||f.to!==offer.to||f.kind!==offer.kind||f.departed+EPS<contract.acceptedDay||f.arrival>contract.dueDay+EPS||contract.settledDay!==null&&f.departed>contract.settledDay+EPS)throw Error('Invalid contract shipment.');
+    }
+    const previous=commerce.contracts.filter(c=>c.offerId===contract.offerId&&c.id<contract.id).at(-1);
+    if(previous&&(previous.settledDay===null||contract.acceptedDay+EPS<previous.settledDay+CONTRACT_COOLDOWN))throw Error('Contract buyer cooldown was bypassed.');
+  }
+  for(const offer of CONTRACT_OFFERS) {
+    const latest=commerce.contracts.filter(c=>c.offerId===offer.id).at(-1);
+    if(latest?.status==='active'&&commerce.cooldowns[offer.id]>latest.acceptedDay+EPS)throw Error('Contract accepted during buyer cooldown.');
+    const settled=commerce.contracts.filter(c=>c.offerId===offer.id&&c.settledDay!==null).at(-1);
+    if(settled&&Math.abs(commerce.cooldowns[offer.id]-settled.settledDay!-CONTRACT_COOLDOWN)>EPS)throw Error('Invalid contract buyer cooldown.');
+  }
+  for(const f of flights) {
+    if(f.contractId!==null&&!commerce.contracts.some(c=>c.id===f.contractId))throw Error('Shipment refers to a missing contract.');
+    const service=services.find(s=>s.id===f.serviceId);
+    if(service&&service.contractId!==f.contractId)throw Error('Shipment and service have different customers.');
+  }
+  for(const service of services)if(service.contractId!==null) {
+    const contract=commerce.contracts.find(c=>c.id===service.contractId);
+    if(!contract)throw Error('Service refers to a missing contract.');
+    const offer=contractOffer(contract.offerId);
+    if(service.from!==offer.from||service.to!==offer.to||service.kind!==offer.kind||service.deliveredT>contract.quantityT||service.dispatched>contract.quantityT)throw Error('Invalid contract service.');
+    if(service.enabled&&(contract.status!=='active'||contractRemaining(world,contract.id).unassignedT===0))throw Error('Settled or fully assigned contract service must be paused.');
+  }
+  const references=new Set([...flights.map(f=>f.contractId),...services.map(s=>s.contractId)]);
+  if(commerce.contracts.filter(c=>c.status!=='active'&&!references.has(c.id)).length>CONTRACT_HISTORY)throw Error('Contract history exceeds its retained limit.');
   return world;
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:8, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:9, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6,7,8].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6,7,8,9].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

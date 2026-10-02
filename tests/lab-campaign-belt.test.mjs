@@ -37,12 +37,12 @@ const checkLedger=w=>{
 
 test('belt: the real v4 export preserves every old field and starts an empty Ceres economy',()=>{
   const old=fixture.state,before=structuredClone(fixture),w=validateCampaign(old);
-  for(const k of Object.keys(old).filter(k=>!['schema','model','ports'].includes(k)))assert.deepEqual(w[k],old[k],k);
+  for(const k of Object.keys(old).filter(k=>!['schema','model','ports'].includes(k)))assert.deepEqual(w[k],['flights','services'].includes(k)?old[k].map(item=>({...item,contractId:null})):old[k],k);
   for(const id of Object.keys(old.ports))assert.deepEqual(w.ports[id],{...old.ports[id],waterT:0});
   const fresh=createCampaign('fresh','Fresh');
   assert.deepEqual(w.ports.ceres,fresh.ports.ceres);assert.deepEqual(w.belt,fresh.belt);
-  assert.equal(w.schema,8);assert.equal(w.model,'network-0.8.0');assert.deepEqual(fixture,before);
-  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,8);
+  assert.equal(w.schema,9);assert.equal(w.model,'network-0.9.0');assert.deepEqual(fixture,before);
+  const envelope=JSON.parse(exportCampaign(w));assert.equal(envelope.version,9);
   const restored=importCampaign(JSON.stringify(envelope),'copy');assert.deepEqual(restored,{...w,id:'copy',revision:0});
   checkLedger(w);
 });

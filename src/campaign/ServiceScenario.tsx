@@ -32,6 +32,7 @@ export default function ServiceScenario({world,horizon,current,busy,act}:{world:
     {label:'This service departs',before:current.serviceDeparturesById[service.id]??0,after:proposed.serviceDeparturesById[service.id]??0,unit:''},
     {label:'Blocked attempts',before:serviceHolds(current),after:serviceHolds(proposed),unit:''},
     {label:'Cargo received',before:current.receivedT,after:proposed.receivedT,unit:' t'},
+    ...(service.contractId!==null?[{label:'Customer deliveries',before:current.customerDeliveredT,after:proposed.customerDeliveredT,unit:' t'},{label:'Credits at end',before:current.creditsLater,after:proposed.creditsLater,unit:' cr'}]:[]),
     {label:'Fuel at end',before:current.fuelLater,after:proposed.fuelLater,unit:' t'},
     ...(world.solar.unlocked?[{label:'Mirror launches',before:current.mirrorLaunches,after:proposed.mirrorLaunches,unit:''}]:[]),
   ];
@@ -51,7 +52,7 @@ export default function ServiceScenario({world,horizon,current,busy,act}:{world:
       {!valid&&<p className="outlook-scenario-note">Choose 1–{maximum} whole tonnes and an interval of 1–3,650 whole days.</p>}
     </form>
     {proposed&&comparison&&<div className="outlook-comparison" aria-live="polite">
-      <table><caption className="sr-only">Projected effect of changing service {service.id}</caption><thead><tr><th scope="col">Next {horizon} days</th><th scope="col">Current</th><th scope="col">Proposed</th></tr></thead><tbody>{comparison.map(row=><tr key={row.label}><th scope="row">{row.label}</th><td>{number(row.before)}{row.unit}</td><td>{number(row.after)}{row.unit}</td></tr>)}</tbody></table>
+      <table><caption className="sr-only">Projected effect of changing service {service.id}</caption><thead><tr><th scope="col">Next {number(horizon)} days</th><th scope="col">Current</th><th scope="col">Proposed</th></tr></thead><tbody>{comparison.map(row=><tr key={row.label}><th scope="row">{row.label}</th><td>{number(row.before)}{row.unit}</td><td>{number(row.after)}{row.unit}</td></tr>)}</tbody></table>
       <p className="outlook-scenario-note">{!service.enabled?'This service is paused; resume it to see departures.':service.nextDay>current.toDay?'Its next attempt is beyond this window. Try a longer forecast.':'The next attempt stays on Day '+number(service.nextDay)+'. Cargo in flight keeps its arrival.'} Receipts count only cargo that arrives by the end of this window.</p>
       <button type="button" className="primary" disabled={busy} onClick={()=>{act(w=>updateService(w,draft!.id,draft!.cargoT,draft!.intervalDays));setDraft(null);}}>Apply schedule</button>
     </div>}

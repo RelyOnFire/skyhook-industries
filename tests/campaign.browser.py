@@ -9,6 +9,7 @@ import threading
 from playwright.sync_api import sync_playwright, expect
 
 ROOT=Path(__file__).resolve().parents[1]
+EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self,*_): pass
 
@@ -193,8 +194,11 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==8 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==9 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
+            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            assert all(f['contractId'] is None for f in migrated['state']['flights'])
+            assert all(s['contractId'] is None for s in migrated['state']['services'])
             assert migrated['checkpoints'][0]==legacy
             page.get_by_role('button',name='Your saves',exact=True).click()
             page.locator('.campaign-slot-list li').filter(has=page.get_by_text('CURRENT',exact=True)).get_by_role('button',name='Recover checkpoint').click();saved()
@@ -256,9 +260,11 @@ def main():
             solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
             assert records(solar)[0]==previous_record
             action('Save now',solar);migrated=records(solar)[0]
-            assert migrated['state']['schema']==8 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['state']['schema']==9 and migrated['state']['revision']==previous['revision']+1
             assert migrated['checkpoints'][0]==previous
-            for key in ['flights','services','day','fuelT','marsOperations']:
+            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in previous[field]]
+            for key in ['day','fuelT','marsOperations']:
                 assert migrated['state'][key]==previous[key]
             for site in ['earth','moon','phobos']:
                 assert migrated['state']['ports'][site]=={**previous['ports'][site],'waterT':0}
@@ -556,10 +562,12 @@ def main():
             stale.get_by_role('button',name='Continue Power loop').click();saved(stale)
             action('Save now',motion)
             migrated=next(r for r in records(motion) if r['id']==old['id'])
-            assert migrated['state']['schema']==8 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==9 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in old[field]]
             assert migrated['checkpoints'][0]==old and migrated['state']['solar']['powerLink'] is False
             for key in old:
-                if key not in ['schema','model','revision','solar','ports']:assert migrated['state'][key]==old[key]
+                if key not in ['schema','model','revision','solar','ports','flights','services']:assert migrated['state'][key]==old[key]
             for site in old['ports']:assert migrated['state']['ports'][site]=={**old['ports'][site],'waterT':0}
             for key in old['solar']:assert migrated['state']['solar'][key]==old['solar'][key]
             stale.get_by_role('button',name='+1 day',exact=True).click()

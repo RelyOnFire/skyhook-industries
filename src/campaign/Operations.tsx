@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { tetherCapacity, BELT, beltObjectives, beltProduction, developmentObjectives, developmentProjects, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, flightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, swarmPower, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
+import { tetherCapacity, BELT, beltObjectives, beltProduction, developmentObjectives, developmentProjects, build, buildCost, CARGO, INDUSTRY, industryStatus, installIndustry, contractRemaining, isCustomerFreight, serviceFlightPlan, LIMITS, mercuryProduction, networkObjectives, objectives, powerObjectives, removeService, resupply, SITE, SITES, siteLocked, solarObjectives, swarmPower, toggleService, type Campaign, type CargoKind, type SiteId } from './model.js';
 import { FacilityDrawing } from './NetworkMap.js';
 import { forecastNetwork } from './forecast.js';
 import { trafficItems, type TrafficId, type TrafficItem } from './traffic.js';
 import NetworkOutlook from './NetworkOutlook.js';
+import Contracts from './Contracts.js';
 import ServiceEditor from './ServiceEditor.js';
 import { suggestSupply } from './supply.js';
 
@@ -12,7 +13,7 @@ export const date = (v:number) => 'Day '+n(v);
 export type Act = (fn:(w:Campaign)=>Campaign)=>void;
 export type Prepare = (from:SiteId,to:SiteId,kind:CargoKind,cargoT?:number)=>void;
 export function projectSupplyNeed(world:Campaign,project:ReturnType<typeof developmentProjects>[number]) {
-  const port=world.ports[project.site],inbound=world.flights.filter(flight=>flight.to===project.site);
+  const port=world.ports[project.site],inbound=world.flights.filter(flight=>flight.to===project.site&&!isCustomerFreight(world,flight));
   const inboundMaterial=inbound.filter(flight=>flight.kind==='materials').reduce((sum,flight)=>sum+flight.cargoT,0);
   const inboundEquipment=inbound.filter(flight=>flight.kind==='equipment').reduce((sum,flight)=>sum+flight.cargoT,0);
   return {
@@ -33,7 +34,7 @@ export function Outposts({world,busy,selected,onSelect,act,prepare,onEarthDesign
     <header className="panel-title"><h2 id="outposts-heading">Outposts</h2><span>{visibleSites.filter(s=>world.ports[s].level).length} / {visibleSites.length} online</span></header>
     {visibleSites.map(id=>{
       const p=world.ports[id], locked=siteLocked(world,id), cost=buildCost(world,id);
-      const incoming=world.flights.filter(f=>f.to===id).sort((a,b)=>a.arrival-b.arrival);
+      const incoming=world.flights.filter(f=>f.to===id&&!isCustomerFreight(world,f)).sort((a,b)=>a.arrival-b.arrival);
       const material=incoming.filter(f=>f.kind==='materials').reduce((a,f)=>a+f.cargoT,0),equipment=incoming.filter(f=>f.kind==='equipment').reduce((a,f)=>a+f.cargoT,0),water=incoming.filter(f=>f.kind==='water').reduce((a,f)=>a+f.cargoT,0);
       const hasWater=world.belt.unlocked&&(id==='ceres'||id==='phobos');
       const materialSupply=id==='earth'?null:suggestSupply(world,id,'materials');
@@ -94,6 +95,7 @@ export function NextMove({world,onSelect,onMilestones,onOutlook,onTract}:{world:
     </div>
     <div className="next-actions">
       {next?(chapter===5?<a className="next-power" href="#development-operations">Plan industrial expansion ↗</a>:chapter===4?<a className="next-power" href="#belt-operations">Open belt operations ↗</a>:chapter===3?<a className="next-power" href="#swarm-power">{world.solar.powerLink?'View power loop ↗':'Connect the power loop ↗'}</a>:<button onClick={()=>onSelect(targets[all.indexOf(next)])}>Focus {SITE[targets[all.indexOf(next)]].name} ↗</button>):!world.solar.autoLaunch?<a className="next-power" href="#solar-heading">Review mirror controls ↗</a>:needsMercuryTract?<button className="next-power" onClick={onTract}>Plan Mercury supply ↗</button>:<button className="next-power" onClick={onOutlook}>Review network outlook ↗</button>}
+      {!next&&<a className="text-button" href="#contracts">Freight contracts ↗</a>}
       <button className="text-button" onClick={onMilestones}>{done} / {all.length} milestones</button>
     </div>
   </section>;
@@ -107,7 +109,7 @@ export function Milestones({world}:{world:Campaign}) {
   </div>;
 }
 
-export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}:{world:Campaign;busy:boolean;act:Act;tracked:TrafficId|null;onTrack:(id:TrafficId|null)=>void;arrivals:string[];onDismiss:()=>void}) {
+export function TrafficBoard({world,busy,act,prepareContract,tracked,onTrack,arrivals,onDismiss}:{world:Campaign;busy:boolean;act:Act;prepareContract:(id:number)=>void;tracked:TrafficId|null;onTrack:(id:TrafficId|null)=>void;arrivals:string[];onDismiss:()=>void}) {
   const [kind,setKind]=useState<'all'|'cargo'|TrafficItem['kind']>('all');
   const [destination,setDestination]=useState<'all'|TrafficItem['to']>('all');
   const flightList=useRef<HTMLDivElement>(null),reveal=useRef<TrafficId|null>(null);
@@ -126,10 +128,14 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
   },[kind,destination]);
   const services=<section className="campaign-schedules" aria-labelledby="schedules-heading"><header className="panel-title"><h2 id="schedules-heading">Scheduled services</h2><span>{world.services.length} / 12</span></header>
       <div className="traffic-scroll service-scroll" tabIndex={0} role="region" aria-label="Scheduled service list">{!world.services.length?<p className="campaign-empty">Start a regular supply line using the cargo controls. Your services and any shortages will appear here.</p>:world.services.map(s=>{
-        const currentReason=flightPlan(world,s.from,s.to,s.cargoT,s.mode,s.kind).reason;
+        const currentReason=serviceFlightPlan(world,s).reason;
+        const order=s.contractId===null?null:world.commerce.contracts.find(c=>c.id===s.contractId);
+        const assigned=!!order&&contractRemaining(world,order.id).unassignedT===0;
+        const cannotResume=!!order&&(order.status!=='active'||assigned);
+        const serviceState=order&&order.status!=='active'?order.status[0].toUpperCase()+order.status.slice(1):assigned?'Cargo assigned':!s.enabled?'Paused':null;
         const recoveryEnds=Math.max(world.ports[s.from].readyDay,world.ports[s.to].readyDay);
         const reason=s.enabled&&s.nextDay<=world.day+1+1e-8&&!(currentReason.includes('recovering')&&recoveryEnds<=s.nextDay)?currentReason.split('. ')[0]:'';
-        return <article className="service-row" id={'service-'+s.id} tabIndex={-1} key={s.id} aria-label={'Service '+s.id}><div className="traffic-row-title"><h3>{SITE[s.from].name} <span>→</span> {SITE[s.to].name}</h3><span className={'traffic-state'+(!s.enabled?' paused':reason?' waiting':'')}>{!s.enabled?'Paused':reason?'Waiting':'Scheduled'}</span></div><p><b>{s.cargoT} t</b> {CARGO[s.kind].toLowerCase()} · every {s.intervalDays} d</p><p className="traffic-timing">{s.enabled?(reason?reason+' Retry ':'Next departure ')+date(s.nextDay):'In-flight deliveries continue.'}</p><div className="service-row-controls"><small>#{s.id} · {s.dispatched} sent · {n(s.deliveredT)} t delivered</small><ServiceEditor key={world.id+':'+s.id} world={world} service={s} busy={busy} act={act}/><button disabled={busy} aria-label={(s.enabled?'Pause service ':'Resume service ')+s.id} onClick={()=>act(w=>toggleService(w,s.id))}>{s.enabled?'Pause':'Resume'}</button><button disabled={busy} aria-label={'Remove service '+s.id} onClick={()=>act(w=>removeService(w,s.id))}>Remove</button></div></article>;
+        return <article className="service-row" id={'service-'+s.id} tabIndex={-1} key={s.id} aria-label={'Service '+s.id}><div className="traffic-row-title"><h3>{SITE[s.from].name} <span>→</span> {SITE[s.to].name}</h3><span className={'traffic-state'+(!s.enabled?' paused':reason?' waiting':'')}>{serviceState||(reason?'Waiting':'Scheduled')}</span></div><p><b>{s.cargoT} t</b> {CARGO[s.kind].toLowerCase()} · every {s.intervalDays} d{s.contractId!==null&&<span className="contract-service-tag"> · contract #{s.contractId}</span>}</p><p className="traffic-timing">{s.enabled?(reason?reason+' Retry ':'Next departure ')+date(s.nextDay):'In-flight deliveries continue.'}</p><div className="service-row-controls"><small>#{s.id} · {s.dispatched} sent · {n(s.deliveredT)} t delivered</small><ServiceEditor key={world.id+':'+s.id} world={world} service={s} busy={busy} act={act}/><button disabled={busy||!s.enabled&&cannotResume} title={!s.enabled&&cannotResume?currentReason:undefined} aria-label={(s.enabled?'Pause service ':'Resume service ')+s.id} onClick={()=>act(w=>toggleService(w,s.id))}>{s.enabled?'Pause':'Resume'}</button><button disabled={busy} aria-label={'Remove service '+s.id} onClick={()=>act(w=>removeService(w,s.id))}>Remove</button></div></article>;
       })}</div>
     </section>;
   return <aside className="ops-traffic" id="traffic" aria-label="Live logistics">
@@ -140,9 +146,10 @@ export function TrafficBoard({world,busy,act,tracked,onTrack,arrivals,onDismiss}
         <label>Destination<select aria-label="Filter flights by destination" value={destination} onChange={e=>setDestination(e.target.value as typeof destination)}><option value="all">Everywhere</option>{SITES.filter(id=>!siteLocked(world,id)).map(id=><option key={id} value={id}>{SITE[id].name}</option>)}{world.solar.unlocked&&<option value="swarm">Solar swarm</option>}</select></label>
       </div>
       <div className="traffic-total" data-testid="traffic-summary"><b>{n(shown.reduce((a,f)=>a+f.mass,0))} t</b> {filtered?'matching':'in transit'} <span>{shown.length} / {flights.length} flights</span></div>
-      <div ref={flightList} className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list" title="Next arrivals first">{!shown.length?<div className="campaign-empty"><p>{!flights.length?'No cargo in transit. Send a shipment and watch it cross the map.':'No flights match these filters.'}</p>{filtered&&<button onClick={clearFilters}>Show all traffic</button>}</div>:shown.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-traffic-id={f.id} data-arrival={f.arrival} data-kind={f.kind} data-destination={f.to}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
+      <div ref={flightList} className="traffic-scroll flight-scroll" tabIndex={0} role="region" aria-label="Active flight list" title="Next arrivals first">{!shown.length?<div className="campaign-empty"><p>{!flights.length?'No cargo in transit. Send a shipment and watch it cross the map.':'No flights match these filters.'}</p>{filtered&&<button onClick={clearFilters}>Show all traffic</button>}</div>:shown.map(f=><article className={'flight-row'+(tracked===f.id?' tracked':'')} key={f.id} data-traffic-id={f.id} data-arrival={f.arrival} data-kind={f.kind} data-destination={f.to}><div className="traffic-row-title"><h3>{f.fromName} <span>→</span> {f.toName}</h3><b>{n(f.arrival-world.day)}<small> d</small></b></div><p><i className={'cargo-swatch '+f.kind} aria-hidden="true"/><b>{f.mass} t</b> {f.cargo.toLowerCase()}{f.customer&&<em className="contract-service-tag"> · customer freight</em>} <span>· {date(f.arrival)}</span></p><div className="flight-row-bottom"><progress aria-label={f.label+' progress'} value={world.day-f.departed} max={f.arrival-f.departed}/>{f.kind==='mirrors'&&<span className="mirror-tag">SOLAR</span>}<button aria-pressed={tracked===f.id} aria-label={(tracked===f.id?'Tracking ':'Track ')+f.label.toLowerCase()} onClick={()=>onTrack(tracked===f.id?null:f.id)}>{tracked===f.id?'Tracking':'Track'}</button></div></article>)}</div>
     </section>
     {services}
+    <Contracts key={world.id} world={world} busy={busy} act={act} prepareContract={prepareContract}/>
     <NetworkOutlook key={world.id} world={world} busy={busy} act={act}/>
     {!!arrivals.length&&<section className="campaign-arrivals" aria-label="Recent arrivals"><header><b>Deliveries received</b><button aria-label="Dismiss arrival notifications" onClick={onDismiss}>Dismiss</button></header><div role="status">{arrivals.map((text,i)=><p key={i}>{text}</p>)}</div></section>}
     <details className="campaign-history"><summary>Activity log <span>{world.log.length} events</span></summary><ol>{[...world.log].reverse().map((e,i)=><li key={i}><time>{date(e.day)}</time><span>{e.text}</span></li>)}</ol></details>

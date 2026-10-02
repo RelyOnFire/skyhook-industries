@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { forecastNetwork, previewService } from '../.lab-test/campaign/forecast.js';
-import { addService, advance, createCampaign, LIMITS, validateCampaign } from '../.lab-test/campaign/model.js';
+import { acceptContract, addContractService, activeContract, addService, advance, createCampaign, LIMITS, validateCampaign } from '../.lab-test/campaign/model.js';
 import { updateService } from '../.lab-test/campaign/service-edit.js';
 
 test('outlook uses the real engine without changing the saved world or its revision', () => {
@@ -110,4 +110,33 @@ test('new service preview enforces scheduling limits and clips both plans to the
   assert.equal(end.current.days,1.5);assert.equal(end.proposed.toDay,LIMITS.days);
   assert.throws(()=>previewService({...world,day:LIMITS.days-.5},draft,30),/horizon/);
   assert.deepEqual(world,original);
+});
+
+
+test('contract service forecast projects consumed customer freight and payment through a long deadline',()=>{
+  let world=validateCampaign(JSON.parse(readFileSync(new URL('./fixtures/campaign-v5.json',import.meta.url))).state);
+  world.services=[];
+  world.ports.moon.materialsT=600;
+  world.ports.moon.equipmentT=100;
+  world.ports.moon.level=3;
+  world.ports.phobos.level=3;
+  world.ports.moon.readyDay=world.day;
+  world.ports.phobos.readyDay=world.day;
+  world=acceptContract(world,'mars-build','industrial');
+  const order=activeContract(world),days=order.dueDay-world.day;
+  assert.ok(days>365,'the industrial loading window extends past a one-year forecast');
+  const original=structuredClone(world);
+  const draft={from:'moon',to:'phobos',kind:'materials',mode:'tether',cargoT:30,intervalDays:2,contractId:order.id};
+  const preview=previewService(world,draft,days);
+  const actual=advance(addContractService(world,order.id,30,'tether',2),days);
+  assert.deepEqual(world,original);
+  assert.equal(preview.proposed.toDay,order.dueDay);
+  assert.equal(preview.proposed.contracts[0].status,'completed');
+  assert.equal(preview.proposed.customerDeliveredT,300);
+  assert.equal(preview.proposed.creditsLater,3000);
+  assert.equal(preview.proposed.receivedT,preview.current.receivedT,'buyer receipts do not become network depot receipts');
+  assert.equal(preview.proposed.creditsLater,actual.commerce.credits);
+  assert.equal(preview.proposed.serviceDeparturesById[world.nextService],10);
+  assert.deepEqual(preview.proposed.ports.map(p=>p.later),preview.proposed.ports.map(p=>actual.ports[p.id]));
+  assert.deepEqual(validateCampaign(actual),actual);
 });

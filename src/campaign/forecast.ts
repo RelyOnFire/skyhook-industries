@@ -1,4 +1,4 @@
-import { addService, advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type CargoKind, type Shipment, type SiteId } from './model.js';
+import { addContractService, addService, advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type CargoKind, type Shipment, type SiteId } from './model.js';
 
 export interface ServiceDelay {
   id: number;
@@ -18,7 +18,7 @@ export interface MirrorDelay {
 /** Run the real event engine on copies. This is an outlook, never a saved action. */
 export function forecastNetwork(world: Campaign, requestedDays: number) {
   const days = Math.min(requestedDays, LIMITS.days - world.day);
-  if (!Number.isInteger(requestedDays) || requestedDays < 1 || days <= 0) throw Error('Choose a forecast within the simulation horizon.');
+  if (!Number.isFinite(requestedDays) || requestedDays <= 0 || days <= 0) throw Error('Choose a forecast within the simulation horizon.');
   const delayed = new Map<string, ServiceDelay>(),mirrorDelayed = new Map<string, MirrorDelay>();
   const recordBlocked = (attempt: BlockedDeparture) => {
     if (attempt.kind === 'mirrors') {
@@ -64,6 +64,10 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     fuelLater: projected.fuelT,
     swarmNow: world.solar.deployedT,
     swarmLater: projected.solar.deployedT,
+    creditsNow: world.commerce.credits,
+    creditsLater: projected.commerce.credits,
+    customerDeliveredT: projected.commerce.contracts.reduce((sum,c)=>sum+c.deliveredT-(world.commerce.contracts.find(old=>old.id===c.id)?.deliveredT??0),0),
+    contracts: world.commerce.contracts.filter(c=>c.status==='active').map(c=>projected.commerce.contracts.find(next=>next.id===c.id)!),
     receivedT: ports.reduce((sum, port) => sum + port.later.receivedT - port.now.receivedT, 0),
     activeServices: world.services.filter(service => service.enabled).length,
     serviceDepartures,
@@ -79,12 +83,12 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
 }
 
 export interface ServiceProposal {
-  from:SiteId;to:SiteId;kind:CargoKind;mode:Shipment['mode'];cargoT:number;intervalDays:number;
+  from:SiteId;to:SiteId;kind:CargoKind;mode:Shipment['mode'];cargoT:number;intervalDays:number;contractId?:number|null;
 }
 
 /** Compare a new service at its real queue position, without saving either run. */
 export function previewService(world:Campaign,draft:ServiceProposal,days:number) {
-  const proposal=addService(world,draft.from,draft.to,draft.cargoT,draft.mode,draft.kind,draft.intervalDays);
+  const proposal=draft.contractId!=null?addContractService(world,draft.contractId,draft.cargoT,draft.mode,draft.intervalDays):addService(world,draft.from,draft.to,draft.cargoT,draft.mode,draft.kind,draft.intervalDays);
   const current=forecastNetwork(world,days),proposed=forecastNetwork(proposal,days);
   return {current,proposed,serviceId:world.nextService};
 }

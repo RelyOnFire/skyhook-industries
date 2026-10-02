@@ -9,6 +9,7 @@ import threading
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self, *_): pass
@@ -81,10 +82,12 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = records()[0]
-            assert migrated['state']['schema']==8 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==9 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints'][0]==old
+            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in old[field]]
             for key in old:
-                if key not in ['schema','model','revision','ports']: assert migrated['state'][key]==old[key], key
+                if key not in ['schema','model','revision','ports','flights','services']: assert migrated['state'][key]==old[key], key
             for site in old['ports']: assert migrated['state']['ports'][site]=={**old['ports'][site], 'waterT':0}
             assert not migrated['state']['belt']['unlocked'] and migrated['state']['ports']['ceres']['level']==0
             stale.get_by_role('button', name='+1 day', exact=True).click()
@@ -226,7 +229,7 @@ def main():
             backup = out/'belt-backup.json'
             event.value.save_as(backup)
             exported = json.loads(backup.read_text())
-            assert exported['version']==8 and exported['state']==grown
+            assert exported['version']==9 and exported['state']==grown
             bad = json.loads(backup.read_text())
             bad['state']['belt']['refinedT']+=1
             page.locator('input[type=file]').set_input_files({'name':'bad-water.json','mimeType':'application/json','buffer':json.dumps(bad).encode()})
@@ -239,7 +242,7 @@ def main():
             ledger(copy)
             page.locator('.campaign-save-manager>summary').click()
             action('Dismiss message')
-            done('schema-8 water backup imports into a separate slot; a broken mass ledger preserves the current world')
+            done('schema-9 water backup imports into a separate slot; a broken mass ledger preserves the current world')
 
             for width,height in [(1440,1000),(1280,800),(1000,900),(768,1024),(390,844),(320,800)]:
                 page.set_viewport_size({'width':width,'height':height})

@@ -60,11 +60,11 @@ test('daily services actually depart more often with a faster design; coarse/fin
 test('v1–v6 have no free design; v7 preserves its paid legacy terms until explicit conversion with one-time credit',()=>{
   for(let version=1;version<=7;version++){
     const raw=JSON.parse(readFileSync(new URL(`./fixtures/campaign-v${version}.json`,import.meta.url))),before=structuredClone(raw);
-    const migrated=validateCampaign(raw.state);assert.equal(migrated.schema,8);assert.deepEqual(raw,before);
+    const migrated=validateCampaign(raw.state);assert.equal(migrated.schema,9);assert.deepEqual(raw,before);
     if(version<7){assert.equal(migrated.earthDesign,null);raw.state.earthDesign=report;assert.equal(validateCampaign(raw.state).earthDesign,null);}
-    if(version===6)assert.deepEqual(migrated,{...raw.state,schema:8,model:CAMPAIGN_MODEL,earthDesign:null});
+    if(version===6)assert.deepEqual(migrated,{...raw.state,schema:9,model:CAMPAIGN_MODEL,commerce:createCampaign('x','x').commerce,flights:raw.state.flights.map(f=>({...f,contractId:null})),services:raw.state.services.map(s=>({...s,contractId:null})),earthDesign:null});
     if(version===7){
-      assert.deepEqual(migrated,{...raw.state,schema:8,model:CAMPAIGN_MODEL});near(tetherRecoveryDays(migrated,'earth'),1.6);
+      assert.deepEqual(migrated,{...raw.state,schema:9,model:CAMPAIGN_MODEL,commerce:createCampaign('x','x').commerce,flights:raw.state.flights.map(f=>({...f,contractId:null})),services:raw.state.services.map(s=>({...s,contractId:null}))});near(tetherRecoveryDays(migrated,'earth'),1.6);
       const cost=earthDesignCost(migrated,heavy);assert.equal(cost.credit,true);assert.equal(cost.materialsT,earthDesignPerformance(heavy,1).materialsT-40);
       const converted=commissionEarthDesign(migrated,heavy);assert.equal(converted.earthDesign.version,2);assert.equal(earthDesignCost(converted,small).credit,false);
       assert.deepEqual(converted.flights,migrated.flights);assert.deepEqual(converted.services,migrated.services);assert.equal(converted.ports.earth.readyDay,migrated.ports.earth.readyDay);

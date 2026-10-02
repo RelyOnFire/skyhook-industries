@@ -177,11 +177,71 @@ A sustainable scenario tested for 1,000 days sends 5 t Earth–Moon equipment ev
 every 20 days. The player first commissions both tethers and supplies the
 20 t/5 t installation requirements plus working equipment.
 
+## Customer freight and earned supplies
+
+Contracts give an established network optional work alongside its own supply chain.
+The Freight contracts panel stays with live logistics. One order can be active at a
+time. The three fictional buyers, prices, deadlines and procurement prices are
+fixed scenario rules, not real markets or a simulated competing economy.
+
+| Buyer / order | Cargo route | Payment per on-time tonne |
+| --- | --- | --- |
+| Terran Orbital Works / lunar construction imports | Moon → Earth material | 4 credits |
+| Ares Habitat Cooperative / Mars habitat construction | Moon → Phobos material | 8 credits |
+| Helion Research Industries / Mercury industrial tooling | Earth → Mercury equipment | 20 credits |
+
+Both endpoint tethers and the origin industry must be commissioned; accepting an
+order does not require ready stock. Standard orders request 30 t with a 30-day
+loading window. Industrial orders request 300 t with a 120-day window and require
+the same established network as industrial development. The deadline is acceptance
+plus the loading window plus that route's frozen coast and handling time. Last
+departure and arrival deadline are shown separately. All cargo must arrive on time;
+an arrival exactly at the deadline counts before expiry. Completing the order pays
+an additional 25% of its base value once. Each buyer waits 90 days after settlement
+before offering another order. Acceptance near the 100,000-day horizon is rejected
+if the deadline would lie beyond it.
+
+Only explicitly assigned cargo departing after acceptance counts. Preparing an
+order chooses its recipient in the existing composer; preparing a regular supply
+or changing its route/resource restores the player's depot as recipient. Ordinary
+shipments and existing services never silently become customer freight. Delivery
+consumes the cargo for the buyer and pays credits; it does not credit the player's
+destination stock, received-total milestones or Moon/Phobos progression counters.
+Customer cargo remains visible in traffic and tracking but is excluded from usable
+inbound supplies and industrial-project shortfalls. It still reserves physical
+depot room, so cancellation can safely return cargo to the depot on arrival.
+
+Contract services share normal inventory, fuel, recovery, arrival, capacity and
+queue rules. Their final batch shrinks to the unassigned quantity, and all services
+for the order pause when its remaining cargo is in flight or the order settles.
+Their history remains available until manually removed. Cancellation and expiry
+retain partial earnings, give no completion bonus, and stop further bookings.
+Already dispatched cargo for a cancelled order arrives as ordinary depot supplies.
+Contract deadlines are events in advance() and Next event. Forecasts use the same
+engine, include customer receipts and credit balances, and can run through an
+active contract's deadline without changing the world.
+
+Earth procurement spends earned credits explicitly: material costs 12 credits/t,
+equipment 30 credits/t and pooled support fuel 2 credits/t. Quantities are whole
+tonnes; stock plus reserved inbound storage must fit, and purchases cannot borrow
+or happen automatically. Material/equipment prices exceed the highest same-cargo
+contract payout including its bonus, preventing a profitable purchase–delivery–
+replacement loop. Normal Earth production and allocations retain their existing
+rules. Credits have no real-money value and are not leaderboard scores.
+
+Schema 9 adds a commerce ledger, bounded contract receipts (20 recent settlements
+plus any referenced by live cargo or retained services), buyer cooldowns and nullable
+contractId on shipments/services. All v1–8 migrations start with zero earned/spent
+credits, no orders or cooldowns, and null assignments on existing traffic. Existing
+resources, progress, clocks, design reports and arrival dates stay intact. There
+are no retroactive deliveries, payments or purchases. Validation checks identities,
+terms, chronology, payment and balance conservation, references and assignment caps.
+
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 8 / network-0.8.0 exports in a skyhook-campaign
-version-8 envelope. The validator accepts schemas 1, 2, 3, 4, 5, 6 and 7 with their matching
+store. Current state schema 9 / network-0.9.0 exports in a skyhook-campaign
+version-9 envelope. The validator accepts schemas 1, 2, 3, 4, 5, 6, 7 and 8 with their matching
 models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
@@ -616,3 +676,23 @@ commissioning. It is a regression fixture, not a newly collected player save.
 Actual solver variants exercise different payload, engine and structure choices;
 tests verify dispatch fuel/capacity, changed service frequency, cost, remote-port
 limits, step determinism, legacy conversion, replacement and standard restoration.
+
+## Agreed development direction
+
+Expeditions remains a browser strategy game. Subsequent work should deepen the
+transport decisions: varied customer demand and contracts, markets and competing
+operators, followed by research that changes network capabilities and tradeoffs.
+The first contract release deliberately proves real delivered demand and spending
+without claiming dynamic markets or competitors already exist. Playtest it in a
+completed save before adding another economy layer.
+
+A richer 3D system view should retain the concise operations workspace and expose
+route congestion, moving freight and growing infrastructure. Optional close-ups
+should explain capture, cargo or industry and preserve immediate return to planning;
+first-person piloting and an Unreal migration are outside the chosen direction.
+
+A future optional leaderboard needs shared scenario starts, fixed model versions,
+explicit scoring and server-verified action histories. Editable local saves and
+self-reported balances are not trustworthy ranked submissions. Keep the existing
+offline personal worlds; do not impose an account to continue them. No leaderboard
+or competitive backend is implemented by the freight-contract release.

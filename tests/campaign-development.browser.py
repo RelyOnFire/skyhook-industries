@@ -10,6 +10,7 @@ import threading
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -95,14 +96,16 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']['schema']==8 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==9 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints']==[old]
+            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in old[field]]
             for key in old:
-                if key not in ['schema','model','revision']: assert migrated['state'][key]==old[key], key
+                if key not in ['schema','model','revision','flights','services']: assert migrated['state'][key]==old[key], key
             assert migrated['state']['development']=={'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}
             action('Save now')
             assert record()==migrated
-            done('native v5 load is read-only; schema 8 checkpoints every old field once and starts with no development upgrades')
+            done('native v5 load is read-only; schema 9 checkpoints every old field once and starts with no development upgrades')
 
             chapter = page.locator('#development-operations')
             launch = chapter.locator('[data-project="launch"]')
@@ -261,7 +264,7 @@ def main():
             backup = out/'industrial-backup.json'
             event.value.save_as(backup)
             envelope = json.loads(backup.read_text())
-            assert envelope['version']==8 and envelope['state']==frozen
+            assert envelope['version']==9 and envelope['state']==frozen
             page.locator('input[type=file]').set_input_files(str(backup))
             saved()
             copy = next(r['state'] for r in records() if r['id'] not in [old['id'], active_id])
