@@ -1,0 +1,8 @@
+---
+import Campaign from '../../../campaign/Campaign';
+import LabLayout from '../../../layouts/LabLayout.astro';
+---
+<LabLayout title="Expeditions · Skyhook Industries" description="Build an interplanetary supply chain. Grow an Earth–Moon–Phobos network, power Mercury's solar swarm, and develop Ceres for water and propellant. Play in your browser and keep your progress." active="campaign">
+  <noscript><p class="campaign-js-note">Enable JavaScript to start or continue a network. You can read the <a href="/lab/campaign/method/">campaign guide and assumptions</a> or <a href="/help/">save instructions</a> without it.</p></noscript>
+  <Campaign client:load />
+</LabLayout>

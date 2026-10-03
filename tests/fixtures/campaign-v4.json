@@ -1,0 +1,653 @@
+{
+  "format": "skyhook-campaign",
+  "version": 4,
+  "state": {
+    "schema": 4,
+    "model": "network-0.4.0",
+    "id": "power-browser-fixture",
+    "name": "Power loop",
+    "revision": 135,
+    "day": 2542.865758917809,
+    "fuelT": 1513.3057589178109,
+    "nextShipment": 175,
+    "nextSupplyDay": 1371.8657589178094,
+    "lunarReturnedT": 10,
+    "ports": {
+      "earth": {
+        "materialsT": 0,
+        "equipmentT": 929.4328794589046,
+        "industry": true,
+        "level": 1,
+        "readyDay": 2460.865758917809,
+        "receivedT": 10,
+        "sentT": 512
+      },
+      "moon": {
+        "materialsT": 1003.9954204047212,
+        "equipmentT": 10.80022897976356,
+        "industry": true,
+        "level": 2,
+        "readyDay": 2527.865758917809,
+        "receivedT": 235,
+        "sentT": 990
+      },
+      "phobos": {
+        "materialsT": 1.9328794589048357,
+        "equipmentT": 24.07731517835657,
+        "industry": true,
+        "level": 1,
+        "readyDay": 2528.865758917809,
+        "receivedT": 911,
+        "sentT": 0
+      },
+      "mercury": {
+        "materialsT": 3115.0251280000016,
+        "equipmentT": 0.7297860000000008,
+        "industry": true,
+        "level": 3,
+        "readyDay": 2543.3204217126286,
+        "receivedT": 210,
+        "sentT": 0
+      }
+    },
+    "flights": [
+      {
+        "id": 158,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2283.865758917809,
+        "arrival": 2546.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 159,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2303.865758917809,
+        "arrival": 2566.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 160,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2323.865758917809,
+        "arrival": 2586.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 161,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2343.865758917809,
+        "arrival": 2606.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 162,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 3,
+        "fuelT": 1.44,
+        "mode": "tether",
+        "departed": 2355.865758917809,
+        "arrival": 2617.7315178356184,
+        "kind": "equipment",
+        "serviceId": 2
+      },
+      {
+        "id": 164,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2363.865758917809,
+        "arrival": 2626.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 165,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2383.865758917809,
+        "arrival": 2646.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 166,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2403.865758917809,
+        "arrival": 2666.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 167,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2423.865758917809,
+        "arrival": 2686.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 168,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2445.865758917809,
+        "arrival": 2708.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 170,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 3,
+        "fuelT": 1.44,
+        "mode": "tether",
+        "departed": 2458.865758917809,
+        "arrival": 2720.7315178356184,
+        "kind": "equipment",
+        "serviceId": 2
+      },
+      {
+        "id": 171,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2466.865758917809,
+        "arrival": 2729.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 172,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2486.865758917809,
+        "arrival": 2749.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 173,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2506.865758917809,
+        "arrival": 2769.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 174,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 2526.865758917809,
+        "arrival": 2789.7315178356184,
+        "kind": "materials",
+        "serviceId": 3
+      }
+    ],
+    "log": [
+      {
+        "day": 2461.8703385130875,
+        "text": "Flight 169 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 2461.9488218598453,
+        "text": "Mirror launch 126: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2462.7166907161395,
+        "text": "Mirror launch 111 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2464.4723750226985,
+        "text": "Mirror launch 127: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2465.895262901514,
+        "text": "Mirror launch 112 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2466.7315178356184,
+        "text": "Flight 152 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 2466.865758917809,
+        "text": "Flight 171: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 2466.96172888601,
+        "text": "Mirror launch 128: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2469.019768188177,
+        "text": "Mirror launch 113 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2469.4177979965198,
+        "text": "Mirror launch 129: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2472.0920151476766,
+        "text": "Mirror launch 114 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2472.8414607002287,
+        "text": "Mirror launch 130: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2475.1137230975887,
+        "text": "Mirror launch 115 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2475.233561028106,
+        "text": "Mirror launch 131: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2478.135431047501,
+        "text": "Mirror launch 116 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2478.594910460595,
+        "text": "Mirror launch 132: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2483.1082358293565,
+        "text": "Mirror launch 117 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2483.926289580142,
+        "text": "Mirror launch 133: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2486.0336951264662,
+        "text": "Mirror launch 118 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2486.228449620169,
+        "text": "Mirror launch 134: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2486.7315178356184,
+        "text": "Flight 153 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 2486.865758917809,
+        "text": "Flight 172: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 2488.91329336492,
+        "text": "Mirror launch 119 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2489.5021139181827,
+        "text": "Mirror launch 135: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2491.7484462363627,
+        "text": "Mirror launch 120 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2492.7479792800514,
+        "text": "Mirror launch 136: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2494.54050487704,
+        "text": "Mirror launch 121 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2494.9667172618874,
+        "text": "Mirror launch 137: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2498.29075973399,
+        "text": "Mirror launch 122 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2499.1589753754347,
+        "text": "Mirror launch 138: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2503.0004441460787,
+        "text": "Mirror launch 123 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2503.325378222377,
+        "text": "Mirror launch 139: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2505.6707376647423,
+        "text": "Mirror launch 124 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2506.466528562534,
+        "text": "Mirror launch 140: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2506.7315178356184,
+        "text": "Flight 154 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 2506.865758917809,
+        "text": "Flight 173: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 2508.30276913682,
+        "text": "Mirror launch 125 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2508.583008320522,
+        "text": "Mirror launch 141: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2517.7315178356184,
+        "text": "Flight 155 arrived at Phobos. 3 t equipment added to the depot."
+      },
+      {
+        "day": 2517.8976195696414,
+        "text": "Mirror launch 126 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2518.6753795350737,
+        "text": "Mirror launch 142: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2520.4211727324946,
+        "text": "Mirror launch 127 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2520.7441852549077,
+        "text": "Mirror launch 143: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2522.7899503847048,
+        "text": "Mirror launch 144: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2522.910526595806,
+        "text": "Mirror launch 128 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2524.8357155145018,
+        "text": "Mirror launch 145: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2525.366595706316,
+        "text": "Mirror launch 129 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2526.7315178356184,
+        "text": "Flight 156 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 2526.858947614293,
+        "text": "Mirror launch 146: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2526.865758917809,
+        "text": "Flight 174: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 2528.7902584100248,
+        "text": "Mirror launch 130 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2528.860137655304,
+        "text": "Mirror launch 147: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2531.182358737902,
+        "text": "Mirror launch 131 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2531.8397607350694,
+        "text": "Mirror launch 148: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2534.5437081703913,
+        "text": "Mirror launch 132 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2534.798276754425,
+        "text": "Mirror launch 149: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2539.875087289938,
+        "text": "Mirror launch 133 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2540.736131058787,
+        "text": "Mirror launch 150: 30 t departed Mercury for the solar swarm."
+      },
+      {
+        "day": 2542.177247329965,
+        "text": "Mirror launch 134 deployed. 30 t joined the solar swarm."
+      },
+      {
+        "day": 2542.653755045962,
+        "text": "Mirror launch 151: 30 t departed Mercury for the solar swarm."
+      }
+    ],
+    "solar": {
+      "unlocked": true,
+      "depositT": 92354.6943200001,
+      "nextCycleDay": 2543.865758917809,
+      "mirrorWorks": true,
+      "launchArray": true,
+      "powerLink": true,
+      "mirrorsT": 562.6528400000012,
+      "manufacturedT": 3792.6528399999956,
+      "deployedT": 2720,
+      "autoLaunch": true,
+      "nextLaunchDay": 2544.551566742555,
+      "nextDeployment": 152,
+      "deployments": [
+        {
+          "id": 135,
+          "departed": 2489.5021139181827,
+          "arrival": 2545.4509116279787,
+          "massT": 30
+        },
+        {
+          "id": 136,
+          "departed": 2492.7479792800514,
+          "arrival": 2548.6967769898474,
+          "massT": 30
+        },
+        {
+          "id": 137,
+          "departed": 2494.9667172618874,
+          "arrival": 2550.9155149716835,
+          "massT": 30
+        },
+        {
+          "id": 138,
+          "departed": 2499.1589753754347,
+          "arrival": 2555.1077730852307,
+          "massT": 30
+        },
+        {
+          "id": 139,
+          "departed": 2503.325378222377,
+          "arrival": 2559.274175932173,
+          "massT": 30
+        },
+        {
+          "id": 140,
+          "departed": 2506.466528562534,
+          "arrival": 2562.4153262723303,
+          "massT": 30
+        },
+        {
+          "id": 141,
+          "departed": 2508.583008320522,
+          "arrival": 2564.531806030318,
+          "massT": 30
+        },
+        {
+          "id": 142,
+          "departed": 2518.6753795350737,
+          "arrival": 2574.6241772448698,
+          "massT": 30
+        },
+        {
+          "id": 143,
+          "departed": 2520.7441852549077,
+          "arrival": 2576.692982964704,
+          "massT": 30
+        },
+        {
+          "id": 144,
+          "departed": 2522.7899503847048,
+          "arrival": 2578.738748094501,
+          "massT": 30
+        },
+        {
+          "id": 145,
+          "departed": 2524.8357155145018,
+          "arrival": 2580.784513224298,
+          "massT": 30
+        },
+        {
+          "id": 146,
+          "departed": 2526.858947614293,
+          "arrival": 2582.807745324089,
+          "massT": 30
+        },
+        {
+          "id": 147,
+          "departed": 2528.860137655304,
+          "arrival": 2584.8089353651,
+          "massT": 30
+        },
+        {
+          "id": 148,
+          "departed": 2531.8397607350694,
+          "arrival": 2587.7885584448654,
+          "massT": 30
+        },
+        {
+          "id": 149,
+          "departed": 2534.798276754425,
+          "arrival": 2590.747074464221,
+          "massT": 30
+        },
+        {
+          "id": 150,
+          "departed": 2540.736131058787,
+          "arrival": 2596.684928768583,
+          "massT": 30
+        },
+        {
+          "id": 151,
+          "departed": 2542.653755045962,
+          "arrival": 2598.602552755758,
+          "massT": 30
+        }
+      ]
+    },
+    "services": [
+      {
+        "id": 1,
+        "from": "earth",
+        "to": "moon",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 5,
+        "intervalDays": 90,
+        "nextDay": 2545.865758917809,
+        "enabled": true,
+        "dispatched": 21,
+        "deliveredT": 105
+      },
+      {
+        "id": 2,
+        "from": "earth",
+        "to": "phobos",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 3,
+        "intervalDays": 100,
+        "nextDay": 2558.865758917809,
+        "enabled": true,
+        "dispatched": 19,
+        "deliveredT": 51
+      },
+      {
+        "id": 3,
+        "from": "moon",
+        "to": "phobos",
+        "kind": "materials",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 20,
+        "nextDay": 2546.865758917809,
+        "enabled": true,
+        "dispatched": 93,
+        "deliveredT": 800
+      },
+      {
+        "id": 4,
+        "from": "earth",
+        "to": "mercury",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 60,
+        "nextDay": 2184.865758917809,
+        "enabled": false,
+        "dispatched": 11,
+        "deliveredT": 110
+      }
+    ],
+    "nextService": 5,
+    "marsOperations": 1596.1342410821903,
+    "lunarPhobosDeliveredT": 800
+  }
+}

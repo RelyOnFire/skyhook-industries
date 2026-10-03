@@ -1,6 +1,7 @@
 import type { Frame, Result } from '../simulation/engine.js';
+import type { StudioUnits } from './StudioUnits.js';
 const show=(n:number,d=1)=>n.toLocaleString('en-US',{maximumFractionDigits:d});
-export default function ElectricalPanel({result,frame}:{result:Result;frame:Frame}) {
+export default function ElectricalPanel({result,frame,units}:{result:Result;frame:Frame;units:StudioUnits}) {
   const e=frame.electrical;
   if(!e||result.design.recovery!=='electrodynamic')return null;
   return <section className="electrical-recorder" aria-label="Electrodynamic power recorder">
@@ -9,7 +10,7 @@ export default function ElectricalPanel({result,frame}:{result:Result;frame:Fram
     <dl>
       <div><dt>Bus draw</dt><dd>{show(e.busW/1000)} <small>/ {show(result.design.edPowerKw)} kW</small></dd></div>
       <div><dt>Circuit A / B</dt><dd>{show(e.circuits[0].current)} / {show(e.circuits[1].current)} <small>A</small></dd></div>
-      <div><dt>Net Lorentz force</dt><dd>{show(Math.hypot(e.fx,e.fy))} <small>N</small></dd></div>
+      <div><dt>Net Lorentz force</dt><dd>{show(Math.hypot(e.fx,e.fy)/(units.force==='kN'?1000:1),units.force==='kN'?3:1)} <small>{units.force}</small></dd></div>
       <div><dt>Heat + dumped power</dt><dd>{show(e.heatW/1000)} <small>kW</small></dd></div>
       <div><dt>Electrical energy used</dt><dd>{show(frame.state[8]/3.6e9,3)} <small>MWh</small></dd></div>
     </dl>

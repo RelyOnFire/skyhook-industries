@@ -1,0 +1,56 @@
+.phobos-flight-actions{grid-column:1/-1;padding:4px 18px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.phobos-flight-actions .phobos-report{margin:0}
+.phobos-pin{min-height:40px;font-size:11px;color:var(--lab-cyan);background:none}
+.phobos-comparison{margin-top:14px;scroll-margin-top:16px}
+.phobos-comparison .panel-heading{gap:18px;padding:18px 20px;flex-wrap:wrap}
+.phobos-comparison .panel-heading h2{margin-top:8px;font-size:20px}
+.phobos-comparison-actions{display:flex;flex-wrap:wrap;gap:8px}
+.phobos-comparison-actions button{font-size:11px;min-height:40px}
+.phobos-comparison-actions button:last-child{background:none;color:var(--lab-muted)}
+.phobos-comparison-state{padding:12px 20px;margin:0;font-size:11px;line-height:1.65;color:var(--lab-muted);border-bottom:1px solid var(--lab-line)}
+.phobos-comparison[data-draft=true] .phobos-comparison-state{color:#e5ad82}
+.phobos-comparison-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;padding:22px}
+.phobos-comparison-plot{margin:0;min-width:0}
+.phobos-comparison-plot figcaption{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--lab-soft)}
+.phobos-comparison-plot figcaption strong{font-size:16px;font-weight:400}
+.phobos-comparison-plot figcaption span,.phobos-comparison-plot p{font-size:11px;color:var(--lab-muted);line-height:1.65}
+.phobos-comparison-plot svg{display:block;width:100%;max-height:520px;margin:10px 0;background:#0a1013;border:1px solid #243239}
+.phobos-comparison-plot svg text{fill:#9aadb5;font:11px var(--lab-mono,monospace)}
+.phobos-comparison-axis{stroke:#243239;stroke-dasharray:2 7}
+.phobos-comparison-mars{fill:#433228;stroke:#886952;stroke-width:1}
+.phobos-comparison-cutoff{fill:none;stroke:#96745b;stroke-width:1;stroke-dasharray:2 4}
+.phobos-comparison-orbit{fill:none;stroke:#59686d;stroke-width:1;stroke-dasharray:3 6}
+.phobos-comparison-moon{fill:#bdbaa9}
+.phobos-path-pinned{stroke:#b7cdcf;fill:#0a1013;stroke-width:2}
+.phobos-path-current{stroke:#efa477;fill:#efa477;stroke-width:2}
+.phobos-path-pinned polyline{stroke-dasharray:6 5}
+.phobos-path-key{display:flex;gap:10px 18px;flex-wrap:wrap;font-size:11px;color:var(--lab-soft);line-height:1.6}
+.phobos-path-key i{display:inline-block;width:20px;margin-right:6px;vertical-align:middle}
+.phobos-path-key .phobos-current-line{border-top:2px solid #efa477}
+.phobos-path-key .phobos-pinned-line{border-top:2px dashed #b7cdcf}
+.phobos-comparison-data{min-width:0}
+.phobos-comparison-flights{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:0 0 16px}
+.phobos-comparison-flights>div{display:flex;flex-direction:column;gap:9px;padding-left:12px;border-left:2px solid #efa477}
+.phobos-comparison-flights>div[data-flight=pinned]{border-left:2px dashed #b7cdcf}
+.phobos-comparison-flights strong{font-size:17px;font-weight:400;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.phobos-comparison-flights>div>span:last-of-type{font-size:11px;color:#e5ad82;line-height:1.5}
+.phobos-comparison-flights>div>span[data-clear=true]{color:#acd6c1}
+.phobos-comparison-flights p{font-size:11px;color:var(--lab-muted);line-height:1.6;margin:0}
+.phobos-comparison-data table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.phobos-comparison-data caption{text-align:left;font-size:10px;line-height:1.65;color:var(--lab-muted);padding:0 0 12px}
+.phobos-comparison-data th{font-weight:400;color:var(--lab-soft);text-align:left}
+.phobos-comparison-data th:first-child{width:38%}
+.phobos-comparison-data th,.phobos-comparison-data td{padding:9px 4px;border-bottom:1px solid #26343a;overflow-wrap:anywhere}
+.phobos-comparison-data th:not(:first-child),.phobos-comparison-data td{text-align:right}
+.phobos-comparison-data thead th{font-size:10px;color:var(--lab-muted)}
+.phobos-comparison-data small{display:block;margin-top:5px;font-size:10px;color:var(--lab-muted)}
+.phobos-comparison-data .phobos-comparison-delta{color:#b7cdcf}
+.phobos-comparison-note{font-size:11px;line-height:1.7;color:var(--lab-muted);margin-bottom:0}
+.phobos-comparison-inputs{border-top:1px solid var(--lab-line);padding:15px 22px;font-size:12px}
+.phobos-comparison-inputs summary{min-height:30px;cursor:pointer;color:var(--lab-soft)}
+.phobos-comparison-inputs dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 30px;margin:10px 0}
+.phobos-comparison-inputs dl>div{display:flex;justify-content:space-between;gap:15px;line-height:1.6}
+.phobos-comparison-inputs dt,.phobos-comparison-inputs p{color:var(--lab-muted)}
+.phobos-comparison-inputs dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:800px){.phobos-comparison-body{grid-template-columns:1fr;gap:24px}.phobos-comparison-plot svg{max-height:360px}.phobos-comparison-inputs dl{grid-template-columns:1fr}}
+@media(max-width:600px){.phobos-pin,.phobos-comparison-actions button{min-height:44px}.phobos-comparison .panel-heading{padding:16px}.phobos-comparison-actions{width:100%}.phobos-comparison-actions button{flex:1 1 100%}.phobos-comparison-body{padding:16px}.phobos-comparison-state{padding:12px 16px}.phobos-comparison-data table{font-size:11px}.phobos-comparison-data th,.phobos-comparison-data td{padding:8px 2px}.phobos-comparison-flights{gap:10px}.phobos-comparison-flights strong{font-size:15px}.phobos-comparison-inputs{padding:14px 16px}.phobos-comparison-inputs summary{min-height:44px}.phobos-comparison-inputs dl>div{display:block}.phobos-comparison-inputs dd{text-align:left;margin-top:4px}}

@@ -1,0 +1,9 @@
+---
+import PhobosLab from '../../../lab/PhobosLab';
+import LabLayout from '../../../layouts/LabLayout.astro';
+---
+<LabLayout title="Phobos Flight Studio · Tether Lab" description="Make Phobos the central anchor. Explore inward and outward tether releases, cable loads and transfer energy around Mars.">
+  <PhobosLab client:only="react">
+    <main slot="fallback" class="guide" id="lab-content"><h1>Loading the Phobos experiment…</h1><p>One moon. Two directions. Your calculation runs in this browser.</p><noscript><p>The simulator needs JavaScript. Read the <a href="/lab/phobos/method/">Phobos model and assumptions</a> without it.</p></noscript></main>
+  </PhobosLab>
+</LabLayout>

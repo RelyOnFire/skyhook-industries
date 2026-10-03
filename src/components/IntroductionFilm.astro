@@ -1,0 +1,95 @@
+---
+const media = '/films/skyhook-introduction';
+---
+<section class="introduction-film" id="watch" aria-labelledby="film-title" data-introduction-film>
+  <div class="film-heading">
+    <div><p class="section-index">A FIRST LOOK / ORIGINAL FILM</p><h2 id="film-title">One handoff.<br />A different way up.</h2></div>
+    <p>Follow a payload from approach to release, then see how one tether could become part of a wider network.</p>
+  </div>
+  <div class="film-player" data-film-player>
+    <button class="film-poster" type="button" data-film-play aria-label="Watch how a skyhook works — 90 seconds, with narration and captions">
+      <img src={`${media}-poster.webp`} width="1280" height="720" loading="lazy" decoding="async" alt="A rotating orbital tether carries a payload above Earth's curved horizon." />
+      <span class="film-play-label"><span class="film-play-icon" aria-hidden="true">▶</span><span><span data-film-play-label>Watch how a skyhook works</span><small>90 seconds · Narrated · Captioned</small></span></span>
+    </button>
+  </div>
+  <p class="film-status" data-film-status role="status" hidden></p>
+  <div class="film-foot"><p>Concept illustration, followed by Flight Studio and Expeditions.</p><a href="/system/#flight-story-title">Explore each moment ↗</a></div>
+  <details class="film-transcript"><summary>Read the transcript</summary><div>
+    <p>Reaching orbit takes speed as well as height. What if some of the machinery that gives a payload that speed could stay in space?</p>
+    <p>A skyhook is a rotating tether in orbit. Near the bottom of its swing, its tip moves against the orbital motion, reducing the speed an approaching payload needs to match.</p>
+    <p>A launch vehicle climbs to the meeting point. Position, speed and timing must align. A grapple secures the payload, and the tether carries the load.</p>
+    <p>As the tether turns, the payload gains orbital energy. At a chosen release point, it leaves on its own trajectory.</p>
+    <p>That energy comes from the tether's motion. Before the next handoff, the system must recover. Propulsion, or carefully planned returning cargo, could help restore what the outgoing payload took.</p>
+    <p>One tether could become part of a transport network: a lunar lunavator, an anchor at Phobos, and routes further into the solar system.</p>
+    <p>Skyhook Industries explores that possibility. Design and test a flight in Flight Studio. Build and supply a network in Expeditions.</p>
+    <p>Start with one handoff. See where it could lead.</p>
+    <p class="film-description">The illustration follows an Earth tether, zooms into a conceptual grapple, and shows release and recovery. Free-orbiting Earth and lunar tethers connect to a Phobos-anchored system. The final shots show the site's actual flight experiment and strategy game.</p>
+  </div></details>
+  <noscript><p class="film-nojs"><a href={`${media}.mp4`}>Open the introduction film</a> · <a href={`${media}.vtt`}>Download captions</a>. The transcript is available above.</p></noscript>
+</section>
+<script>
+  document.querySelectorAll<HTMLElement>('[data-introduction-film]').forEach(section => {
+    const trigger = section.querySelector<HTMLButtonElement>('[data-film-play]');
+    const player = section.querySelector<HTMLElement>('[data-film-player]');
+    const status = section.querySelector<HTMLElement>('[data-film-status]');
+    const label = section.querySelector<HTMLElement>('[data-film-play-label]');
+    if (!trigger || !player || !status || !label) return;
+    const media = '/films/skyhook-introduction.mp4';
+    let mediaUrl: string | null = null, request: AbortController | null = null;
+    const release = () => { if (mediaUrl) { URL.revokeObjectURL(mediaUrl); mediaUrl = null; } };
+    const failure = () => {
+      const restoreFocus = player.querySelector('video')?.contains(document.activeElement);
+      player.replaceChildren(trigger); release();
+      trigger.disabled = false; trigger.removeAttribute('aria-busy');
+      trigger.setAttribute('aria-label', 'Try loading the introduction film again');
+      label.textContent = 'Try loading the film again';
+      const link = document.createElement('a');
+      link.href = media; link.textContent = 'Open the film directly';
+      status.replaceChildren('The film could not load. Try again, ', link, ', or read the transcript below.');
+      status.hidden = false;
+      if (restoreFocus) trigger.focus({ preventScroll: true });
+    };
+    trigger.addEventListener('click', async () => {
+      if (request) return;
+      trigger.disabled = true; trigger.setAttribute('aria-busy', 'true');
+      trigger.setAttribute('aria-label', 'Loading the introduction film');
+      label.textContent = 'Loading the film…'; status.hidden = true;
+      request = new AbortController();
+      const timeout = window.setTimeout(() => request?.abort(), 90000);
+      try {
+        // Static asset hosts may ignore Range. A complete, click-requested Blob
+        // gives the native player a seekable source for this small 90-second film.
+        const response = await fetch(media, { signal: request.signal });
+        if (!response.ok) throw new Error('Film request failed.');
+        const blob = await response.blob();
+        if (!blob.size) throw new Error('Film is empty.');
+        mediaUrl = URL.createObjectURL(blob);
+        const video = document.createElement('video');
+        video.controls = true; video.playsInline = true; video.preload = 'metadata';
+        video.poster = '/films/skyhook-introduction-poster.webp'; video.src = mediaUrl;
+        video.setAttribute('aria-label', 'How a skyhook works: an original narrated introduction');
+        video.setAttribute('tabindex', '0');
+        const captions = document.createElement('track');
+        captions.kind = 'captions'; captions.srclang = 'en'; captions.label = 'English';
+        captions.src = '/films/skyhook-introduction.vtt'; captions.default = true;
+        video.append(captions);
+        video.addEventListener('error', () => { if (player.contains(video)) failure(); });
+        player.replaceChildren(video); video.focus({ preventScroll: true });
+        // If fetching outlasts this browser's user activation, native Play stays
+        // visible. Reduced motion also permits a deliberate request to play.
+        void video.play().catch(() => { /* Use the focused native controls. */ });
+      } catch { failure(); }
+      finally { window.clearTimeout(timeout); request = null; }
+    });
+    window.addEventListener('pagehide', event => {
+      if (!event.persisted) { request?.abort(); release(); }
+    });
+  });
+</script>
+<style>
+  .introduction-film{max-width:1320px;margin:auto;padding:76px 40px 62px;border-top:1px solid #344149;color:#e9edef}
+  .film-heading{display:flex;align-items:end;justify-content:space-between;gap:40px;margin-bottom:30px}.film-heading h2{margin:14px 0 0;font-size:clamp(30px,4vw,48px);font-weight:400;letter-spacing:-.045em;line-height:1.1}.film-heading>p{max-width:36ch;color:#b6c0c6;font-size:16px;line-height:1.65;margin:0}
+  .film-player{position:relative;aspect-ratio:16/9;background:#0a1116;border:1px solid #435159;overflow:hidden}.film-poster{position:relative;display:block;width:100%;height:100%;padding:0;border:0;background:#0a1116;cursor:pointer;color:#f0f3f4;text-align:left}.film-poster img{display:block;width:100%;height:100%;object-fit:cover}.film-play-label{position:absolute;inset:auto 0 0;display:flex;align-items:center;gap:17px;padding:60px 30px 26px;background:linear-gradient(transparent,rgba(5,10,14,.94));font:500 clamp(15px,2vw,23px)/1.35 var(--sans)}.film-play-label small{display:block;margin-top:5px;font-size:12px;font-weight:400;color:#c0ced4;letter-spacing:.04em}.film-play-icon{display:grid;place-items:center;flex:none;width:54px;height:54px;padding-left:3px;border-radius:50%;background:#e9a078;color:#11191e;font-size:18px}.film-poster:hover .film-play-icon{background:#ffd1b4}.film-poster:disabled{cursor:progress}.film-poster:disabled .film-play-icon{opacity:.6}.film-poster:focus-visible{outline:3px solid #f5b48d;outline-offset:-5px}.film-player :global(video){display:block;width:100%;height:100%;background:#0a1116}.film-player :global(video:focus-visible){outline:3px solid #f5b48d;outline-offset:-3px}.film-status{margin:14px 0;padding:14px;background:#101b23;color:#edf1f3;font-size:14px;line-height:1.5}.film-status :global(a){color:#efaf87}
+  .film-foot{display:flex;justify-content:space-between;gap:20px;padding:14px 0;color:#a9b6be;font-size:12px;line-height:1.6}.film-foot p{margin:0}.film-foot a,.film-nojs a{color:#efaf87;text-underline-offset:4px}.film-transcript{border-top:1px solid #344149;font-size:14px;line-height:1.75;color:#c2ccd1}.film-transcript summary{padding:16px 0;cursor:pointer;min-height:48px}.film-transcript summary:focus-visible{outline:2px solid #f5b48d;outline-offset:4px}.film-transcript>div{max-width:78ch;padding-bottom:15px}.film-transcript p{margin:0 0 16px}.film-description{font-size:12px;color:#a9b6be}.film-nojs{font-size:14px}
+  @media(max-width:700px){.introduction-film{padding:44px 22px 36px}.film-heading{display:block}.film-heading>p{margin-top:20px;font-size:15px}.film-play-label{padding:38px 13px 13px;gap:11px}.film-play-icon{width:38px;height:38px;font-size:14px}.film-play-label small{font-size:10px}.film-foot{display:block}.film-foot a{display:inline-block;margin-top:7px}}
+</style>

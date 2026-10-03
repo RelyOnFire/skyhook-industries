@@ -1,0 +1,13 @@
+.service-row-controls{flex-wrap:wrap}
+.service-row-controls>small{flex:1 1 100px;margin-right:0}
+.service-row-controls .service-edit-toggle{color:#dfb28e}
+.service-editor{order:1;flex:0 0 100%;min-width:0;margin-top:5px;padding-top:11px;border-top:1px solid var(--ops-line)}
+.service-editor-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.service-editor-fields label{min-width:0;font-size:10px;color:var(--ops-muted)}
+.campaign .service-editor input{display:block;margin-top:5px;font-size:12px;background:#0c1216}
+.service-editor>p{margin-top:9px;font-size:10px;line-height:1.5;color:var(--ops-muted)}
+.service-editor>p.service-editor-capacity{color:#e5b384}
+.service-editor-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}
+.service-row-controls .service-editor-actions button{min-height:34px;padding:6px 9px;border-color:var(--ops-line)}
+.service-row-controls .service-editor-actions .primary{background:#ad7652;color:#fff5eb;border-color:#bd8863}
+@media(max-width:600px){.campaign .service-editor :is(input,button){min-height:40px}.service-editor-fields label,.service-editor>p{font-size:11px}}

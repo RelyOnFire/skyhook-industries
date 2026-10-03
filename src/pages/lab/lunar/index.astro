@@ -1,0 +1,9 @@
+---
+import Lab from '../../../lab/Lab';
+import LabLayout from '../../../layouts/LabLayout.astro';
+---
+<LabLayout title="Lunar Flight Studio · Tether Lab" description="Explore a rotating tether in lunar orbit. Calculate payload transfers, cable loads and recovery in the Skyhook Industries Flight Studio.">
+  <Lab client:only="react" initialArchitecture="lunar-rotovator">
+    <main slot="fallback" class="guide" id="lab-content"><h1>Loading the lunar experiment…</h1><p>Catch. Release. Recover. Your calculation runs in this browser.</p><noscript><p>The simulator needs JavaScript. Read the <a href="/lab/lunar/method/">lunar model and assumptions</a> without it.</p></noscript></main>
+  </Lab>
+</LabLayout>

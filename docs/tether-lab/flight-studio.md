@@ -1,10 +1,11 @@
 # Flight Studio experience pass
 
 Status: draft PR review; existing Cloudflare main and GoDaddy websites remain unchanged.
-Numerical model: D1p-0.2.0 / schema 2. This pass does not add a second, simplified arcade solver.
+Current numerical models: Earth D1p-0.4.0 and lunar L1p-0.1.0 / design schema 2. Both use the shared rigid-body solver. This document describes the original Earth experience; see [lunar-flight-studio.md](lunar-flight-studio.md) for the Moon experiment and its separate scope.
 
 ## Experience
 
+- Public entry points at `/lab/?mission=second-delivery` and `/lab/lunar/?mission=lunar-relay` open the existing mission briefing. Starting remains explicit; Escape returns to the sandbox. Unknown or mismatched mission IDs are ignored, and an explicit shared design takes precedence. Opening or starting a mission never overwrites a saved design.
 - Three explicit, reproducible challenges: make the second delivery, carry two 5 t payloads below a 100 t dry facility, and deliver twice within a 12 t loaded propellant budget.
 - Guided, paused replay at actual calculated capture, release and readiness events.
 - Full-run debrief distinguishes clearance cutoff, stress exceedance, compression, failed release, exhausted fuel, incomplete recovery and completion. Suggestions are experiments, not guaranteed remedies.
@@ -37,8 +38,10 @@ An optional `--isolated --executable /usr/bin/chromium` mode is provided for off
 
 ## Still outside this model
 
-Electrodynamic recovery, independently planned return traffic, asymmetric/multi-tier dynamics (including T4), eccentric initial orbits, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation and lunar/solar-system targeting are not implemented. Catalogue sketches remain reference-only. Adding cosmetic dropdown entries would misrepresent the model.
+Earth E0 electrodynamic recovery, a separate spherical-Moon orbital experiment and the bounded P1 Phobos anchored experiment are implemented. The finite-mass T4p compound rotor is also implemented; see `phobos-flight-studio.md` and `t4-flight-studio.md` for their separate solvers and limitations. The separate R1 return comparison constructs and independently checks a local upper-tip arrival, then measures energy exchange and release safety; see `return-traffic.md`. Interplanetary return targeting, arbitrary asymmetric/multi-tier geometries, physical T4 crossing clearance, atmospheric ascent/capture guidance, elasticity, fatigue, debris/sever propagation, lunar surface pickup/reeling and Earth–Moon/solar-system targeting remain outside these experiments. The other catalogue configurations remain reference-only.
 
 ## Maintenance
 
 The challenge evaluator and debrief interpretation live in `src/simulation/insights.ts`; they consume solver results. Changes to grading criteria should update the regression suite. Model changes require numerical review, not simply regenerating expected output. Display-only timing, camera behavior and derived explanations must never mutate a flight’s design or samples.
+
+CardioRotovator shows synchronized reference geometry separately from C1p passive empty and matched-pickup coasts with free gravity-gradient motion. See `cardio-flight-studio.md`; no phase controller, atmosphere, reeling or repeatable pickup is implied.

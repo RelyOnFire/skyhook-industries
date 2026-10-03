@@ -1,0 +1,95 @@
+---
+import ExperimentLinks from './ExperimentLinks.astro';
+---
+<section class="experience-gateway" id="explore" aria-labelledby="experience-heading">
+  <div class="gateway-heading">
+    <div><p class="section-index">02 / TAKE THE CONTROLS</p><h2 id="experience-heading">One flight.<br />A whole network.</h2></div>
+    <p>Design the machine. Build the system around it.<br />Two ways to explore orbital infrastructure, right in your browser.</p>
+  </div>
+  <div class="workspace-pair">
+    <article class="workspace flight-workspace">
+      <div class="workspace-top"><span>FLIGHT STUDIO</span><span>ENGINEERING SANDBOX</span></div>
+      <div class="workspace-art" aria-hidden="true">
+        <svg viewBox="0 0 560 280" focusable="false">
+          <defs><radialGradient id="gateway-earth" cx="28%" cy="18%"><stop stop-color="#294552"/><stop offset="1" stop-color="#0b141a"/></radialGradient></defs>
+          <path d="M34 251H526 M280 22V258" stroke="#26363e" stroke-dasharray="2 7"/>
+          <ellipse cx="229" cy="207" rx="197" ry="67" transform="rotate(-23 229 207)" fill="none" stroke="#526c79" stroke-dasharray="3 7"/>
+          <circle cx="218" cy="252" r="118" fill="url(#gateway-earth)" stroke="#6b8997"/>
+          <path d="M100 244 A118 118 0 0 1 313 182" fill="none" stroke="#b0c9d3" stroke-opacity=".35" stroke-width="4"/>
+          <path d="M348 140 Q413 119 477 46" fill="none" stroke="#efa477" stroke-width="1.5"/>
+          <path d="m469 47 8-1-1 9" fill="none" stroke="#efa477"/>
+          <path d="M286 57 374 165" stroke="#d2e1e7" stroke-width="2.5"/>
+          <circle cx="330" cy="111" r="6" fill="#132028" stroke="#e5edf0"/>
+          <circle cx="286" cy="57" r="3.5" fill="#d2e1e7"/><circle cx="374" cy="165" r="4" fill="#efa477"/>
+          <path d="M374 165Q395 136 408 109" fill="none" stroke="#efa477" stroke-dasharray="3 5"/>
+          <path d="m382 80 20 0 15-17" fill="none" stroke="#78919e"/>
+          <text x="423" y="59" fill="#c3d3db">RELEASE</text>
+          <text x="43" y="57" fill="#92aab6">ORBIT + SPIN</text>
+          <text x="43" y="78" fill="#e2ecef" class="art-title">Momentum in motion.</text>
+        </svg>
+        <span class="art-caption">TRANSFER SCHEMATIC</span>
+      </div>
+      <div class="workspace-copy">
+        <h3>Make the second delivery.</h3>
+        <p>One payload gets away. Can your tether recover and do it again? Change the design, fly the handoff, and read what the next flight costs.</p>
+        <a class="gateway-action" href="/lab/?mission=second-delivery">Try a guided flight <span aria-hidden="true">↗</span></a>
+        <p class="workspace-note">Calculated trajectories, loads and recovery. Each experiment explains its assumptions.</p>
+      </div>
+    </article>
+    <article class="workspace network-workspace">
+      <div class="workspace-top"><span>EXPEDITIONS</span><span>STRATEGY GAME</span></div>
+      <div class="workspace-art" aria-hidden="true">
+        <svg viewBox="0 0 560 280" focusable="false">
+          <defs><radialGradient id="gateway-sun"><stop stop-color="#efbb79" stop-opacity=".22"/><stop offset="1" stop-color="#efbb79" stop-opacity="0"/></radialGradient></defs>
+          <circle cx="406" cy="139" r="98" fill="url(#gateway-sun)"/>
+          <ellipse cx="406" cy="139" rx="69" ry="52" fill="none" stroke="#987858" stroke-dasharray="2 9"/>
+          <ellipse cx="406" cy="139" rx="52" ry="38" fill="none" stroke="#bc976a" stroke-dasharray="2 8" transform="rotate(-23 406 139)"/>
+          <circle cx="406" cy="139" r="20" fill="#f1c28a"/><circle cx="406" cy="139" r="25" fill="none" stroke="#ce9e6b" stroke-opacity=".4"/>
+          <g fill="none" stroke="#55727d" stroke-width="1.5"><path d="M74 178 150 87 270 58 482 43M74 178 270 58M150 87 269 210 74 178"/></g>
+          <path d="M270 58 269 210 354 172" fill="none" stroke="#b88761" stroke-width="1.5"/>
+          <path d="m348 171 6 1-3 5" fill="none" stroke="#b88761"/>
+          <g fill="#101b22" stroke="#b0c6d0"><circle cx="74" cy="178" r="12"/><circle cx="150" cy="87" r="7"/><path d="m264 54 8-3 5 6-4 8-9-3Z"/><circle cx="482" cy="43" r="5"/></g>
+          <circle cx="269" cy="210" r="9" fill="#493729" stroke="#e4ac7c"/>
+          <g fill="#efa477"><circle cx="112" cy="133" r="2.5"/><circle cx="210" cy="159" r="2.5"/><circle cx="313" cy="190" r="2.5"/></g>
+          <g fill="#c3d3db"><text x="49" y="212">EARTH</text><text x="128" y="66">MOON</text><text x="241" y="37">PHOBOS</text><text x="462" y="70">CERES</text><text x="237" y="239">MERCURY</text><text x="384" y="221" fill="#e3b988">SWARM</text></g>
+        </svg>
+        <span class="art-caption">NETWORK SCHEMATIC / NOT TO SCALE</span>
+      </div>
+      <div class="workspace-copy">
+        <h3>A foothold. Then an industry.</h3>
+        <p>Supply the Moon. Anchor your Mars network at Phobos. Turn Mercury’s resources into a solar swarm, then reach into the belt.</p>
+        <a class="gateway-action" href="/lab/campaign/">Play Expeditions <span aria-hidden="true">↗</span></a>
+        <p class="workspace-note">A strategic logistics game. Progress saves in this browser; export a backup to take it with you.</p>
+      </div>
+    </article>
+  </div>
+  <div class="experiment-heading"><h3>Five machines. Different questions.</h3><a href="/lab/architectures/">Compare the models <span aria-hidden="true">↗</span></a></div>
+  <ExperimentLinks />
+</section>
+<style>
+  .experience-gateway{padding:clamp(48px,7svh,80px) max(4vw,calc((100vw - 1240px)/2));background:linear-gradient(#080b0d,#101619);border-top:1px solid #29343b}
+  .gateway-heading{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:end;margin-bottom:32px}
+  .gateway-heading .section-index{color:#efa477;margin:0 0 22px}
+  .gateway-heading h2{font-size:clamp(32px,3.3vw,48px);font-weight:400;line-height:1.15;letter-spacing:-.035em;margin:0}
+  .gateway-heading>p{color:#b6c5cc;font-size:17px;line-height:1.7;max-width:440px;margin:0 0 4px}
+  .workspace-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+  .workspace{border:1px solid #34434b;min-width:0;background:#0d151a;display:flex;flex-direction:column}
+  .workspace-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 24px;border-bottom:1px solid #29383f;font:11px/1.5 var(--mono);letter-spacing:.075em;color:#b4c5cd}
+  .workspace-top>span:first-child{color:#f1ad84}
+  .workspace-art{position:relative;overflow:hidden;border-bottom:1px solid #29383f;background:radial-gradient(ellipse at 65% 80%,#1a2a33,#0b1217 75%)}
+  .network-workspace .workspace-art{background:radial-gradient(ellipse at 75% 40%,#26241f,#0b1217 65%)}
+  .workspace-art svg{display:block;width:100%;height:auto;aspect-ratio:2/1}
+  .workspace-art text{font:10px var(--mono);letter-spacing:.04em}.workspace-art .art-title{font:18px var(--sans);letter-spacing:0}
+  .art-caption{position:absolute;bottom:10px;left:16px;font:9px/1.4 var(--mono);letter-spacing:.055em;color:#9aadb7}
+  .workspace-copy{padding:26px;display:flex;flex-direction:column;align-items:start;flex:1}
+  .workspace-copy h3{font-size:clamp(23px,2vw,29px);font-weight:500;line-height:1.2;letter-spacing:-.02em;margin:0 0 14px}
+  .workspace-copy>p{color:#b8c8cf;font-size:16px;line-height:1.65;margin:0 0 22px;max-width:52ch}
+  .gateway-action{display:flex;justify-content:space-between;align-items:center;gap:28px;min-height:46px;padding:10px 16px;background:#efa477;color:#141c20;text-decoration:none;font-size:15px;font-weight:600;margin-top:auto;border:1px solid #efa477}
+  .gateway-action:hover{background:#ffd1b3}.gateway-action>span{font-size:20px;font-weight:400}
+  .workspace-copy .workspace-note{font-size:13px;color:#94aab5;line-height:1.6;margin:18px 0 0}
+  .experiment-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px 28px;flex-wrap:wrap;margin:36px 0 18px}
+  .experiment-heading h3{font-size:19px;font-weight:500;letter-spacing:-.015em;margin:0}.experiment-heading a{font-size:14px;color:#c4d3d9;text-underline-offset:5px}.experiment-heading a>span{margin-left:10px;color:#efa477}
+  a:focus-visible{outline:2px solid #efa477;outline-offset:5px}
+  @media(max-width:850px){.workspace-top{padding:14px 18px}.workspace-copy{padding:22px}.gateway-heading{gap:28px}.workspace-pair{gap:18px}}
+  @media(max-width:700px){.experience-gateway{padding:44px 20px}.gateway-heading{grid-template-columns:1fr;gap:20px}.gateway-heading>p{font-size:16px}.workspace-pair{grid-template-columns:1fr;gap:24px}.workspace-copy{padding:22px 20px}.workspace-top{font-size:10px}.art-caption{font-size:8px;left:12px;bottom:7px}.workspace-art .art-title{font-size:21px}.experiment-heading{margin-top:32px}}
+</style>

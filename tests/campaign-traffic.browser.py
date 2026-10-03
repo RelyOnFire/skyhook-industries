@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+"""Resume a genuinely congested v5 save and exercise expanded traffic in the UI."""
+import argparse
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import json
+from pathlib import Path
+import threading
+from playwright.sync_api import sync_playwright, expect
+from campaign_browser_helpers import empty_commerce
+
+ROOT = Path(__file__).resolve().parents[1]
+
+class QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *_): pass
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--executable')
+    parser.add_argument('--origin', help='Exercise a published preview in an isolated browser')
+    args = parser.parse_args()
+    out = ROOT/'qa/browser/campaign-traffic'
+    out.mkdir(parents=True, exist_ok=True)
+    server = None
+    if args.origin:
+        origin = args.origin.rstrip('/')
+    else:
+        server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT/'dist')))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        origin = f'http://127.0.0.1:{server.server_port}'
+    report = {'origin': origin, 'checks': [], 'errors': []}
+    def done(name):
+        report['checks'].append(name)
+        print('PASS', name, flush=True)
+    with sync_playwright() as p:
+        options = {'headless': True}
+        if args.executable: options['executable_path'] = args.executable
+        else: options['channel'] = 'chromium'
+        browser = p.chromium.launch(**options)
+        context = browser.new_context(viewport={'width':1440, 'height':1000}, reduced_motion='reduce', accept_downloads=True)
+        page = context.new_page()
+        page.set_default_timeout(15000)
+        page.on('pageerror', lambda e: report['errors'].append(str(e)))
+        def records():
+            return page.evaluate("""async()=>{const db=await new Promise((ok,no)=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});return await new Promise((ok,no)=>{let r=db.transaction('worlds').objectStore('worlds').getAll();r.onsuccess=()=>{db.close();ok(r.result)};r.onerror=()=>no(r.error)})}""")
+        def record(): return next(r for r in records() if r['id']=='traffic-fixture')
+        def state(): return record()['state']
+        def saved(): expect(page.get_by_text('Saved in this browser', exact=True)).to_be_visible()
+        def action(name):
+            page.get_by_role('button', name=name, exact=True).click()
+            saved()
+        def cargo(source, destination, kind):
+            page.get_by_label('From', exact=True).select_option(source)
+            page.get_by_label('To', exact=True).select_option(destination)
+            page.get_by_label('Cargo type', exact=True).select_option(kind)
+            page.get_by_label('Cargo (t)', exact=True).fill('1')
+            page.get_by_role('radio', name='Bootstrap tug').check()
+        try:
+            page.goto(origin+'/lab/campaign/', wait_until='networkidle')
+            expect(page.get_by_role('button', name='Start new network', exact=True)).to_be_enabled()
+            old = json.loads((ROOT/'tests/fixtures/campaign-v5.json').read_text())['state']
+            old['id'], old['name'] = 'traffic-fixture', 'Open corridors'
+            original = {'id':old['id'], 'state':old, 'savedAt':'2099-01-01T00:00:00.000Z', 'checkpoints':[]}
+            page.evaluate("""async record=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{let t=db.transaction('worlds','readwrite');t.objectStore('worlds').put(record);t.oncomplete=ok;t.onerror=()=>no(t.error)});db.close()}""", original)
+            page.reload(wait_until='networkidle')
+            page.get_by_role('button', name='Continue Open corridors').click()
+            saved()
+            assert record()==original
+            assert len(old['flights'])+len(old['solar']['deployments'])==32
+            stale = context.new_page()
+            stale.goto(origin+'/lab/campaign/', wait_until='networkidle')
+            stale.get_by_role('button', name='Continue Open corridors').click()
+            expect(stale.get_by_text('Saved in this browser', exact=True)).to_be_visible()
+            action('Your saves')
+            action('Save now')
+            migrated = record()
+            assert migrated['state']=={**old, 'schema':10, 'earthDesign':None, 'model':'network-0.10.0', 'commerce':empty_commerce(old['day']), 'flights':[{**f,'contractId':None} for f in old['flights']], 'services':[{**s,'contractId':None} for s in old['services']], 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
+            assert migrated['checkpoints']==[old]
+            action('Save now')
+            assert record()==migrated
+            stale.get_by_role('button', name='+1 day', exact=True).click()
+            expect(stale.get_by_role('alert')).to_contain_text('Another tab changed this campaign')
+            assert record()==migrated
+            stale.close()
+            page.locator('.campaign-save-manager>summary').click()
+            done('native v5 migration preserves all progress, checkpoints once, keeps unchanged saves idle and invalidates stale writers')
+
+            before_supply=record()
+            page.get_by_role('button',name='Supply Phobos with material',exact=True).click()
+            expect(page.get_by_label('From',exact=True)).to_have_value('moon')
+            expect(page.get_by_label('To',exact=True)).to_have_value('phobos')
+            expect(page.get_by_label('Cargo (t)',exact=True)).to_have_value('10')
+            expect(page.get_by_role('radio',name='Tether corridor')).to_be_checked()
+            expect(page.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_enabled()
+            page.get_by_role('button',name='Supply Ceres with material',exact=True).click()
+            expect(page.get_by_label('From',exact=True)).to_have_value('phobos')
+            expect(page.get_by_label('To',exact=True)).to_have_value('ceres')
+            expect(page.get_by_label('Cargo (t)',exact=True)).to_have_value('7')
+            expect(page.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_enabled()
+            expect(page.get_by_label('Repeat every (simulation days)',exact=True)).to_have_value('200')
+            page.get_by_role('button',name='Supply Mercury with equipment',exact=True).click()
+            expect(page.get_by_label('From',exact=True)).to_have_value('earth')
+            expect(page.get_by_label('Repeat every (simulation days)',exact=True)).to_have_value('60')
+            assert record()==before_supply, 'Preparing stocked supply changed resources, flights or checkpoints'
+            done('outpost shortcuts choose stocked connected depots, fit available whole tonnes and only prepare the form')
+
+            cargo('earth','phobos','equipment')
+            preview=page.get_by_role('region',name='New service preview',exact=True)
+            preview_button=preview.get_by_role('button',name='Preview service',exact=True)
+            preview_result=preview.locator('.service-preview-result')
+            frozen_preview=record()
+            page.get_by_label('Cargo (t)',exact=True).fill('30')
+            page.get_by_role('radio',name='Tether corridor').check()
+            expect(page.get_by_role('button',name='Dispatch cargo',exact=True)).to_be_disabled()
+            preview_button.click()
+            expect(preview_result.locator('.service-preview-metrics dd').nth(0)).to_have_text('0')
+            expect(preview_result.locator('.service-preview-metrics dd').nth(2)).to_have_text('365')
+            expect(preview.get_by_label('New service departure holds')).to_be_visible()
+            assert record()==frozen_preview, 'Preview changed saved state or history'
+            preview.get_by_label('Service preview horizon').select_option('30')
+            expect(preview_result).to_have_count(0)
+            preview_button.click()
+            expect(preview_result.locator('.service-preview-metrics dd').nth(2)).to_have_text('30')
+            page.get_by_label('Cargo (t)',exact=True).fill('')
+            expect(preview_button).to_be_disabled();expect(preview_result).to_have_count(0)
+            cargo('earth','phobos','equipment')
+            preview_button.click()
+            assert int(preview_result.locator('.service-preview-metrics dd').nth(0).inner_text())>0
+            expect(preview_result.locator('.service-preview-metrics dd').nth(1)).to_have_text('0 t')
+            preview.get_by_label('Service preview horizon').select_option('365');preview_button.click()
+            assert float(preview_result.locator('.service-preview-metrics dd').nth(1).inner_text().replace(' t','').replace(',',''))>0
+            for width in [1440,768,320]:
+                page.set_viewport_size({'width':width,'height':1000})
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+                preview.screenshot(path=str(out/f'new-service-preview-{width}.png'))
+            assert record()==frozen_preview, 'Forecast horizon and viewport changed the save'
+            page.set_viewport_size({'width':1440,'height':1000})
+            action('Dispatch cargo')
+            expect(preview_result).to_have_attribute('data-stale','true')
+            expect(preview.get_by_role('status')).to_contain_text('Network changed')
+            preview_button.click();expect(preview_result).to_have_attribute('data-stale','false')
+            preview.get_by_role('button',name='Close service preview',exact=True).click()
+            expect(preview_result).to_have_count(0)
+            done('new service previews expose blocked plans, distinguish transit from delivery, preserve saves and flag changed networks')
+            after = state()
+            assert len(after['flights'])==len(old['flights'])+1
+            assert after['flights'][:-1]==[{**f,'contractId':None} for f in old['flights']] and after['day']==old['day']
+            action('Launch 30 t mirrors')
+            assert len(state()['solar']['deployments'])==len(old['solar']['deployments'])+1
+            cargo('ceres','phobos','water')
+            page.get_by_label('Repeat every (simulation days)', exact=True).fill('30')
+            action('Schedule service')
+            action('+1 day')
+            live = state()
+            assert live['services'][-1]['dispatched']==1
+            assert live['solar']['nextDeployment']>old['solar']['nextDeployment']+1
+            expect(page.get_by_test_id('cargo-capacity')).to_have_text(f"{len(live['flights'])} / 256")
+            expect(page.get_by_test_id('mirror-capacity')).to_have_text(f"{len(live['solar']['deployments'])} / 128")
+            done('the old 32-flight bottleneck clears immediately for manual cargo, scheduled water and automatic mirrors')
+
+            cargo('earth','phobos','equipment')
+            for _ in range(64): action('Dispatch cargo')
+            action('+30 days')
+            busy = state()
+            assert len(busy['flights'])>64 and len(busy['solar']['deployments'])>6
+            assert len(busy['flights'])+len(busy['solar']['deployments'])>100
+            assert page.locator('.flight-row').count()==len(busy['flights'])+len(busy['solar']['deployments'])
+            # Dense mirror traffic must never recreate the dark, tessellated cable.
+            mirrors=page.locator('.map-flight.mirrors')
+            expect(mirrors).to_have_count(len(busy['solar']['deployments']))
+            assert mirrors.count()>20, 'The visual regression needs a busy deployment corridor'
+            glyphs=mirrors.locator('path').evaluate_all("els=>els.map(e=>({stroke:getComputedStyle(e).stroke,width:e.getBBox().width}))")
+            assert all(g['stroke']=='none' and g['width']<6 for g in glyphs)
+            power_path=page.locator('.map-power-conduit').get_attribute('d')
+            before_mirror=record()
+            mirror_id=busy['solar']['deployments'][0]['id']
+            action('Track mirror launch '+str(mirror_id))
+            expect(page.locator('.map-flight.tracked')).to_have_attribute('data-traffic-id','mirror-'+str(mirror_id))
+            lane=page.locator('path.map-tracked-route').get_attribute('d')
+            assert 'Q' in lane and lane!=power_path
+            assert page.locator('.map-flight.tracked').evaluate("""e=>{
+                const m=new DOMMatrixReadOnly(getComputedStyle(e).transform),p=document.querySelector('path.map-tracked-route');
+                const length=p.getTotalLength();let nearest=Infinity;
+                for(let i=0;i<=400;i++){const q=p.getPointAtLength(length*i/400);nearest=Math.min(nearest,Math.hypot(m.e-q.x,m.f-q.y));}
+                return nearest<1;
+            }"""), 'Tracked mirror marker left its highlighted lane'
+            assert record()==before_mirror, 'Tracking a visual lane changed the world'
+            page.locator('.network-map').screenshot(path=str(out/'busy-mirror-lanes.png'))
+            done('dense mirror batches use small unoutlined symbols and a separately tracked curved deployment lane')
+            arrivals = page.locator('.flight-row').evaluate_all('els=>els.map(e=>Number(e.dataset.arrival))')
+            assert arrivals==sorted(arrivals)
+            last = max(busy['flights'], key=lambda f:f['arrival'])
+            action('Track flight '+str(last['id']))
+            expect(page.locator('.map-flight.tracked')).to_have_attribute('data-traffic-id','cargo-'+str(last['id']))
+            cargo_filter=page.get_by_label('Filter flights by cargo', exact=True)
+            destination_filter=page.get_by_label('Filter flights by destination', exact=True)
+            rows=page.locator('.flight-row')
+            before_filter=record()
+            marker_count=page.locator('.map-flight').count()
+            for kind in ['cargo','materials','equipment','water','mirrors']:
+                cargo_filter.select_option(kind)
+                expected=len(busy['solar']['deployments']) if kind=='mirrors' else sum(kind=='cargo' or f['kind']==kind for f in busy['flights'])
+                expect(rows).to_have_count(expected)
+                times=rows.evaluate_all('els=>els.map(e=>Number(e.dataset.arrival))')
+                assert times==sorted(times)
+                assert page.locator('.map-flight').count()==marker_count
+            expect(page.get_by_role('button',name='Show tracked',exact=True)).to_be_visible()
+            page.get_by_role('button',name='Show tracked',exact=True).click()
+            expect(cargo_filter).to_have_value('all')
+            expect(destination_filter).to_have_value('all')
+            expect(page.get_by_role('button',name='Tracking flight '+str(last['id']),exact=True)).to_be_focused()
+            cargo_filter.focus();cargo_filter.press('Home');cargo_filter.press('ArrowDown');cargo_filter.press('Enter')
+            # Chromium can leave the native select popup open after Enter.
+            # Close it before programmatic changes and the screenshot.
+            cargo_filter.press('Escape')
+            expect(cargo_filter).to_have_value('cargo')
+            cargo_filter.select_option('equipment');destination_filter.select_option('phobos')
+            matching=[f for f in busy['flights'] if f['kind']=='equipment' and f['to']=='phobos']
+            expect(rows).to_have_count(len(matching))
+            expect(page.get_by_test_id('traffic-summary')).to_contain_text(f"{sum(f['cargoT'] for f in matching):,} t matching")
+            expect(page.get_by_test_id('traffic-summary')).to_contain_text(f"{len(matching)} / {len(busy['flights'])+len(busy['solar']['deployments'])} flights")
+            page.locator('.campaign-traffic').screenshot(path=str(out/'filtered-equipment.png'))
+            cargo_filter.select_option('mirrors')
+            expect(rows).to_have_count(0)
+            expect(page.get_by_text('No flights match these filters.',exact=True)).to_be_visible()
+            page.get_by_role('button',name='Show all traffic',exact=True).click()
+            assert record()==before_filter, 'Filtering changed the saved world or checkpoints'
+            cargo_filter.select_option('mirrors');destination_filter.select_option('swarm')
+            page.get_by_label('Simulation speed',exact=True).select_option('1')
+            action('Play simulation')
+            preview_button.click()
+            expect(page.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
+            cargo_filter.select_option('cargo');cargo_filter.select_option('mirrors')
+            expect(page.get_by_role('button',name='Pause simulation',exact=True)).to_be_enabled()
+            page.wait_for_function("day=>Number(document.querySelector('[data-testid=campaign-day]').textContent.replace(/[^0-9.]/g,''))>day",arg=busy['day']+.5)
+            action('Pause simulation');busy=state()
+            expect(preview_result).to_have_attribute('data-stale','true')
+            expect(cargo_filter).to_have_value('mirrors');expect(destination_filter).to_have_value('swarm')
+            expect(rows).to_have_count(len(busy['solar']['deployments']))
+            for width in [1440,768,320]:
+                page.set_viewport_size({'width':width,'height':1000})
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+                for control in [cargo_filter,destination_filter]:assert control.bounding_box()['height']>=44
+                page.locator('.campaign-traffic').screenshot(path=str(out/f'filtered-mirrors-{width}.png'))
+            done('cargo/destination filters retain arrival order, matching totals, map tracking, keyboard access and live updates without saving')
+            page.reload(wait_until='networkidle')
+            page.get_by_role('button', name='Continue Open corridors').click()
+            saved()
+            expect(cargo_filter).to_have_value('all');expect(destination_filter).to_have_value('all')
+            expect(preview_result).to_have_count(0)
+            assert state()==busy
+            page.locator('.network-outlook>summary').click()
+            expect(page.get_by_label('Forecast horizon')).to_have_value('90')
+            expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+90:,.1f}")
+            expect(page.locator('.outlook-body > .outlook-ports')).to_contain_text('Ceres')
+            assert state()==busy
+            page.get_by_label('Forecast horizon').select_option('365')
+            expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+365:,.1f}")
+            assert state()==busy
+            page.locator('.network-outlook').screenshot(path=str(out/'outlook-desktop.png'))
+            page.set_viewport_size({'width':320,'height':800})
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),'Outlook overflows at 320 px'
+            page.locator('.network-outlook').evaluate("e=>e.scrollIntoView({block:'start'})")
+            assert page.locator('.network-outlook>summary').bounding_box()['y'] >= page.locator('.campaign-clock').bounding_box()['height']-1
+            page.screenshot(path=str(out/'outlook-phone.png'))
+            page.locator('.network-outlook>summary').click()
+            page.set_viewport_size({'width':1440,'height':1000})
+            done('read-only 90/365-day outlook projects mature-network stocks and delays without touching saves or overflowing on phones')
+            action('Your saves')
+            with page.expect_download() as event:
+                page.get_by_role('button', name='Download backup', exact=True).click()
+            backup = out/'traffic-backup.json'
+            event.value.save_as(backup)
+            assert json.loads(backup.read_text())['state']==busy
+            cargo_filter.select_option('water');destination_filter.select_option('phobos')
+            page.locator('input[type=file]').set_input_files(str(backup))
+            saved()
+            expect(cargo_filter).to_have_value('all');expect(destination_filter).to_have_value('all')
+            copy = next(r['state'] for r in records() if r['id']!=busy['id'])
+            assert copy=={**busy, 'id':copy['id'], 'revision':0} and state()==busy
+            page.locator('.campaign-save-manager>summary').click()
+            done('more than 100 simultaneous flights remain ordered and trackable, reload exactly and round-trip through a separate backup slot')
+
+            for width,height in [(1440,1000),(1280,800),(768,1024),(390,844),(320,800)]:
+                page.set_viewport_size({'width':width,'height':height})
+                page.evaluate('document.activeElement?.blur();scrollTo(0,0)')
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),f'Overflow at {width}'
+                expect(page.get_by_test_id('cargo-capacity')).to_have_text(f"{len(busy['flights'])} / 256")
+                expect(page.get_by_test_id('mirror-capacity')).to_have_text(f"{len(busy['solar']['deployments'])} / 128")
+                assert page.locator('.flight-scroll').evaluate('e=>e.scrollHeight>e.clientHeight && e.clientHeight<=350')
+                page.screenshot(path=str(out/f'traffic-{width}.png'),full_page=True)
+                page.locator('.campaign-traffic').screenshot(path=str(out/f'traffic-panel-{width}.png'))
+            done('expanded traffic retains bounded scrolling and readable independent capacities across desktop, tablet and phone')
+            assert not report['errors'],report['errors']
+            report['status']='passed'
+        except Exception as e:
+            report['status']='failed'
+            report['failure']=str(e)
+            page.screenshot(path=str(out/'failure.png'),full_page=True)
+            raise
+        finally:
+            (out/'report.json').write_text(json.dumps(report,indent=2))
+            browser.close()
+            if server: server.shutdown()
+
+if __name__=='__main__': main()
