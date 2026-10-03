@@ -4,7 +4,17 @@ This is the first original Skyhook Industries film: a 90-second introduction for
 
 The film uses the site's charcoal, copper and restrained scientific diagrams. Its mechanism poses and camera choreography come directly from the existing flight walkthrough, with a close view of capture. The film's job is to make the idea understandable and memorable before inviting the viewer into Flight Studio or Expeditions.
 
-## Narration
+## Next narration pass
+
+Playthrough feedback found the first voice clunky, especially “lunar lunavator”
+and the closing invitation. Audition those two passages before producing another
+complete soundtrack. Proposed wording is “a lunavator orbiting the Moon”. Read
+“See where it could lead” with understated curiosity and a gentle falling cadence.
+Keep phrases connected, retain natural pauses, and fit the edit to the selected
+performance. The published narration and captions below remain the first cut;
+no replacement voice has been selected or generated yet.
+
+## Published narration
 
 Reaching orbit takes speed as well as height. What if some of the machinery that gives a payload that speed could stay in space?
 
@@ -47,7 +57,7 @@ The final product clips should show actual working controls. Describe Expedition
 
 ## Delivery and placement
 
-The film uses calm synthetic narration from Piper's `en_GB-cori-high` voice. The voice creator, Bryce Beattie, publishes it under a [public-domain license](https://brycebeattie.com/files/tts/); the [model card](https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/high/MODEL_CARD) identifies the LibriVox training source. The timing manifest records the model checksum and synthesis settings. No voice is presented as the founder or another identifiable speaker. Narration is normalized to approximately −18 LUFS with a −1.5 dB true-peak ceiling. There is no music track.
+The first cut uses synthetic narration from Piper's `en_GB-cori-high` voice. The voice creator, Bryce Beattie, publishes it under a [public-domain license](https://brycebeattie.com/files/tts/); the [model card](https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/high/MODEL_CARD) identifies the LibriVox training source. The timing manifest records the model checksum and synthesis settings. No voice is presented as the founder or another identifiable speaker. Narration is normalized to approximately −18 LUFS with a −1.5 dB true-peak ceiling. There is no music track.
 
 Delivery is 1280×720 at 24 fps, H264 video with AAC audio, a WebP poster, WebVTT captions and an HTML transcript. An explicit click or keyboard activation downloads the complete film (about 2.9 MB) while the poster shows a loading label. The native player receives a browser-local Blob URL so seeking works even when static hosting ignores byte-range requests. No video or caption resource is requested on initial homepage load. Captions start enabled, and native controls provide pause, seeking, volume and fullscreen; browsers that require another gesture after the download retain a focused native Play control. Failed requests leave a retry button and direct media link. The Blob is released when leaving the page, except when it is retained for browser back/forward restoration. Reduced-motion visitors get the same still poster until they deliberately play. The transcript and a direct media link remain usable without JavaScript. The interactive walkthrough remains available for visitors who want to pause and explore a moment themselves.
 

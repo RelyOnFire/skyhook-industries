@@ -39,7 +39,7 @@ function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true,loadIm
     </g></g>
   </g>;
 }
-export default function NetworkMap({world,selected,onSelect,tracked,onTrack,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:TrafficId|null;onTrack?:(id:TrafficId|null)=>void;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
+export default function NetworkMap({world,selected,onSelect,tracked,onTrack,onWatch,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:TrafficId|null;onTrack?:(id:TrafficId|null)=>void;onWatch?:()=>void;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
   const visual=useRef<HTMLDivElement>(null),[previewVisible,setPreviewVisible]=useState(false);
   const loadImages=!!world||previewVisible;
   useEffect(()=>{
@@ -62,6 +62,7 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
   const detail=followed?`${followed.label} · ${followed.mass} t ${followed.cargo.toLowerCase()}${followed.customer?' · customer freight':''} · Day ${number(followed.arrival)}`:complete?(tracked.startsWith('mirror-')?'Mirrors are now part of the solar swarm.':'Cargo has reached its destination.'):route?'Planned corridor · prepare a shipment below':'Select an outpost to explore';
   return <div className={'network-map'+(playing?' running':'')+(followed?' following':'')}>
     <div className="map-heading"><div><p className="campaign-eyebrow">TRANSPORT NETWORK</p><h2>{world?.belt.unlocked?'Inner system & belt':'The inner system'}</h2></div><div className="map-readouts">{world?.solar.unlocked&&power&&<a className="map-power-readout" href="#swarm-power" aria-label={world.solar.powerLink?`${number(power.returnedGW)} GW returned to Mercury, ${number(power.multiplier)} times production capacity. View power loop.`:'Connect swarm power to Mercury'}><span>POWER TO MERCURY</span><strong data-testid="map-power">{number(power.returnedGW)} <small>GW</small></strong><span>{world.solar.powerLink?number(power.multiplier)+'× capacity':'Connect power'} <b>↗</b></span></a>}<span className="map-live"><i/>{playing?'LIVE':'STANDBY'}</span></div></div>
+    {world&&onWatch&&<div className="map-actions"><span>Earth tether · up close</span><button type="button" onClick={onWatch} aria-haspopup="dialog"><span aria-hidden="true">▶</span> Watch a departure</button></div>}
     <div ref={visual} className="map-visual">
     <svg key={world?.id??'preview'} viewBox="0 0 1000 550" role="group" aria-label="Transport network connecting Earth, the Moon and Phobos, with Mercury available through the solar swarm expedition and Ceres through Phobos. Orbital motion is illustrative and follows Play and Pause.">
       <defs>

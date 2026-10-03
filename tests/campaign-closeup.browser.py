@@ -148,7 +148,7 @@ def main():
                 expect(page.get_by_role('dialog', name='Cargo departure', exact=True)).to_have_count(0)
                 assert not scene_requests, 'The optional 3D departure bundle loaded before opening a replay'
                 assert records(page) == initial
-                done('only Earth-origin tether cargo offers a departure replay; tugs and lunar departures do not')
+                done('only Earth-origin tether cargo offers a shipment-specific replay; tugs and lunar departures do not')
 
                 dialog, trigger = watch(page)
                 expect(dialog).to_contain_text('Earth')
@@ -286,6 +286,63 @@ def main():
                 assert records(mirror_page) == mirror_before
                 done('solar mirror traffic retains its own tracking and never presents an Earth cargo capture')
                 mirror_context.close()
+
+                demo_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce', accept_downloads=True)
+                demo = demo_context.new_page()
+                demo.set_default_timeout(20000)
+                demo.on('pageerror', lambda error: report['errors'].append(str(error)))
+                demo.goto(origin + '/lab/campaign/', wait_until='networkidle')
+                demo.get_by_label('Name your network', exact=True).fill('Departure demo')
+                demo.get_by_role('button', name='Start new network', exact=True).click()
+                expect(demo.get_by_text('Saved in this browser', exact=True)).to_be_visible()
+
+                def demonstration(label):
+                    before = records(demo)
+                    exported = backup(demo, f'{label}-before.json')
+                    entry = demo.get_by_role('button', name='Watch a departure', exact=True)
+                    expect(entry).to_be_enabled()
+                    expect(demo.locator('.map-actions')).to_contain_text('Watch a departure')
+                    for width, height in [(1440, 1000), (320, 740)]:
+                        demo.set_viewport_size({'width': width, 'height': height})
+                        entry.scroll_into_view_if_needed()
+                        assert not demo.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                        demo.locator('.map-actions').screenshot(path=str(out / f'{label}-entry-{width}.png'))
+                        entry.click()
+                        concept = demo.get_by_role('dialog', name='Earth departure', exact=True)
+                        expect(concept).to_be_visible()
+                        expect(concept).to_contain_text('Concept demonstration')
+                        expect(concept).to_contain_text('sends no cargo')
+                        expect(concept.locator('.departure-header')).to_contain_text(re.compile('CONCEPT CLOSE-UP', re.I))
+                        text = concept.inner_text()
+                        assert not re.search(r'\bFlight\s*#?\s*\d', text, re.I), 'The demo invented a shipment identity'
+                        assert not re.search(r'\b\d+(?:[.,]\d+)*\s*t\b', text), 'The demo invented a cargo mass'
+                        assert not re.search(r'\b(?:Arrives|Arrival|Delivered|In transit)\b', text, re.I), 'The demo claims a shipment timeline'
+                        expect(concept.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                        concept.get_by_role('button', name='Capture', exact=True).click()
+                        capture(demo, concept, f'{label}-capture-{width}.png')
+                        scrub(concept, 880)
+                        assert records(demo) == before, 'Viewing or scrubbing the concept demo changed saved state'
+                        demo.keyboard.press('Escape')
+                        expect(entry).to_be_focused()
+                    assert records(demo) == before, 'The concept demo changed the network, revision or checkpoints'
+                    assert backup(demo, f'{label}-after.json') == exported, 'The concept demo changed the exported campaign'
+
+                assert records(demo)[0]['state']['day'] == 0
+                assert not records(demo)[0]['state']['flights']
+                demonstration('fresh-demo')
+                demo.set_viewport_size({'width': 1440, 'height': 1000})
+                demo.get_by_label('From', exact=True).select_option('earth')
+                demo.get_by_label('To', exact=True).select_option('moon')
+                demo.get_by_label('Cargo (t)', exact=True).fill('5')
+                demo.get_by_role('radio', name='Bootstrap tug').check()
+                demo.get_by_role('button', name='Dispatch cargo', exact=True).click()
+                expect(demo.get_by_text('Saved in this browser', exact=True)).to_be_visible()
+                assert len(records(demo)[0]['state']['flights']) == 1
+                assert records(demo)[0]['state']['flights'][0]['mode'] == 'tug'
+                expect(demo.get_by_role('button', name='Watch departure of flight 1', exact=True)).to_have_count(0)
+                demonstration('tug-only-demo')
+                done('persistent map entry opens an explicit concept demo in fresh and tug-only networks without inventing cargo or changing records, exports or time')
+                demo_context.close()
                 assert not report['errors'], report['errors']
                 report['status'] = 'passed'
             except Exception as error:

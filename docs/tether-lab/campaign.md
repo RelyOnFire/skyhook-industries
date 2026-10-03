@@ -51,6 +51,9 @@ colors. Track any cargo flight or mirror launch to highlight its corridor and
 inspect its payload, destination and arrival in the fixed map footer. Tracking,
 clearing and completion never expand this footer or move the traffic controls.
 Cargo and mirror identities remain separate even when their numeric IDs match.
+**Watch a departure** above the map opens an Earth handoff demonstration, even in
+a fresh network or one without active tether flights. It is labeled as a concept
+demonstration and has no shipment identity, cargo mass or arrival claim.
 Earth-origin tether cargo offers **Watch departure** in its traffic row. This
 optional 3D concept replay uses the selected flight's manifest and live delivery
 status, with its own play/pause, scrubber and approach/capture/swing/release controls.

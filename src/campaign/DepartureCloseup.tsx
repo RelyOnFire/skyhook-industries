@@ -10,7 +10,7 @@ const duration=STAGE_MS.slice(0,4).reduce((sum,t)=>sum+t,0);
 const n=(value:number)=>value.toLocaleString('en-US',{maximumFractionDigits:1});
 const captions=['Match the moving lower tip.','Align the fitting. Close the grapple.','Carry the payload outward.','Release. Its velocity carries it onward.'];
 
-export default function DepartureCloseup({shipment,world,networkPlaying,onClose}:{shipment:Shipment;world:Campaign;networkPlaying:boolean;onClose:()=>void}) {
+export default function DepartureCloseup({shipment,world,networkPlaying,onClose}:{shipment?:Shipment;world:Campaign;networkPlaying:boolean;onClose:()=>void}) {
   const dialog=useRef<HTMLDialogElement>(null),closeButton=useRef<HTMLButtonElement>(null);
   const [elapsed,setElapsed]=useState(0),[playing,setPlaying]=useState(false);
   const [Scene,setScene]=useState<ComponentType<{stage:number;progress:number}>|null>(null);
@@ -39,13 +39,13 @@ export default function DepartureCloseup({shipment,world,networkPlaying,onClose}
   useEffect(()=>{if(elapsed>=duration)setPlaying(false);},[elapsed]);
   const stage=elapsed>=offsets[3]?3:elapsed>=offsets[2]?2:elapsed>=offsets[1]?1:0;
   const progress=Math.min(1,(elapsed-offsets[stage])/STAGE_MS[stage]);
-  const inFlight=world.flights.some(f=>f.id===shipment.id);
+  const inFlight=!!shipment&&world.flights.some(f=>f.id===shipment.id);
   const toggle=()=>{if(elapsed>=duration)setElapsed(0);setPlaying(value=>!value);};
-  return <dialog ref={dialog} className="departure-dialog" aria-labelledby="departure-heading" data-phase={labels[stage].toLowerCase()} onCancel={event=>{event.preventDefault();onClose();}} onKeyDown={event=>{
+  return <dialog ref={dialog} className="departure-dialog" aria-labelledby="departure-heading" data-mode={shipment?'flight':'concept'} data-phase={labels[stage].toLowerCase()} onCancel={event=>{event.preventDefault();onClose();}} onKeyDown={event=>{
     if(event.code==='Space'&&!event.repeat&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!(event.target instanceof Element&&event.target.closest('button,input,a,select,textarea'))){event.preventDefault();toggle();}
   }}>
-    <header className="departure-header"><div><p className="campaign-eyebrow">Flight {shipment.id} / EARTH TETHER</p><h2 id="departure-heading">Cargo departure</h2></div><button ref={closeButton} onClick={onClose} aria-label="Close departure">×</button></header>
-    <div className="departure-manifest"><strong>{SITE[shipment.from].name} <span>→</span> {SITE[shipment.to].name}</strong><span>{n(shipment.cargoT)} t {CARGO[shipment.kind].toLowerCase()}</span><span className="departure-live">{inFlight?'In transit':world.day>=shipment.arrival?'Delivered':'Departure recorded'}</span></div>
+    <header className="departure-header"><div><p className="campaign-eyebrow">{shipment?<>Flight {shipment.id} / EARTH TETHER</>:'EARTH TETHER / CONCEPT CLOSE-UP'}</p><h2 id="departure-heading">{shipment?'Cargo departure':'Earth departure'}</h2></div><button ref={closeButton} onClick={onClose} aria-label="Close departure">×</button></header>
+    <div className="departure-manifest">{shipment?<><strong>{SITE[shipment.from].name} <span>→</span> {SITE[shipment.to].name}</strong><span>{n(shipment.cargoT)} t {CARGO[shipment.kind].toLowerCase()}</span><span className="departure-live">{inFlight?'In transit':world.day>=shipment.arrival?'Delivered':'Departure recorded'}</span></>:<><strong>Earth tether</strong><span>Concept demonstration</span></>}</div>
     <div className="departure-stage" tabIndex={0} aria-label={`${labels[stage]}. ${captions[stage]} Space plays or pauses this close-up.`}>
       {Scene?<Scene stage={stage} progress={progress}/>:<div className="departure-visual" data-renderer="diagram"><DepartureDiagram stage={stage} progress={progress}/></div>}
       <div className="departure-overlay"><span>{String(stage+1).padStart(2,'0')} / {labels[stage].toUpperCase()}</span><span>CONCEPT REPLAY</span></div>
@@ -53,6 +53,6 @@ export default function DepartureCloseup({shipment,world,networkPlaying,onClose}
     </div>
     <div className="departure-controls"><button className="primary" onClick={toggle}>{elapsed>=duration?'Replay close-up':playing?'Pause close-up':'Play close-up'}</button><label><span className="sr-only">Departure progress</span><input aria-label="Departure progress" type="range" min="0" max="1000" step="1" value={Math.round(elapsed/duration*1000)} aria-valuetext={`${labels[stage]}, ${Math.round(elapsed/duration*100)} percent through departure replay`} onChange={event=>{setPlaying(false);setElapsed(Number(event.target.value)/1000*duration);}}/></label><span>{Math.floor(elapsed/1000)} / {duration/1000} s</span></div>
     <nav className="departure-phases" aria-label="Departure moments">{labels.map((label,index)=><button key={label} aria-pressed={stage===index} onClick={()=>{setPlaying(false);setElapsed(offsets[index]+STAGE_MS[index]*STILL_PROGRESS[index]);}}>{label}</button>)}</nav>
-    <div className="departure-footer"><p>Illustrative Earth handoff, not a reconstruction of this flight. The replay has its own clock.<br/><span>{networkPlaying?'Simulation running':'Simulation paused'} · Day {n(world.day)} · Arrives Day {n(shipment.arrival)}</span></p><button onClick={onClose}>Back to network</button></div>
+    <div className="departure-footer"><p>{shipment?'Illustrative Earth handoff, not a reconstruction of this flight. The replay has its own clock.':'Explore an Earth handoff. This demonstration has its own clock and sends no cargo.'}<br/><span>{networkPlaying?'Simulation running':'Simulation paused'} · Day {n(world.day)}{shipment&&<> · Arrives Day {n(shipment.arrival)}</>}</span></p><button onClick={onClose}>Back to network</button></div>
   </dialog>;
 }
