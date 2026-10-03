@@ -1,0 +1,295 @@
+{
+  "duration": 90,
+  "sampleRate": 48000,
+  "audio": "narration.wav",
+  "voice": "Piper en_GB-cori-high, synthetic narration",
+  "modelCard": "https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/high/MODEL_CARD",
+  "voiceLicense": "Public domain, as published by model creator Bryce Beattie",
+  "voiceLicenseURL": "https://brycebeattie.com/files/tts/",
+  "engine": "piper-tts 1.8.0",
+  "encoder": "7.0.2-static",
+  "modelSHA256": "470b4dd634c98f8a4850d7626ffc3dfc90774628eeef6605a6dd8f88f30a5903",
+  "synthesis": {
+    "length_scale": 1.19,
+    "noise_scale": 0.55,
+    "noise_w_scale": 0.7
+  },
+  "shots": [
+    {
+      "id": "opening",
+      "start": 0,
+      "end": 10,
+      "text": "Reaching orbit takes speed as well as height. What if some of the machinery that gives a payload that speed could stay in space?",
+      "sentences": [
+        {
+          "text": "Reaching orbit takes speed as well as height.",
+          "start": 0.7,
+          "end": 3.475
+        },
+        {
+          "text": "What if some of the machinery that gives a payload that speed could stay in space?",
+          "start": 3.775,
+          "end": 8.196
+        }
+      ]
+    },
+    {
+      "id": "rotation",
+      "start": 10,
+      "end": 24,
+      "text": "A skyhook is a rotating tether in orbit. Near the bottom of its swing, its tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
+      "sentences": [
+        {
+          "text": "A skyhook is a rotating tether in orbit.",
+          "start": 10.3,
+          "end": 13.063
+        },
+        {
+          "text": "Near the bottom of its swing, its tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
+          "start": 13.363,
+          "end": 21.2
+        }
+      ]
+    },
+    {
+      "id": "capture",
+      "start": 24,
+      "end": 38,
+      "text": "A launch vehicle climbs to the meeting point. Position, speed and timing must align. A grapple secures the payload, and the tether carries the load.",
+      "sentences": [
+        {
+          "text": "A launch vehicle climbs to the meeting point.",
+          "start": 24.3,
+          "end": 26.982
+        },
+        {
+          "text": "Position, speed and timing must align.",
+          "start": 27.282,
+          "end": 31.427
+        },
+        {
+          "text": "A grapple secures the payload, and the tether carries the load.",
+          "start": 31.727,
+          "end": 35.323
+        }
+      ]
+    },
+    {
+      "id": "swing",
+      "start": 38,
+      "end": 44,
+      "text": "As the tether turns, the payload gains orbital energy.",
+      "sentences": [
+        {
+          "text": "As the tether turns, the payload gains orbital energy.",
+          "start": 38.3,
+          "end": 42.194
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "start": 44,
+      "end": 50,
+      "text": "At a chosen release point, it leaves on its own trajectory.",
+      "sentences": [
+        {
+          "text": "At a chosen release point, it leaves on its own trajectory.",
+          "start": 44.3,
+          "end": 48.035
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "start": 50,
+      "end": 64,
+      "text": "That energy comes from the tether's motion. Before the next handoff, the system must recover. Propulsion, or carefully planned returning cargo, could help restore what the outgoing payload took.",
+      "sentences": [
+        {
+          "text": "That energy comes from the tether's motion.",
+          "start": 50.3,
+          "end": 52.576
+        },
+        {
+          "text": "Before the next handoff, the system must recover.",
+          "start": 52.876,
+          "end": 56.219
+        },
+        {
+          "text": "Propulsion, or carefully planned returning cargo, could help restore what the outgoing payload took.",
+          "start": 56.519,
+          "end": 62.813
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "start": 64,
+      "end": 74,
+      "text": "One tether could become part of a transport network: a lunar lunavator, an anchor at Phobos, and routes further into the solar system.",
+      "sentences": [
+        {
+          "text": "One tether could become part of a transport network: a lunar lunavator, an anchor at Phobos, and routes further into the solar system.",
+          "start": 64.3,
+          "end": 72.299
+        }
+      ]
+    },
+    {
+      "id": "invitation",
+      "start": 74,
+      "end": 90,
+      "text": "Skyhook Industries explores that possibility. Design and test a flight in Flight Studio. Build and supply a network in Expeditions. Start with one handoff. See where it could lead.",
+      "sentences": [
+        {
+          "text": "Skyhook Industries explores that possibility.",
+          "start": 74.3,
+          "end": 77.612
+        },
+        {
+          "text": "Design and test a flight in Flight Studio.",
+          "start": 77.912,
+          "end": 81.581
+        },
+        {
+          "text": "Build and supply a network in Expeditions.",
+          "start": 81.881,
+          "end": 85.058
+        },
+        {
+          "text": "Start with one handoff.",
+          "start": 85.358,
+          "end": 87.236
+        },
+        {
+          "text": "See where it could lead.",
+          "start": 87.536,
+          "end": 88.882
+        }
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "start": 0.7,
+      "end": 3.475,
+      "text": "Reaching orbit takes\nspeed as well as height."
+    },
+    {
+      "start": 3.775,
+      "end": 5.433,
+      "text": "What if some of the machinery"
+    },
+    {
+      "start": 5.433,
+      "end": 8.196,
+      "text": "that gives a payload that\nspeed could stay in space?"
+    },
+    {
+      "start": 10.3,
+      "end": 13.063,
+      "text": "A skyhook is a rotating tether in orbit."
+    },
+    {
+      "start": 13.363,
+      "end": 15.5,
+      "text": "Near the bottom of its swing,"
+    },
+    {
+      "start": 15.5,
+      "end": 17.994,
+      "text": "its tip moves against the orbital motion,"
+    },
+    {
+      "start": 17.994,
+      "end": 21.2,
+      "text": "reducing the speed an approaching\npayload needs to match."
+    },
+    {
+      "start": 24.3,
+      "end": 26.982,
+      "text": "A launch vehicle climbs\nto the meeting point."
+    },
+    {
+      "start": 27.282,
+      "end": 31.427,
+      "text": "Position, speed and timing must align."
+    },
+    {
+      "start": 31.727,
+      "end": 35.323,
+      "text": "A grapple secures the payload,\nand the tether carries the load."
+    },
+    {
+      "start": 38.3,
+      "end": 42.194,
+      "text": "As the tether turns, the\npayload gains orbital energy."
+    },
+    {
+      "start": 44.3,
+      "end": 48.035,
+      "text": "At a chosen release point, it\nleaves on its own trajectory."
+    },
+    {
+      "start": 50.3,
+      "end": 52.576,
+      "text": "That energy comes from\nthe tether's motion."
+    },
+    {
+      "start": 52.876,
+      "end": 56.219,
+      "text": "Before the next handoff,\nthe system must recover."
+    },
+    {
+      "start": 56.519,
+      "end": 59.216,
+      "text": "Propulsion, or carefully\nplanned returning cargo,"
+    },
+    {
+      "start": 59.216,
+      "end": 62.813,
+      "text": "could help restore what\nthe outgoing payload took."
+    },
+    {
+      "start": 64.3,
+      "end": 67.43,
+      "text": "One tether could become\npart of a transport network:"
+    },
+    {
+      "start": 67.43,
+      "end": 69.865,
+      "text": "a lunar lunavator, an anchor at Phobos,"
+    },
+    {
+      "start": 69.865,
+      "end": 72.299,
+      "text": "and routes further into the solar system."
+    },
+    {
+      "start": 74.3,
+      "end": 77.612,
+      "text": "Skyhook Industries\nexplores that possibility."
+    },
+    {
+      "start": 77.912,
+      "end": 81.581,
+      "text": "Design and test a flight in Flight Studio."
+    },
+    {
+      "start": 81.881,
+      "end": 85.058,
+      "text": "Build and supply a network in Expeditions."
+    },
+    {
+      "start": 85.358,
+      "end": 87.236,
+      "text": "Start with one handoff."
+    },
+    {
+      "start": 87.536,
+      "end": 88.882,
+      "text": "See where it could lead."
+    }
+  ]
+}

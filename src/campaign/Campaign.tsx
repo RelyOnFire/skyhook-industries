@@ -1,4 +1,5 @@
 import EarthDesign from './EarthDesign.js';
+import DepartureCloseup from './DepartureCloseup.js';
 import ServicePreview from './ServicePreview.js';
 import { useEffect, useRef, useState } from 'react';
 import { tetherCapacity, CONTRACT_OFFERS, contractRemaining, contractFlightPlan, dispatchContract, addContractService, addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
@@ -25,6 +26,7 @@ export default function Campaign() {
   const [cargo,setCargo]=useState('10'), [mode,setMode]=useState<Shipment['mode']>('tug'), [name,setName]=useState('First light');
   const [kind,setKind]=useState<CargoKind>('materials'), [intervalDays,setIntervalDays]=useState('30');
   const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<TrafficId|null>(null);
+  const [departure,setDeparture]=useState<Shipment|null>(null);
   useEffect(()=>{if(designOpen)setPlaying(false);},[designOpen]);
   const [arrivals,setArrivals]=useState<string[]>([]);
   const [contractId,setContractId]=useState<number|null>(null);
@@ -81,7 +83,7 @@ export default function Campaign() {
     const timer=window.setTimeout(()=>act(w=>advance(w,Math.min(speed,LIMITS.days-w.day))),1000);
     return()=>window.clearTimeout(timer);
   },[playing,speed,world,busy,designOpen]);
-  const changeWorld=()=>{setContractId(null);setDesignOpen(false);setPlaying(false);setTracked(null);setArrivals([]);setSelected('moon');setFrom('earth');setTo('moon');setKind('materials');setCargo('10');setMode('tug');setIntervalDays('30');};
+  const changeWorld=()=>{setDeparture(null);setContractId(null);setDesignOpen(false);setPlaying(false);setTracked(null);setArrivals([]);setSelected('moon');setFrom('earth');setTo('moon');setKind('materials');setCargo('10');setMode('tug');setIntervalDays('30');};
   const start=(candidate?:World)=>void task(async()=>{
     changeWorld();const next=candidate || createCampaign(crypto.randomUUID(),name);revision.current=null;setWorld(next);setSelected('moon');
     setFrom('earth');setTo('moon');setMode('tug');setCargo('10');setKind('materials');await persist(next);main.current?.focus();
@@ -142,6 +144,10 @@ export default function Campaign() {
     prepare(offer.from,offer.to,offer.kind,contractRemaining(world,id).unassignedT);
     setContractId(id);setIntervalDays('2');
   };
+  const watchDeparture=(id:TrafficId)=>{
+    const flight=world?.flights.find(f=>`cargo-${f.id}`===id&&f.from==='earth'&&f.mode==='tether');
+    if(flight){setTracked(id);setDeparture({...flight});}
+  };
   return <main ref={main} tabIndex={-1} id="lab-content" className={'campaign'+(world?' has-world':'')}>
     <header className="campaign-header"><div><p className="campaign-eyebrow">SKYHOOK / EXPEDITIONS</p><h1>{world?world.name:'A foothold. Then a network.'}</h1></div>
       {world&&<div className="campaign-save"><span role="status">{saveStatus}</span><button onClick={()=>reveal(savePanel.current)}>Your saves <span aria-hidden="true">↗</span></button></div>}
@@ -149,6 +155,7 @@ export default function Campaign() {
     {error&&<div className="campaign-message error" role="alert"><span>{error}</span>{world&&saveStatus.startsWith('Not saved')&&<div><button disabled={busy} onClick={()=>void task(async()=>persist(world))}>Retry save</button> <button onClick={download}>Export unsaved progress</button></div>}</div>}{notice&&<div className="campaign-message" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice('')}>Dismiss</button></div>}
     {!world&&designSource&&<p className="campaign-message">A Flight Studio design is ready to review. Continue a saved network or start one to see its report and commissioning cost.</p>}
     {world&&designOpen&&<EarthDesign key={world.id} world={world} source={designSource} busy={busy} saveError={error} act={act} onClose={()=>setDesignOpen(false)}/>}
+    {world&&departure&&<DepartureCloseup key={world.id+':'+departure.id} shipment={departure} world={world} networkPlaying={playing} onClose={()=>setDeparture(null)}/>}
     {!world&&<><section className="campaign-welcome" aria-label="Start or continue"><div><p className="campaign-eyebrow">BUILD AN INTERPLANETARY SUPPLY CHAIN</p><h2>Start at Earth.<br/>Build toward the Sun.</h2><p>Supply a lunar lunavator. Anchor your Mars network at Phobos. Grow a solar swarm from Mercury, then reach into the belt for water and propellant.</p><p>Your outposts, routes and cargo share one operations view. Time moves when you choose. Build reliable routes, then earn from customer freight contracts.</p></div><div className="campaign-start">
       <div className="campaign-recent">{loading?<p role="status">Checking saved networks…</p>:latest?<button className="primary" disabled={busy} onClick={()=>resume(latest.id)}><span>Continue {latest.name}</span><small>{day(latest.day)}</small></button>:<p>Your progress stays in this browser.</p>}</div>
       <label htmlFor="campaign-name">Name your network</label><input id="campaign-name" maxLength={48} value={name} disabled={loading} onChange={e=>setName(e.target.value)} autoComplete="off"/>
@@ -192,7 +199,7 @@ export default function Campaign() {
           <BeltChapter world={world} busy={busy} act={act} prepare={prepare}/>
           <DevelopmentChapter key={world.id} world={world} busy={busy} act={act} prepare={prepare}/>
         </div>
-        <TrafficBoard key={world.id} world={world} busy={busy} act={act} prepareContract={prepareContract} tracked={tracked} onTrack={trackFlight} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
+        <TrafficBoard key={world.id} world={world} busy={busy} act={act} prepareContract={prepareContract} tracked={tracked} onTrack={trackFlight} onWatch={watchDeparture} arrivals={arrivals} onDismiss={()=>setArrivals([])}/>
       </div>
       <details ref={milestonePanel} className="campaign-milestones" id="milestones"><summary>Milestones <span>First corridors → working network → first light → the power loop → into the belt → industrial scale</span></summary><Milestones world={world}/></details>
     </>}

@@ -1,10 +1,10 @@
 # Skyhook introduction film storyboard
 
-This is the proposed first original Skyhook Industries film: a 90-second introduction for someone who has never heard of a rotating tether. It explains one handoff, why recovery matters, and where to explore the idea on the site. The script and shot plan are ready for review; narration, rendered footage and a finished video have not been produced.
+This is the first original Skyhook Industries film: a 90-second introduction for someone who has never heard of a rotating tether. It explains one handoff, why recovery matters, and where to explore the idea on the site. The finished H264/AAC film, poster and English captions live in `public/films/`. The homepage includes a deliberate-play player and a full HTML transcript.
 
-The film should inherit the site's charcoal, copper and restrained scientific diagrams. Use the existing flight walkthrough as the motion reference, with deliberate camera movement and a close view of capture. The film's job is to make the idea understandable and memorable before inviting the viewer into Flight Studio or Expeditions.
+The film uses the site's charcoal, copper and restrained scientific diagrams. Its mechanism poses and camera choreography come directly from the existing flight walkthrough, with a close view of capture. The film's job is to make the idea understandable and memorable before inviting the viewer into Flight Studio or Expeditions.
 
-## Narration draft
+## Narration
 
 Reaching orbit takes speed as well as height. What if some of the machinery that gives a payload that speed could stay in space?
 
@@ -28,14 +28,14 @@ Start with one handoff. See where it could lead.
 | --- | --- | --- |
 | 0–10 s | Begin close to Earth's horizon. Reveal an orbital arc and a small payload; a velocity arrow establishes the problem before the tether appears. | Reaching orbit takes speed |
 | 10–24 s | Pull back to the free-orbiting tether. Show the hub moving along its orbit while the tether rotates. At the lower tip, two restrained arrows explain opposing orbital and rotational motion. | Orbit + rotation |
-| 24–39 s | Track the carrier climbing from below. Move into the existing grapple close-up as relative motion closes. Show alignment, jaw closure and a secure latch, then ease back out. | Match motion · grapple · secure |
-| 39–49 s | Follow the loaded tether through its swing. Keep the payload visibly above the atmosphere and the hub travelling along its orbit. | Carry the load |
-| 49–60 s | Show one clear release and the departing payload's trajectory. Keep the release velocity arrow briefly visible, then let the payload travel freely. | Release onto a new trajectory |
-| 60–73 s | Hold a clear view of the changed tether orbit. Show current within the rotating tether, then brief chemical and returning-cargo alternatives. Indicate recovery over later passes rather than an instant restoration. | Recover for the next handoff |
-| 73–82 s | Widen to the Earth–Moon–Phobos network. Depict free-orbiting rotors at Earth and the Moon; the inward and outward Phobos arms remain attached to Phobos. | One handoff. A wider network. |
-| 82–90 s | Use short captures of the actual Flight Studio and Expeditions interfaces, followed by a quiet end card with two clear destinations. | Explore a flight · Build a network |
+| 24–38 s | Track the carrier climbing from below. Move into the existing grapple close-up as relative motion closes. Show alignment, jaw closure and a secure latch, then ease back out. | Meet. Match. Secure. |
+| 38–44 s | Follow the loaded tether through its swing. Keep the payload visibly above the atmosphere and the hub travelling along its orbit. | Carry the load |
+| 44–50 s | Show one clear release and the departing payload's trajectory. Keep the release velocity arrow briefly visible, then let the payload travel freely. | Release. Then coast. |
+| 50–64 s | Hold a clear view of the changed tether orbit. Show current within the rotating tether, then brief chemical and returning-cargo alternatives. Indicate recovery over later passes rather than an instant restoration. | Recover for the next handoff |
+| 64–74 s | Widen to the Earth–Moon–Phobos network. Depict free-orbiting rotors at Earth and the Moon; the inward and outward Phobos arms remain attached to Phobos. | One handoff. A wider network. |
+| 74–90 s | An end card shows real Flight Studio and Expeditions captures with two clear destinations. The Studio is captured after advancing the actual mission-event control; the game uses an isolated imported test world. | Design and test a flight · Build and supply a network |
 
-Timing is a proposed edit, to be adjusted after a spoken read. Preserve intelligibility and the capture detail if the narration requires a few more seconds.
+Shot boundaries are aligned to the rendered narration. The exact sentence and caption timings are tracked in [the timing manifest](skyhook-introduction.timings.json).
 
 ## Visual and scientific continuity
 
@@ -45,14 +45,23 @@ The camera may slow and zoom into capture, but both the tether and payload must 
 
 The final product clips should show actual working controls. Describe Expeditions as a strategy game in its caption and keep its schematic routes separate from Flight Studio calculations. Avoid cost, safety or performance promises that the project's models do not establish.
 
-## Production and placement
+## Delivery and placement
 
-Record a calm narration at a comfortable pace, then time the edit to it. Render motion from controlled scene code and capture the real interfaces. Use original or appropriately licensed sound, keeping the voice easy to understand without headphones.
+The film uses calm synthetic narration from Piper's `en_GB-cori-high` voice. The voice creator, Bryce Beattie, publishes it under a [public-domain license](https://brycebeattie.com/files/tts/); the [model card](https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/high/MODEL_CARD) identifies the LibriVox training source. The timing manifest records the model checksum and synthesis settings. No voice is presented as the founder or another identifiable speaker. Narration is normalized to approximately −18 LUFS with a −1.5 dB true-peak ceiling. There is no music track.
 
-Deliver a 16:9 master, a lightweight web version, a poster frame, captions and a text transcript. Use deliberate playback with visible controls. Load the video player after activation so the homepage remains fast; retain a useful poster and transcript if playback is unavailable. Keep the interactive walkthrough available for visitors who want to pause and explore a moment themselves.
+Delivery is 1280×720 at 24 fps, H264 video with AAC audio, a WebP poster, WebVTT captions and an HTML transcript. The native video player is created only after an explicit click or keyboard activation. No video or caption resource is requested on initial homepage load. Captions start enabled, and native controls provide pause, seeking, volume and fullscreen. Reduced-motion visitors get the same still poster until they deliberately play. The transcript and a direct media link remain usable without JavaScript. The interactive walkthrough remains available for visitors who want to pause and explore a moment themselves.
 
 The homepage invitation should read “Watch how a skyhook works” and show the running time. The end card should lead to the existing guided flight and Expeditions. Selected external videos can remain in further learning with their creators credited; the primary introduction should tell this project's story.
 
-## Review before rendering
+## Regenerating the film
 
-Read the narration aloud against the shot timings. Check the capture, atmospheric clearance, release and recovery choreography against the existing walkthrough and its tests. Review text size on a phone, caption contrast and the distinction between concept illustration, calculated flight and game footage. Rendering and publication follow that review; this storyboard alone is not a finished video.
+Use the narration generator with a local, licensed Cori high model, then render from a current built site. Python Playwright, Chromium, Piper, NumPy and an H264/AAC-capable ffmpeg are production tools, not runtime dependencies of the website:
+
+```sh
+python scripts/generate-introduction-audio.py --model /path/to/en_GB-cori-high.onnx --out /path/to/film-audio
+python scripts/render-introduction.py --ffmpeg /path/to/ffmpeg --audio /path/to/film-audio/narration.wav --shots /path/to/film-audio/narration-timings.json
+```
+
+`scripts/introduction-scene.js` directs the existing FlightStory controls; it does not implement another physics model. Rendering uses fresh browser storage and the tracked campaign fixture. Intermediate frames, source WAV audio and application captures are written outside the published assets under `qa/` or the selected audio output directory. Review the ten generated key frames before rendering all frames with the optional `--stills-only` pass.
+
+The detailed planet imagery is the site's established imagery; its source credits remain in [the texture provenance](../../public/textures/README.md). The film's network routes and free/anchored tether symbols are original drawings. Scientific caveats remain visible during the mechanism and network views, and the final card labels the game separately from the calculated flight experiment.

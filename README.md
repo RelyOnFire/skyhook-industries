@@ -65,8 +65,10 @@ cutover. See [the launch checklist](docs/production-launch.md) for redirects,
 indexing, save transfer, validation and rollback.
 
 Visitors can use [Help & saves](src/pages/help.astro) to back up networks and designs. The
-[original introduction film storyboard](docs/storyboards/skyhook-introduction.md)
-is ready for review; it is not a completed video.
+[original introduction film](docs/storyboards/skyhook-introduction.md)
+is a completed 90-second narrated first cut, with captions, a transcript and a
+deliberate-play homepage player. Its regeneration scripts and voice provenance
+are documented alongside the shot plan.
 
 ## Editorial rule
 

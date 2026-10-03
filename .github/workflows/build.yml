@@ -72,6 +72,10 @@ jobs:
         run: python3 tests/studio-units.browser.py
       - name: Capture and check responsive company pages
         run: python3 tests/site-pages.browser.py
+      - name: Check introduction film loading, playback and captions
+        run: python3 tests/site-film.browser.py
+      - name: Exercise optional departure close-up and save isolation
+        run: python3 tests/campaign-closeup.browser.py
       - name: Exercise campaign progression and durable saves
         run: python3 tests/campaign.browser.py
       - name: Exercise Ceres supply, water returns and v4 save migration

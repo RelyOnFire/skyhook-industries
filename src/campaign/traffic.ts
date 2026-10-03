@@ -6,12 +6,13 @@ export interface TrafficItem {
   id: TrafficId; label: string; from: SiteId; to: SiteId | 'swarm';
   fromName: string; toName: string; mass: number;
   kind: 'materials' | 'equipment' | 'water' | 'mirrors'; cargo: string;
+  mode?: 'tug' | 'tether';
   departed: number; arrival: number; customer?: boolean;
 }
 export function trafficItems(world: Campaign): TrafficItem[] {
   return [
     ...world.flights.map(f=>({id:`cargo-${f.id}` as const,label:'Flight '+f.id,from:f.from,to:f.to,
-      fromName:SITE[f.from].name,toName:SITE[f.to].name,mass:f.cargoT,customer:isCustomerFreight(world,f),kind:f.kind,cargo:CARGO[f.kind],departed:f.departed,arrival:f.arrival})),
+      fromName:SITE[f.from].name,toName:SITE[f.to].name,mass:f.cargoT,customer:isCustomerFreight(world,f),kind:f.kind,cargo:CARGO[f.kind],mode:f.mode,departed:f.departed,arrival:f.arrival})),
     ...world.solar.deployments.map(d=>({id:`mirror-${d.id}` as const,label:'Mirror launch '+d.id,from:'mercury' as const,to:'swarm' as const,
       fromName:'Mercury',toName:'Solar swarm',mass:d.massT,kind:'mirrors' as const,cargo:'Mirrors',departed:d.departed,arrival:d.arrival})),
   ].sort((a,b)=>a.arrival-b.arrival||a.id.localeCompare(b.id));

@@ -51,6 +51,16 @@ colors. Track any cargo flight or mirror launch to highlight its corridor and
 inspect its payload, destination and arrival in the fixed map footer. Tracking,
 clearing and completion never expand this footer or move the traffic controls.
 Cargo and mirror identities remain separate even when their numeric IDs match.
+Earth-origin tether cargo offers **Watch departure** in its traffic row. This
+optional 3D concept replay uses the selected flight's manifest and live delivery
+status, with its own play/pause, scrubber and approach/capture/swing/release controls.
+It illustrates the existing Earth handoff geometry; it does not reconstruct the
+campaign trajectory or validate a commissioned design. Game time continues if
+Play was already running, and arrivals still credit exactly once. Opening,
+scrubbing and closing the replay never write a save. The Three.js scene loads
+only on request, with a diagram fallback if WebGL fails. Reduced motion starts
+paused; Escape closes the dialog and Space inside it controls only the replay.
+Other origins, tugs and mirror launches retain their existing map tracking.
 On phones, tracking brings the map into view and focuses the inspector. Returned
 power and Mercury's production multiplier appear in the map header, linked to
 the full power controls; an unconnected swarm reports zero returned power.
