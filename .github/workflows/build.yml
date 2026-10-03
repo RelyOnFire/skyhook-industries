@@ -49,7 +49,13 @@ jobs:
       - name: Install browser regression tooling
         run: |
           python3 -m pip install playwright==1.55.0
-          python3 -m playwright install --with-deps chromium
+          # Branded Chrome supplies the H264/AAC codecs used by the introduction.
+          # Keep bundled Chromium for the existing numerical/UI browser suites.
+          python3 -m playwright install --with-deps chromium chrome
+      - name: Check introduction film loading, playback and captions
+        run: python3 tests/site-film.browser.py --channel chrome
+      - name: Exercise optional departure close-up and save isolation
+        run: python3 tests/campaign-closeup.browser.py
       - name: Exercise native-origin Flight Studio and WebGL
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
       - name: Exercise delayed planetary imagery and scene fallbacks
@@ -72,10 +78,6 @@ jobs:
         run: python3 tests/studio-units.browser.py
       - name: Capture and check responsive company pages
         run: python3 tests/site-pages.browser.py
-      - name: Check introduction film loading, playback and captions
-        run: python3 tests/site-film.browser.py
-      - name: Exercise optional departure close-up and save isolation
-        run: python3 tests/campaign-closeup.browser.py
       - name: Exercise campaign progression and durable saves
         run: python3 tests/campaign.browser.py
       - name: Exercise Ceres supply, water returns and v4 save migration

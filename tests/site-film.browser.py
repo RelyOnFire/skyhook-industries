@@ -5,7 +5,6 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
-import re
 import threading
 from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright, expect
@@ -14,63 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
+    # Deliberately no Range support: the published asset host can ignore it.
+    # The player must make the explicit download seekable without server help.
     def log_message(self, *_):
         pass
-
-    def end_headers(self):
-        if urlsplit(self.path).path.endswith('.mp4'):
-            self.send_header('Accept-Ranges', 'bytes')
-        super().end_headers()
-
-    def send_head(self):
-        # Native media seeking needs byte ranges, as served by Workers assets.
-        # Python's basic static server ignores Range and cannot exercise this.
-        self.remaining = None
-        request_range = self.headers.get('Range')
-        if not request_range or not urlsplit(self.path).path.endswith('.mp4'):
-            return super().send_head()
-        path = Path(self.translate_path(self.path))
-        if not path.is_file():
-            self.send_error(404)
-            return None
-        size = path.stat().st_size
-        match = re.fullmatch(r'bytes=(\d*)-(\d*)', request_range)
-        if not match or not any(match.groups()):
-            self.send_error(416)
-            return None
-        first, last = match.groups()
-        start = int(first) if first else max(0, size-int(last))
-        end = min(int(last), size-1) if first and last else size-1
-        if start > end or start >= size:
-            self.send_response(416)
-            self.send_header('Content-Range', f'bytes */{size}')
-            self.end_headers()
-            return None
-        stream = path.open('rb')
-        stream.seek(start)
-        self.remaining = end-start+1
-        self.send_response(206)
-        self.send_header('Content-Type', 'video/mp4')
-        self.send_header('Content-Length', str(self.remaining))
-        self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
-        self.end_headers()
-        return stream
-
-    def copyfile(self, source, output):
-        if self.remaining is None:
-            return super().copyfile(source, output)
-        remaining = self.remaining
-        while remaining:
-            chunk = source.read(min(65536, remaining))
-            if not chunk:
-                break
-            output.write(chunk)
-            remaining -= len(chunk)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--executable')
+    parser.add_argument('--channel', default='chromium', help='Chromium channel, such as chrome for the installed stable browser')
     parser.add_argument('--origin', help='Exercise a published branch in an isolated browser')
     args = parser.parse_args()
     out = ROOT / 'qa/browser/site-film'
@@ -94,10 +46,20 @@ def main():
             if args.executable:
                 options['executable_path'] = args.executable
             else:
-                options['channel'] = 'chromium'
+                options['channel'] = args.channel
             browser = p.chromium.launch(**options)
             report['browser'] = browser.version
             context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
+            context.add_init_script("""(() => {
+                window.__filmRevoked=[];window.__filmMediaErrors=[];const original=URL.revokeObjectURL;
+                URL.revokeObjectURL=function(url){window.__filmRevoked.push(url);return original.call(this,url);};
+                document.addEventListener('error',event=>{
+                    if(event.target instanceof HTMLMediaElement)window.__filmMediaErrors.push({
+                        code:event.target.error?.code,message:event.target.error?.message,
+                        time:event.target.currentTime,ready:event.target.readyState,network:event.target.networkState
+                    });
+                },true);
+            })();""")
             page = context.new_page()
             page.set_default_timeout(20000)
             media_requests = []
@@ -134,6 +96,7 @@ def main():
                 expect(video).to_be_focused()
                 expect(video).to_have_attribute('controls', '')
                 expect(video).to_have_attribute('playsinline', '')
+                assert video.get_attribute('src').startswith('blob:'), 'The native player did not receive a seekable local source'
                 expect(video.locator('track[kind="captions"]')).to_have_attribute('srclang', 'en')
                 sizes = video.evaluate("""video => ({
                     width:video.getBoundingClientRect().width,height:video.getBoundingClientRect().height,
@@ -178,7 +141,60 @@ def main():
                     assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                     assert video.evaluate('v => Math.abs(v.getBoundingClientRect().width-v.parentElement.clientWidth)<=1 && Math.abs(v.getBoundingClientRect().height-v.parentElement.clientHeight)<=1')
                     film.screenshot(path=str(out / f'film-playing-{width}.png'))
+                media_url = video.get_attribute('src')
+                page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})); window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));")
+                assert not page.evaluate('window.__filmRevoked'), 'Back/forward caching revoked the retained film source'
+                expect(video).to_have_attribute('src', media_url)
+                video.evaluate('video => {video.currentTime=40;}')
+                page.wait_for_function("""() => {
+                    const video=document.querySelector('[data-film-player] video');
+                    return video && !video.seeking && video.readyState>=2 && Math.abs(video.currentTime-40)<.1;
+                }""", polling=100)
                 done('deliberate keyboard activation plays the narrated film with native controls, focused player and enabled English captions')
+
+                retry_context = browser.new_context(viewport={'width': 320, 'height': 740}, reduced_motion='reduce')
+                retry = retry_context.new_page()
+                retry.set_default_timeout(20000)
+                retry.on('pageerror', lambda error: report['errors'].append(str(error)))
+                attempt, pending = 0, []
+                def film_response(route):
+                    nonlocal attempt
+                    attempt += 1
+                    if attempt == 1:
+                        route.fulfill(status=503, content_type='text/plain', body='Injected unavailable film')
+                    else:
+                        pending.append(route)
+                retry.route('**/films/skyhook-introduction.mp4', film_response)
+                retry.goto(origin + '/', wait_until='networkidle')
+                retry_film = retry.locator('[data-introduction-film]')
+                retry_trigger = retry_film.locator('[data-film-play]')
+                retry_trigger.click()
+                expect(retry_film.get_by_role('status')).to_contain_text('The film could not load.')
+                expect(retry_trigger).to_be_enabled()
+                expect(retry_film.get_by_role('link', name='Open the film directly', exact=True)).to_have_attribute('href', '/films/skyhook-introduction.mp4')
+                expect(retry_film.locator('video')).to_have_count(0)
+                retry_trigger.click()
+                expect(retry_trigger).to_be_disabled()
+                expect(retry_trigger).to_have_attribute('aria-busy', 'true')
+                expect(retry_trigger).to_contain_text('Loading the film')
+                expect(retry_trigger.locator('img')).to_be_visible()
+                expect(retry_film.locator('video')).to_have_count(0)
+                retry_film.screenshot(path=str(out / 'film-loading-320.png'))
+                assert len(pending) == 1, 'The retried download was not held for inspection'
+                pending[0].continue_()
+                retry_video = retry_film.locator('video')
+                expect(retry_video).to_be_visible()
+                expect(retry_video).to_be_focused()
+                retry.wait_for_function("""() => {
+                    const video=document.querySelector('[data-film-player] video');
+                    return video && video.readyState>=2 && video.seekable.length && video.seekable.end(0)>=24;
+                }""", polling=100)
+                assert attempt == 2
+                expect(retry_film.get_by_role('status')).not_to_be_visible()
+                retry_context.close()
+                page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));")
+                assert page.evaluate('window.__filmRevoked') == [media_url], 'Leaving the page did not release the film Blob URL'
+                done('download failure preserves a retry and direct link; pending downloads keep the poster; Blob sources survive back/forward caching and release on departure')
 
                 nojs_context = browser.new_context(java_script_enabled=False, viewport={'width': 320, 'height': 740}, reduced_motion='reduce')
                 nojs = nojs_context.new_page()
@@ -199,9 +215,14 @@ def main():
                 report['failure'] = str(error)
                 report['media_debug'] = page.evaluate("""() => {
                     const v=document.querySelector('[data-film-player] video');
-                    return v ? {time:v.currentTime,ready:v.readyState,network:v.networkState,error:v.error?.message,
+                    const probe=v||document.createElement('video');
+                    const diagnostics={errors:window.__filmMediaErrors,capabilities:{
+                        mp4:probe.canPlayType('video/mp4'),aac:probe.canPlayType('audio/mp4; codecs="mp4a.40.2"'),
+                        h264:probe.canPlayType('video/mp4; codecs="avc1.64001f, mp4a.40.2"')
+                    }};
+                    return v ? {...diagnostics,time:v.currentTime,ready:v.readyState,network:v.networkState,error:{code:v.error?.code,message:v.error?.message},
                         seekable:Array.from({length:v.seekable.length},(_,i)=>[v.seekable.start(i),v.seekable.end(i)]),
-                        buffered:Array.from({length:v.buffered.length},(_,i)=>[v.buffered.start(i),v.buffered.end(i)])} : null;
+                        buffered:Array.from({length:v.buffered.length},(_,i)=>[v.buffered.start(i),v.buffered.end(i)])} : diagnostics;
                 }""")
                 page.screenshot(path=str(out / 'failure.png'), full_page=True)
                 raise
