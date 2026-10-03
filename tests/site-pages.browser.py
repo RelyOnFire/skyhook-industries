@@ -14,7 +14,7 @@ from urllib.parse import quote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTES = ['', 'system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'archive', '404', 'lab/architectures']
+ROUTES = ['', 'system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'help', 'archive', '404', 'lab/architectures']
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -117,8 +117,9 @@ def main():
                 png = response.body()
                 assert png[:8] == b'\x89PNG\r\n\x1a\n' and struct.unpack('>II', png[16:24]) == (1200, 630)
                 expect(page.locator('head meta[name="twitter:image"]')).to_have_attribute('content', source)
-                if path.startswith('/lab/'):
-                    expect(page.locator('head meta[name="robots"]')).to_have_attribute('content', 'noindex,follow')
+                # This suite exercises the normal production build. Preview
+                # metadata is checked separately by the launch policy test.
+                expect(page.locator('head meta[name="robots"]')).to_have_count(0)
             page.goto(origin + '/lab/campaign/method/', wait_until='networkidle')
             expect(page.locator('.brand-links a.active')).to_have_count(1)
             expect(page.locator('.brand-links a.active')).to_have_attribute('href', '/lab/campaign/')
@@ -193,7 +194,7 @@ def main():
                 trigger.click()
                 menu.get_by_role('link', name='Contact', exact=True).click()
                 expect(page).to_have_url(origin + '/contact/')
-                expect(page.locator('main h1')).to_have_text('Bring a real problem.')
+                expect(page.locator('main h1')).to_have_text('Tell us what you found.')
                 report['navigation'].append(path)
 
             # Enhancing dismissal must not make navigation depend on JavaScript.

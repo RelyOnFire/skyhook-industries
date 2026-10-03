@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SKYHOOK_DEPLOYMENT: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,6 +36,16 @@ jobs:
           diff -u analysis/reference_architecture_v04_output.md /tmp/reference_architecture_v04_output.md
       - name: Build site
         run: npm run build
+      - name: Verify production indexing and legacy redirects
+        run: node --test tests/site-launch.test.mjs
+      - name: Verify preview isolation
+        env:
+          SKYHOOK_DEPLOYMENT: preview
+          WORKERS_CI_BRANCH: dribbble-visual-redesign
+          SKYHOOK_TEST_DIST: qa/launch-preview-dist
+        run: |
+          npm run build -- --outDir qa/launch-preview-dist
+          node --test tests/site-launch.test.mjs
       - name: Install browser regression tooling
         run: |
           python3 -m pip install playwright==1.55.0
@@ -89,4 +101,41 @@ jobs:
             dist/
             package-lock.json
             source-review.tar
+          retention-days: 7
+
+  launch-browsers:
+    name: Launch and save transfer (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      SKYHOOK_DEPLOYMENT: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+      - name: Install browser tooling
+        run: |
+          python3 -m pip install playwright==1.55.0
+          python3 -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Check public entry points and transfer saves between origins
+        run: python3 tests/site-launch.browser.py --browser ${{ matrix.browser }}
+      - name: Upload launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-${{ matrix.browser }}
+          path: qa/browser/site-launch/${{ matrix.browser }}/
           retention-days: 7

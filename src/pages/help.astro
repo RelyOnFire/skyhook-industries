@@ -1,0 +1,109 @@
+---
+import ProductionLayout from '../layouts/ProductionLayout.astro';
+---
+<ProductionLayout title="Help & saves — Skyhook Industries" description="Back up your Expeditions progress, move saved networks between site addresses, and keep portable copies of your Tether Lab designs.">
+  <section class="page-hero paper-hero">
+    <p class="eyebrow">Help & saves</p>
+    <h1>Keep your progress.</h1>
+    <p>Your networks and saved designs belong to this browser and site address. A downloaded backup lets you bring them to another address, browser or device.</p>
+    <nav class="help-jumps" aria-label="Help topics">
+      <a href="#campaign-saves">Expeditions saves</a>
+      <a href="#studio-designs">Tether Lab designs</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="/contact/#feedback">Send feedback ↗</a>
+    </nav>
+  </section>
+
+  <section class="paper-section" id="campaign-saves" aria-labelledby="campaign-help-heading">
+    <div class="section-grid">
+      <p class="chapter-label">01 / Expeditions</p>
+      <div class="help-copy">
+        <h2 id="campaign-help-heading">Bring your network with you.</h2>
+        <p>Expeditions autosaves successful actions. There is no account or cloud sync, and saves do not move automatically when the website address changes.</p>
+        <ol class="help-steps">
+          <li><strong>Open the address where you played.</strong> Use the same browser and profile. If that was dribbble-visual-redesign, <a href="https://dribbble-visual-redesign-skyhook-industries.imattoo.workers.dev/lab/campaign/">open your usual Expeditions address</a>.</li>
+          <li><strong>Download each network.</strong> Pause time and select <b>Your saves</b> to open <b>Saved networks &amp; backups</b>. Choose <b>Load</b> beside the network you want. Select <b>Download backup</b>. Repeat for every network you want to keep.</li>
+          <li><strong>Import at your destination.</strong> Open Expeditions at the new address or in the new browser. Select <b>Import campaign backup</b> on the welcome screen, or <b>Import backup</b> under <b>Saved networks &amp; backups</b>, and choose the downloaded JSON file.</li>
+          <li><strong>Check before continuing.</strong> Confirm the network name, simulation day and progress. Import creates and saves a separate slot; existing networks stay intact. Reload and open the imported network to check the saved copy.</li>
+        </ol>
+        <p class="help-note">Keep the downloaded files and your original address bookmarked until you have checked every imported network. Each backup contains that network’s current state, including its commissioned Earth design; earlier checkpoints are not included.</p>
+        <a class="help-action" href="/lab/campaign/">Open Expeditions at this address →</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-section" id="studio-designs" aria-labelledby="studio-help-heading">
+    <div class="section-grid">
+      <p class="chapter-label">02 / Tether Lab</p>
+      <div class="help-copy">
+        <h2 id="studio-help-heading">Take the design, then fly it again.</h2>
+        <p>Export the current design before loading another one. To back up a previously saved design, choose <b>Load</b> in its experiment first. At the destination, import the file into the matching experiment, then choose <b>Save</b> to keep it in that browser.</p>
+        <dl class="help-designs">
+          <div><dt><a href="/lab/">Earth</a> &amp; <a href="/lab/lunar/">Moon</a></dt><dd><b>Export JSON</b> → <b>Import design</b> → <b>Save</b><span>File controls are below the design controls. On phones, open <b>Design</b>. Back up Earth and Moon separately.</span></dd></div>
+          <div><dt><a href="/lab/phobos/">Phobos</a> &amp; <a href="/lab/t4/">T4</a></dt><dd><b>Export design</b> → <b>Import</b> → <b>Save</b><span>File controls are in each experiment’s design bay. Keep one file for each design you want to retain.</span></dd></div>
+          <div><dt><a href="/lab/cardio/">CardioRotovator reference</a></dt><dd><b>Reference files</b> → <b>Export reference</b><span>At the destination, use <b>Reference files</b> → <b>Import reference</b> → <b>Save reference</b>. Use <b>Load reference</b> to retrieve the saved geometry and phase.</span></dd></div>
+          <div><dt><a href="/lab/cardio/">CardioRotovator passive experiment</a></dt><dd><b>Export design</b> → <b>Import design</b> → <b>Save</b><span>Open <b>Explore uncontrolled dynamics</b>. Its saved design is separate from the synchronized reference above it.</span></dd></div>
+        </dl>
+        <p>Each experiment keeps one saved design per browser and address; CardioRotovator has the two separate saves described above. Import changes the current inputs. <b>Save</b> replaces that experiment’s previously saved design, so export it first if you want both.</p>
+        <p class="help-note">Design files preserve inputs, not Flight school completion, unit preferences, pinned flights or study results. Export any reports you want to keep separately. Choosing a preset or resetting a scenario changes the current view; it does not erase the saved design. Older Earth or Moon files may ask you to review an update before running.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section" id="troubleshooting" aria-labelledby="help-troubleshooting-heading">
+    <div class="section-grid">
+      <p class="chapter-label">03 / Getting unstuck</p>
+      <div class="help-copy">
+        <h2 id="help-troubleshooting-heading">Find your way back.</h2>
+        <details class="help-answer">
+          <summary>My saved network is missing.</summary>
+          <p>Check the address, browser and profile where you played. The dribbble-visual-redesign address and www.skyhook-industries.com have separate storage. A blank list at a different address does not mean your original save was deleted. Return to the original address to download a backup.</p>
+        </details>
+        <details class="help-answer">
+          <summary>The game says it could not save.</summary>
+          <p>Download a backup of the open network before closing or reloading the tab. If another tab has this world open, pause it first. Resolve the reported problem, then try <b>Save now</b>; you can also import your downloaded backup into a separate slot.</p>
+        </details>
+        <details class="help-answer">
+          <summary>Can I go back to a checkpoint?</summary>
+          <p>In <b>Saved networks &amp; backups</b>, choose <b>Recover checkpoint</b> beside a network when available. Recovery makes a separate slot and keeps the original. Each network retains up to three earlier checkpoints in this browser.</p>
+        </details>
+        <details class="help-answer">
+          <summary>Why was my import rejected?</summary>
+          <p>Use an Expeditions campaign backup for the game, and the matching design or reference file for a Lab experiment. A flight report is not a design backup. Keep the original file unchanged and include the error message when <a href="/contact/#feedback">asking for help</a>.</p>
+        </details>
+        <p class="help-note">Clearing site data removes local saves. Keep downloaded backups, especially before clearing browser data or leaving a private browsing session.</p>
+        <a class="help-action" href="/contact/#feedback">Something still feels wrong? Send feedback →</a>
+      </div>
+    </div>
+  </section>
+</ProductionLayout>
+
+<style>
+  .help-jumps { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 28px; }
+  .help-jumps a, .help-action { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+  .help-copy { max-width: 76ch; font-size: 17px; line-height: 1.75; color: #b6c3c9; }
+  .help-copy > p { margin: 0 0 22px; }
+  .help-copy :is(b, strong) { color: #e4ebed; font-weight: 600; }
+  .help-steps { padding-left: 24px; margin: 28px 0; }
+  .help-steps li { padding-left: 8px; margin-bottom: 20px; }
+  .help-steps li::marker { color: #efa477; font: 13px var(--mono); }
+  .help-note { border-left: 2px solid #87674f; padding-left: 18px; font-size: 15px; }
+  .help-designs { margin: 30px 0; }
+  .help-designs > div { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr); gap: 24px; border-top: 1px solid #303e45; padding: 20px 0; }
+  .help-designs > div:last-child { border-bottom: 1px solid #303e45; }
+  .help-designs dt { font-size: 15px; }
+  .help-designs dd { margin: 0; font-size: 15px; }
+  .help-designs dd span { display: block; margin-top: 8px; }
+  .help-answer { border-top: 1px solid #303e45; }
+  .help-answer summary { padding: 16px 0; min-height: 56px; cursor: pointer; color: #e4ebed; }
+  .help-answer p { margin: 0 0 22px; font-size: 16px; }
+  .help-answer:last-of-type { border-bottom: 1px solid #303e45; margin-bottom: 24px; }
+  .help-answer summary:focus-visible { outline: 2px solid #efa477; outline-offset: 4px; }
+  section[id] { scroll-margin-top: 24px; }
+  @media (max-width: 600px) {
+    .help-copy { font-size: 16px; }
+    .help-designs > div { grid-template-columns: 1fr; gap: 8px; }
+    .help-jumps { gap: 4px 20px; }
+    .help-steps { padding-left: 20px; }
+  }
+</style>

@@ -12,7 +12,7 @@ const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <PageMeta title={title} description={description} noindex={true} experience={active === 'campaign' ? 'campaign' : 'lab'} />
+    <PageMeta title={title} description={description} experience={active === 'campaign' ? 'campaign' : 'lab'} />
   </head>
   <body class="lab-body">
     <a class="lab-skip" href="#lab-content">Skip to content</a>
@@ -22,8 +22,12 @@ const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '
       {links.map(([id, label, href]) => <a href={href} aria-current={active === id ? 'page' : undefined}>{label}</a>)}
     </nav>
     <slot />
-    <footer class="lab-imagery-credit"><a href="/lab/method/#imagery">Planetary imagery & credits ↗</a></footer>
+    <footer class="lab-imagery-credit">
+      <a href="/help/">Help &amp; saves</a>
+      <a href="/contact/#feedback">Feedback</a>
+      <a href="/lab/method/#imagery">Planetary imagery &amp; credits ↗</a>
+    </footer>
   </body>
 </html>
 
-<style>.lab-imagery-credit{max-width:1500px;margin:0 auto;padding:18px 24px;font-size:11px;color:#8fa1ab}.lab-imagery-credit a{color:inherit;text-underline-offset:3px}</style>
+<style>.lab-imagery-credit{max-width:1500px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;gap:0 24px;font-size:11px;color:#8fa1ab}.lab-imagery-credit a{display:inline-flex;align-items:center;min-height:44px;color:inherit;text-underline-offset:3px}</style>
