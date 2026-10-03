@@ -8,6 +8,15 @@ free lunar rotor. Phobos itself anchors the inward and outward tethers.
 
 ## Operations interface
 
+The welcome screen is included in the initial HTML. Save discovery runs in the
+browser after hydration; Start, Import and the network-name input stay disabled
+until it completes. A fixed space holds the save status or Continue action, so
+finding a saved network does not move the other controls. No player data is
+embedded in the generated page. The welcome map fetches its detailed planet
+surfaces when it becomes visible; an open network loads them immediately. The
+map keeps the same geometry throughout. Without JavaScript, visitors can still
+read the introduction and follow links to the campaign guide and save help.
+
 The campaign is one operations workspace: all outposts and their local stocks,
 inbound cargo, industry rates and tether availability stay exposed. Choosing a
 destination highlights it without hiding other depots. Outpost supply shortcuts

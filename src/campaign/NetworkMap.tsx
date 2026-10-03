@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import PlanetDisc from '../visuals/PlanetDisc.js';
 import type { Campaign, SiteId } from './model.js';
 import { ROUTES, SITE, SITES, swarmPower } from './model.js';
@@ -19,14 +20,14 @@ function flightPosition(f:TrafficItem,day:number) {
   return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,angle:Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI};
 }
 const number = (value:number) => value.toLocaleString('en-US',{maximumFractionDigits:1});
-function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site:SiteId;cx:number;cy:number;radius:number;seconds:number;phase:number;commissioned?:boolean}) {
+function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true,loadImage=true}:{site:SiteId;cx:number;cy:number;radius:number;seconds:number;phase:number;commissioned?:boolean;loadImage?:boolean}) {
   return <g transform={`translate(${cx} ${cy})`} className="map-tether" data-site={site} aria-label={site==='phobos'?(commissioned?'Phobos and its anchored tethers orbit Mars':'Phobos orbits Mars'):SITE[site].facility+' in free orbit'}>
     <circle r={radius} className="map-tether-track"/>
     <g transform={`rotate(${phase})`}><g className="map-orbital-motion" style={{animationDuration:seconds+'s'}}>
       <g transform={`translate(0 ${-radius})`}>
         {site==='phobos'?<>
           {commissioned&&<path d="M0 -31V29" stroke={SITE.phobos.color} strokeWidth="2"/>}
-          <PlanetDisc body="phobos" cx={0} cy={0} r={13}/>
+          <PlanetDisc body="phobos" cx={0} cy={0} r={13} loadImage={loadImage}/>
           <circle r="3" fill="#ffe0b7"/>
           {commissioned&&<><circle cy="-31" r="2.5" fill="#f1c08e"/><circle cy="29" r="2.5" fill="#f1c08e"/></>}
         </>:<g className="map-rotor-motion">
@@ -39,6 +40,19 @@ function OrbitalTether({site,cx,cy,radius,seconds,phase,commissioned=true}:{site
   </g>;
 }
 export default function NetworkMap({world,selected,onSelect,tracked,onTrack,playing,route}:{world:Campaign|null;selected:SiteId;onSelect:(id:SiteId)=>void;tracked:TrafficId|null;onTrack?:(id:TrafficId|null)=>void;playing:boolean;route?:{from:SiteId;to:SiteId}}) {
+  const visual=useRef<HTMLDivElement>(null),[previewVisible,setPreviewVisible]=useState(false);
+  const loadImages=!!world||previewVisible;
+  useEffect(()=>{
+    // SVG images do not support native lazy loading. Keep the welcome map's
+    // geometry in the initial HTML, but fetch surfaces only when it is visible.
+    if(loadImages||!visual.current)return;
+    if(typeof IntersectionObserver==='undefined'){setPreviewVisible(true);return;}
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){setPreviewVisible(true);observer.disconnect();}
+    });
+    observer.observe(visual.current);
+    return()=>observer.disconnect();
+  },[loadImages]);
   const swarmMass=world?.solar.deployedT||0,swarmCount=Math.min(80,Math.ceil(swarmMass/10));
   const shells=[0,1,...(swarmMass>=2000?[2]:[]),...(swarmMass>=10000?[3]:[]),...(swarmMass>=50000?[4]:[])];
   const visibleSites=SITES.filter(id=>id!=='ceres'||world?.solar.powerLink);
@@ -48,7 +62,7 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
   const detail=followed?`${followed.label} · ${followed.mass} t ${followed.cargo.toLowerCase()}${followed.customer?' · customer freight':''} · Day ${number(followed.arrival)}`:complete?(tracked.startsWith('mirror-')?'Mirrors are now part of the solar swarm.':'Cargo has reached its destination.'):route?'Planned corridor · prepare a shipment below':'Select an outpost to explore';
   return <div className={'network-map'+(playing?' running':'')+(followed?' following':'')}>
     <div className="map-heading"><div><p className="campaign-eyebrow">TRANSPORT NETWORK</p><h2>{world?.belt.unlocked?'Inner system & belt':'The inner system'}</h2></div><div className="map-readouts">{world?.solar.unlocked&&power&&<a className="map-power-readout" href="#swarm-power" aria-label={world.solar.powerLink?`${number(power.returnedGW)} GW returned to Mercury, ${number(power.multiplier)} times production capacity. View power loop.`:'Connect swarm power to Mercury'}><span>POWER TO MERCURY</span><strong data-testid="map-power">{number(power.returnedGW)} <small>GW</small></strong><span>{world.solar.powerLink?number(power.multiplier)+'× capacity':'Connect power'} <b>↗</b></span></a>}<span className="map-live"><i/>{playing?'LIVE':'STANDBY'}</span></div></div>
-    <div className="map-visual">
+    <div ref={visual} className="map-visual">
     <svg key={world?.id??'preview'} viewBox="0 0 1000 550" role="group" aria-label="Transport network connecting Earth, the Moon and Phobos, with Mercury available through the solar swarm expedition and Ceres through Phobos. Orbital motion is illustrative and follows Play and Pause.">
       <defs>
         <radialGradient id="map-sun" cx="40%" cy="35%"><stop stopColor="#fff6d8"/><stop offset=".6" stopColor="#efc38e"/><stop offset="1" stopColor="#c77b47"/></radialGradient>
@@ -74,14 +88,14 @@ export default function NetworkMap({world,selected,onSelect,tracked,onTrack,play
       {world?.solar.launchArray&&<g className="map-mirror-lanes" aria-label="Mirror deployments from Mercury to the swarm"><path d={mirrorPath(0)}/><text x="24" y="415">MIRRORS ↗</text></g>}
       {world?.solar.powerLink&&<g className="map-power-link" aria-label="Power returned to Mercury, schematic energy flow"><path className="map-power-conduit" d="M111 274Q119 342 174 391"/><path className="map-power-flow" d="M111 274Q119 342 174 391"/><text x="101" y="335">POWER RETURN</text></g>}
       <circle cx="95" cy="215" r="35" fill="url(#map-sun)"/><text x="95" y="271" textAnchor="middle" className="map-body-label">SOL</text>
-      <g opacity={world?.solar.unlocked?1:.5}><PlanetDisc body="mercury" cx={180} cy={420} r={25}/></g>
-      <PlanetDisc body="earth" cx={460} cy={290} r={56}/>
-      <PlanetDisc body="moon" cx={595} cy={130} r={24}/>
-      {world?.solar.powerLink&&<g opacity={world.belt.unlocked?1:.5}><PlanetDisc body="ceres" cx={840} cy={110} r={25}/></g>}
-      <PlanetDisc body="mars" cx={855} cy={403} r={50}/><text x="913" y="438" className="map-body-label">MARS</text>
+      <g opacity={world?.solar.unlocked?1:.5}><PlanetDisc body="mercury" cx={180} cy={420} r={25} loadImage={loadImages}/></g>
+      <PlanetDisc body="earth" cx={460} cy={290} r={56} loadImage={loadImages}/>
+      <PlanetDisc body="moon" cx={595} cy={130} r={24} loadImage={loadImages}/>
+      {world?.solar.powerLink&&<g opacity={world.belt.unlocked?1:.5}><PlanetDisc body="ceres" cx={840} cy={110} r={25} loadImage={loadImages}/></g>}
+      <PlanetDisc body="mars" cx={855} cy={403} r={50} loadImage={loadImages}/><text x="913" y="438" className="map-body-label">MARS</text>
       {(!world||world.ports.earth.level>0)&&<OrbitalTether site="earth" cx={460} cy={290} radius={86} seconds={30} phase={-30}/>}
       {!!world?.ports.moon.level&&<OrbitalTether site="moon" cx={595} cy={130} radius={50} seconds={38} phase={-24}/>}
-      <OrbitalTether site="phobos" cx={855} cy={403} radius={88} seconds={42} phase={-10} commissioned={!!world?.ports.phobos.level}/>
+      <OrbitalTether site="phobos" cx={855} cy={403} radius={88} seconds={42} phase={-10} commissioned={!!world?.ports.phobos.level} loadImage={loadImages}/>
       {!!world?.ports.mercury.level&&<OrbitalTether site="mercury" cx={180} cy={420} radius={54} seconds={26} phase={-30}/>}
       {!!world?.ports.ceres.level&&<OrbitalTether site="ceres" cx={840} cy={110} radius={50} seconds={50} phase={24}/>}
       {world&&([{id:'launch',name:'Mirror array',level:world.development.launchLevel,x:219,y:453},{id:'water',name:'Water works',level:world.development.waterLevel,x:885,y:119},{id:'fuel',name:'Fuel works',level:world.development.fuelLevel,x:915,y:353}]).filter(item=>item.level>0).map(item=><g key={item.id} className="map-infrastructure" transform={`translate(${item.x} ${item.y})`} role="img" aria-label={item.name+' at '+2**item.level+' times base capacity'}><path d="M-3 12H35"/>{Array.from({length:item.level},(_,i)=><rect key={i} x={i*11} y={8-i*3} width="7" height={4+i*3} rx="1"/>)}<text y="25">{2**item.level}× {item.name.toUpperCase()}</text></g>)}

@@ -75,6 +75,77 @@ def main():
                 event.value.save_as(path)
                 return path, json.loads(path.read_text())
 
+            def welcome_hydration(welcome_context, saved_name=None, inspect_images=False):
+                """Hold application JavaScript so the actual server-rendered layout is observable."""
+                welcome = welcome_context.new_page()
+                welcome.set_viewport_size({'width': 320, 'height': 600})
+                welcome.set_default_timeout(20000)
+                held_scripts, errors, planets = [], [], []
+                holding = True
+
+                def scripts(route):
+                    if holding and route.request.resource_type == 'script':
+                        held_scripts.append(route)
+                    else:
+                        route.continue_()
+
+                welcome.route('**/*', scripts)
+                welcome.on('pageerror', lambda error: errors.append(str(error)))
+                welcome.on('console', lambda message: errors.append(message.text) if message.type == 'error' else None)
+                welcome.on('request', lambda request: planets.append(urlsplit(request.url).path) if urlsplit(request.url).path.startswith('/planets/') else None)
+                try:
+                    welcome.goto(origin + '/lab/campaign/', wait_until='commit')
+                    expect(welcome.locator('main h1')).to_have_text('A foothold. Then a network.')
+                    expect(welcome.locator('.campaign-start')).to_have_css('display', 'flex')
+                    # System fonts need no download; WebKit can keep fonts.ready
+                    # pending while these script requests are deliberately held.
+                    controls = [
+                        welcome.get_by_label('Name your network', exact=True),
+                        welcome.get_by_role('button', name='Start new network', exact=True),
+                        welcome.get_by_role('button', name='Import campaign backup', exact=True),
+                    ]
+                    for control in controls:
+                        expect(control).to_be_disabled()
+                    expect(welcome.get_by_role('button', name='Play simulation', exact=True)).to_have_count(0)
+                    before = [control.bounding_box() for control in controls]
+                    assert all(before), 'Server-rendered welcome controls are missing'
+                    assert held_scripts, 'Hydration was not held for the server-rendered layout check'
+                    assert not planets, f'Welcome loaded planet imagery before hydration: {planets}'
+                    holding = False
+                    for script in held_scripts:
+                        script.continue_()
+                    for control in controls:
+                        expect(control).to_be_enabled()
+                    if saved_name:
+                        expect(welcome.locator('.campaign-recent button')).to_contain_text('Continue ' + saved_name)
+                    else:
+                        expect(welcome.locator('.campaign-recent button')).to_have_count(0)
+                    # Enabled controls prove React committed the save result.
+                    # Geometry has no transition and bounding_box flushes layout.
+                    after = [control.bounding_box() for control in controls]
+                    for index, (a, b) in enumerate(zip(before, after)):
+                        assert b and all(abs(a[key] - b[key]) <= 1 for key in ['x', 'y', 'width', 'height']), f'Welcome control {index} moved on hydration: {a} -> {b}'
+                    assert not errors, f'Welcome hydration errors: {errors}'
+
+                    if inspect_images:
+                        welcome.wait_for_load_state('networkidle')
+                        map_visual = welcome.locator('.map-visual')
+                        assert map_visual.bounding_box()['y'] >= 600, 'This check requires the welcome map below the viewport'
+                        assert not planets, f'Below-fold welcome imagery was fetched: {planets}'
+                        expect(map_visual.locator('image[href^="/planets/"]')).to_have_count(0)
+                        map_visual.scroll_into_view_if_needed()
+                        expected = {f'/planets/{body}.webp' for body in ['earth', 'moon', 'mars', 'mercury', 'phobos']}
+                        expect(map_visual.locator('image[href^="/planets/"]')).to_have_count(len(expected))
+                        welcome.wait_for_load_state('networkidle')
+                        assert set(planets) == expected, f'Visible welcome map did not fetch the established detailed imagery: {planets}'
+                        welcome.screenshot(path=str(out / 'campaign-welcome-320.png'), full_page=True)
+                    assert not errors, f'Welcome errors: {errors}'
+                except Exception:
+                    welcome.screenshot(path=str(out / 'welcome-failure.png'), full_page=True)
+                    raise
+                finally:
+                    welcome.close()
+
             try:
                 for path in ['/', '/system/', '/lab/', '/lab/campaign/', '/help/']:
                     response = page.goto(origin + path, wait_until='networkidle')
@@ -122,8 +193,24 @@ def main():
                 native.locator('.help-answer').first.locator('summary').click()
                 expect(native.locator('.help-answer').first.locator('p')).to_be_visible()
                 assert not native.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                native.goto(origin + '/lab/campaign/', wait_until='networkidle')
+                expect(native.locator('main h1')).to_have_text('A foothold. Then a network.')
+                expect(native.locator('.campaign-welcome')).to_contain_text('Build toward the Sun.')
+                expect(native.locator('.campaign-js-note')).to_contain_text('JavaScript')
+                expect(native.locator('.campaign-js-note a[href="/lab/campaign/method/"]')).to_be_visible()
+                expect(native.get_by_label('Name your network', exact=True)).to_be_disabled()
+                expect(native.get_by_role('button', name='Start new network', exact=True)).to_be_disabled()
+                expect(native.get_by_role('button', name='Import campaign backup', exact=True)).to_be_disabled()
+                expect(native.get_by_role('button', name='Play simulation', exact=True)).to_have_count(0)
+                expect(native.locator('image[href^="/planets/"]')).to_have_count(0)
+                assert not native.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                 native.close()
-                done('Save instructions and native troubleshooting disclosures remain available without JavaScript')
+                done('Save help, troubleshooting and the complete Expeditions introduction remain readable without JavaScript; play controls stay inactive')
+
+                fresh_context = browser.new_context(viewport={'width': 320, 'height': 600}, reduced_motion='reduce')
+                welcome_hydration(fresh_context, inspect_images=True)
+                fresh_context.close()
+                done('Delayed hydration keeps narrow-phone welcome controls in place; detailed planet imagery waits until the map enters view')
 
                 page.set_viewport_size({'width': 1440, 'height': 1000})
                 page.goto(origin + '/lab/campaign/', wait_until='networkidle')
@@ -145,6 +232,8 @@ def main():
                 assert records() == [], 'Distinct origins unexpectedly shared campaign storage'
                 page.get_by_role('button', name='Start new network', exact=True).click()
                 saved()
+                expect(page.locator('.has-world .map-visual image[href^="/planets/"]')).to_have_count(5)
+                assert set(page.locator('.has-world .map-visual image').evaluate_all('(images) => images.map(image => image.getAttribute("href"))')) == {f'/planets/{body}.webp' for body in ['earth', 'moon', 'mars', 'mercury', 'phobos']}
                 previous = records()[0]
                 page.locator('input[type=file]').set_input_files(str(campaign_file))
                 saved()
@@ -162,6 +251,9 @@ def main():
                 expect(page.get_by_role('button', name='Load ' + source_record['state']['name'], exact=True)).to_be_enabled()
                 assert records() == [source_record]
                 done('A genuine cross-origin campaign export/import preserves time, cargo, orders and credits; creates a separate durable slot and leaves both original saves intact')
+
+                welcome_hydration(context, saved_name=source_record['state']['name'])
+                done('Finding an existing saved network adds Continue without moving the name, start or import controls')
 
                 key = 'skyhook-lab-design-v2'
                 page.goto(origin + '/lab/', wait_until='networkidle')

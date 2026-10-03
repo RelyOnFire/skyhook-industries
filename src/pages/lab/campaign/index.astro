@@ -3,7 +3,6 @@ import Campaign from '../../../campaign/Campaign';
 import LabLayout from '../../../layouts/LabLayout.astro';
 ---
 <LabLayout title="Expeditions · Skyhook Industries" description="Build an interplanetary supply chain. Grow an Earth–Moon–Phobos network, power Mercury's solar swarm, and develop Ceres for water and propellant. Play in your browser and keep your progress." active="campaign">
-  <Campaign client:only="react">
-    <main id="lab-content" class="guide" slot="fallback"><h1>Loading your expeditions…</h1><p>Your network and saved campaigns stay in this browser.</p><noscript><p>The campaign needs JavaScript. Read the <a href="/lab/campaign/method/">campaign guide and assumptions</a> without it.</p></noscript></main>
-  </Campaign>
+  <noscript><p class="campaign-js-note">Enable JavaScript to start or continue a network. You can read the <a href="/lab/campaign/method/">campaign guide and assumptions</a> or <a href="/help/">save instructions</a> without it.</p></noscript>
+  <Campaign client:load />
 </LabLayout>
