@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import {addService,advance,CAMPAIGN_MODEL,createCampaign,dispatch,exportCampaign,flightPlan,importCampaign,launchMirrors,LIMITS,mirrorLaunchPlan,SOLAR,validateCampaign} from '../.lab-test/campaign/model.js';
 
 // Actual completed Ceres playthrough, stranded at the old combined 32-flight limit.
+const freshCommerceAt=day=>{const commerce=createCampaign('x','x').commerce;Object.assign(commerce.market,{startedDay:day,nextReviewDay:day+90,nextRivalDay:day+15});return commerce;};
+
 const fixture=JSON.parse(readFileSync(new URL('./fixtures/campaign-v5.json',import.meta.url)));
 const resume=()=>validateCampaign(fixture.state);
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} ≠ ${b}`);
@@ -24,7 +26,7 @@ function fullMirrors(w=resume()) {
 test('traffic: native 0.5.0 migration preserves Ceres and all pending events with empty industrial development',()=>{
   const before=structuredClone(fixture),w=resume();
   assert.equal(fixture.state.flights.length+fixture.state.solar.deployments.length,32);
-  assert.deepEqual(w,{...fixture.state,schema:9,model:CAMPAIGN_MODEL,commerce:createCampaign('x','x').commerce,flights:fixture.state.flights.map(f=>({...f,contractId:null})),services:fixture.state.services.map(s=>({...s,contractId:null})),earthDesign:null,development:{launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0}});
+  assert.deepEqual(w,{...fixture.state,schema:10,model:CAMPAIGN_MODEL,commerce:freshCommerceAt(fixture.state.day),flights:fixture.state.flights.map(f=>({...f,contractId:null})),services:fixture.state.services.map(s=>({...s,contractId:null})),earthDesign:null,development:{launchLevel:0,waterLevel:0,fuelLevel:0,mercuryTracts:0,ceresTracts:0,fuelReserveT:0}});
   assert.deepEqual(fixture,before);
   assert.deepEqual(importCampaign(JSON.stringify(fixture),'copy'),{...w,id:'copy',revision:0});
   assert.deepEqual(validateCampaign(w),w);

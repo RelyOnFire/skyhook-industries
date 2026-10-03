@@ -11,6 +11,8 @@ import {updateService} from '../.lab-test/campaign/service-edit.js';
 import {DEFAULT,simulate} from '../.lab-test/simulation/engine.js';
 import {earthDesignReport} from '../.lab-test/simulation/expedition-design.js';
 
+const freshCommerceAt=day=>{const commerce=createCampaign('x','x').commerce;Object.assign(commerce.market,{startedDay:day,nextReviewDay:day+90,nextRivalDay:day+15});return commerce;};
+
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} ≠ ${b}`);
 function network() {
   const w=createCampaign('commerce-test','Working customer network');
@@ -41,7 +43,7 @@ test('contracts: offers require infrastructure, accept without stock, and freeze
   assert.deepEqual(next.flights,w.flights);assert.deepEqual(next.services,w.services);assert.deepEqual(next.solar,w.solar);
   assert.equal(next.fuelT,w.fuelT);assert.equal(next.commerce.credits,0);assert.equal(next.revision,w.revision+1);
   assert.equal(activeContract(next).dueDay,q.dueDay);assert.deepEqual(validateCampaign(next),next);
-  assert.throws(()=>acceptContract(next,'mars-build','standard'),/active contract/);
+  assert.throws(()=>acceptContract(next,'lunar-return','standard'),/active contract/);
   assert.throws(()=>dispatchContract(next,1,10,'tug'),/Not enough/);
   assert.throws(()=>contractQuote(w,'unknown','standard'),/Unknown/);
   assert.throws(()=>contractQuote(w,'lunar-return','unknown'),/standard or industrial/);
@@ -88,7 +90,7 @@ test('contracts: ordinary cargo before and after acceptance remains depot supply
   assert.equal(w.ports.earth.materialsT,180);assert.equal(w.lunarReturnedT,20);
   assert.equal(w.ports.earth.receivedT,20);assert.equal(w.commerce.contracts[0].deliveredT,10);assert.equal(w.commerce.credits,40);
   const due=w.commerce.contracts[0].dueDay;
-  assert.equal(nextEventDay(w),due);
+  assert.equal(nextEventDay(w),Math.min(due,w.commerce.market.nextRivalDay));
   w=advance(w,due-w.day);
   assert.equal(w.commerce.contracts[0].status,'expired');assert.equal(w.commerce.credits,40);
   assert.equal(w.commerce.contracts[0].settledDay,due);assert.equal(w.commerce.cooldowns['lunar-return'],due+90);
@@ -272,12 +274,12 @@ test('commerce: every older schema migrates with zero credits and unchanged traf
       for(const f of raw.flights)delete f.contractId;for(const s of raw.services)delete s.contractId;
     }
     const before=structuredClone(raw),next=validateCampaign(raw);
-    assert.deepEqual(raw,before);assert.equal(next.schema,9);assert.equal(next.model,CAMPAIGN_MODEL);
-    assert.deepEqual(next.commerce,createCampaign('x','x').commerce);
+    assert.deepEqual(raw,before);assert.equal(next.schema,10);assert.equal(next.model,CAMPAIGN_MODEL);
+    assert.deepEqual(next.commerce,freshCommerceAt(raw.day));
     for(const key of ['id','name','day','revision','fuelT','nextShipment','nextSupplyDay','lunarReturnedT','log'])assert.deepEqual(next[key],raw[key]);
     for(const f of raw.flights)for(const key of Object.keys(f))assert.deepEqual(next.flights.find(item=>item.id===f.id)[key],f[key]);
     assert.ok(next.flights.every(f=>f.contractId===null));assert.ok(next.services.every(s=>s.contractId===null));
-    if(version===8)assert.deepEqual(next,{...raw,schema:9,model:CAMPAIGN_MODEL,commerce:createCampaign('x','x').commerce,flights:raw.flights.map(f=>({...f,contractId:null})),services:raw.services.map(s=>({...s,contractId:null}))});
+    if(version===8)assert.deepEqual(next,{...raw,schema:10,model:CAMPAIGN_MODEL,commerce:freshCommerceAt(raw.day),flights:raw.flights.map(f=>({...f,contractId:null})),services:raw.services.map(s=>({...s,contractId:null}))});
     assert.deepEqual(importCampaign(JSON.stringify({format:'skyhook-campaign',version,state:raw}),'copy'),{...next,id:'copy',revision:0});
     assert.deepEqual(validateCampaign(next),next);
   }

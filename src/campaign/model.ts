@@ -1,7 +1,7 @@
 import { validateEarthDesignReport, type EarthDesignReport } from '../simulation/expedition-design.js';
 /** Persistent event-driven logistics. Rates and recipes are game rules.
  * This does not dispatch the Earth solver for lunar or Phobos operations. */
-export const CAMPAIGN_MODEL = 'network-0.9.0';
+export const CAMPAIGN_MODEL = 'network-0.10.0';
 export const SITES = ['earth', 'moon', 'phobos', 'mercury', 'ceres'] as const;
 export type SiteId = typeof SITES[number];
 export const SITE = {
@@ -82,16 +82,43 @@ export type ProcurementKind = 'materials' | 'equipment' | 'fuel';
 export const PROCUREMENT_PRICES = {materials:12,equipment:30,fuel:2} as const;
 const CONTRACT_TERMS = {standard:{quantityT:30,loadingWindowDays:30},industrial:{quantityT:300,loadingWindowDays:120}} as const;
 const CONTRACT_COOLDOWN = 90, CONTRACT_HISTORY = 20;
+export const MARKET = {
+  reviewDays:90,rivalIntervalDays:30,firstRivalDays:15,historyLimit:24,
+  volumes:{'lunar-return':[300,600,450,300],'mars-build':[600,300,450,750],'mercury-tooling':[600,450,300,750]},
+  rates:{'lunar-return':[2,4,6],'mars-build':[4,6,8],'mercury-tooling':[12,16,20]},
+} as const;
+export const RIVAL_OPERATORS = [
+  {id:'selene',name:'Selene Logistics',offerIds:['lunar-return'],capacityT:90,maxFlights:1},
+  {id:'vector',name:'Vector Freight',offerIds:['mars-build','mercury-tooling'],capacityT:120,maxFlights:3},
+] as const;
+export type RivalOperatorId = typeof RIVAL_OPERATORS[number]['id'];
+export type DemandBand = 'low'|'steady'|'high';
+export interface BuyerDemand {openT:number;playerCommittedT:number;rivalCommittedT:number}
+export interface RivalShipment {id:number;operatorId:RivalOperatorId;offerId:ContractOfferId;marketRound:number;cargoT:number;departed:number;arrival:number}
+export interface FreightMarket {
+  startedDay:number;round:number;nextReviewDay:number;nextRivalDay:number;
+  buyers:Record<ContractOfferId,BuyerDemand>;nextShipment:number;flights:RivalShipment[];
+  rivalDeliveredT:Record<RivalOperatorId,number>;history:Entry[];
+}
+function marketRequested(offerId:ContractOfferId,round:number) {return MARKET.volumes[offerId][round%4];}
+function freshBuyers(round:number):FreightMarket['buyers'] {
+  return Object.fromEntries(CONTRACT_OFFERS.map(offer=>[offer.id,{openT:marketRequested(offer.id,round),playerCommittedT:0,rivalCommittedT:0}])) as FreightMarket['buyers'];
+}
+function freshMarket(day:number):FreightMarket {
+  return {startedDay:day,round:0,nextReviewDay:day+MARKET.reviewDays,nextRivalDay:day+MARKET.firstRivalDays,
+    buyers:freshBuyers(0),nextShipment:1,flights:[],rivalDeliveredT:{selene:0,vector:0},history:[]};
+}
 export interface Contract {
   id:number; offerId:ContractOfferId; size:ContractSize; acceptedDay:number; dueDay:number;
   quantityT:number; deliveredT:number; earnedCredits:number;
+  rate:number; completionBonusCredits:number; marketRound:number|null;
   status:'active'|'completed'|'expired'|'cancelled'; settledDay:number|null;
 }
 export interface Commerce {
   credits:number; earnedCredits:number; spentCredits:number; nextContract:number;
-  contracts:Contract[]; cooldowns:Record<ContractOfferId,number>;
+  contracts:Contract[]; cooldowns:Record<ContractOfferId,number>; market:FreightMarket;
 }
-function freshCommerce():Commerce {return {credits:0,earnedCredits:0,spentCredits:0,nextContract:1,contracts:[],cooldowns:{'lunar-return':0,'mars-build':0,'mercury-tooling':0}};}
+function freshCommerce(day=0):Commerce {return {credits:0,earnedCredits:0,spentCredits:0,nextContract:1,contracts:[],cooldowns:{'lunar-return':0,'mars-build':0,'mercury-tooling':0},market:freshMarket(day)};}
 export interface Deployment { id: number; massT: number; departed: number; arrival: number }
 export interface SolarIndustry {
   unlocked: boolean; depositT: number; nextCycleDay: number | null; mirrorWorks: boolean;
@@ -107,7 +134,7 @@ function freshBelt():BeltIndustry {return {unlocked:false,depositT:BELT.depositT
 function emptyPort(): Port {return {materialsT:0,equipmentT:0,waterT:0,industry:false,level:0,readyDay:0,receivedT:0,sentT:0};}
 export interface Entry { day: number; text: string }
 export interface Campaign {
-  schema: 9; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
+  schema: 10; model: typeof CAMPAIGN_MODEL; id: string; name: string; revision: number;
   day: number; fuelT: number; nextShipment: number; nextSupplyDay: number; lunarReturnedT: number;
   ports: Record<SiteId, Port>; flights: Shipment[]; log: Entry[];
   earthDesign: EarthDesignReport | null; solar: SolarIndustry; belt:BeltIndustry; development:Development; commerce:Commerce; services: Service[]; nextService: number; marsOperations: number; lunarPhobosDeliveredT: number;
@@ -116,7 +143,7 @@ export interface Campaign {
 export const LIMITS = { days: 100000, stock: 1000000, cargoFlights: 256, mirrorDeployments: 128, services: 12, fileBytes: 512000 };
 export function createCampaign(id: string, name: string): Campaign {
   const port = (materialsT: number, level = 0): Port => ({ materialsT, equipmentT: level ? 20 : 0, waterT:0, industry: !!level, level, readyDay: 0, receivedT: 0, sentT: 0 });
-  return { schema: 9, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
+  return { schema: 10, model: CAMPAIGN_MODEL, id, name: name.trim().slice(0,48) || 'First light', revision: 0,
     day: 0, fuelT: 100, nextShipment: 1, nextSupplyDay: 0, lunarReturnedT: 0,
     ports: { earth: port(160,1), moon: port(0), phobos: port(0), mercury: emptyPort(), ceres:emptyPort() }, flights: [],
     earthDesign:null, solar:freshSolar(), belt:freshBelt(), development:freshDevelopment(), commerce:freshCommerce(), services: [], nextService: 1, marsOperations: 0, lunarPhobosDeliveredT: 0,
@@ -231,12 +258,54 @@ function contractOffer(id:ContractOfferId) {
   if(!offer)throw Error('Unknown commercial contract.');
   return offer;
 }
+export function buyerMarket(w:Campaign,offerId:ContractOfferId) {
+  contractOffer(offerId);
+  const market=w.commerce.market,buyer=market.buyers[offerId],index=buyer.openT<300?0:buyer.openT<600?1:2;
+  const inbound=market.flights.filter(f=>f.offerId===offerId);
+  return {openT:buyer.openT,requestedT:marketRequested(offerId,market.round),demandBand:(['low','steady','high'] as const)[index],
+    rate:MARKET.rates[offerId][index],nextReviewDay:market.nextReviewDay,
+    rivalInFlightT:inbound.reduce((sum,f)=>sum+f.cargoT,0),nextRivalArrivalDay:inbound.length?Math.min(...inbound.map(f=>f.arrival)):null,nextRivalDay:market.nextRivalDay};
+}
+function marketNote(w:Campaign,text:string) {
+  const market=w.commerce.market;market.history.push({day:w.day,text});market.history=market.history.slice(-MARKET.historyLimit);
+}
+function arriveRivals(w:Campaign) {
+  const market=w.commerce.market;
+  for(const flight of market.flights.filter(f=>f.arrival<=w.day+EPS).sort((a,b)=>a.arrival-b.arrival||a.id-b.id)) {
+    market.rivalDeliveredT[flight.operatorId]+=flight.cargoT;
+    const operator=RIVAL_OPERATORS.find(r=>r.id===flight.operatorId)!;
+    marketNote(w,operator.name+' delivered '+flight.cargoT+' t to '+contractOffer(flight.offerId).buyer+'.');
+  }
+  market.flights=market.flights.filter(f=>f.arrival>w.day+EPS);
+}
+function reviewMarket(w:Campaign) {
+  const market=w.commerce.market;market.round++;market.buyers=freshBuyers(market.round);
+  market.nextReviewDay=market.startedDay+(market.round+1)*MARKET.reviewDays;
+  marketNote(w,'Procurement round '+(market.round+1)+' opened. Unclaimed requests expired; committed customer freight continues.');
+}
+function bookRivals(w:Campaign) {
+  const market=w.commerce.market;
+  for(const operator of RIVAL_OPERATORS) {
+    if(market.flights.filter(f=>f.operatorId===operator.id).length>=operator.maxFlights)continue;
+    const candidates=CONTRACT_OFFERS.filter(offer=>(operator.offerIds as readonly ContractOfferId[]).includes(offer.id)&&market.buyers[offer.id].openT>=30)
+      .filter(offer=>{const route=routeFor(offer.from,offer.to);return w.day+route.coastDays+route.handlingDays<=LIMITS.days;})
+      .sort((a,b)=>market.buyers[b.id].openT-market.buyers[a.id].openT||(a.id<b.id?-1:1));
+    const offer=candidates[0];if(!offer)continue;
+    const buyer=market.buyers[offer.id],cargoT=Math.min(operator.capacityT,Math.floor(buyer.openT/30)*30),route=routeFor(offer.from,offer.to);
+    const flight:RivalShipment={id:market.nextShipment++,operatorId:operator.id,offerId:offer.id,marketRound:market.round,cargoT,departed:w.day,arrival:w.day+route.coastDays+route.handlingDays};
+    buyer.openT-=cargoT;buyer.rivalCommittedT+=cargoT;market.flights.push(flight);
+    marketNote(w,operator.name+' reserved '+cargoT+' t for '+offer.buyer+'. '+SITE[offer.from].name+' → '+SITE[offer.to].name+', arrival day '+flight.arrival.toFixed(1)+'.');
+  }
+  const attempt=Math.round((market.nextRivalDay-market.startedDay-MARKET.firstRivalDays)/MARKET.rivalIntervalDays)+1;
+  market.nextRivalDay=market.startedDay+MARKET.firstRivalDays+attempt*MARKET.rivalIntervalDays;
+}
 function contractById(w:Campaign,id:number) {
   const contract=w.commerce.contracts.find(candidate=>candidate.id===id);
   if(!contract)throw Error('Contract not found.');
   return contract;
 }
 export function activeContract(w:Campaign) {return w.commerce.contracts.find(contract=>contract.status==='active')??null;}
+export function activeContracts(w:Campaign) {return w.commerce.contracts.filter(contract=>contract.status==='active').sort((a,b)=>a.id-b.id);}
 function contractEligibility(w:Campaign,offerId:ContractOfferId,size:ContractSize) {
   const offer=contractOffer(offerId);
   if(siteLocked(w,offer.from)||siteLocked(w,offer.to))return 'Open both route destinations first.';
@@ -250,11 +319,14 @@ export function contractQuote(w:Campaign,offerId:ContractOfferId,size:ContractSi
   if(size!=='standard'&&size!=='industrial')throw Error('Choose a standard or industrial contract.');
   const terms=CONTRACT_TERMS[size],route=routeFor(offer.from,offer.to),duration=route.coastDays+route.handlingDays;
   const lastDepartureDay=w.day+terms.loadingWindowDays,dueDay=lastDepartureDay+duration;
-  const baseCredits=terms.quantityT*offer.rate,bonusCredits=baseCredits/4;
-  const reason=contractEligibility(w,offerId,size)||(activeContract(w)?'Finish or cancel your active contract first.':'')||
+  const marketFacts=buyerMarket(w,offerId),rate=marketFacts.rate;
+  const baseCredits=terms.quantityT*rate,bonusCredits=baseCredits/4;
+  const reason=contractEligibility(w,offerId,size)||(w.commerce.contracts.some(c=>c.offerId===offerId&&c.status==='active')?'Finish or cancel your active contract for this buyer first.':'')||
     (w.commerce.cooldowns[offerId]>w.day+EPS?'This buyer will offer another order on day '+w.commerce.cooldowns[offerId].toFixed(1)+'.':'')||
+    (marketFacts.openT<terms.quantityT?'Only '+marketFacts.openT+' t remain unclaimed in this procurement round.':'')||
     (dueDay>LIMITS.days?'This order would finish beyond the campaign horizon.':'');
-  return {...offer,...terms,size,duration,acceptedDay:w.day,lastDepartureDay,dueDay,baseCredits,bonusCredits,totalCredits:baseCredits+bonusCredits,reason};
+  return {...offer,...terms,size,rate,duration,acceptedDay:w.day,lastDepartureDay,dueDay,baseCredits,bonusCredits,completionBonusCredits:bonusCredits,
+    totalCredits:baseCredits+bonusCredits,marketRound:w.commerce.market.round,marketFacts,reason};
 }
 export function contractRemaining(w:Campaign,id:number) {
   const contract=contractById(w,id),inFlightT=w.flights.filter(f=>f.contractId===id).reduce((sum,f)=>sum+f.cargoT,0);
@@ -274,15 +346,22 @@ function stopContractServices(w:Campaign,id:number) {
   for(const service of w.services)if(service.contractId===id)service.enabled=false;
 }
 function settleContract(w:Campaign,contract:Contract,status:'completed'|'expired'|'cancelled') {
+  if(status!=='completed'&&contract.marketRound===w.commerce.market.round) {
+    const buyer=w.commerce.market.buyers[contract.offerId],released=contract.quantityT-contract.deliveredT;
+    buyer.openT+=released;buyer.playerCommittedT-=released;
+  }
   contract.status=status;contract.settledDay=w.day;
   w.commerce.cooldowns[contract.offerId]=w.day+CONTRACT_COOLDOWN;
   stopContractServices(w,contract.id);
   note(w,'Contract '+contract.id+' '+status+'. '+contract.deliveredT+' / '+contract.quantityT+' t delivered; '+contract.earnedCredits+' credits earned.');
 }
-export function acceptContract(w:Campaign,offerId:ContractOfferId,size:ContractSize):Campaign {
+export function acceptContract(w:Campaign,offerId:ContractOfferId,size:ContractSize,expectedQuote?:{marketRound:number;rate:number}):Campaign {
   const quote=contractQuote(w,offerId,size);if(quote.reason)throw Error(quote.reason);
+  if(expectedQuote&&(expectedQuote.marketRound!==quote.marketRound||expectedQuote.rate!==quote.rate))throw Error('This quote changed. Review the current demand and rate before accepting.');
   const next=edit(w),id=next.commerce.nextContract++;
-  next.commerce.contracts.push({id,offerId,size,acceptedDay:w.day,dueDay:quote.dueDay,quantityT:quote.quantityT,deliveredT:0,earnedCredits:0,status:'active',settledDay:null});
+  const buyer=next.commerce.market.buyers[offerId];buyer.openT-=quote.quantityT;buyer.playerCommittedT+=quote.quantityT;
+  next.commerce.contracts.push({id,offerId,size,acceptedDay:w.day,dueDay:quote.dueDay,quantityT:quote.quantityT,deliveredT:0,earnedCredits:0,
+    rate:quote.rate,completionBonusCredits:quote.bonusCredits,marketRound:quote.marketRound,status:'active',settledDay:null});
   pruneContracts(next);
   note(next,'Contract '+id+' accepted: '+quote.quantityT+' t '+CARGO[quote.kind].toLowerCase()+' for '+quote.buyer+', due day '+quote.dueDay.toFixed(1)+'.');
   return next;
@@ -397,7 +476,7 @@ function arrive(w: Campaign) {
       const offer=contractOffer(contract.offerId);
       contract.deliveredT+=f.cargoT;
       const complete=contract.deliveredT===contract.quantityT;
-      const payment=f.cargoT*offer.rate+(complete?contract.quantityT*offer.rate/4:0);
+      const payment=f.cargoT*contract.rate+(complete?contract.completionBonusCredits:0);
       contract.earnedCredits+=payment;w.commerce.earnedCredits+=payment;w.commerce.credits+=payment;
       note(w,'Flight '+f.id+': '+f.cargoT+' t received by '+offer.buyer+' for contract '+contract.id+'. '+payment+' credits paid; cargo consumed by the customer.');
       if(complete)settleContract(w,contract,'completed');
@@ -424,14 +503,17 @@ export function advance(world: Campaign, days: number, onBlocked?: (departure:Bl
   while(next.day<target) {
     const events=[target,...next.flights.map(f=>f.arrival),...next.services.filter(s=>s.enabled).map(s=>s.nextDay),
       ...next.commerce.contracts.filter(c=>c.status==='active').map(c=>c.dueDay),
+      next.commerce.market.nextReviewDay,next.commerce.market.nextRivalDay,...next.commerce.market.flights.map(f=>f.arrival),
       ...next.solar.deployments.map(d=>d.arrival),
       ...(next.solar.nextCycleDay===null?[]:[next.solar.nextCycleDay]),
       ...(next.belt.nextCycleDay===null?[]:[next.belt.nextCycleDay]),
       ...(next.solar.autoLaunch&&next.solar.nextLaunchDay!==null?[next.solar.nextLaunchDay]:[])];
     const at=Math.min(...events); produce(next,Math.max(0,at-next.day)); next.day=at;
-    arrive(next); deploy(next);
+    arrive(next); arriveRivals(next); deploy(next);
     for(const contract of next.commerce.contracts)if(contract.status==='active'&&contract.dueDay<=at+EPS)settleContract(next,contract,'expired');
     pruneContracts(next);
+    if(next.commerce.market.nextReviewDay<=at+EPS)reviewMarket(next);
+    if(next.commerce.market.nextRivalDay<=at+EPS)bookRivals(next);
     if(next.solar.nextCycleDay!==null&&next.solar.nextCycleDay<=at+EPS)mercuryCycle(next);
     if(next.belt.nextCycleDay!==null&&next.belt.nextCycleDay<=at+EPS)beltCycle(next);
     for(const service of [...next.services].sort((a,b)=>a.id-b.id)) {
@@ -463,6 +545,7 @@ export function advance(world: Campaign, days: number, onBlocked?: (departure:Bl
 export function nextEventDay(world: Campaign) {
   const days = [...world.flights.map(f => f.arrival), ...SITES.map(s => world.ports[s].readyDay), world.nextSupplyDay,
     ...world.commerce.contracts.filter(c=>c.status==='active').map(c=>c.dueDay),
+    world.commerce.market.nextReviewDay,world.commerce.market.nextRivalDay,...world.commerce.market.flights.map(f=>f.arrival),
     ...world.services.filter(s=>s.enabled).map(s=>s.nextDay),...world.solar.deployments.map(d=>d.arrival),
     ...(world.solar.nextCycleDay===null?[]:[world.solar.nextCycleDay]),
     ...(world.belt.nextCycleDay===null?[]:[world.belt.nextCycleDay]),
@@ -790,7 +873,8 @@ export function validateCampaign(value: unknown): Campaign {
   const beforeDesign=beforeDevelopment||raw.schema===6&&raw.model==='network-0.6.0';
   const fixedDesign=raw.schema===7&&raw.model==='network-0.7.0';
   const beforeCommerce=beforeDesign||fixedDesign||raw.schema===8&&raw.model==='network-0.8.0';
-  if (!beforeCommerce && (raw.schema !== 9 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
+  const beforeMarket=beforeCommerce||raw.schema===9&&raw.model==='network-0.9.0';
+  if (!beforeMarket && (raw.schema !== 10 || raw.model !== CAMPAIGN_MODEL)) throw Error('This save uses a different campaign version. Keep your backup; it has not been changed.');
   let development=freshDevelopment();
   if(!beforeDevelopment){const d=object(raw.development);development={
     launchLevel:num(d.launchLevel,0,DEVELOPMENT.maxLevel,true),waterLevel:num(d.waterLevel,0,DEVELOPMENT.maxLevel,true),fuelLevel:num(d.fuelLevel,0,DEVELOPMENT.maxLevel,true),
@@ -883,10 +967,10 @@ export function validateCampaign(value: unknown): Campaign {
     if(Math.abs(ceresReserve-belt.depositT-belt.extractedT)>1e-5||Math.abs(belt.extractedT-ports.ceres.waterT-ports.phobos.waterT-transit-belt.refinedT)>1e-5||Math.abs(belt.returnedWaterT-ports.phobos.waterT-belt.refinedT)>1e-5)throw Error('Water mass ledger does not balance.');
   }
   const log = raw.log.map(v => { const e = object(v); return { day: num(e.day,0,day), text: str(e.text,300) }; });
-  let commerce=freshCommerce();
+  let commerce=freshCommerce(day);
   if(!beforeCommerce) {
     const c=object(raw.commerce),cooldowns=object(c.cooldowns),nextContract=num(c.nextContract,1,1e9,true);
-    if(!Array.isArray(c.contracts)||c.contracts.length>CONTRACT_HISTORY+LIMITS.cargoFlights+LIMITS.services+1)throw Error('Invalid commercial contract history.');
+    if(!Array.isArray(c.contracts)||c.contracts.length>CONTRACT_HISTORY+LIMITS.cargoFlights+LIMITS.services+CONTRACT_OFFERS.length)throw Error('Invalid commercial contract history.');
     const contractIds=new Set<number>();
     const contracts=c.contracts.map((value):Contract=>{
       const record=object(value),id=num(record.id,1,nextContract-1,true);
@@ -902,29 +986,84 @@ export function validateCampaign(value: unknown): Campaign {
       if(status==='active'?(settledDay!==null||dueDay<=day||deliveredT===quantityT):(settledDay===null||settledDay>dueDay+EPS))throw Error('Invalid contract settlement.');
       if(status==='completed'&&deliveredT!==quantityT||status!=='completed'&&deliveredT===quantityT)throw Error('Invalid contract progress.');
       if(status==='expired'&&(settledDay===null||Math.abs(settledDay-dueDay)>EPS))throw Error('Invalid contract expiry.');
-      const expected=deliveredT*offer.rate+(status==='completed'?quantityT*offer.rate/4:0);
+      const rate=beforeMarket?offer.rate:num(record.rate,1,20,true),completionBonusCredits=beforeMarket?quantityT*rate/4:num(record.completionBonusCredits,quantityT*rate/4,quantityT*rate/4,true);
+      const marketRound=beforeMarket||record.marketRound===null?null:num(record.marketRound,0,Math.floor(LIMITS.days/MARKET.reviewDays),true);
+      if(marketRound===null?rate!==offer.rate:!(MARKET.rates[offer.id] as readonly number[]).includes(rate))throw Error('Invalid locked contract rate.');
+      const expected=deliveredT*rate+(status==='completed'?completionBonusCredits:0);
       const earnedCredits=num(record.earnedCredits,expected,expected,true);
-      return {id,offerId:offer.id,size,acceptedDay,dueDay,quantityT,deliveredT,earnedCredits,status,settledDay};
+      return {id,offerId:offer.id,size,acceptedDay,dueDay,quantityT,deliveredT,earnedCredits,rate,completionBonusCredits,marketRound,status,settledDay};
     });
     const money=(value:unknown)=>num(value,0,Number.MAX_SAFE_INTEGER,true);
-    commerce={credits:money(c.credits),earnedCredits:money(c.earnedCredits),spentCredits:money(c.spentCredits),nextContract,contracts,cooldowns:{
+    commerce={credits:money(c.credits),earnedCredits:money(c.earnedCredits),spentCredits:money(c.spentCredits),nextContract,contracts,market:freshMarket(day),cooldowns:{
       'lunar-return':num(cooldowns['lunar-return'],0,day+CONTRACT_COOLDOWN),
       'mars-build':num(cooldowns['mars-build'],0,day+CONTRACT_COOLDOWN),
       'mercury-tooling':num(cooldowns['mercury-tooling'],0,day+CONTRACT_COOLDOWN),
     }};
     if(commerce.earnedCredits-commerce.spentCredits!==commerce.credits||commerce.earnedCredits<contracts.reduce((sum,c)=>sum+c.earnedCredits,0)||commerce.earnedCredits>(nextContract-1)*7500)throw Error('Commercial credit ledger does not balance.');
   }
-  const world:Campaign={ schema:9, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
+  if(!beforeMarket) {
+    const m=object(object(raw.commerce).market),startedDay=num(m.startedDay,0,day);
+    const expectedRound=Math.floor((day-startedDay+EPS)/MARKET.reviewDays),round=num(m.round,expectedRound,expectedRound,true);
+    const rivalAttempts=Math.max(0,Math.floor((day-startedDay-MARKET.firstRivalDays+EPS)/MARKET.rivalIntervalDays)+1);
+    const nextReviewDay=num(m.nextReviewDay,day+1e-9,LIMITS.days+MARKET.reviewDays),nextRivalDay=num(m.nextRivalDay,day+1e-9,LIMITS.days+MARKET.rivalIntervalDays);
+    if(Math.abs(nextReviewDay-startedDay-(round+1)*MARKET.reviewDays)>EPS||Math.abs(nextRivalDay-startedDay-MARKET.firstRivalDays-rivalAttempts*MARKET.rivalIntervalDays)>EPS)throw Error('Invalid market clock.');
+    const buyers=freshBuyers(round),rawBuyers=object(m.buyers);
+    for(const offer of CONTRACT_OFFERS) {
+      const b=object(rawBuyers[offer.id]),requested=marketRequested(offer.id,round);
+      buyers[offer.id]={openT:num(b.openT,0,requested,true),playerCommittedT:num(b.playerCommittedT,0,requested,true),rivalCommittedT:num(b.rivalCommittedT,0,requested,true)};
+      const buyer=buyers[offer.id];
+      if(buyer.openT+buyer.playerCommittedT+buyer.rivalCommittedT!==requested||buyer.rivalCommittedT%30!==0)throw Error('Buyer demand ledger does not balance.');
+    }
+    const nextShipment=num(m.nextShipment,1,1+rivalAttempts*RIVAL_OPERATORS.length,true);
+    if(!Array.isArray(m.flights)||m.flights.length>RIVAL_OPERATORS.reduce((sum,operator)=>sum+operator.maxFlights,0))throw Error('Invalid rival fleet size.');
+    const shipmentIds=new Set<number>(),bookings=new Set<string>();
+    const marketFlights=m.flights.map((value):RivalShipment=>{
+      const f=object(value),id=num(f.id,1,nextShipment-1,true);
+      if(shipmentIds.has(id))throw Error('Duplicate rival shipment.');shipmentIds.add(id);
+      const operator=RIVAL_OPERATORS.find(candidate=>candidate.id===f.operatorId);
+      if(!operator)throw Error('Unknown freight operator.');
+      const offer=contractOffer(f.offerId as ContractOfferId);
+      if(!(operator.offerIds as readonly ContractOfferId[]).includes(offer.id))throw Error('Rival operator cannot serve this route.');
+      const departed=num(f.departed,startedDay,day),arrival=num(f.arrival,day+1e-9,LIMITS.days),route=routeFor(offer.from,offer.to);
+      const attempt=(departed-startedDay-MARKET.firstRivalDays)/MARKET.rivalIntervalDays;
+      if(attempt<-EPS||Math.abs(attempt-Math.round(attempt))>EPS||Math.abs(arrival-departed-route.coastDays-route.handlingDays)>1e-6)throw Error('Invalid rival shipment timing.');
+      const booking=operator.id+':'+Math.round(attempt);
+      if(bookings.has(booking))throw Error('Rival booked more than one convoy at an attempt.');bookings.add(booking);
+      const marketRound=num(f.marketRound,0,round,true),cargoT=num(f.cargoT,30,operator.capacityT,true);
+      if(cargoT%30!==0||marketRound!==Math.floor((departed-startedDay+EPS)/MARKET.reviewDays))throw Error('Invalid rival cargo or procurement round.');
+      return {id,operatorId:operator.id,offerId:offer.id,marketRound,cargoT,departed,arrival};
+    });
+    const rawDelivered=object(m.rivalDeliveredT),rivalDeliveredT={selene:0,vector:0};
+    for(const operator of RIVAL_OPERATORS) {
+      const fleet=marketFlights.filter(f=>f.operatorId===operator.id);
+      if(fleet.length>operator.maxFlights)throw Error('Rival fleet exceeds its capacity.');
+      const fastest=Math.min(...operator.offerIds.map(id=>{const offer=contractOffer(id),route=routeFor(offer.from,offer.to);return route.coastDays+route.handlingDays;}));
+      const completedAttempts=Math.max(0,Math.floor((day-startedDay-MARKET.firstRivalDays-fastest+EPS)/MARKET.rivalIntervalDays)+1);
+      const delivered=num(rawDelivered[operator.id],0,completedAttempts*operator.capacityT,true);
+      if(delivered%30!==0||delivered+fleet.reduce((sum,f)=>sum+f.cargoT,0)>rivalAttempts*operator.capacityT)throw Error('Invalid rival delivery ledger.');
+      rivalDeliveredT[operator.id]=delivered;
+    }
+    const lifetimeMass=rivalDeliveredT.selene+rivalDeliveredT.vector+marketFlights.reduce((sum,f)=>sum+f.cargoT,0);
+    if(lifetimeMass<(nextShipment-1)*30||lifetimeMass>(nextShipment-1)*120)throw Error('Rival cargo ledger does not balance.');
+    if(!Array.isArray(m.history)||m.history.length>MARKET.historyLimit)throw Error('Invalid market activity history.');
+    const history=m.history.map(v=>{const entry=object(v);return {day:num(entry.day,startedDay,day),text:str(entry.text,300)};});
+    if(history.some((entry,index)=>index>0&&entry.day<history[index-1].day))throw Error('Invalid market activity chronology.');
+    commerce.market={startedDay,round,nextReviewDay,nextRivalDay,buyers,nextShipment,flights:marketFlights,rivalDeliveredT,history};
+  }
+  const world:Campaign={ schema:10, model:CAMPAIGN_MODEL, id:str(raw.id,80), name:str(raw.name,48), revision:num(raw.revision,0,1e9,true), day,
     fuelT:num(raw.fuelT,0,LIMITS.stock), nextShipment, nextSupplyDay:num(raw.nextSupplyDay,0,LIMITS.days+30), lunarReturnedT:num(raw.lunarReturnedT,0,1e9), ports, flights, log,
     earthDesign:beforeDesign?null:raw.earthDesign===null?null:validateEarthDesignReport(raw.earthDesign),solar,belt,development,commerce,services,nextService,marsOperations:legacy?0:num(raw.marsOperations,0,1e9),lunarPhobosDeliveredT:legacy?0:num(raw.lunarPhobosDeliveredT,0,1e9) };
   if(Object.values(development).some(v=>v>0)&&developmentUnlockReason(world))throw Error('Industrial development requires the established Mercury and Ceres network.');
   if(fixedDesign&&world.earthDesign&&world.earthDesign.version!==1)throw Error('Invalid design report for the saved campaign version.');
   if(world.earthDesign&&!ports.earth.level)throw Error('An Earth design requires a commissioned tether.');
-  if(commerce.contracts.filter(c=>c.status==='active').length>1)throw Error('Only one commercial contract can be active.');
+  if(commerce.contracts.filter(c=>c.status==='active').length>CONTRACT_OFFERS.length)throw Error('Only one contract per buyer can be active.');
   let prior:Contract|undefined;
   for(const contract of commerce.contracts) {
-    if(prior&&(contract.id<=prior.id||prior.settledDay===null||contract.acceptedDay+EPS<prior.settledDay))throw Error('Invalid contract chronology.');
+    if(prior&&(contract.id<=prior.id||contract.acceptedDay+EPS<prior.acceptedDay))throw Error('Invalid contract chronology.');
     prior=contract;
+    if(contract.marketRound===null) {
+      if(contract.acceptedDay>commerce.market.startedDay+EPS)throw Error('Legacy contract was accepted after market trading began.');
+    } else if(contract.acceptedDay+EPS<commerce.market.startedDay||contract.marketRound>commerce.market.round||contract.marketRound!==Math.floor((contract.acceptedDay-commerce.market.startedDay+EPS)/MARKET.reviewDays))throw Error('Invalid contract procurement round.');
     if(contractEligibility(world,contract.offerId,contract.size))throw Error('Contract requires its commissioned route and industry.');
     const offer=contractOffer(contract.offerId),related=flights.filter(f=>f.contractId===contract.id);
     if(contract.deliveredT+related.reduce((sum,f)=>sum+f.cargoT,0)>contract.quantityT)throw Error('Contract cargo exceeds its order quantity.');
@@ -941,6 +1080,18 @@ export function validateCampaign(value: unknown): Campaign {
     if(latest?.status==='active'&&commerce.cooldowns[offer.id]>latest.acceptedDay+EPS)throw Error('Contract accepted during buyer cooldown.');
     const settled=commerce.contracts.filter(c=>c.offerId===offer.id&&c.settledDay!==null).at(-1);
     if(settled&&Math.abs(commerce.cooldowns[offer.id]-settled.settledDay!-CONTRACT_COOLDOWN)>EPS)throw Error('Invalid contract buyer cooldown.');
+    const committed=commerce.contracts.filter(c=>c.offerId===offer.id&&c.marketRound===commerce.market.round)
+      .reduce((sum,c)=>sum+(c.status==='cancelled'||c.status==='expired'?c.deliveredT:c.quantityT),0);
+    const buyer=commerce.market.buyers[offer.id];
+    if(buyer.playerCommittedT!==committed)throw Error('Player commitments do not match buyer demand.');
+    const pending=commerce.market.flights.filter(f=>f.offerId===offer.id&&f.marketRound===commerce.market.round).reduce((sum,f)=>sum+f.cargoT,0);
+    const delivered=RIVAL_OPERATORS.filter(operator=>(operator.offerIds as readonly ContractOfferId[]).includes(offer.id)).reduce((sum,operator)=>sum+commerce.market.rivalDeliveredT[operator.id],0);
+    if(buyer.rivalCommittedT<pending||buyer.rivalCommittedT>pending+delivered)throw Error('Rival commitments do not match buyer demand.');
+  }
+  const market=commerce.market,roundAttempts=Math.max(0,Math.floor((day-market.startedDay-market.round*MARKET.reviewDays-MARKET.firstRivalDays+EPS)/MARKET.rivalIntervalDays)+1);
+  for(const operator of RIVAL_OPERATORS) {
+    const assigned=operator.offerIds.reduce((sum,id)=>sum+market.buyers[id].rivalCommittedT,0);
+    if(assigned>roundAttempts*operator.capacityT)throw Error('Rival commitments exceed procurement-round bookings.');
   }
   for(const f of flights) {
     if(f.contractId!==null&&!commerce.contracts.some(c=>c.id===f.contractId))throw Error('Shipment refers to a missing contract.');
@@ -958,11 +1109,11 @@ export function validateCampaign(value: unknown): Campaign {
   if(commerce.contracts.filter(c=>c.status!=='active'&&!references.has(c.id)).length>CONTRACT_HISTORY)throw Error('Contract history exceeds its retained limit.');
   return world;
 }
-export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:9, state:validateCampaign(world) },null,2); }
+export function exportCampaign(world: Campaign) { return JSON.stringify({ format:'skyhook-campaign', version:10, state:validateCampaign(world) },null,2); }
 export function importCampaign(text: string, id: string): Campaign {
   if (new TextEncoder().encode(text).length > LIMITS.fileBytes) throw Error('Campaign file exceeds 512 KB.');
   const envelope = JSON.parse(text);
-  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6,7,8,9].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
+  if (envelope?.format !== 'skyhook-campaign' || ![1,2,3,4,5,6,7,8,9,10].includes(envelope?.version)) throw Error('Choose a Skyhook campaign backup. Flight Studio design files are separate.');
   // Validate state first to give the useful "different campaign version" message.
   const world = validateCampaign(envelope.state);
   if(envelope.version!==envelope.state.schema)throw Error('Backup envelope and campaign version do not match.');

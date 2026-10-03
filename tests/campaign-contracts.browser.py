@@ -47,6 +47,10 @@ def main():
       industrial=advance(industrial,1000);
       industrial.id='contracts-industrial';industrial.name='Industrial contract horizon';industrial.revision=0;
       industrial.ports.moon.materialsT=10000;industrial.ports.moon.equipmentT=1000;industrial.fuelT=10000;
+      // Wait for enough open buyer demand for this industrial test order.
+      for(let rounds=0;contractQuote(industrial,'mars-build','industrial').reason&&rounds<8;rounds++)
+        industrial=advance(industrial,industrial.commerce.market.nextReviewDay-industrial.day);
+      if(contractQuote(industrial,'mars-build','industrial').reason)throw Error('Industrial fixture has no available Mars order.');
       console.log(JSON.stringify({clean:JSON.parse(exportCampaign(validateCampaign(clean))),
         industrial:JSON.parse(exportCampaign(validateCampaign(industrial))),
         lunar:contractQuote(clean,'lunar-return','standard'),mars:contractQuote(industrial,'mars-build','industrial')}));
@@ -100,7 +104,7 @@ def main():
             })""")
         def offers_open():
             details = page.locator('.contract-offers')
-            if details.get_attribute('open') is None: details.locator('summary').click()
+            if details.get_attribute('open') is None: details.locator(':scope > summary').click()
         def offer(offer_id): return page.locator('[data-offer="'+offer_id+'"]')
         def buy_materials(amount):
             procurement = page.locator('.contract-procurement')
@@ -258,7 +262,7 @@ def main():
             backup = out/'contracts-backup.json'
             event.value.save_as(backup)
             exported = json.loads(backup.read_text())
-            assert exported['version']==9 and exported['state']==retried
+            assert exported['version']==10 and exported['state']==retried
             original_id = active_id
             original_record = record()
             import_world(backup)
@@ -275,6 +279,7 @@ def main():
             page.get_by_role('radio',name='Bootstrap tug').check()
             action('Dispatch cargo')
             before_cancel = state()
+            panel.locator('.contract-active .contract-active-terms>summary').click()
             action('Cancel contract',panel)
             cancelled = state()
             assert cancelled['commerce']['contracts'][-1]['status']=='cancelled'

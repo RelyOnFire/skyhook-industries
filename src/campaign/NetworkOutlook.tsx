@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { activeContract, LIMITS, type Campaign } from './model.js';
+import { LIMITS, type Campaign } from './model.js';
 import { forecastNetwork } from './forecast.js';
 import ServiceScenario from './ServiceScenario.js';
 
@@ -8,18 +8,20 @@ const day = (value: number) => 'Day ' + number(value);
 
 export default function NetworkOutlook({ world,busy,act }: { world:Campaign;busy:boolean;act:(fn:(world:Campaign)=>Campaign)=>void }) {
   const [open, setOpen] = useState(false);
-  const [horizon, setHorizon] = useState<number|'contract'>(90);
-  const contract=activeContract(world);
-  const effectiveHorizon=horizon==='contract'&&!contract?90:horizon;
-  const days=effectiveHorizon==='contract'&&contract?Math.max(1e-7,contract.dueDay-world.day):typeof effectiveHorizon==='number'?effectiveHorizon:90;
+  const [horizon, setHorizon] = useState<number|'contract'|`contract-${number}`>(90);
+  const contracts=world.commerce.contracts.filter(c=>c.status==='active').sort((a,b)=>a.dueDay-b.dueDay||a.id-b.id);
+  const contract=typeof horizon==='string'&&horizon.startsWith('contract-')?contracts.find(c=>c.id===Number(horizon.slice(9))):contracts[0];
+  const effectiveHorizon=typeof horizon==='string'&&!contract?90:horizon;
+  const days=typeof effectiveHorizon==='string'&&contract?Math.max(1e-7,contract.dueDay-world.day):typeof effectiveHorizon==='number'?effectiveHorizon:90;
   const outlook = useMemo(() => open && world.day < LIMITS.days ? forecastNetwork(world, days) : null, [open, world, days]);
   return <details className="network-outlook" onToggle={event => setOpen(event.currentTarget.open)}>
     <summary>Network outlook <span>Project stocks and departure holds ↗</span></summary>
     {world.day >= LIMITS.days ? <p className="outlook-note">This network has reached the simulation horizon.</p> : outlook && <div className="outlook-body">
-      <label className="outlook-horizon">Look ahead <select aria-label="Forecast horizon" value={effectiveHorizon} onChange={event => setHorizon(event.target.value==='contract'?'contract':Number(event.target.value))}><option value={30}>30 days</option><option value={90}>90 days</option><option value={365}>365 days</option><option value="contract" disabled={!contract}>{contract?'Contract deadline':'Contract deadline (no active order)'}</option></select></label>
-      <p className="outlook-note">From {day(outlook.fromDay)} to {day(outlook.toDay)}. Current services, production and automatic launches continue. No manual shipments, purchases, upgrades or Earth supply requests are assumed. This does not advance your saved world. {world.development.fuelReserveT>0&&<>Automatic mirrors protect {number(world.development.fuelReserveT)} t fuel; cargo can spend it.</>}</p>
+      <label className="outlook-horizon">Look ahead <select aria-label="Forecast horizon" value={effectiveHorizon} onChange={event => setHorizon(event.target.value.startsWith('contract')?event.target.value as 'contract'|`contract-${number}`:Number(event.target.value))}><option value={30}>30 days</option><option value={90}>90 days</option><option value={365}>365 days</option><option value="contract" disabled={!contracts.length}>{contracts.length>1?'Next contract deadline':contracts.length?'Contract deadline':'Contract deadline (no active order)'}</option>{contracts.filter(order=>order.id!==contracts[0]?.id||horizon==='contract-'+order.id).map(order=><option key={order.id} value={'contract-'+order.id}>Contract #{order.id} · {day(order.dueDay)}</option>)}</select></label>
+      <p className="outlook-note">From {day(outlook.fromDay)} to {day(outlook.toDay)}. Current services, production, automatic launches, buyer rounds and rival freight continue. No new player contracts, manual shipments, purchases, upgrades or Earth supply requests are assumed. This does not advance your saved world. {world.development.fuelReserveT>0&&<>Automatic mirrors protect {number(world.development.fuelReserveT)} t fuel; cargo can spend it.</>}</p>
       <div className="outlook-metrics"><div><span>Service departures</span><b>{number(outlook.serviceDepartures)}</b></div><div><span>Cargo received</span><b>+{number(outlook.receivedT)} t</b></div><div><span>Support fuel</span><b>{number(outlook.fuelNow)} → {number(outlook.fuelLater)} t</b></div>{world.solar.unlocked && <div><span>Swarm deployed</span><b>{number(outlook.swarmNow)} → {number(outlook.swarmLater)} t</b></div>}{world.solar.unlocked&&<div><span>Mirror launches</span><b>{number(outlook.mirrorLaunches)}</b></div>}</div>
       {outlook.contracts.map(order=><p className="outlook-note" key={order.id}>Contract #{order.id}: <b>{number(order.deliveredT)} / {number(order.quantityT)} t</b> delivered · {order.status}. Credits: {number(outlook.creditsNow)} → {number(outlook.creditsLater)} cr. Customer freight is consumed by the buyer, separate from depot receipts.</p>)}
+      <details className="outlook-market"><summary>Buyer demand <span>now → then</span></summary><p className="outlook-note">{number(outlook.rivalDepartures)} rival convoys depart in this window. Open demand is available for new orders; accepted prices stay locked.</p><div className="outlook-ports" aria-label="Projected buyer demand">{outlook.markets.map(market=><div className="outlook-port" key={market.id}><b>{market.buyer}</b><span>Open orders <strong>{number(market.now.openT)} → {number(market.later.openT)} t</strong></span><span>New-order rate <strong>{market.now.rate} → {market.later.rate} cr/t</strong></span><span>Rival cargo in flight <strong>{number(market.later.rivalInFlightT)} t</strong></span></div>)}</div></details>
       <h3>Departure holds <small>{outlook.holds.length} {outlook.holds.length===1?'cause':'causes'}</small></h3>
       {outlook.holds.length ? <div className="outlook-hold-scroll" tabIndex={0} role="region" aria-label="Projected departure holds"><ul className="outlook-delays">{outlook.holds.map(item => <li key={item.kind==='service'?'service-'+item.id+'-'+item.reason:'mirrors-'+item.reason}><b>{item.kind==='service'?'#'+item.id+' '+item.route:'Automatic mirror launches'}</b><span>{item.attempts} blocked {item.attempts === 1 ? 'attempt' : 'attempts'} · first {day(item.firstDay)}</span><p>{item.reason}</p><a href={item.kind==='service'?'#service-'+item.id:item.reason.includes('holding')?'#development-operations':'#solar-heading'}>{item.kind==='service'?'Review service':'Review mirror controls'} ↗</a></li>)}</ul></div> : <p className="outlook-clear">{outlook.activeServices||world.solar.autoLaunch?'No departures are blocked in this window.':'No active services or automatic launches to project.'}</p>}
       <ServiceScenario world={world} horizon={days} current={outlook} busy={busy} act={act}/>

@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 import threading
 from playwright.sync_api import sync_playwright, expect
+from campaign_browser_helpers import empty_commerce
 
 ROOT = Path(__file__).resolve().parents[1]
-EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self, *_): pass
@@ -74,7 +74,7 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']=={**old, 'schema':9, 'earthDesign':None, 'model':'network-0.9.0', 'commerce':EMPTY_COMMERCE, 'flights':[{**f,'contractId':None} for f in old['flights']], 'services':[{**s,'contractId':None} for s in old['services']], 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
+            assert migrated['state']=={**old, 'schema':10, 'earthDesign':None, 'model':'network-0.10.0', 'commerce':empty_commerce(old['day']), 'flights':[{**f,'contractId':None} for f in old['flights']], 'services':[{**s,'contractId':None} for s in old['services']], 'revision':old['revision']+1, 'development':{'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}}
             assert migrated['checkpoints']==[old]
             action('Save now')
             assert record()==migrated
@@ -252,7 +252,7 @@ def main():
             page.locator('.network-outlook>summary').click()
             expect(page.get_by_label('Forecast horizon')).to_have_value('90')
             expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+90:,.1f}")
-            expect(page.locator('.outlook-ports')).to_contain_text('Ceres')
+            expect(page.locator('.outlook-body > .outlook-ports')).to_contain_text('Ceres')
             assert state()==busy
             page.get_by_label('Forecast horizon').select_option('365')
             expect(page.locator('.outlook-body')).to_contain_text(f"to Day {busy['day']+365:,.1f}")

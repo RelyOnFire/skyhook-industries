@@ -1,7 +1,7 @@
 import EarthDesign from './EarthDesign.js';
 import ServicePreview from './ServicePreview.js';
 import { useEffect, useRef, useState } from 'react';
-import { tetherCapacity, activeContract, CONTRACT_OFFERS, contractRemaining, contractFlightPlan, dispatchContract, addContractService, addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
+import { tetherCapacity, CONTRACT_OFFERS, contractRemaining, contractFlightPlan, dispatchContract, addContractService, addService, EARTH_EQUIPMENT_PER_DAY, type CargoKind, advance, createCampaign, dispatch, exportCampaign, flightPlan, importCampaign, LIMITS, nextEventDay, ROUTES, SITE, SITES, siteLocked, swarmPower, waterRoute, type Campaign as World, type Shipment, type SiteId } from './model.js';
 import { deleteSave, listSaves, loadSave, saveCampaign, type SaveSummary } from './storage.js';
 import SolarChapter from './SolarChapter.js';
 import BeltChapter from './BeltChapter.js';
@@ -98,7 +98,7 @@ export default function Campaign() {
     }finally{if(upload.current)upload.current.value='';}
   });
   const latest=slots.find(s=>s.valid), event=world?nextEventDay(world):null;
-  const commitment=world?activeContract(world):null;
+  const commitment=world?.commerce.contracts.find(c=>c.status==='active'&&CONTRACT_OFFERS.some(o=>o.id===c.offerId&&o.from===from&&o.to===to&&o.kind===kind))??null;
   const matchingOffer=commitment?CONTRACT_OFFERS.find(o=>o.id===commitment.offerId&&o.from===from&&o.to===to&&o.kind===kind):null;
   const assignedContract=world?.commerce.contracts.find(c=>c.id===contractId);
   const assignedOffer=assignedContract?CONTRACT_OFFERS.find(o=>o.id===assignedContract.offerId):null;

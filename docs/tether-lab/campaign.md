@@ -180,15 +180,17 @@ every 20 days. The player first commissions both tethers and supplies the
 ## Customer freight and earned supplies
 
 Contracts give an established network optional work alongside its own supply chain.
-The Freight contracts panel stays with live logistics. One order can be active at a
-time. The three fictional buyers, prices, deadlines and procurement prices are
-fixed scenario rules, not real markets or a simulated competing economy.
+The Freight contracts panel stays with live logistics. Up to three orders can be
+active together, with one per buyer. Each order keeps its own deadline and cargo;
+a long Mars delivery can run alongside a shorter lunar job. Three fictional buyers post finite procurement rounds, and two independent
+freight operators reserve some of that demand. Prices, demand cycles, fleet limits
+and procurement costs are explicit scenario rules, not forecasts of real markets.
 
-| Buyer / order | Cargo route | Payment per on-time tonne |
+| Buyer / order | Cargo route | Low / steady / high rate per on-time tonne |
 | --- | --- | --- |
-| Terran Orbital Works / lunar construction imports | Moon → Earth material | 4 credits |
-| Ares Habitat Cooperative / Mars habitat construction | Moon → Phobos material | 8 credits |
-| Helion Research Industries / Mercury industrial tooling | Earth → Mercury equipment | 20 credits |
+| Terran Orbital Works / lunar construction imports | Moon → Earth material | 2 / 4 / 6 credits |
+| Ares Habitat Cooperative / Mars habitat construction | Moon → Phobos material | 4 / 6 / 8 credits |
+| Helion Research Industries / Mercury industrial tooling | Earth → Mercury equipment | 12 / 16 / 20 credits |
 
 Both endpoint tethers and the origin industry must be commissioned; accepting an
 order does not require ready stock. Standard orders request 30 t with a 30-day
@@ -198,7 +200,7 @@ plus the loading window plus that route's frozen coast and handling time. Last
 departure and arrival deadline are shown separately. All cargo must arrive on time;
 an arrival exactly at the deadline counts before expiry. Completing the order pays
 an additional 25% of its base value once. Each buyer waits 90 days after settlement
-before offering another order. Acceptance near the 100,000-day horizon is rejected
+before accepting another order from the player; rivals have their own booking clock. Acceptance near the 100,000-day horizon is rejected
 if the deadline would lie beyond it.
 
 Only explicitly assigned cargo departing after acceptance counts. Preparing an
@@ -237,11 +239,80 @@ resources, progress, clocks, design reports and arrival dates stay intact. There
 are no retroactive deliveries, payments or purchases. Validation checks identities,
 terms, chronology, payment and balance conservation, references and assignment caps.
 
+## Buyer demand and competing carriers
+
+Schema 10 / network-0.10.0 introduces 90-day procurement rounds. Each round replaces
+only the unclaimed request volume; accepted player orders and rival cargo from older
+rounds keep their terms and arrivals. The market starts at a new world's day zero or
+an older world's saved day. Nothing runs retroactively during migration. All market
+activity uses simulation time and the ordinary advance() engine, including forecasts.
+
+| Buyer | Requested tonnes in the repeating four-round cycle |
+| --- | --- |
+| Terran Orbital Works | 300, 600, 450, 300 |
+| Ares Habitat Cooperative | 600, 300, 450, 750 |
+| Helion Research Industries | 600, 450, 300, 750 |
+
+New-order rates follow the remaining open demand: below 300 t is low, 300–599 t is
+steady, and at least 600 t is high. Accepting a 30/300 t order reserves that quantity
+immediately and saves its rate, 25% completion bonus and market round. Acceptance
+checks the displayed round/rate against the current quote. Delivery and receipts
+use those saved terms even if the live rate changes. Previously accepted v9 orders
+retain their original 4/8/20 credit rates and exact bonuses, and are outside the new
+round's reservation ledger.
+
+Cancellation or expiry returns the undelivered quantity to open demand only while
+its original procurement round is still open. Requests from an older round have
+closed and do not reappear. Partial payments and in-flight depot fallback keep their
+existing rules. A round's exact accounting is:
+
+`requested = open + player committed + rival committed`
+
+Committed volumes include cargo already delivered for that round; same-round
+cancellation releases only undelivered tonnes. Earlier round commitments remain in
+saved contracts and rival flights. This finite-round design avoids a market that
+accumulates unmet demand forever, or one whose old requests can be resurrected.
+
+Two fictional competitors use independent transport and supply allocations:
+
+- Selene Logistics serves Moon → Earth with a 90 t convoy (three 30 t loads), with
+  at most one convoy travelling at once.
+- Vector Freight serves Moon → Phobos and Earth → Mercury with a 120 t convoy
+  (four 30 t loads), with at most three convoys travelling at once. It chooses the
+  route with the larger open request, using a fixed tie order.
+
+Their first booking decision is 15 days after the market starts, then every 30 days.
+Each operator can reserve at most one convoy per decision, using whole 30 t loads
+up to its rating and the available demand. Bookings reserve requests immediately;
+arrival uses that corridor's unchanged coast plus handling time. A busy fleet waits
+for a later decision. No convoy can arrive beyond the campaign horizon. Rival ships
+use separate allocations: they never debit player depots, fuel, tether recovery or
+flight slots. Their supply inputs and return logistics are abstracted, as distinct
+from a full competing industrial economy. Their delivered cargo goes to customers,
+not the player's depots, and earns no player credits or milestones.
+
+Shared events process player/rival arrivals and contract expiry before renewing a
+procurement round and making rival bookings; industry and player services retain
+their existing order. Market clocks and rival arrivals participate in Next event.
+The offer catalogue keeps buyers in a fixed order and shows open demand, price band,
+next round, and rival traffic. Bounded Buyer activity records explain reservations
+and deliveries. Network outlook projects open demand, new-order rates and rival
+cargo using the same event engine, assuming no new player acceptance.
+
+The saved market carries its origin day, round and clocks, current buyer ledgers,
+bounded rival convoys and delivery totals, and the 24 most recent activity entries.
+Validation checks round timing, reservations, allowed operators/routes, convoy
+ratings and counts, transit durations, identities and saved payout terms. The v9
+fixture was generated by network-0.9.0 from the prior browser-suite export using
+ordinary acceptance, dispatch, time and service actions; it is a QA world, not a
+newly collected player save. It retains earned/spent credits, a completed receipt,
+a partially paid active order, cargo in flight and a scheduled contract service.
+
 ## Saves and compatibility
 
 IndexedDB skyhook-campaigns stays at database version 1, with the same worlds
-store. Current state schema 9 / network-0.9.0 exports in a skyhook-campaign
-version-9 envelope. The validator accepts schemas 1, 2, 3, 4, 5, 6, 7 and 8 with their matching
+store. Current state schema 10 / network-0.10.0 exports in a skyhook-campaign
+version-10 envelope. The validator accepts schemas 1, 2, 3, 4, 5, 6, 7, 8 and 9 with their matching
 models and original backup envelopes.
 
 Version-one migration preserves ID, name, simulation day, revision, all old depot fields,
@@ -668,7 +739,7 @@ standard fleet is free but refunds nothing and retires any unused legacy credit.
 Commissioning, replacing or restoring never changes in-flight cargo or existing
 reservations. Oversized scheduled payloads are preserved and wait until the player
 changes the service, port or design. Atomic saves, revisions and old-head checkpoints
-remain in use. Exports retain the report; imports accept versions 1–8.
+remain in use. Exports retain the report; imports accept versions 1–10.
 
 `tests/fixtures/campaign-v7.json` was made by the prior network-0.7.0 model from
 the tracked v6 migration fixture, with construction stock supplied before its paid
@@ -682,9 +753,11 @@ limits, step determinism, legacy conversion, replacement and standard restoratio
 Expeditions remains a browser strategy game. Subsequent work should deepen the
 transport decisions: varied customer demand and contracts, markets and competing
 operators, followed by research that changes network capabilities and tradeoffs.
-The first contract release deliberately proves real delivered demand and spending
-without claiming dynamic markets or competitors already exist. Playtest it in a
-completed save before adding another economy layer.
+Buyer rounds now vary open demand and new-order rates, while bounded rival fleets
+compete for unaccepted requests. Their supply industry remains abstract. Next,
+research should create distinct logistical choices with costs and tradeoffs; avoid
+adding a mandatory upgrade checklist or an import-only bonus. Playtest the market
+in completed saves before expanding the number of interconnected economy systems.
 
 A richer 3D system view should retain the concise operations workspace and expose
 route congestion, moving freight and growing infrastructure. Optional close-ups
@@ -695,4 +768,4 @@ A future optional leaderboard needs shared scenario starts, fixed model versions
 explicit scoring and server-verified action histories. Editable local saves and
 self-reported balances are not trustworthy ranked submissions. Keep the existing
 offline personal worlds; do not impose an account to continue them. No leaderboard
-or competitive backend is implemented by the freight-contract release.
+or competitive backend is implemented by the buyer-market release.

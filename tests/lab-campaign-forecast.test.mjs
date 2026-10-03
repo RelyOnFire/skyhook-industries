@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { forecastNetwork, previewService } from '../.lab-test/campaign/forecast.js';
-import { acceptContract, addContractService, activeContract, addService, advance, createCampaign, LIMITS, validateCampaign } from '../.lab-test/campaign/model.js';
+import { buyerMarket, acceptContract, addContractService, activeContract, addService, advance, createCampaign, LIMITS, validateCampaign } from '../.lab-test/campaign/model.js';
 import { updateService } from '../.lab-test/campaign/service-edit.js';
 
 test('outlook uses the real engine without changing the saved world or its revision', () => {
@@ -138,5 +138,19 @@ test('contract service forecast projects consumed customer freight and payment t
   assert.equal(preview.proposed.creditsLater,actual.commerce.credits);
   assert.equal(preview.proposed.serviceDeparturesById[world.nextService],10);
   assert.deepEqual(preview.proposed.ports.map(p=>p.later),preview.proposed.ports.map(p=>actual.ports[p.id]));
+  assert.deepEqual(validateCampaign(actual),actual);
+});
+
+
+test('buyer forecasts include rival reservations and new procurement rounds without changing the save',()=>{
+  const world=createCampaign('market-forecast','Market forecast'),before=structuredClone(world);
+  const projection=forecastNetwork(world,105),actual=advance(world,105);
+  assert.deepEqual(world,before);
+  assert.ok(projection.rivalDepartures>0);
+  assert.equal(projection.rivalDepartures,actual.commerce.market.nextShipment-world.commerce.market.nextShipment);
+  for(const entry of projection.markets){
+    assert.deepEqual(entry.now,buyerMarket(world,entry.id));
+    assert.deepEqual(entry.later,buyerMarket(actual,entry.id));
+  }
   assert.deepEqual(validateCampaign(actual),actual);
 });

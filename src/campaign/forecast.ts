@@ -1,4 +1,4 @@
-import { addContractService, addService, advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type CargoKind, type Shipment, type SiteId } from './model.js';
+import { buyerMarket, CONTRACT_OFFERS, addContractService, addService, advance, industryStatus, LIMITS, SITE, SITES, siteLocked, type BlockedDeparture, type Campaign, type CargoKind, type Shipment, type SiteId } from './model.js';
 
 export interface ServiceDelay {
   id: number;
@@ -64,6 +64,8 @@ export function forecastNetwork(world: Campaign, requestedDays: number) {
     fuelLater: projected.fuelT,
     swarmNow: world.solar.deployedT,
     swarmLater: projected.solar.deployedT,
+    markets: CONTRACT_OFFERS.map(offer=>({id:offer.id,buyer:offer.buyer,now:buyerMarket(world,offer.id),later:buyerMarket(projected,offer.id)})),
+    rivalDepartures: projected.commerce.market.nextShipment-world.commerce.market.nextShipment,
     creditsNow: world.commerce.credits,
     creditsLater: projected.commerce.credits,
     customerDeliveredT: projected.commerce.contracts.reduce((sum,c)=>sum+c.deliveredT-(world.commerce.contracts.find(old=>old.id===c.id)?.deliveredT??0),0),

@@ -8,9 +8,9 @@ from pathlib import Path
 import subprocess
 import threading
 from playwright.sync_api import sync_playwright, expect
+from campaign_browser_helpers import empty_commerce
 
 ROOT = Path(__file__).resolve().parents[1]
-EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -96,16 +96,16 @@ def main():
             action('Your saves')
             action('Save now')
             migrated = record()
-            assert migrated['state']['schema']==9 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['schema']==10 and migrated['state']['revision']==old['revision']+1
             assert migrated['checkpoints']==[old]
-            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            assert migrated['state']['commerce']==empty_commerce(old['day'])
             for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in old[field]]
             for key in old:
                 if key not in ['schema','model','revision','flights','services']: assert migrated['state'][key]==old[key], key
             assert migrated['state']['development']=={'launchLevel':0,'waterLevel':0,'fuelLevel':0,'mercuryTracts':0,'ceresTracts':0,'fuelReserveT':0}
             action('Save now')
             assert record()==migrated
-            done('native v5 load is read-only; schema 9 checkpoints every old field once and starts with no development upgrades')
+            done('native v5 load is read-only; schema 10 checkpoints every old field once and starts with no development upgrades')
 
             chapter = page.locator('#development-operations')
             launch = chapter.locator('[data-project="launch"]')
@@ -264,7 +264,7 @@ def main():
             backup = out/'industrial-backup.json'
             event.value.save_as(backup)
             envelope = json.loads(backup.read_text())
-            assert envelope['version']==9 and envelope['state']==frozen
+            assert envelope['version']==10 and envelope['state']==frozen
             page.locator('input[type=file]').set_input_files(str(backup))
             saved()
             copy = next(r['state'] for r in records() if r['id'] not in [old['id'], active_id])
@@ -291,12 +291,12 @@ def main():
                 editor.get_by_role('button', name='Cancel', exact=True).click()
                 if width==320:
                     outlook = page.locator('.network-outlook')
-                    outlook.locator('summary').click()
+                    outlook.locator(':scope > summary').click()
                     outlook.evaluate("element=>element.scrollIntoView({block:'start'})")
                     expect(outlook.locator('.outlook-hold-scroll')).to_be_visible()
                     assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'), 'Departure reasons overflow at 320 px'
                     page.screenshot(path=str(out/'outlook-holds-320.png'))
-                    outlook.locator('summary').click()
+                    outlook.locator(':scope > summary').click()
             done('industrial projects and service editing fit desktop, tablet and 390/320 px phones')
             assert not report['errors'], report['errors']
             report['status']='passed'

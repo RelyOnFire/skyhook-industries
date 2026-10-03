@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 import threading
 from playwright.sync_api import sync_playwright, expect
+from campaign_browser_helpers import empty_commerce
 
 ROOT=Path(__file__).resolve().parents[1]
-EMPTY_COMMERCE = {'credits':0, 'earnedCredits':0, 'spentCredits':0, 'nextContract':1, 'contracts':[], 'cooldowns':{'lunar-return':0, 'mars-build':0, 'mercury-tooling':0}}
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self,*_): pass
 
@@ -68,7 +68,11 @@ def main():
             page.get_by_label('From',exact=True).select_option('earth');page.get_by_label('To',exact=True).select_option('phobos')
             page.get_by_role('radio',name='Bootstrap tug').check()
             for _ in range(3):action('Dispatch cargo')
-            action('Advance to next event')
+            # Rival bookings and buyer reviews are now intervening events.
+            for _ in range(80):
+                if records()[0]['state']['ports']['phobos']['materialsT']>=30:break
+                action('Advance to next event')
+            assert records()[0]['state']['ports']['phobos']['materialsT']==30
             page.get_by_role('button',name='Phobos Awaiting construction').click()
             action('Commission anchor hub · 30 t')
             assert records()[0]['state']['ports']['phobos']['level']==1
@@ -194,9 +198,9 @@ def main():
             assert next(r for r in records() if r['id']==legacy['id'])==legacy_record
             action('Save now')
             migrated=next(r for r in records() if r['id']==legacy['id'])
-            assert migrated['state']['schema']==9 and migrated['state']['revision']==legacy['revision']+1
+            assert migrated['state']['schema']==10 and migrated['state']['revision']==legacy['revision']+1
             assert migrated['state']['day']==legacy['day'] and migrated['state']['fuelT']==legacy['fuelT']
-            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            assert migrated['state']['commerce']==empty_commerce(legacy['day'])
             assert all(f['contractId'] is None for f in migrated['state']['flights'])
             assert all(s['contractId'] is None for s in migrated['state']['services'])
             assert migrated['checkpoints'][0]==legacy
@@ -260,9 +264,9 @@ def main():
             solar.reload(wait_until='networkidle');solar.get_by_role('button',name='Continue Mercury expedition').click();saved(solar)
             assert records(solar)[0]==previous_record
             action('Save now',solar);migrated=records(solar)[0]
-            assert migrated['state']['schema']==9 and migrated['state']['revision']==previous['revision']+1
+            assert migrated['state']['schema']==10 and migrated['state']['revision']==previous['revision']+1
             assert migrated['checkpoints'][0]==previous
-            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            assert migrated['state']['commerce']==empty_commerce(previous['day'])
             for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in previous[field]]
             for key in ['day','fuelT','marsOperations']:
                 assert migrated['state'][key]==previous[key]
@@ -523,7 +527,7 @@ def main():
             live.wait_for_timeout(1150)
             assert next(r['state'] for r in records(live) if r['state']['id']==fresh['id'])==retried
             # A horizon save is still readable, but neither clock control may advance it.
-            horizon={**fresh,'day':100000}
+            horizon={**fresh,'day':100000,'commerce':empty_commerce(100000)}
             live.evaluate("""async state=>{const db=await new Promise(ok=>{let r=indexedDB.open('skyhook-campaigns',1);r.onsuccess=()=>ok(r.result)});await new Promise((ok,no)=>{const tx=db.transaction('worlds','readwrite');tx.objectStore('worlds').put({id:state.id,state,savedAt:'2099-01-01T00:00:00.000Z',checkpoints:[]});tx.oncomplete=ok;tx.onerror=()=>no(tx.error)});db.close()}""",horizon)
             live.reload(wait_until='networkidle');live.get_by_role('button',name='Continue Clock isolation').click();saved(live)
             live.locator('#lab-content').focus();live.keyboard.press('Space')
@@ -562,8 +566,8 @@ def main():
             stale.get_by_role('button',name='Continue Power loop').click();saved(stale)
             action('Save now',motion)
             migrated=next(r for r in records(motion) if r['id']==old['id'])
-            assert migrated['state']['schema']==9 and migrated['state']['revision']==old['revision']+1
-            assert migrated['state']['commerce']==EMPTY_COMMERCE
+            assert migrated['state']['schema']==10 and migrated['state']['revision']==old['revision']+1
+            assert migrated['state']['commerce']==empty_commerce(old['day'])
             for field in ['flights','services']: assert migrated['state'][field]==[{**item,'contractId':None} for item in old[field]]
             assert migrated['checkpoints'][0]==old and migrated['state']['solar']['powerLink'] is False
             for key in old:

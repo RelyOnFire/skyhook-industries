@@ -180,3 +180,5 @@
 .map-mirror-lanes path{fill:none;stroke:#efc995;stroke-width:1;stroke-opacity:.25}
 .map-mirror-lanes text{font-size:9px;letter-spacing:1px;fill:#ad9980}
 .map-tracked-route{fill:none}
+
+.outlook-market{margin:14px 0;border-block:1px solid var(--ops-line)}.outlook-market>summary{padding:12px 0;font-size:11px;cursor:pointer}.outlook-market>summary span{float:right;color:var(--ops-muted);font-size:10px}.outlook-market[open]{padding-bottom:12px}
