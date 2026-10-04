@@ -107,9 +107,9 @@ def main():
         expect(progress(dialog)).to_have_value(str(value))
 
     def watch(page, flight=1):
-        trigger = page.get_by_role('button', name=f'Watch departure of flight {flight}', exact=True)
+        trigger = page.get_by_role('button', name=f'Explore Earth launch for flight {flight}', exact=True)
         trigger.click()
-        dialog = page.get_by_role('dialog', name='Cargo departure', exact=True)
+        dialog = page.get_by_role('dialog', name='Earth launch', exact=True)
         expect(dialog).to_be_visible()
         expect(dialog.locator('.departure-header')).to_contain_text(re.compile(rf'Flight {flight}\b', re.I))
         return dialog, trigger
@@ -140,12 +140,12 @@ def main():
                 import_world(page)
                 initial = records(page)
                 initial_backup = backup(page, 'before-closeup.json')
-                expect(page.get_by_role('button', name='Watch departure of flight 1', exact=True)).to_be_visible()
-                expect(page.get_by_role('button', name='Watch departure of flight 4', exact=True)).to_be_visible()
+                expect(page.get_by_role('button', name='Explore Earth launch for flight 1', exact=True)).to_be_visible()
+                expect(page.get_by_role('button', name='Explore Earth launch for flight 4', exact=True)).to_be_visible()
                 for flight in [2, 3]:
                     expect(page.locator(f'.flight-row[data-traffic-id="cargo-{flight}"]')).to_be_visible()
-                    expect(page.get_by_role('button', name=f'Watch departure of flight {flight}', exact=True)).to_have_count(0)
-                expect(page.get_by_role('dialog', name='Cargo departure', exact=True)).to_have_count(0)
+                    expect(page.get_by_role('button', name=f'Explore Earth launch for flight {flight}', exact=True)).to_have_count(0)
+                expect(page.get_by_role('dialog', name='Earth launch', exact=True)).to_have_count(0)
                 assert not scene_requests, 'The optional 3D departure bundle loaded before opening a replay'
                 assert records(page) == initial
                 done('only Earth-origin tether cargo offers a shipment-specific replay; tugs and lunar departures do not')
@@ -168,9 +168,15 @@ def main():
                 expect(dialog.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
                 expect(dialog.locator('.departure-footer')).to_contain_text('Simulation paused')
                 assert records(page) == initial, 'Space inside the replay started or changed the paused game'
-                for phase in ['Approach', 'Capture', 'Swing', 'Release']:
+                for phase in ['Climb', 'Rendezvous', 'Lift', 'Release']:
                     dialog.get_by_role('button', name=phase, exact=True).click()
                     expect(dialog).to_have_attribute('data-phase', phase.lower())
+                    expect(dialog.locator('.departure-telemetry')).to_contain_text('km/s')
+                    if phase == 'Rendezvous':
+                        expect(dialog.locator('.departure-telemetry')).to_contain_text('150 km')
+                        expect(dialog.locator('.departure-telemetry')).to_contain_text('4.5 km/s')
+                    if phase == 'Lift':
+                        expect(dialog.locator('.departure-telemetry')).to_contain_text('Returning')
                     expect(dialog.get_by_role('button', name=phase, exact=True)).to_have_attribute('aria-pressed', 'true')
                     assert records(page) == initial, f'{phase} changed the campaign save'
                     capture(page, dialog, f'{phase.lower()}-1440.png')
@@ -186,11 +192,11 @@ def main():
                 }""", polling=100)
                 dialog.get_by_role('button', name='Pause close-up', exact=True).click()
                 assert records(page) == initial
-                done('WebGL replay, all four phases, scrubbing and replay controls leave the entire saved record and checkpoints unchanged')
+                done('WebGL replay, aircraft climb, rendezvous, lift and release, scrubbing and replay controls leave the entire saved record and checkpoints unchanged')
 
                 for width, height in [(1440, 1000), (390, 844), (320, 740)]:
                     page.set_viewport_size({'width': width, 'height': height})
-                    dialog.get_by_role('button', name='Capture', exact=True).click()
+                    dialog.get_by_role('button', name='Rendezvous', exact=True).click()
                     capture(page, dialog, f'capture-{width}.png')
                     expect(dialog.get_by_role('button', name='Close departure', exact=True)).to_be_visible()
                     expect(progress(dialog)).to_be_visible()
@@ -260,7 +266,7 @@ def main():
                 reduced_start = progress(fallback_dialog).input_value()
                 fallback.wait_for_timeout(300)
                 assert progress(fallback_dialog).input_value() == reduced_start
-                fallback_dialog.get_by_role('button', name='Capture', exact=True).click()
+                fallback_dialog.get_by_role('button', name='Rendezvous', exact=True).click()
                 capture(fallback, fallback_dialog, 'fallback-capture-390.png')
                 fixed = progress(fallback_dialog).input_value()
                 fallback.wait_for_timeout(300)
@@ -279,10 +285,10 @@ def main():
                 mirror_before = records(mirror_page)
                 mirror_rows = mirror_page.locator('.flight-row[data-kind="mirrors"]')
                 assert mirror_rows.count() > 0
-                expect(mirror_rows.get_by_role('button', name='Watch departure', exact=False)).to_have_count(0)
+                expect(mirror_rows.get_by_role('button', name='Earth launch', exact=False)).to_have_count(0)
                 mirror_id = fixtures['mirrors']['state']['solar']['deployments'][0]['id']
                 mirror_page.get_by_role('button', name=f'Track mirror launch {mirror_id}', exact=True).click()
-                expect(mirror_page.get_by_role('dialog', name='Cargo departure', exact=True)).to_have_count(0)
+                expect(mirror_page.get_by_role('dialog', name='Earth launch', exact=True)).to_have_count(0)
                 assert records(mirror_page) == mirror_before
                 done('solar mirror traffic retains its own tracking and never presents an Earth cargo capture')
                 mirror_context.close()
@@ -299,26 +305,26 @@ def main():
                 def demonstration(label):
                     before = records(demo)
                     exported = backup(demo, f'{label}-before.json')
-                    entry = demo.get_by_role('button', name='Watch a departure', exact=True)
+                    entry = demo.get_by_role('button', name='Explore Earth launch', exact=True)
                     expect(entry).to_be_enabled()
-                    expect(demo.locator('.map-actions')).to_contain_text('Watch a departure')
+                    expect(demo.locator('.map-actions')).to_contain_text('Explore Earth launch')
                     for width, height in [(1440, 1000), (320, 740)]:
                         demo.set_viewport_size({'width': width, 'height': height})
                         entry.scroll_into_view_if_needed()
                         assert not demo.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                         demo.locator('.map-actions').screenshot(path=str(out / f'{label}-entry-{width}.png'))
                         entry.click()
-                        concept = demo.get_by_role('dialog', name='Earth departure', exact=True)
+                        concept = demo.get_by_role('dialog', name='Earth launch', exact=True)
                         expect(concept).to_be_visible()
                         expect(concept).to_contain_text('Concept demonstration')
                         expect(concept).to_contain_text('sends no cargo')
-                        expect(concept.locator('.departure-header')).to_contain_text(re.compile('CONCEPT CLOSE-UP', re.I))
+                        expect(concept.locator('.departure-header')).to_contain_text(re.compile('HASTOL-INSPIRED CONCEPT', re.I))
                         text = concept.inner_text()
                         assert not re.search(r'\bFlight\s*#?\s*\d', text, re.I), 'The demo invented a shipment identity'
                         assert not re.search(r'\b\d+(?:[.,]\d+)*\s*t\b', text), 'The demo invented a cargo mass'
                         assert not re.search(r'\b(?:Arrives|Arrival|Delivered|In transit)\b', text, re.I), 'The demo claims a shipment timeline'
                         expect(concept.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
-                        concept.get_by_role('button', name='Capture', exact=True).click()
+                        concept.get_by_role('button', name='Rendezvous', exact=True).click()
                         capture(demo, concept, f'{label}-capture-{width}.png')
                         scrub(concept, 880)
                         assert records(demo) == before, 'Viewing or scrubbing the concept demo changed saved state'
@@ -339,7 +345,7 @@ def main():
                 expect(demo.get_by_text('Saved in this browser', exact=True)).to_be_visible()
                 assert len(records(demo)[0]['state']['flights']) == 1
                 assert records(demo)[0]['state']['flights'][0]['mode'] == 'tug'
-                expect(demo.get_by_role('button', name='Watch departure of flight 1', exact=True)).to_have_count(0)
+                expect(demo.get_by_role('button', name='Explore Earth launch for flight 1', exact=True)).to_have_count(0)
                 demonstration('tug-only-demo')
                 done('persistent map entry opens an explicit concept demo in fresh and tug-only networks without inventing cargo or changing records, exports or time')
                 demo_context.close()

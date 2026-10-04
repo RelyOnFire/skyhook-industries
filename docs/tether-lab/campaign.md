@@ -51,14 +51,31 @@ colors. Track any cargo flight or mirror launch to highlight its corridor and
 inspect its payload, destination and arrival in the fixed map footer. Tracking,
 clearing and completion never expand this footer or move the traffic controls.
 Cargo and mirror identities remain separate even when their numeric IDs match.
-**Watch a departure** above the map opens an Earth handoff demonstration, even in
-a fresh network or one without active tether flights. It is labeled as a concept
-demonstration and has no shipment identity, cargo mass or arrival claim.
-Earth-origin tether cargo offers **Watch departure** in its traffic row. This
-optional 3D concept replay uses the selected flight's manifest and live delivery
-status, with its own play/pause, scrubber and approach/capture/swing/release controls.
-It illustrates the existing Earth handoff geometry; it does not reconstruct the
-campaign trajectory or validate a commissioned design. Game time continues if
+**Explore Earth launch** above the map opens a dedicated HASTOL-inspired Earth
+access sequence, even without active tether flights. A hypersonic carrier climbs,
+shuts off its engines for a ballistic pop-up, meets the lower grapple at matched
+position and velocity, then returns while the tether lifts and releases the cargo.
+Climb, Rendezvous, Lift and Release have their own camera, pause and scrub controls.
+This is separate from the introduction film's motion. Hardware is enlarged and
+physical time compressed for legibility; the readouts are explicitly illustrative.
+
+The nominal visual example uses a 150 km handoff at 4.5 km/s, a circular hub at
+1,100 km and 950 km arms. These chosen parameters are not a reproduced HASTOL
+vehicle or a commissioned design. The prescribed powered climb connects to an
+Earth-central-gravity aircraft coast. The rigid tether matches the carrier's
+position and velocity at pickup; release inherits the tip velocity and subsequently
+coasts under the same gravity. Aircraft performance, atmospheric loads, capture
+hardware, finite-mass tether recoil and destination targeting are not solved.
+[The NIAC HASTOL Phase II report](https://www.niac.usra.edu/files/studies/final_report/391Grant.pdf),
+chapter 1, provides the aircraft/pop-up/grapple sequence and discusses higher
+rendezvous altitudes and the capture window. Its differing study cases must not
+be conflated with these nominal display parameters.
+
+Earth-origin tether cargo offers **Earth launch** in its traffic row, retaining
+its actual manifest and live delivery status alongside the concept. A standalone
+concept has no shipment identity, cargo mass or arrival claim. The Earth sequence
+is explicitly local access, rather than a replay of an interplanetary flight.
+Game time continues if
 Play was already running, and arrivals still credit exactly once. Opening,
 scrubbing and closing the replay never write a save. The Three.js scene loads
 only on request, with a diagram fallback if WebGL fails. Reduced motion starts
