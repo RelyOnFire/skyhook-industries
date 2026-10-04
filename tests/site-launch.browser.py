@@ -5,6 +5,7 @@ Use --browser firefox or webkit for the other browser engines. Linux WebKit
 coverage is useful compatibility evidence, not a physical Safari/iOS test.
 """
 import argparse
+from contextlib import ExitStack
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -133,9 +134,15 @@ def main():
                         assert map_visual.bounding_box()['y'] >= 600, 'This check requires the welcome map below the viewport'
                         assert not planets, f'Below-fold welcome imagery was fetched: {planets}'
                         expect(map_visual.locator('image[href^="/planets/"]')).to_have_count(0)
-                        map_visual.scroll_into_view_if_needed()
                         expected = {f'/planets/{body}.webp' for body in ['earth', 'moon', 'mars', 'mercury', 'phobos']}
-                        expect(map_visual.locator('image[href^="/planets/"]')).to_have_count(len(expected))
+                        # SVG nodes can commit before Firefox starts their image
+                        # requests; an earlier networkidle state can still be set.
+                        # Listen before scrolling, and require every actual request.
+                        with ExitStack() as image_requests:
+                            for path in expected:
+                                image_requests.enter_context(welcome.expect_request(lambda request, path=path: urlsplit(request.url).path == path))
+                            map_visual.scroll_into_view_if_needed()
+                            expect(map_visual.locator('image[href^="/planets/"]')).to_have_count(len(expected))
                         welcome.wait_for_load_state('networkidle')
                         assert set(planets) == expected, f'Visible welcome map did not fetch the established detailed imagery: {planets}'
                         welcome.screenshot(path=str(out / 'campaign-welcome-320.png'), full_page=True)
