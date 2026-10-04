@@ -58,6 +58,16 @@ position and velocity, then returns while the tether lifts and releases the carg
 Climb, Rendezvous, Lift and Release have their own camera, pause and scrub controls.
 This is separate from the introduction film's motion. Hardware is enlarged and
 physical time compressed for legibility; the readouts are explicitly illustrative.
+The original carrier has a slender chined body, swept horizontal wings, paired
+nacelles, canted fins and centered glazing. One coherent camera view exposes
+the complete airframe; its canopy and wings are not independently rotated. The
+capture view eases higher after fading the distant planet, then restores the
+wide framing for lift and release.
+Darkstar/Blackbird-style planforms and the slender Skylon concept inform its
+appearance, rather than specifying a flight-capable vehicle. The authored geometry
+uses no external aircraft mesh or branded markings. References include
+[Lockheed Martin's Darkstar design account](https://www.lockheedmartin.com/en-us/careers/life-at-lm/2023/top-gun-movie.html)
+and [ESA's Skylon concept](https://www.esa.int/ESA_Multimedia/Images/2013/07/SABRE_engine_in_place_on_Skylon_spaceplane).
 
 The nominal visual example uses a 150 km handoff at 4.5 km/s, a circular hub at
 1,100 km and 950 km arms. These chosen parameters are not a reproduced HASTOL
@@ -81,6 +91,18 @@ scrubbing and closing the replay never write a save. The Three.js scene loads
 only on request, with a diagram fallback if WebGL fails. Reduced motion starts
 paused; Escape closes the dialog and Space inside it controls only the replay.
 Other origins, tugs and mirror launches retain their existing map tracking.
+The next access concepts should be specific to their environments: electromagnetic
+mass drivers feeding lunar and Mercury tethers are candidates for robust bulk
+cargo, with acceleration, power, track length, targeting and capture to be assessed.
+The [lunar electromagnetic launcher study](https://ntrs.nasa.gov/api/citations/19890006394/downloads/19890006394.pdf)
+supports the airless-body approach; extending it to Mercury remains a design
+choice rather than a validated efficiency comparison. For Mars access, a Phobos
+inward tip is not stationary relative to the ground. Weinstein's
+[2003 proposal](https://ntrs.nasa.gov/citations/20030065879) terminates above the
+atmosphere and describes about 0.52 km/s relative surface motion, with short boosted
+craft reaching the moving terminal. A direct grab of stationary surface cargo
+would require additional tip control and an atmosphere/terrain/load analysis.
+These future access mechanisms are not yet campaign facilities or departure scenes.
 On phones, tracking brings the map into view and focuses the inspector. Returned
 power and Mercury's production multiplier appear in the map header, linked to
 the full power controls; an unconnected swarm reports zero returned power.

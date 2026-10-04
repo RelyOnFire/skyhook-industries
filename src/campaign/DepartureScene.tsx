@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { LAUNCH, earthLaunchFrame, launchPath } from './earth-launch-motion.js';
 import DepartureDiagram from './DepartureDiagram.js';
+import { createHypersonicAircraft } from './HypersonicAircraft.js';
 
 /** Dedicated Earth-access sequence; enlarged hardware over illustrative flight paths. */
 export default function DepartureScene({stage,progress}:{stage:number;progress:number}) {
@@ -23,6 +24,7 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
     const scene=new THREE.Scene();scene.background=new THREE.Color('#070d13');
     const camera=new THREE.OrthographicCamera(-500,500,310,-310,1,50000);
     scene.add(new THREE.AmbientLight('#bfd0e6',.8));
+    scene.add(new THREE.HemisphereLight('#91b3cd','#172635',1.2));
     const sun=new THREE.DirectionalLight('#fff1db',3.2);sun.position.set(-900,750,1300);scene.add(sun);
     const materials:THREE.Material[]=[],geometries:THREE.BufferGeometry[]=[],textures:THREE.Texture[]=[];
     const metal=new THREE.MeshStandardMaterial({color:'#b7cbd3',metalness:.65,roughness:.36});
@@ -32,7 +34,7 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
     const mesh=(g:THREE.BufferGeometry,m:THREE.Material,parent:THREE.Object3D)=>{geometries.push(g);const object=new THREE.Mesh(g,m);parent.add(object);return object;};
     const box=(parent:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m=metal)=>{const object=mesh(new THREE.BoxGeometry(w,h,d),m,parent);object.position.set(x,y,z);return object;};
     const rod=(parent:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,r:number,m=metal)=>{const delta=b.clone().sub(a),object=mesh(new THREE.CylinderGeometry(r,r,delta.length(),8),m,parent);object.position.copy(a.clone().add(b).multiplyScalar(.5));object.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return object;};
-    const earthMaterial=new THREE.MeshStandardMaterial({color:'#667987',roughness:1});materials.push(earthMaterial);
+    const earthMaterial=new THREE.MeshStandardMaterial({color:'#667987',roughness:1,transparent:true});materials.push(earthMaterial);
     const earth=mesh(new THREE.SphereGeometry(LAUNCH.radius,96,64),earthMaterial,scene);earth.rotation.set(.18,-1.2,.18);
     const cloudMaterial=new THREE.MeshStandardMaterial({transparent:true,opacity:.55,depthWrite:false,roughness:1});materials.push(cloudMaterial);
     const clouds=mesh(new THREE.SphereGeometry(LAUNCH.radius+6,96,64),cloudMaterial,scene);clouds.rotation.copy(earth.rotation);clouds.visible=false;
@@ -64,28 +66,30 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
     box(payload,2.8,15,2.8,0,-7,0,metal);
     const fitting=mesh(new THREE.TorusGeometry(6,2,10,28),copper,payload);fitting.rotation.y=.2;
     for(const x of [-7,7])box(payload,1,20,13,x,-26,0,metal);
-    const aircraft=new THREE.Group();scene.add(aircraft);
-    rod(aircraft,new THREE.Vector3(-27,0,0),new THREE.Vector3(24,0,0),3.8);
-    const nose=mesh(new THREE.ConeGeometry(3.8,15,12),metal,aircraft);nose.rotation.z=-Math.PI/2;nose.position.x=31.5;
-    const wingShape=new THREE.Shape();wingShape.moveTo(7,0);wingShape.lineTo(-24,26);wingShape.lineTo(-17,0);wingShape.lineTo(-24,-26);wingShape.closePath();
-    const wings=mesh(new THREE.ExtrudeGeometry(wingShape,{depth:.9,bevelEnabled:false}),dark,aircraft);wings.rotation.x=Math.PI/3;
-    const canopy=mesh(new THREE.SphereGeometry(1,16,10),dark,aircraft);canopy.scale.set(8,2.7,2.4);canopy.position.set(12,3.3,2);
-    const finShape=new THREE.Shape();finShape.moveTo(-27,1);finShape.lineTo(-25,12);finShape.lineTo(-13,1);finShape.closePath();mesh(new THREE.ExtrudeGeometry(finShape,{depth:1,bevelEnabled:false}),dark,aircraft);
-    box(aircraft,19,2,9,-18,-4,0,dark);box(aircraft,2,2.5,10,-28,-4,0,copper);
-    box(aircraft,8,3,8,0,5.25,0,copper);
-    const flameMaterial=new THREE.MeshBasicMaterial({color:'#efb486',transparent:true,opacity:.7});materials.push(flameMaterial);
-    const flame=mesh(new THREE.ConeGeometry(3,24,12),flameMaterial,aircraft);flame.rotation.z=Math.PI/2;flame.position.set(-41,-3,0);
+    const carrier=createHypersonicAircraft(),aircraft=carrier.group;scene.add(aircraft);
     draw.current=()=>{
       if(disposed||lost||!root.clientWidth)return;
       const {stage,progress}=frame.current,f=earthLaunchFrame(stage,progress);
       camera.left=-f.camera.width/2;camera.right=f.camera.width/2;camera.top=f.camera.width*.31;camera.bottom=-f.camera.width*.31;camera.updateProjectionMatrix();
-      camera.position.set(f.camera.center.x,f.camera.center.y,22000);camera.lookAt(f.camera.center.x,f.camera.center.y,0);
+      // A single camera sees the entire airframe. Keep the wide view's radial
+      // tilt shallow so the low terminal stays outside the planetary limb.
+      const ease=(t:number)=>{const p=Math.min(1,Math.max(0,t));return p*p*(3-2*p);};
+      const weight=ease((f.altitude-55)/80),detail=ease((320-f.camera.width)/190),planetOpacity=1-ease((440-f.camera.width)/120);
+      earthMaterial.opacity=planetOpacity;earthMaterial.depthWrite=planetOpacity===1;
+      cloudMaterial.opacity=.55*planetOpacity;clouds.visible=!!cloudMaterial.map&&planetOpacity>0;
+      orbitMaterial.opacity=.23*planetOpacity;atmosphereMaterial.opacity=.25*planetOpacity;
+      // In the local capture view, fade the distant planet before turning up
+      // the viewing angle. Return both together as the camera widens for lift.
+      const radial=new THREE.Vector3(f.hub.x,f.hub.y,0).normalize(),tangent=new THREE.Vector3(radial.y,-radial.x,0);
+      const eye=tangent.multiplyScalar(Math.sin(weight*Math.PI/10)).addScaledVector(radial,Math.sin(weight*(7+17*detail)*Math.PI/180));
+      eye.z=Math.sqrt(1-eye.x*eye.x-eye.y*eye.y);eye.multiplyScalar(22000);
+      camera.position.set(f.camera.center.x+eye.x,f.camera.center.y+eye.y,eye.z);camera.lookAt(f.camera.center.x,f.camera.center.y,0);
       tether.position.set(f.hub.x,f.hub.y,0);tether.rotation.z=f.angle;
       const cableScale=Math.max(1,f.camera.width/1000*.65/.4);cable.scale.set(cableScale,1,cableScale);
       const hardwareScale=stage<2?.25:Math.max(.25,(f.camera.width-130)/1000*.9);grapple.scale.setScalar(hardwareScale);payload.scale.setScalar(hardwareScale);
       payload.position.set(f.payload.x,f.payload.y,0);payload.rotation.z=f.payloadAngle;
       aircraft.position.set(f.aircraft.x,f.aircraft.y,0);aircraft.rotation.z=f.aircraftAngle;aircraft.visible=f.aircraftVisible;
-      flame.visible=f.powered;ascentPath.visible=stage<2;releasePath.visible=stage===3;
+      carrier.exhaust.forEach(flame=>{flame.visible=f.powered;});ascentPath.visible=stage<2;releasePath.visible=stage===3;
       const jawAngle=f.jawAngle*Math.PI/180;
       jaws[0].rotation.z=-jawAngle;jaws[1].rotation.z=jawAngle;
       latch.visible=f.latched;
@@ -96,7 +100,7 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
     const contextLost=(event:Event)=>{event.preventDefault();lost=true;setFailed(true);};
     renderer.domElement.addEventListener('webglcontextlost',contextLost);
     resize();setReady(true);
-    return()=>{disposed=true;draw.current=()=>{};observer.disconnect();renderer.domElement.removeEventListener('webglcontextlost',contextLost);textures.forEach(t=>t.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
+    return()=>{disposed=true;draw.current=()=>{};observer.disconnect();renderer.domElement.removeEventListener('webglcontextlost',contextLost);textures.forEach(t=>t.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());carrier.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
   },[]);
   return <div className="departure-visual" data-renderer={ready&&!failed?'webgl':'diagram'}>
     <div ref={host} className="departure-webgl" aria-hidden="true" hidden={!ready||failed}/>

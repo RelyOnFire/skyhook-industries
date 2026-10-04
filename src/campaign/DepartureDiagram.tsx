@@ -20,12 +20,13 @@ export default function DepartureDiagram({stage,progress}:{stage:number;progress
         <circle cy={LAUNCH.arm} r="6" fill="#d7e5ea"/>
       </g>
       {f.aircraftVisible&&<g transform={`translate(${f.aircraft.x} ${f.aircraft.y}) rotate(${degrees(f.aircraftAngle)})`} data-aircraft="visible">
-        <path d="M7 0L-24 13L-17 0L-24-13Z" fill="#314653"/>
-        <path d="M-30-3L-26 4L13 4L39 0L-26-4Z" fill="#b7cbd3"/>
-        <path d="M-27 2L-25 12L-13 2Z" fill="#7d98a6"/>
-        <path d="M7 4Q15 9 20 3" fill="#263744"/>
-        <rect x="-4" y="3.8" width="8" height="3" fill="#d69a70"/>
-        {f.powered&&<path d="M-28-5L-55-3L-28-1Z" fill="#efb486" opacity=".7"/>}
+        <path d="M-39 1.4L-30 10L-26 1.4Z" fill="#526974"/>
+        <path d="M-42-.6Q-32 4-8 3Q18 3 44 0Q20-2-12-2L-42-.6Z" fill="#718894"/>
+        <path d="M-40-1L-31-4L-8-2L-8-.5Z" fill="#293e49"/>
+        <path d="M18-.3L-39-.7" stroke="#bccbd2" strokeWidth=".6"/>
+        <path d="M6 2.7Q11 4.5 18 3.3L25 1.6Q16 2.2 6 2.7Z" fill="#14374a" stroke="#9baeb8" strokeWidth=".3"/>
+        <path d="M-3 3V6M3 3V6" stroke="#bacad2" strokeWidth=".8"/><rect x="-4" y="5.5" width="8" height="1.2" fill="#b88764"/>
+        {f.powered&&<path d="M-40-2.5L-56-1.5L-40-.5Z" fill="#efb486" opacity=".7"/>}
       </g>}
       <g transform={`translate(${f.payload.x} ${f.payload.y}) rotate(${degrees(f.payloadAngle)}) scale(${hardwareScale})`}>
         <rect x="-2" y="-9" width="4" height="5.5" fill="#a27553" stroke="#f0c6a4" strokeWidth=".3"/>
