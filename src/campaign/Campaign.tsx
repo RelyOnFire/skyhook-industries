@@ -26,7 +26,7 @@ export default function Campaign() {
   const [cargo,setCargo]=useState('10'), [mode,setMode]=useState<Shipment['mode']>('tug'), [name,setName]=useState('First light');
   const [kind,setKind]=useState<CargoKind>('materials'), [intervalDays,setIntervalDays]=useState('30');
   const [playing,setPlaying]=useState(false), [speed,setSpeed]=useState(1), [tracked,setTracked]=useState<TrafficId|null>(null);
-  const [departure,setDeparture]=useState<Shipment|'demo'|null>(null);
+  const [departure,setDeparture]=useState<Shipment|'demo'|'moon-demo'|null>(null);
   useEffect(()=>{if(designOpen)setPlaying(false);},[designOpen]);
   const [arrivals,setArrivals]=useState<string[]>([]);
   const [contractId,setContractId]=useState<number|null>(null);
@@ -145,7 +145,7 @@ export default function Campaign() {
     setContractId(id);setIntervalDays('2');
   };
   const watchDeparture=(id:TrafficId)=>{
-    const flight=world?.flights.find(f=>`cargo-${f.id}`===id&&f.from==='earth'&&f.mode==='tether');
+    const flight=world?.flights.find(f=>`cargo-${f.id}`===id&&(f.from==='earth'||f.from==='moon')&&f.mode==='tether');
     if(flight){setTracked(id);setDeparture({...flight});}
   };
   return <main ref={main} tabIndex={-1} id="lab-content" className={'campaign'+(world?' has-world':'')}>
@@ -155,7 +155,7 @@ export default function Campaign() {
     {error&&<div className="campaign-message error" role="alert"><span>{error}</span>{world&&saveStatus.startsWith('Not saved')&&<div><button disabled={busy} onClick={()=>void task(async()=>persist(world))}>Retry save</button> <button onClick={download}>Export unsaved progress</button></div>}</div>}{notice&&<div className="campaign-message" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice('')}>Dismiss</button></div>}
     {!world&&designSource&&<p className="campaign-message">A Flight Studio design is ready to review. Continue a saved network or start one to see its report and commissioning cost.</p>}
     {world&&designOpen&&<EarthDesign key={world.id} world={world} source={designSource} busy={busy} saveError={error} act={act} onClose={()=>setDesignOpen(false)}/>}
-    {world&&departure&&<DepartureCloseup key={world.id+':'+(departure==='demo'?'demo':departure.id)} shipment={departure==='demo'?undefined:departure} world={world} networkPlaying={playing} onClose={()=>setDeparture(null)}/>}
+    {world&&departure&&<DepartureCloseup key={world.id+':'+(typeof departure==='string'?departure:departure.id)} shipment={typeof departure==='string'?undefined:departure} origin={departure==='moon-demo'?'moon':'earth'} world={world} networkPlaying={playing} onClose={()=>setDeparture(null)}/>}
     {!world&&<><section className="campaign-welcome" aria-label="Start or continue"><div><p className="campaign-eyebrow">BUILD AN INTERPLANETARY SUPPLY CHAIN</p><h2>Start at Earth.<br/>Build toward the Sun.</h2><p>Supply a lunar lunavator. Anchor your Mars network at Phobos. Grow a solar swarm from Mercury, then reach into the belt for water and propellant.</p><p>Your outposts, routes and cargo share one operations view. Time moves when you choose. Build reliable routes, then earn from customer freight contracts.</p></div><div className="campaign-start">
       <div className="campaign-recent">{loading?<p role="status">Checking saved networks…</p>:latest?<button className="primary" disabled={busy} onClick={()=>resume(latest.id)}><span>Continue {latest.name}</span><small>{day(latest.day)}</small></button>:<p>Your progress stays in this browser.</p>}</div>
       <label htmlFor="campaign-name">Name your network</label><input id="campaign-name" maxLength={48} value={name} disabled={loading} onChange={e=>setName(e.target.value)} autoComplete="off"/>
@@ -178,7 +178,7 @@ export default function Campaign() {
       <nav className="ops-jump" aria-label="Operations navigation"><a href="#outposts">Outposts</a><a href="#network">Map</a><a href="#traffic">Traffic</a><a href="#contracts">Contracts</a><a href="#dispatch">Send cargo</a></nav>
       <div className="ops-grid">
         <Outposts world={world} busy={busy} selected={selected} onSelect={setSelected} act={act} prepare={prepare} onEarthDesign={()=>setDesignOpen(true)}/>
-        <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} onTrack={trackFlight} onWatch={()=>setDeparture('demo')} playing={playing} route={{from,to}}/></section>
+        <div className="ops-center"><section id="network" aria-label="Network map"><NetworkMap world={world} selected={selected} onSelect={setSelected} tracked={tracked} onTrack={trackFlight} onWatch={origin=>setDeparture(origin==='moon'?'moon-demo':'demo')} playing={playing} route={{from,to}}/></section>
           <section className="campaign-dispatch" id="dispatch" aria-labelledby="dispatch-heading"><header className="panel-title"><h2 id="dispatch-heading">Send cargo</h2><span>{SITE[from].name} → {SITE[to].name}</span></header>
         <form onSubmit={e=>{e.preventDefault();act(w=>contractId!==null?dispatchContract(w,contractId,Number(cargo),mode):dispatch(w,from,to,Number(cargo),mode,kind));}}>
           <div className="campaign-fields"><div><label htmlFor="campaign-origin">From</label><select id="campaign-origin" value={from} onChange={e=>chooseFrom(e.target.value as SiteId)}>{SITES.map(s=><option key={s} value={s} disabled={siteLocked(world,s)}>{SITE[s].name}{siteLocked(world,s)?' · Chapter '+(s==='ceres'?'05':'03'):''}</option>)}</select></div><div><label htmlFor="campaign-destination">To</label><select id="campaign-destination" value={to} onChange={e=>chooseTo(e.target.value as SiteId)}>{SITES.filter(s=>connected(from,s)).map(s=><option key={s} value={s} disabled={siteLocked(world,s)}>{SITE[s].name}{siteLocked(world,s)?' · Chapter '+(s==='ceres'?'05':'03'):''}</option>)}</select></div><div><label htmlFor="campaign-kind">Cargo type</label><select id="campaign-kind" value={kind} onChange={e=>{setContractId(null);setKind(e.target.value as CargoKind);}}><option value="materials">Construction material</option><option value="equipment">Equipment</option>{waterRoute(from,to)&&<option value="water">Water</option>}</select></div><div><label htmlFor="campaign-cargo">Cargo (t)</label><input id="campaign-cargo" type="number" min="1" max="30" step="1" required value={cargo} onChange={e=>setCargo(e.target.value)}/></div></div>

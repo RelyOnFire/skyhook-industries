@@ -105,13 +105,43 @@ Play was already running, and arrivals still credit exactly once. Opening,
 scrubbing and closing the replay never write a save. The Three.js scene loads
 only on request, with a diagram fallback if WebGL fails. Reduced motion starts
 paused; Escape closes the dialog and Space inside it controls only the replay.
-Other origins, tugs and mirror launches retain their existing map tracking.
-The next access concepts should be specific to their environments: electromagnetic
-mass drivers feeding lunar and Mercury tethers are candidates for robust bulk
-cargo, with acceleration, power, track length, targeting and capture to be assessed.
-The [lunar electromagnetic launcher study](https://ntrs.nasa.gov/api/citations/19890006394/downloads/19890006394.pdf)
-supports the airless-body approach; extending it to Mercury remains a design
-choice rather than a validated efficiency comparison. For Mars access, a Phobos
+**Explore Moon launch** beside the Earth entry opens a separate lunar mass-driver
+concept without requiring a shipment. Moon-origin tether cargo offers **Moon
+launch** in its traffic row, with its real manifest, arrival day and live status.
+Tugs, other origins and mirror deployments retain map tracking.
+
+Load, Accelerate, Coast, Capture, Swing and Release have separate camera moments.
+An original coil launcher, loading bay, capacitor banks and solar apron feed a
+raised straight ramp. Illuminated coils follow the sled; after separation the
+sled stays on the track while cargo coasts without rocket exhaust. The view
+zooms into the fitting and closing grapple, then widens to show both tether ends
+and the departing cargo. NASA's existing LROC texture covers the mean sphere;
+local hardware is enlarged. The ground close-up adds original regolith relief around a level loading apron; its craters are display geometry, not a surveyed site or albedo-derived topography. The visual composition takes inspiration from the
+[shared lunar mass-driver concept video](https://www.youtube.com/watch?v=-0tUa1a0HjQ),
+without embedding its footage or reproducing its satellites.
+
+The display model uses the lunar Flight Studio's frozen mean radius (1,737.4 km)
+and GM (4,902.800118 km³/s²). A prescribed circular hub at 200 km with 150 km arms
+matches cargo at a 50 km apogee and 0.9 km/s. Backward central-gravity integration
+finds the exit state and a straight rail foot above the sphere. Net prescribed
+launcher acceleration is 60 m/s²: approximately 8 km of accelerating track and
+16.3 physical seconds give about 0.98 km/s at exit, followed by about 293 seconds
+of unpowered coast. The 39-second replay compresses those intervals and the swing;
+it does not represent one uniform physical playback rate. Cargo attitude is
+prescribed for a visible grapple fitting. Release inherits the tip's inertial
+velocity, then coasts under lunar gravity. Conservation, matched pickup, surface
+clearance, phase continuity and wide framing are checked numerically.
+
+This is an access illustration, separate from campaign transfer durations and
+the orbital-transfer Lunar Flight Studio. The equal-arm rotor, prescribed motion
+and launcher acceleration do not solve finite-mass capture recoil, structural
+loads, coil power/storage, sled braking, terrain, lunar rotation or destination
+targeting. A mass driver supplies departure speed; a tether catcher supplies
+additional speed and release, rather than treating a surface shot as an already
+circularized orbit. The
+[lunar electromagnetic launcher study](https://ntrs.nasa.gov/api/citations/19890006394/downloads/19890006394.pdf),
+section 4, describes coil launchers and the need for capture or circularization.
+Mercury surface access remains a future environment-specific design. For Mars access, a Phobos
 inward tip is not stationary relative to the ground. Weinstein's
 [2003 proposal](https://ntrs.nasa.gov/citations/20030065879) terminates above the
 atmosphere and describes about 0.52 km/s relative surface motion, with short boosted

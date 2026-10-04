@@ -151,7 +151,8 @@ def main():
                 assert not scene_requests, 'The optional 3D departure bundle loaded before opening a replay'
                 assert not detail_requests, 'Regional launch imagery loaded before opening the viewer'
                 assert records(page) == initial
-                done('only Earth-origin tether cargo offers a shipment-specific replay; tugs and lunar departures do not')
+                expect(page.get_by_role('button', name='Explore Moon launch for flight 3', exact=True)).to_be_visible()
+                done('Earth and Moon tether cargo offer their own departure views; tug traffic does not')
 
                 dialog, trigger = watch(page)
                 expect(dialog).to_contain_text('Earth')
@@ -281,6 +282,102 @@ def main():
                 assert records(fallback) == unchanged
                 done('reduced motion opens paused; WebGL failure keeps a usable diagram and keyboard controls without changing saves')
                 fallback_context.close()
+
+                lunar_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
+                lunar = lunar_context.new_page()
+                lunar.on('pageerror', lambda error: report['errors'].append(str(error)))
+                lunar_scene_requests = []
+                lunar.on('request', lambda r: lunar_scene_requests.append(r.url) if 'LunarDepartureScene' in r.url else None)
+                import_world(lunar)
+                lunar_before = records(lunar)
+                assert not lunar_scene_requests, 'Lunar scene loaded before opening the viewer'
+                lunar_trigger = lunar.get_by_role('button', name='Explore Moon launch for flight 3', exact=True)
+                lunar_trigger.click()
+                moon = lunar.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(moon).to_contain_text('Phobos')
+                expect(moon).to_contain_text('5 t')
+                expect(moon).to_contain_text('In transit')
+                expect(moon.locator('[data-renderer="webgl"]')).to_be_visible(timeout=30000)
+                expect(moon.locator('[data-moon-texture]')).to_have_attribute('data-moon-texture', 'ready', timeout=30000)
+                assert lunar_scene_requests
+                for phase in ['Load', 'Accelerate', 'Coast', 'Capture', 'Swing', 'Release']:
+                    moon.get_by_role('button', name=phase, exact=True).click()
+                    expect(moon).to_have_attribute('data-phase', phase.lower())
+                    if phase == 'Capture':
+                        expect(moon.locator('.departure-telemetry')).to_contain_text('50 km')
+                        expect(moon.locator('.departure-telemetry')).to_contain_text('0.9 km/s')
+                    capture(lunar, moon, f'moon-{phase.lower()}-1440.png')
+                for value in [0, 235, 460, 690, 950, 1000]:
+                    scrub(moon, value)
+                assert records(lunar) == lunar_before
+                for width, height in [(390, 844), (320, 740)]:
+                    lunar.set_viewport_size({'width': width, 'height': height})
+                    moon.get_by_role('button', name='Capture', exact=True).click()
+                    capture(lunar, moon, f'moon-capture-{width}.png')
+                    assert moon.get_by_role('button', name='Accelerate', exact=True).bounding_box()['height'] >= 44
+                lunar.set_viewport_size({'width': 1440, 'height': 1000})
+                moon.locator('canvas').evaluate("c => c.dispatchEvent(new Event('webglcontextlost', {cancelable:true}))")
+                expect(moon.locator('[data-renderer="diagram"]')).to_be_visible()
+                capture(lunar, moon, 'moon-context-loss-1440.png')
+                lunar.keyboard.press('Escape')
+                expect(lunar_trigger).to_be_focused()
+                assert records(lunar) == lunar_before
+                done('Moon cargo keeps its real manifest; six phases, phone layout, lazy texture and context-loss fallback leave saves unchanged')
+
+                # An always-available concept entry lets existing worlds try it
+                # without manufacturing a new Moon shipment or resetting saves.
+                lunar.get_by_role('button', name='Explore Moon launch', exact=True).click()
+                concept = lunar.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(concept).to_have_attribute('data-mode', 'concept')
+                expect(concept).to_contain_text('sends no cargo')
+                expect(concept.locator('.departure-manifest')).not_to_contain_text('5 t')
+                expect(concept.locator('.departure-footer')).not_to_contain_text('Arrives')
+                expect(concept.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                lunar.keyboard.press('Escape')
+                assert records(lunar) == lunar_before
+                lunar.get_by_label('Simulation speed', exact=True).select_option('30')
+                lunar.get_by_role('button', name='Play simulation', exact=True).click()
+                lunar_trigger.click()
+                moon = lunar.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(moon.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                frozen = progress(moon).input_value()
+                expect(moon.locator('.departure-live')).to_have_text('Delivered', timeout=25000)
+                assert progress(moon).input_value() == frozen
+                delivered = records(lunar)[0]['state']
+                assert not any(f['id'] == 3 for f in delivered['flights'])
+                expected_material = lunar_before[0]['state']['ports']['phobos']['materialsT'] + sum(f['cargoT'] for f in lunar_before[0]['state']['flights'] if f['to'] == 'phobos' and f['kind'] == 'materials' and f['arrival'] <= delivered['day'])
+                assert delivered['ports']['phobos']['materialsT'] == expected_material
+                expect(moon.locator('.departure-header')).to_contain_text('Flight 3')
+                moon.get_by_role('button', name='Back to network', exact=True).click()
+                lunar.get_by_role('button', name='Pause simulation', exact=True).click()
+                expect(lunar.locator('#lab-content')).not_to_contain_text('Not saved')
+                done('Moon concept invents no shipment; the paused Moon viewer allows game ticks and real cargo arrival while preserving its opening manifest')
+                lunar_context.close()
+
+                moon_fallback_context = browser.new_context(viewport={'width': 320, 'height': 740}, reduced_motion='reduce')
+                moon_fallback_context.add_init_script("""(() => {
+                    const original=HTMLCanvasElement.prototype.getContext;
+                    HTMLCanvasElement.prototype.getContext=function(kind,...args) {
+                        return String(kind).includes('webgl') ? null : original.call(this,kind,...args);
+                    };
+                })();""")
+                moon_fallback = moon_fallback_context.new_page()
+                moon_fallback.on('pageerror', lambda error: report['errors'].append(str(error)))
+                import_world(moon_fallback)
+                moon_fallback_before = records(moon_fallback)
+                moon_fallback.get_by_role('button', name='Explore Moon launch', exact=True).click()
+                moon_diagram = moon_fallback.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(moon_diagram.locator('[data-renderer="diagram"]')).to_be_visible(timeout=30000)
+                expect(moon_diagram.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                for phase in ['Load', 'Accelerate', 'Coast', 'Capture', 'Swing', 'Release']:
+                    moon_diagram.get_by_role('button', name=phase, exact=True).click()
+                    expect(moon_diagram).to_have_attribute('data-phase', phase.lower())
+                capture(moon_fallback, moon_diagram, 'moon-fallback-320.png')
+                assert records(moon_fallback) == moon_fallback_before
+                moon_fallback.keyboard.press('Escape')
+                expect(moon_fallback.get_by_role('button', name='Explore Moon launch', exact=True)).to_be_focused()
+                done('Moon reduced-motion and WebGL constructor failure retain all phase controls, phone layout and saved state')
+                moon_fallback_context.close()
 
                 mirror_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
                 mirror_page = mirror_context.new_page()
