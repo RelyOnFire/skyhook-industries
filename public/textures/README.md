@@ -7,6 +7,7 @@ not enter any physical model. No runtime hotlinks or texture requests per tick.
 | Asset | Source / credit | Original download |
 | --- | --- | --- |
 | earth.webp | NASA Earth Observatory, Reto Stöckli and Blue Marble: Next Generation team; January 2004 | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x5400x2700.jpg |
+| earth-launch-atlantic.webp | Same NASA team and month; geographic detail for the Earth launch view | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x21600x10800.jpg |
 | moon.webp | NASA/GSFC Scientific Visualization Studio, Ernie Wright, LROC and LOLA; CGI Moon Kit, 2025 color map | https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg |
 | mars.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_mars.jpg |
 | earth-clouds.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_earth_clouds.jpg |
@@ -28,6 +29,18 @@ from the Ceres GLB's image bufferView. Each source was resized with Sharp to 204
 wide, except Earth at 4096 px, without enlargement or cropping, and encoded as WebP
 quality 92 (cloud mask: quality 90). The source Phobos map is 1440 × 720 and retains that resolution.
 No invented craters, albedo-derived displacement or added topography.
+
+The Earth launch view additionally uses a **3900 × 3300** regional crop from the
+21600 × 10800 January source, retaining its native nominal 2 km/pixel resolution.
+Bounds: 105° W–40° W, 0°–55° N; WebP quality 92, no enlargement or reprojection.
+Reproduce with `node scripts/prepare-launch-earth.mjs /path/to/source.jpg` after
+downloading the listed NASA image. The regional mesh and global base share the
+same geodetic coordinates on an oblate WGS84 surface. Its 20 m display offset
+prevents depth fighting; it does not represent terrain height. The cloud image is
+used as a linear transparency mask, not an opaque grayscale colour layer.
+Anisotropic filtering improves the shallow horizon view. These optional assets
+load only when the launch viewer opens; the existing globe is the fallback if
+regional imagery fails. The shared Earth texture and other experiments are unchanged.
 
 `python scripts/render-planets.py` renders the checked-in maps to the transparent
 1024 px WebP globes in `public/planets/` using the installed Three.js and Playwright

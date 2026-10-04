@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { LAUNCH, earthLaunchFrame, launchPath } from './earth-launch-motion.js';
 import DepartureDiagram from './DepartureDiagram.js';
 import { createHypersonicAircraft } from './HypersonicAircraft.js';
+import { launchEarthGeometry, launchEarthOrientation, LAUNCH_REGION } from './LaunchEarth.js';
 
 /** Dedicated Earth-access sequence; enlarged hardware over illustrative flight paths. */
 export default function DepartureScene({stage,progress}:{stage:number;progress:number}) {
@@ -35,15 +36,26 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
     const box=(parent:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m=metal)=>{const object=mesh(new THREE.BoxGeometry(w,h,d),m,parent);object.position.set(x,y,z);return object;};
     const rod=(parent:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,r:number,m=metal)=>{const delta=b.clone().sub(a),object=mesh(new THREE.CylinderGeometry(r,r,delta.length(),8),m,parent);object.position.copy(a.clone().add(b).multiplyScalar(.5));object.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return object;};
     const earthMaterial=new THREE.MeshStandardMaterial({color:'#667987',roughness:1,transparent:true});materials.push(earthMaterial);
-    const earth=mesh(new THREE.SphereGeometry(LAUNCH.radius,96,64),earthMaterial,scene);earth.rotation.set(.18,-1.2,.18);
-    const cloudMaterial=new THREE.MeshStandardMaterial({transparent:true,opacity:.55,depthWrite:false,roughness:1});materials.push(cloudMaterial);
-    const clouds=mesh(new THREE.SphereGeometry(LAUNCH.radius+6,96,64),cloudMaterial,scene);clouds.rotation.copy(earth.rotation);clouds.visible=false;
-    const load=(url:string,apply:(texture:THREE.Texture)=>void)=>{
-      const texture=new THREE.TextureLoader().load(url,loaded=>{if(disposed)return;loaded.colorSpace=THREE.SRGBColorSpace;apply(loaded);draw.current();},undefined,()=>{});
+    const earth=mesh(launchEarthGeometry(),earthMaterial,scene);earth.quaternion.copy(launchEarthOrientation());
+    const detailMaterial=new THREE.MeshStandardMaterial({roughness:1,transparent:true});materials.push(detailMaterial);
+    // Regional texels retain the source resolution on a matching geographic
+    // patch. The 20 m offset prevents z-fighting; it is not invented topography.
+    const detail=mesh(launchEarthGeometry(LAUNCH_REGION,208,176,.02),detailMaterial,scene);detail.quaternion.copy(earth.quaternion);detail.visible=false;detail.renderOrder=1;
+    root.dataset.earthDetail='loading';
+    const cloudMaterial=new THREE.MeshStandardMaterial({transparent:true,opacity:.28,depthWrite:false,roughness:1});materials.push(cloudMaterial);
+    const clouds=mesh(launchEarthGeometry(undefined,256,128,6),cloudMaterial,scene);clouds.quaternion.copy(earth.quaternion);clouds.visible=false;clouds.renderOrder=2;
+    const load=(url:string,apply:(texture:THREE.Texture)=>void,color=true,onError=()=>{})=>{
+      const texture=new THREE.TextureLoader().load(url,loaded=>{
+        if(disposed)return;
+        if(color)loaded.colorSpace=THREE.SRGBColorSpace;
+        loaded.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());
+        apply(loaded);draw.current();
+      },undefined,()=>{if(!disposed)onError();});
       textures.push(texture);
     };
     load('/textures/earth.webp',texture=>{earthMaterial.map=texture;earthMaterial.color.set('#ffffff');earthMaterial.needsUpdate=true;});
-    load('/textures/earth-clouds.webp',texture=>{cloudMaterial.map=texture;cloudMaterial.needsUpdate=true;clouds.visible=true;});
+    load('/textures/earth-launch-atlantic.webp',texture=>{detailMaterial.map=texture;detailMaterial.needsUpdate=true;detail.visible=true;root.dataset.earthDetail='ready';},true,()=>{root.dataset.earthDetail='unavailable';});
+    load('/textures/earth-clouds.webp',texture=>{cloudMaterial.alphaMap=texture;cloudMaterial.needsUpdate=true;},false);
     const orbitGeometry=new THREE.BufferGeometry().setFromPoints(Array.from({length:241},(_,i)=>{const a=i/240*Math.PI*2;return new THREE.Vector3(Math.sin(a)*(LAUNCH.radius+LAUNCH.hubAltitude),Math.cos(a)*(LAUNCH.radius+LAUNCH.hubAltitude),2);}));geometries.push(orbitGeometry);
     const orbitMaterial=new THREE.LineBasicMaterial({color:'#608b9d',transparent:true,opacity:.23});materials.push(orbitMaterial);scene.add(new THREE.Line(orbitGeometry,orbitMaterial));
     const paths=(kind:'aircraft'|'cargo',color:string)=>{const geometry=new THREE.BufferGeometry().setFromPoints(launchPath(kind).map(p=>new THREE.Vector3(p.x,p.y,3)));geometries.push(geometry);const material=new THREE.LineBasicMaterial({color,transparent:true,opacity:.28});materials.push(material);const line=new THREE.Line(geometry,material);scene.add(line);return line;};
@@ -71,17 +83,18 @@ export default function DepartureScene({stage,progress}:{stage:number;progress:n
       if(disposed||lost||!root.clientWidth)return;
       const {stage,progress}=frame.current,f=earthLaunchFrame(stage,progress);
       camera.left=-f.camera.width/2;camera.right=f.camera.width/2;camera.top=f.camera.width*.31;camera.bottom=-f.camera.width*.31;camera.updateProjectionMatrix();
-      // A single camera sees the entire airframe. Keep the wide view's radial
-      // tilt shallow so the low terminal stays outside the planetary limb.
+      // Look down from above the corridor rather than exactly along its limb;
+      // a tangent view compresses every ground feature into horizontal streaks.
       const ease=(t:number)=>{const p=Math.min(1,Math.max(0,t));return p*p*(3-2*p);};
       const weight=ease((f.altitude-55)/80),detail=ease((320-f.camera.width)/190),planetOpacity=1-ease((440-f.camera.width)/120);
       earthMaterial.opacity=planetOpacity;earthMaterial.depthWrite=planetOpacity===1;
-      cloudMaterial.opacity=.55*planetOpacity;clouds.visible=!!cloudMaterial.map&&planetOpacity>0;
+      detailMaterial.opacity=planetOpacity;detailMaterial.depthWrite=planetOpacity===1;
+      cloudMaterial.opacity=.28*planetOpacity;clouds.visible=!!cloudMaterial.alphaMap&&planetOpacity>0;
       orbitMaterial.opacity=.23*planetOpacity;atmosphereMaterial.opacity=.25*planetOpacity;
       // In the local capture view, fade the distant planet before turning up
       // the viewing angle. Return both together as the camera widens for lift.
       const radial=new THREE.Vector3(f.hub.x,f.hub.y,0).normalize(),tangent=new THREE.Vector3(radial.y,-radial.x,0);
-      const eye=tangent.multiplyScalar(Math.sin(weight*Math.PI/10)).addScaledVector(radial,Math.sin(weight*(7+17*detail)*Math.PI/180));
+      const eye=tangent.multiplyScalar(Math.sin(weight*Math.PI/10)).addScaledVector(radial,Math.sin((18+6*detail)*Math.PI/180));
       eye.z=Math.sqrt(1-eye.x*eye.x-eye.y*eye.y);eye.multiplyScalar(22000);
       camera.position.set(f.camera.center.x+eye.x,f.camera.center.y+eye.y,eye.z);camera.lookAt(f.camera.center.x,f.camera.center.y,0);
       tether.position.set(f.hub.x,f.hub.y,0);tether.rotation.z=f.angle;

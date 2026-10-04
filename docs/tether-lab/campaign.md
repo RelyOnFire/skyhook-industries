@@ -63,11 +63,26 @@ nacelles, canted fins and centered glazing. One coherent camera view exposes
 the complete airframe; its canopy and wings are not independently rotated. The
 capture view eases higher after fading the distant planet, then restores the
 wide framing for lift and release.
+Both stabilizer roots are embedded in their engine nacelles, with solid canted
+fins rather than floating single-sided triangles.
 Darkstar/Blackbird-style planforms and the slender Skylon concept inform its
 appearance, rather than specifying a flight-capable vehicle. The authored geometry
 uses no external aircraft mesh or branded markings. References include
 [Lockheed Martin's Darkstar design account](https://www.lockheedmartin.com/en-us/careers/life-at-lm/2023/top-gun-movie.html)
 and [ESA's Skylon concept](https://www.esa.int/ESA_Multimedia/Images/2013/07/SABRE_engine_in_place_on_Skylon_spaceplane).
+
+The geographic illustration places the eastbound pickup above the Atlantic at
+28.5° N, 72° W; the existing planar motion is oriented against that reference
+rather than across a stretched polar texture. Its oblate surface uses geodetic
+latitude, longitude and the [NASA Earth Fact Sheet's WGS84 axes](https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html).
+A native-resolution regional crop of NASA's January Blue Marble map sharpens
+the corridor, alongside the existing global texture. Clouds use their actual
+transparency mask and all maps use anisotropic filtering. The regional surface
+conforms to the same geographic mesh, with a 20 m display offset to avoid depth
+fighting. Sources and reproducible extraction are in `public/textures/README.md`.
+This is a fixed visual corridor, not a selected runway or solved geographic
+launch. The motion/readouts retain their original 6,371 km mean-radius convention;
+the surface shape, imagery and inclination do not change trajectories or saves.
 
 The nominal visual example uses a 150 km handoff at 4.5 km/s, a circular hub at
 1,100 km and 950 km arms. These chosen parameters are not a reproduced HASTOL

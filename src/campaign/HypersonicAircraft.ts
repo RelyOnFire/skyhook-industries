@@ -47,10 +47,13 @@ export function createHypersonicAircraft() {
     trim(body.slice(1,-1).map(p=>new THREE.Vector3(p.x,.1,side*p.w)),.1);
     loft([{x:-40,w:2.7,h:1.8,y:-1.2},{x:-31,w:3.4,h:2.1,y:-1.1},{x:-16,w:3.2,h:1.9,y:-.8},{x:-8,w:2.5,h:1.6,y:-.4}],hull,false,side*11);
     box(-7.6,-.5,side*11,.5,2.6,4.2,panel);box(-39.7,-1.4,side*11,1.3,3.4,6.5,edge);box(-40.4,-1.4,side*11,.3,2.4,5.2,panel);
-    // Canted fins share the horizontal wing's actual span and the hull's up axis.
-    const fin=new THREE.BufferGeometry(),v=[-39,1.4,side*16,-26,1.4,side*15,-30,10,side*20];
-    fin.setAttribute('position',new THREE.Float32BufferAttribute(v,3));fin.setIndex(side<0?[0,1,2]:[2,1,0]);fin.computeVertexNormals();
-    const finMaterial=material('#314550',.55,.4);finMaterial.side=THREE.DoubleSide;mesh(fin,finMaterial);
+    // Both solid fin roots penetrate their own nacelle crown. The outward cant
+    // starts above that attachment, rather than leaving a floating root at z=16.
+    const fin=new THREE.BufferGeometry(),points=[[-39,.15,side*11],[-24,.65,side*11],[-30,10,side*17]];
+    const v=[-.32,.32].flatMap(offset=>points.flatMap(([x,y,z])=>[x,y,z+offset]));
+    fin.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+    fin.setIndex([2,1,0,3,4,5,1,3,0,4,3,1,2,4,1,5,4,2,0,5,2,3,5,0]);fin.computeVertexNormals();
+    const finMaterial=material('#314550',.55,.4);mesh(fin,finMaterial);
   }
   loft([{x:6,w:.03,h:.03,y:2.72},{x:11,w:2.05,h:1.2,y:2.55},{x:18,w:1.8,h:1.3,y:2.05},{x:25,w:.03,h:.03,y:1.55}],glass,true);
   for(const side of [-1,1])trim([new THREE.Vector3(6,2.75,0),new THREE.Vector3(11,2.55,side*2.05),new THREE.Vector3(18,2.05,side*1.8),new THREE.Vector3(25,1.58,0)],.1);

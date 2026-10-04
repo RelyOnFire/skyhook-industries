@@ -136,6 +136,8 @@ def main():
             page.on('pageerror', lambda error: report['errors'].append(str(error)))
             scene_requests = []
             page.on('request', lambda request: scene_requests.append(request.url) if 'DepartureScene' in request.url else None)
+            detail_requests = []
+            page.on('request', lambda request: detail_requests.append(request.url) if '/textures/earth-launch-atlantic.webp' in request.url else None)
             try:
                 import_world(page)
                 initial = records(page)
@@ -147,6 +149,7 @@ def main():
                     expect(page.get_by_role('button', name=f'Explore Earth launch for flight {flight}', exact=True)).to_have_count(0)
                 expect(page.get_by_role('dialog', name='Earth launch', exact=True)).to_have_count(0)
                 assert not scene_requests, 'The optional 3D departure bundle loaded before opening a replay'
+                assert not detail_requests, 'Regional launch imagery loaded before opening the viewer'
                 assert records(page) == initial
                 done('only Earth-origin tether cargo offers a shipment-specific replay; tugs and lunar departures do not')
 
@@ -156,6 +159,7 @@ def main():
                 expect(dialog).to_contain_text('7 t')
                 expect(dialog).to_contain_text('In transit')
                 expect(dialog.locator('[data-renderer="webgl"]')).to_be_visible(timeout=30000)
+                expect(dialog.locator('[data-earth-detail]')).to_have_attribute('data-earth-detail', 'ready', timeout=30000)
                 assert scene_requests, 'Departure replay did not load its optional scene bundle'
                 pause = dialog.get_by_role('button', name='Pause close-up', exact=True)
                 expect(pause).to_be_visible()
@@ -349,6 +353,52 @@ def main():
                 demonstration('tug-only-demo')
                 done('persistent map entry opens an explicit concept demo in fresh and tug-only networks without inventing cargo or changing records, exports or time')
                 demo_context.close()
+
+                # Late regional imagery must repaint an already paused frame;
+                # a failed download must retain the global globe and controls.
+                texture_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
+                texture_page = texture_context.new_page()
+                texture_page.on('pageerror', lambda error: report['errors'].append(str(error)))
+                held = []
+                texture_page.route('**/textures/earth-launch-atlantic.webp', lambda route: held.append(route))
+                import_world(texture_page)
+                texture_before = records(texture_page)
+                texture_dialog, _ = watch(texture_page)
+                expect(texture_dialog.locator('[data-earth-detail]')).to_have_attribute('data-earth-detail', 'loading')
+                expect(texture_dialog.locator('[data-renderer="webgl"]')).to_be_visible()
+                expect(texture_dialog.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                scrub(texture_dialog, 45)
+                texture_page.evaluate("""async () => {
+                    await Promise.all(['/textures/earth.webp','/textures/earth-clouds.webp'].map(src => new Promise((ok,no) => {
+                        const image=new Image();image.onload=ok;image.onerror=no;image.src=src;
+                    })));
+                    await new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(ok)));
+                }""")
+                canvas = texture_dialog.locator('canvas')
+                before_image = canvas.screenshot()
+                assert len(held) == 1, 'The check must hold the real regional image request'
+                held[0].fulfill(response=held[0].fetch())
+                expect(texture_dialog.locator('[data-earth-detail]')).to_have_attribute('data-earth-detail', 'ready')
+                assert canvas.screenshot() != before_image, 'Late regional imagery did not repaint the paused surface'
+                expect(progress(texture_dialog)).to_have_value('45')
+                assert records(texture_page) == texture_before
+                capture(texture_page, texture_dialog, 'regional-earth-ready-1440.png')
+                texture_page.keyboard.press('Escape')
+                texture_page.unroute('**/textures/earth-launch-atlantic.webp')
+                texture_page.route('**/textures/earth-launch-atlantic.webp', lambda route: route.abort())
+                texture_dialog, _ = watch(texture_page)
+                expect(texture_dialog.locator('[data-earth-detail]')).to_have_attribute('data-earth-detail', 'unavailable')
+                expect(texture_dialog.locator('[data-renderer="webgl"]')).to_be_visible()
+                scrub(texture_dialog, 45)
+                capture(texture_page, texture_dialog, 'regional-earth-fallback-1440.png')
+                texture_dialog.locator('.departure-stage').focus()
+                texture_page.keyboard.press('Space')
+                expect(texture_dialog.get_by_role('button', name='Pause close-up', exact=True)).to_be_visible()
+                texture_page.keyboard.press('Space')
+                expect(texture_dialog.get_by_role('button', name='Play close-up', exact=True)).to_be_visible()
+                assert records(texture_page) == texture_before
+                texture_context.close()
+                done('regional imagery loads only on opening, repaints paused ground views on arrival, and retains the globe and controls on failure without save changes')
                 assert not report['errors'], report['errors']
                 report['status'] = 'passed'
             except Exception as error:
