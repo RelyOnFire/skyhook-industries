@@ -9,6 +9,7 @@ not enter any physical model. No runtime hotlinks or texture requests per tick.
 | earth.webp | NASA Earth Observatory, Reto Stöckli and Blue Marble: Next Generation team; January 2004 | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x5400x2700.jpg |
 | earth-launch-atlantic.webp | Same NASA team and month; geographic detail for the Earth launch view | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x21600x10800.jpg |
 | moon.webp | NASA/GSFC Scientific Visualization Studio, Ernie Wright, LROC and LOLA; CGI Moon Kit, 2025 color map | https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg |
+| moon-launch-hadley.webp | NASA/GSFC/Arizona State University, Apollo 15 low-Sun controlled NAC mosaic B | https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_APOLLO15LOB_E259N0038_5M |
 | mars.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_mars.jpg |
 | earth-clouds.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_earth_clouds.jpg |
 | mercury.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_mercury.jpg |
@@ -46,3 +47,18 @@ regional imagery fails. The shared Earth texture and other experiments are uncha
 1024 px WebP globes in `public/planets/` using the installed Three.js and Playwright
 Chromium. Those inexpensive static assets serve SVG/canvas views. The interactive
 3D studios load the full maps and apply their existing simulation-driven rotation.
+
+The lunar launch ground uses a **4096 × 4096** native crop of the LROC Apollo 15
+low-Sun controlled NAC mosaic B, product `NAC_ROI_APOLLO15LOB_E259N0038_5M`.
+The archive's 12395 × 14768 pyramid supplies level 5 (6198 × 7384), at nominal
+10 m/pixel. Crop: left 1024, top 1536, width/height 4096; WebP quality 78.
+Run `node scripts/prepare-launch-moon.mjs` to reproduce from public archive tiles,
+or pass a cached assembled 4096 px PNG. No enlargement, repetition, painted
+craters or albedo-derived displacement is applied. Photographed lighting is
+retained; it is not treated as a measured albedo/height field. The curved mesh
+uses a 20 m display offset and fades into the global map as the camera widens.
+The global globe places the corridor against a mid-latitude Hadley reference
+(about 26.206° N, 3.635° E), avoiding the old polar convergence. This is visual
+placement of an illustrative launcher, not a surveyed site or a terrain solution.
+The asset loads only on opening and repaints a paused frame when ready. On failure,
+the globally textured Moon remains available. Sources checked 5 October 2026.

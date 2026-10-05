@@ -299,6 +299,7 @@ def main():
                 expect(moon).to_contain_text('In transit')
                 expect(moon.locator('[data-renderer="webgl"]')).to_be_visible(timeout=30000)
                 expect(moon.locator('[data-moon-texture]')).to_have_attribute('data-moon-texture', 'ready', timeout=30000)
+                expect(moon.locator('[data-moon-ground]')).to_have_attribute('data-moon-ground', 'ready', timeout=30000)
                 assert lunar_scene_requests
                 for phase in ['Load', 'Accelerate', 'Coast', 'Capture', 'Swing', 'Release']:
                     moon.get_by_role('button', name=phase, exact=True).click()
@@ -378,6 +379,48 @@ def main():
                 expect(moon_fallback.get_by_role('button', name='Explore Moon launch', exact=True)).to_be_focused()
                 done('Moon reduced-motion and WebGL constructor failure retain all phase controls, phone layout and saved state')
                 moon_fallback_context.close()
+
+                # Regional imagery must repaint a paused frame, and a failed
+                # optional request must keep the globally mapped Moon usable.
+                ground_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
+                ground = ground_context.new_page()
+                ground.on('pageerror', lambda e: report['errors'].append(str(e)))
+                held = []
+                ground.route('**/textures/moon-launch-hadley.webp', lambda route: held.append(route))
+                import_world(ground)
+                ground_before = records(ground)
+                ground.get_by_role('button', name='Explore Moon launch', exact=True).click()
+                ground_dialog = ground.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(ground_dialog.locator('[data-renderer="webgl"]')).to_be_visible(timeout=30000)
+                expect(ground_dialog.locator('[data-moon-texture]')).to_have_attribute('data-moon-texture', 'ready', timeout=30000)
+                expect(ground_dialog.locator('[data-moon-ground]')).to_have_attribute('data-moon-ground', 'loading')
+                assert len(held) == 1
+                fixed = progress(ground_dialog).input_value()
+                before_pixels = ground_dialog.locator('canvas').screenshot()
+                held[0].fulfill(path=str(ROOT / 'public/textures/moon-launch-hadley.webp'), content_type='image/webp')
+                expect(ground_dialog.locator('[data-moon-ground]')).to_have_attribute('data-moon-ground', 'ready')
+                assert ground_dialog.locator('canvas').screenshot() != before_pixels, 'Lunar ground did not repaint the paused frame'
+                assert progress(ground_dialog).input_value() == fixed
+                assert records(ground) == ground_before
+                ground.keyboard.press('Escape')
+                ground_context.close()
+                failed_context = browser.new_context(viewport={'width': 320, 'height': 740}, reduced_motion='reduce')
+                failed_ground = failed_context.new_page()
+                failed_ground.on('pageerror', lambda e: report['errors'].append(str(e)))
+                failed_ground.route('**/textures/moon-launch-hadley.webp', lambda route: route.abort())
+                import_world(failed_ground)
+                failed_before = records(failed_ground)
+                failed_ground.get_by_role('button', name='Explore Moon launch', exact=True).click()
+                failed_dialog = failed_ground.get_by_role('dialog', name='Moon launch', exact=True)
+                expect(failed_dialog.locator('[data-moon-ground]')).to_have_attribute('data-moon-ground', 'unavailable', timeout=30000)
+                expect(failed_dialog.locator('[data-moon-texture]')).to_have_attribute('data-moon-texture', 'ready', timeout=30000)
+                expect(failed_dialog.locator('[data-renderer="webgl"]')).to_be_visible()
+                failed_dialog.get_by_role('button', name='Accelerate', exact=True).click()
+                capture(failed_ground, failed_dialog, 'moon-ground-unavailable-320.png')
+                assert records(failed_ground) == failed_before
+                failed_ground.keyboard.press('Escape')
+                failed_context.close()
+                done('native lunar imagery repaints a paused frame; failure retains the mapped globe, controls and unchanged saves')
 
                 mirror_context = browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
                 mirror_page = mirror_context.new_page()

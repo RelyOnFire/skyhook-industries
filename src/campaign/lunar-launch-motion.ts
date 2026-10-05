@@ -58,23 +58,36 @@ for(let i=0;i<LUNAR_LAUNCH.coastDuration*2;i++)after.push(step(after.at(-1)!,.5)
 export function lunarCargoCoast(p:number):LunarState{
  const t=clamp(p)*LUNAR_LAUNCH.coastDuration,index=Math.min(after.length-2,Math.floor(t*2));return step(after[index],t-index*.5);
 }
+/** Keep the rail-exit clock continuous, then compress the long coast only
+ * after widening the view. The polynomial integral has zero warp slope at both
+ * ends. Gravity propagation is unchanged; camera scale offsets the time warp. */
+const railRate=LUNAR_RAIL.duration/(LUNAR_MS[1]/1000),captureRate=8/(LUNAR_MS[3]/1000*.55),coastSeconds=LUNAR_MS[2]/1000;
+const coastSpan=-8-LUNAR_EXIT_TIME,warpSpan=.62,warpStart=.24;
+const extraCoast=coastSpan-coastSeconds*(railRate+captureRate)/2;
+const coastWidth=7*(railRate+extraCoast/coastSeconds/warpSpan*1.875)/railRate;
+export function lunarCoastClock(progress:number){
+ const p=clamp(progress),q=clamp((p-warpStart)/warpSpan),integral=q*q*q*(10-15*q+6*q*q);
+ return {elapsed:coastSeconds*(railRate*p+(captureRate-railRate)*p*p/2)+extraCoast*integral,rate:railRate+(captureRate-railRate)*p+extraCoast/coastSeconds/warpSpan*30*q*q*(1-q)**2};
+}
 export function lunarLaunchFrame(stage:number,progress:number){
- const p=clamp(progress),railProgress=p**1.3;
- const time=stage===0?LUNAR_EXIT_TIME-LUNAR_RAIL.duration:stage===1?LUNAR_EXIT_TIME-LUNAR_RAIL.duration+railProgress*LUNAR_RAIL.duration:stage===2?LUNAR_EXIT_TIME+(-8-LUNAR_EXIT_TIME)*p:stage===3?p<=.55?-8*(1-p/.55):12*(p-.55)/.45:stage===4?12+(LUNAR_RELEASE_TIME-12)*p*p:LUNAR_RELEASE_TIME+p*LUNAR_LAUNCH.coastDuration;
+ const p=clamp(progress),railProgress=p,coast=lunarCoastClock(p);
+ const time=stage===0?LUNAR_EXIT_TIME-LUNAR_RAIL.duration:stage===1?LUNAR_EXIT_TIME-LUNAR_RAIL.duration+railProgress*LUNAR_RAIL.duration:stage===2?LUNAR_EXIT_TIME+coast.elapsed:stage===3?p<=.55?-8*(1-p/.55):12*(p-.55)/.45:stage===4?12+(LUNAR_RELEASE_TIME-12)*p*p:LUNAR_RELEASE_TIME+p*LUNAR_LAUNCH.coastDuration;
  const tether=lunarTetherAt(time),latched=stage===4||stage===3&&p>=.55;
  const state=stage===0?lunarRailAt(0):stage===1?lunarRailAt(railProgress):stage===2||stage===3&&!latched?lunarApproachAt(time):stage===5?lunarCargoCoast(p):{position:tether.tip,velocity:tether.velocity};
  const railAngle=Math.atan2(LUNAR_RAIL.direction.y,LUNAR_RAIL.direction.x)-Math.PI/2;
  const payloadAngle=stage<2?railAngle:stage===2?railAngle+(tether.angle-railAngle)*lunarEase(p/.85):stage===5?LUNAR_RELEASE.angle:tether.angle;
  const loadCamera={center:add(LUNAR_RAIL.start,scale(LUNAR_RAIL.direction,3)),width:13};
  const railCamera={center:add(state.position,{x:0,y:.9}),width:7};
- const coastCamera={center:add(state.position,{x:0,y:8}),width:200};
+ const coastZoom=stage===2?lunarEase((p-.1)/.3):1;
+ const coastCamera={center:add(state.position,{x:0,y:.9+7.1*coastZoom}),width:7+(coastWidth-7)*coastZoom};
  const captureCamera={center:add(state.position,{x:0,y:.1}),width:5};
  const points=[tether.tip,tether.otherTip,state.position],xs=points.map(v=>v.x),ys=points.map(v=>v.y);
  const [x0,x1,y0,y1]=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)];
  const wideCamera={center:{x:(x0+x1)/2,y:(y0+y1)/2},width:Math.max(700,x1-x0+80,(y1-y0+80)/.62)};
  const blend=(a:typeof loadCamera,b:typeof loadCamera,t:number)=>({center:mix(a.center,b.center,t),width:a.width+(b.width-a.width)*t});
- const camera=stage===0?loadCamera:stage===1?blend(loadCamera,railCamera,lunarEase(p/.25)):stage===2?blend(railCamera,coastCamera,lunarEase(p/.38)):stage===3?blend(coastCamera,captureCamera,lunarEase(p/.28)):stage===4?blend(captureCamera,wideCamera,lunarEase(p/.3)):wideCamera;
- return {time,...tether,payload:state.position,payloadAngle,payloadSpeed:lunarSpeed(state.velocity),altitude:lunarAltitude(state.position),latched,jawAngle:stage<3?35:stage===3?35*(1-lunarEase((p-.3)/.25)):stage===4?0:35*lunarEase(p/.12),railProgress:stage===0?0:stage===1?railProgress:1,camera};
+ const camera=stage===0?loadCamera:stage===1?blend(loadCamera,railCamera,lunarEase(p/.25)):stage===2?coastCamera:stage===3?blend(coastCamera,captureCamera,lunarEase(p/.28)):stage===4?blend(captureCamera,wideCamera,lunarEase(p/.3)):wideCamera;
+ const timeScale=stage===0?0:stage===1?railRate:stage===2?coast.rate:stage===3?p<=.55?captureRate:12/(LUNAR_MS[3]/1000*.45):stage===4?2*p*(LUNAR_RELEASE_TIME-12)/(LUNAR_MS[4]/1000):LUNAR_LAUNCH.coastDuration/(LUNAR_MS[5]/1000);
+ return {time,timeScale,...tether,payload:state.position,payloadVelocity:state.velocity,payloadAngle,payloadSpeed:lunarSpeed(state.velocity),altitude:lunarAltitude(state.position),latched,jawAngle:stage<3?35:stage===3?35*(1-lunarEase((p-.3)/.25)):stage===4?0:35*lunarEase(p/.12),railProgress:stage===0?0:stage===1?railProgress:1,camera};
 }
 export function lunarLaunchPath(kind:'approach'|'release'){
  return Array.from({length:160},(_,i)=>kind==='approach'?lunarApproachAt(LUNAR_EXIT_TIME*(1-i/159)).position:lunarCargoCoast(i/159).position);

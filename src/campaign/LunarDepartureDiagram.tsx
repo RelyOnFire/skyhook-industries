@@ -11,9 +11,9 @@ export default function LunarDepartureDiagram({stage,progress}:{stage:number;pro
    <circle r={LUNAR_LAUNCH.radius+LUNAR_LAUNCH.hubAltitude} fill="none" stroke="#668c9c" strokeWidth={.8/s} strokeDasharray={`${4/s} ${6/s}`}/>
    {stage<4&&<path d={path(lunarLaunchPath('approach'))} fill="none" stroke="#7fabbc" strokeWidth={1/s} opacity=".35"/>}
    {stage===5&&<path d={path(lunarLaunchPath('release'))} fill="none" stroke="#d5a175" strokeWidth={1/s} opacity=".4"/>}
-   <g transform={`translate(${LUNAR_RAIL.start.x+LUNAR_RAIL.direction.y*.6} ${LUNAR_RAIL.start.y-LUNAR_RAIL.direction.x*.6}) rotate(${railAngle})`}>
-    <path d={`M-.4 -.05H${LUNAR_RAIL.length+.2}`} stroke="#a6b9c4" strokeWidth=".09"/>
-    {Array.from({length:33},(_,i)=><rect key={i} x={i/32*LUNAR_RAIL.length-.045} y="-.15" width=".09" height=".3" fill={stage===1&&Math.abs(i/32-f.railProgress**2)<.07?'#f1bc88':'#637986'}/>)}
+   <g transform={`translate(${LUNAR_RAIL.start.x} ${LUNAR_RAIL.start.y}) rotate(${railAngle})`}>
+    <path d={`M-.4 -.3H${LUNAR_RAIL.length+.2}`} stroke="#a6b9c4" strokeWidth=".09"/>
+    {Array.from({length:33},(_,i)=><path key={i} d={`M${.65+i/32*(LUNAR_RAIL.length-1.3)} -.5v.075m0 .85v.075`} strokeWidth=".075" stroke={stage===1&&Math.abs((.65+i/32*(LUNAR_RAIL.length-1.3))/LUNAR_RAIL.length-f.railProgress**2)<.07?'#f1bc88':'#637986'}/>)}
     <path d="M-1.6-.7H-.3V.8H-1.6Z" fill="#354957" stroke="#b3815e" strokeWidth=".025"/>
    </g>
    <g transform={`translate(${f.hub.x} ${f.hub.y}) rotate(${f.angle*180/Math.PI})`}>

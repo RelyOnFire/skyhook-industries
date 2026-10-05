@@ -116,7 +116,13 @@ raised straight ramp. Illuminated coils follow the sled; after separation the
 sled stays on the track while cargo coasts without rocket exhaust. The view
 zooms into the fitting and closing grapple, then widens to show both tether ends
 and the departing cargo. NASA's existing LROC texture covers the mean sphere;
-local hardware is enlarged. The ground close-up adds original regolith relief around a level loading apron; its craters are display geometry, not a surveyed site or albedo-derived topography. The visual composition takes inspiration from the
+local hardware is enlarged. The ground close-up uses a native 4096 px crop from
+NASA/GSFC/ASU's Apollo 15 low-Sun LROC mosaic at nominal 10 m/pixel, mapped once
+onto the curved mean sphere. No artificial crater blobs or brightness-derived
+terrain heights are used. The globe places the corridor against the Hadley
+mid-latitude reference instead of compressing a polar cap into horizontal streaks.
+The image's recorded lighting is retained, and the global surface remains a
+fallback. Source, exact extraction and reproduction are in `public/textures/README.md`. The visual composition takes inspiration from the
 [shared lunar mass-driver concept video](https://www.youtube.com/watch?v=-0tUa1a0HjQ),
 without embedding its footage or reproducing its satellites.
 
@@ -127,7 +133,14 @@ finds the exit state and a straight rail foot above the sphere. Net prescribed
 launcher acceleration is 60 m/s²: approximately 8 km of accelerating track and
 16.3 physical seconds give about 0.98 km/s at exit, followed by about 293 seconds
 of unpowered coast. The 39-second replay compresses those intervals and the swing;
-it does not represent one uniform physical playback rate. Cargo attitude is
+it does not represent one uniform physical playback rate. The rail uses a linear
+physical clock, and the coast begins at that same playback rate. Only after the
+camera widens does the long coast compress; its clock eases back to the capture
+rate before rendezvous. The overlay shows the current time factor and the speed
+readout retains two decimals. Free-coast speed decreases under gravity, with no
+post-exit boost or jump in projected pace. Coils, the rail, sled and actual cargo
+meshes share a single centreline, with a tested clear bore. The loading bay and
+exit are outside the coil train. Cargo attitude is
 prescribed for a visible grapple fitting. Release inherits the tip's inertial
 velocity, then coasts under lunar gravity. Conservation, matched pickup, surface
 clearance, phase continuity and wide framing are checked numerically.
