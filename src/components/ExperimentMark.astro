@@ -1,0 +1,47 @@
+---
+import { EARTH } from '../simulation/engine';
+import { CARDIO_REFERENCE_DEFAULT, cardioReferenceOrbit, cardioReferenceSample } from '../simulation/cardio-reference';
+
+interface Props { kind: 'earth' | 'moon' | 'phobos' | 't4' | 'cardio'; }
+const { kind } = Astro.props;
+// The Cardio thumbnail uses the same synchronized geometry as the experiment,
+// so the catalogue cannot drift back to an unrelated decorative ellipse.
+const orbit = kind === 'cardio' ? cardioReferenceOrbit(CARDIO_REFERENCE_DEFAULT) : null;
+const samples = orbit ? Array.from({ length: 181 }, (_, i) => cardioReferenceSample(CARDIO_REFERENCE_DEFAULT, orbit.period * i / 180)) : [];
+const scale = samples.length ? 41 / Math.max(...samples.flatMap(s => [s.tip, s.station]).map(p => Math.max(Math.abs(p[0]), Math.abs(p[1])))) : 0;
+const xy = (p: readonly number[]) => [90 + p[0] * scale, 50 - p[1] * scale];
+const trace = (key: 'station' | 'tip') => samples.map(s => xy(s[key]).join(',')).join(' ');
+const pose = samples[28];
+---
+<svg viewBox="0 0 180 100" aria-hidden="true" focusable="false">
+  {kind === 'earth' && <>
+    <circle class="world" cx="78" cy="57" r="26"/><ellipse class="orbit" cx="78" cy="57" rx="58" ry="33" transform="rotate(-24 78 57)"/>
+    <path d="M109 10 139 52" class="tether"/><circle cx="124" cy="31" r="4"/><circle class="accent" cx="139" cy="52" r="3"/>
+    <path class="accent orbit" d="M139 52 Q166 24 166 9"/>
+  </>}
+  {kind === 'moon' && <>
+    <circle class="world" cx="77" cy="59" r="24"/><circle class="crater" cx="69" cy="54" r="7"/><circle class="crater" cx="85" cy="66" r="4"/>
+    <ellipse class="orbit" cx="77" cy="59" rx="56" ry="34" transform="rotate(-25 77 59)"/>
+    <path d="M99 12 135 42" class="tether"/><circle cx="117" cy="27" r="4"/><circle class="accent" cx="135" cy="42" r="3"/>
+  </>}
+  {kind === 'phobos' && <>
+    <circle class="world" cx="35" cy="50" r="23"/><path class="orbit" d="M105 6 Q125 50 105 94"/>
+    <path class="tether" d="M68 50H107"/><path class="accent tether" d="M121 50H168"/>
+    <path class="world" d="m107 44 9-3 7 8-3 9-11-2-4-6Z"/>
+    <circle cx="68" cy="50" r="3"/><circle class="accent" cx="168" cy="50" r="3"/>
+  </>}
+  {kind === 't4' && <>
+    <path class="orbit" d="M105 4 A78 78 0 0 1 153 83"/><circle cx="42" cy="74" r="7"/>
+    <path class="tether" d="M48 71 128 41"/><circle cx="128" cy="41" r="4"/>
+    <path class="accent tether" d="M108 15 148 67"/><circle class="accent" cx="108" cy="15" r="3"/><circle class="accent" cx="148" cy="67" r="3"/>
+  </>}
+  {kind === 'cardio' && pose && <>
+    <circle class="world" cx="90" cy="50" r={EARTH * scale}/><polyline class="orbit" points={trace('station')}/><polyline class="accent" points={trace('tip')}/>
+    <line class="tether" x1={xy(pose.station)[0]} y1={xy(pose.station)[1]} x2={xy(pose.tip)[0]} y2={xy(pose.tip)[1]}/>
+    <circle cx={xy(pose.station)[0]} cy={xy(pose.station)[1]} r="3"/>
+  </>}
+</svg>
+<style>
+  svg{display:block;width:100%;height:auto;fill:none;stroke:#c4d3d9;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+  .world{fill:#16232b;stroke:#66818e}.orbit{stroke:#6a808b;stroke-dasharray:3 5;stroke-width:1}.crater{fill:#26353c;stroke:none}.tether{stroke-width:2}.accent{stroke:#efa477}
+</style>

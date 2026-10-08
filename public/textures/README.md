@@ -1,0 +1,64 @@
+# Planetary surfaces
+
+Local visualization assets used by Tether Lab and Expeditions. Public attribution:
+`/lab/method/#imagery`. Lighting, shape and orientation are display choices and do
+not enter any physical model. No runtime hotlinks or texture requests per tick.
+
+| Asset | Source / credit | Original download |
+| --- | --- | --- |
+| earth.webp | NASA Earth Observatory, Reto Stöckli and Blue Marble: Next Generation team; January 2004 | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x5400x2700.jpg |
+| earth-launch-atlantic.webp | Same NASA team and month; geographic detail for the Earth launch view | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/january/world.200401.3x21600x10800.jpg |
+| moon.webp | NASA/GSFC Scientific Visualization Studio, Ernie Wright, LROC and LOLA; CGI Moon Kit, 2025 color map | https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg |
+| moon-launch-hadley.webp | NASA/GSFC/Arizona State University, Apollo 15 low-Sun controlled NAC mosaic B | https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_APOLLO15LOB_E259N0038_5M |
+| mars.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_mars.jpg |
+| earth-clouds.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_earth_clouds.jpg |
+| mercury.webp | Solar System Scope / INOVE, CC BY 4.0 | https://www.solarsystemscope.com/textures/download/2k_mercury.jpg |
+| ceres.webp | NASA VTAD, Ceres 3D model, Dawn imagery | https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/c/Ceres_1_1000.glb |
+| phobos.webp | NASA/JPL/Solar System Simulator, Viking imagery processed by USGS | https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/mars---phobos/Mars%20-%20Phobos.jpg |
+
+Sources checked 27 September 2026. Solar System Scope's attribution license is
+https://creativecommons.org/licenses/by/4.0/; author and texture documentation:
+https://www.solarsystemscope.com/textures/. Their maps include artistic processing
+and filled gaps; they are not raw scientific measurements. NASA source pages:
+https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/,
+https://svs.gsfc.nasa.gov/4720/,
+https://science.nasa.gov/resource/ceres-3d-model/,
+https://science.nasa.gov/3d-resources/mars-phobos/.
+
+Processing: the base-color PNG (`ceres_diff.jpg` image name) was extracted unchanged
+from the Ceres GLB's image bufferView. Each source was resized with Sharp to 2048 px
+wide, except Earth at 4096 px, without enlargement or cropping, and encoded as WebP
+quality 92 (cloud mask: quality 90). The source Phobos map is 1440 × 720 and retains that resolution.
+No invented craters, albedo-derived displacement or added topography.
+
+The Earth launch view additionally uses a **3900 × 3300** regional crop from the
+21600 × 10800 January source, retaining its native nominal 2 km/pixel resolution.
+Bounds: 105° W–40° W, 0°–55° N; WebP quality 92, no enlargement or reprojection.
+Reproduce with `node scripts/prepare-launch-earth.mjs /path/to/source.jpg` after
+downloading the listed NASA image. The regional mesh and global base share the
+same geodetic coordinates on an oblate WGS84 surface. Its 20 m display offset
+prevents depth fighting; it does not represent terrain height. The cloud image is
+used as a linear transparency mask, not an opaque grayscale colour layer.
+Anisotropic filtering improves the shallow horizon view. These optional assets
+load only when the launch viewer opens; the existing globe is the fallback if
+regional imagery fails. The shared Earth texture and other experiments are unchanged.
+
+`python scripts/render-planets.py` renders the checked-in maps to the transparent
+1024 px WebP globes in `public/planets/` using the installed Three.js and Playwright
+Chromium. Those inexpensive static assets serve SVG/canvas views. The interactive
+3D studios load the full maps and apply their existing simulation-driven rotation.
+
+The lunar launch ground uses a **4096 × 4096** native crop of the LROC Apollo 15
+low-Sun controlled NAC mosaic B, product `NAC_ROI_APOLLO15LOB_E259N0038_5M`.
+The archive's 12395 × 14768 pyramid supplies level 5 (6198 × 7384), at nominal
+10 m/pixel. Crop: left 1024, top 1536, width/height 4096; WebP quality 78.
+Run `node scripts/prepare-launch-moon.mjs` to reproduce from public archive tiles,
+or pass a cached assembled 4096 px PNG. No enlargement, repetition, painted
+craters or albedo-derived displacement is applied. Photographed lighting is
+retained; it is not treated as a measured albedo/height field. The curved mesh
+uses a 20 m display offset and fades into the global map as the camera widens.
+The global globe places the corridor against a mid-latitude Hadley reference
+(about 26.206° N, 3.635° E), avoiding the old polar convergence. This is visual
+placement of an illustrative launcher, not a surveyed site or a terrain solution.
+The asset loads only on opening and repaints a paused frame when ready. On failure,
+the globally textured Moon remains available. Sources checked 5 October 2026.

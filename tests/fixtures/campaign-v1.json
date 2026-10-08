@@ -1,0 +1,170 @@
+{
+  "format": "skyhook-campaign",
+  "version": 1,
+  "state": {
+    "schema": 1,
+    "model": "network-0.1.0",
+    "id": "642af2e1-d32f-42cd-9f75-3f7529579430",
+    "name": "Lunar bridge",
+    "revision": 21,
+    "day": 351.8657589178094,
+    "fuelT": 27.599999999999994,
+    "nextShipment": 15,
+    "nextSupplyDay": 0,
+    "lunarReturnedT": 10,
+    "ports": {
+      "earth": {
+        "materialsT": 40,
+        "level": 1,
+        "readyDay": 32,
+        "receivedT": 10,
+        "sentT": 130
+      },
+      "moon": {
+        "materialsT": 0,
+        "level": 2,
+        "readyDay": 32,
+        "receivedT": 100,
+        "sentT": 10
+      },
+      "phobos": {
+        "materialsT": 0,
+        "level": 1,
+        "readyDay": 0,
+        "receivedT": 30,
+        "sentT": 0
+      }
+    },
+    "flights": [],
+    "log": [
+      {
+        "day": 0,
+        "text": "Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator."
+      },
+      {
+        "day": 0,
+        "text": "Flight 1: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 0,
+        "text": "Flight 2: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 0,
+        "text": "Flight 3: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 0,
+        "text": "Flight 4: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 1 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 2 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 3 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 4 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 30,
+        "text": "Lunavator commissioned at Moon. Tier 1 / 10 t service rating."
+      },
+      {
+        "day": 30,
+        "text": "Flight 5: 10 t dispatched from Moon to Earth by tether service."
+      },
+      {
+        "day": 36.00457959527852,
+        "text": "Flight 5 arrived at Earth. 10 t added to the depot."
+      },
+      {
+        "day": 60,
+        "text": "Flight 6: 10 t dispatched from Earth to Phobos by bootstrap tug."
+      },
+      {
+        "day": 60,
+        "text": "Flight 7: 10 t dispatched from Earth to Phobos by bootstrap tug."
+      },
+      {
+        "day": 60,
+        "text": "Flight 8: 10 t dispatched from Earth to Phobos by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 6 arrived at Phobos. 10 t added to the depot."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 7 arrived at Phobos. 10 t added to the depot."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 8 arrived at Phobos. 10 t added to the depot."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Phobos anchor hub commissioned at Phobos. Tier 1 / 10 t service rating."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 9: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 10: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 11: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 12: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 13: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 321.8657589178094,
+        "text": "Flight 14: 10 t dispatched from Earth to Moon by bootstrap tug."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 9 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 10 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 11 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 12 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 13 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 327.8703385130879,
+        "text": "Flight 14 arrived at Moon. 10 t added to the depot."
+      },
+      {
+        "day": 351.8657589178094,
+        "text": "Lunavator upgraded at Moon. Tier 2 / 20 t service rating."
+      }
+    ]
+  }
+}

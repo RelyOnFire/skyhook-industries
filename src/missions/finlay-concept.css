@@ -1,0 +1,60 @@
+.finlay-concept {
+  --finlay-copper: #d3a07c;
+  margin: 0;
+  border: 1px solid #ffffff17;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #10191d;
+  color: #e6e9e7;
+}
+.finlay-concept-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 22px 28px 0;
+  color: #a4b4ba;
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .09em;
+}
+.finlay-concept-top > :first-child { color: #d3a07c; }
+.finlay-concept-picture { position: relative; background: radial-gradient(ellipse at 37% 44%, #30404740, transparent 64%); }
+.finlay-concept-picture svg { display: block; width: 100%; height: auto; max-height: 560px; overflow: visible; }
+.finlay-layer { transition: opacity 350ms ease; }
+.finlay-concept-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; padding: 0 24px 14px; font-size: 12px; line-height: 1.4; color: #b6c3c7; }
+.finlay-concept-shape { margin: 0; padding: 0 20px 23px; text-align: center; color: #83969f; font-size: 11px; line-height: 1.5; }
+.finlay-concept-key > span { display: inline-flex; align-items: center; gap: 8px; }
+.finlay-concept-key i { display: block; flex: none; width: 20px; height: 2px; background: #b0c8ce; }
+.finlay-concept-key .finlay-key-bag { height: 9px; border: 1px solid #9cbcc5; background: #a4ced520; border-radius: 50%; }
+.finlay-concept-key .finlay-key-load { background: #c8936c; height: 4px; }
+.finlay-concept-key .finlay-key-water { background: #8bbacb; }
+.finlay-concept-key .finlay-key-heat { background: #d59d76; }
+.finlay-concept-stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #ffffff17; border-bottom: 1px solid #ffffff17; padding: 0 22px; }
+.finlay-concept-stages button { display: flex; gap: 8px; align-items: center; justify-content: center; min-width: 0; min-height: 60px; padding: 12px 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; font: inherit; font-size: 14px; color: #aab7bb; cursor: pointer; transition: color 180ms ease, background-color 180ms ease; }
+.finlay-concept-stages button span { font: 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #829299; }
+.finlay-concept-stages button[aria-pressed="true"] { color: #f0d3b9; border-bottom-color: #d3a07c; background: #d3a07c0b; }
+.finlay-concept-stages button[aria-pressed="true"] span { color: #d3a07c; }
+.finlay-concept-stages button:hover { color: #f0d3b9; background: #ffffff07; }
+.finlay-concept-stages button:disabled { cursor: default; }
+.finlay-concept-stages button:focus-visible { outline: 2px solid #b8d9e2; outline-offset: -5px; border-radius: 6px; }
+.finlay-concept-caption { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 28px; min-height: 180px; align-items: start; align-content: start; }
+.finlay-concept-caption .finlay-concept-focus { margin: 0 0 12px; color: #a8bfc9; font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.finlay-concept-caption h3 { margin: 0; font-size: clamp(19px, 2.1vw, 25px); line-height: 1.28; letter-spacing: -.025em; font-weight: 500; color: #e6e9e7; }
+.finlay-concept-caption > p { margin: 0; font-size: 15px; line-height: 1.65; color: #afbdc3; }
+@media (max-width: 600px) {
+  .finlay-concept { border-radius: 12px; }
+  .finlay-concept-top { padding: 17px 16px 8px; gap: 5px 14px; font-size: 10px; }
+  .finlay-concept-picture svg { min-height: 205px; }
+  .finlay-concept-key { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 10px; padding: 6px 16px 14px; font-size: 11px; }
+  .finlay-concept-key i { width: 14px; }
+  .finlay-concept-key > span { gap: 6px; }
+  .finlay-concept-stages { padding: 0 6px; }
+  .finlay-concept-stages button { flex-direction: column; gap: 8px; min-height: 65px; padding: 10px 3px; font-size: 12px; }
+  .finlay-concept-caption { grid-template-columns: 1fr; gap: 16px; padding: 22px 16px; min-height: 350px; }
+  .finlay-concept-caption .finlay-concept-focus { min-height: 35px; margin-bottom: 8px; }
+  .finlay-concept-caption h3 { font-size: 21px; min-height: 54px; }
+  .finlay-concept-caption > p { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .finlay-layer, .finlay-concept-stages button { transition: none; }
+}

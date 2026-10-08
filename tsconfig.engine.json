@@ -9,6 +9,15 @@
     "outDir": ".lab-test"
   },
   "include": [
+    "src/missions/finlay-model.ts",
+    "src/components/flight-story-motion.ts",
+    "src/campaign/model.ts",
+    "src/campaign/forecast.ts",
+    "src/campaign/service-edit.ts",
+    "src/campaign/supply.ts",
+    "src/campaign/earth-launch-motion.ts",
+    "src/campaign/lunar-launch-motion.ts",
+    "src/campaign/LunarLauncher.ts",
     "src/simulation/**/*.ts",
     "src/lab/view.ts",
     "src/lab/objects.ts",

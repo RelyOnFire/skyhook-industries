@@ -1,0 +1,47 @@
+---
+import { deploymentPolicy } from '../site/deployment.mjs';
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  experience?: 'site' | 'lab' | 'campaign';
+}
+const { title, description, noindex = false, experience = 'site' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+// Workers supplies the branch at build time. Keep preview shares on the same
+// origin as their assets; canonical URLs still identify the public site.
+// https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
+const { production, shareOrigin } = deploymentPolicy();
+const shareURL = new URL(Astro.url.pathname, shareOrigin);
+const cards = {
+  site: ['social-card', 'Skyhook Industries — a different way up. Research, Flight Studio and Expeditions.'],
+  lab: ['social-flight-studio', 'Flight Studio — design a tether, fly the handoff, recover and repeat.'],
+  campaign: ['social-expeditions', 'Expeditions — build an interplanetary supply chain from Earth toward the Sun.'],
+};
+const [card, imageAlt] = cards[experience];
+const image = new URL(`/${card}.png`, shareOrigin);
+image.searchParams.set('v', 'comet-20261008');
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="theme-color" content="#080b0d" />
+<link rel="canonical" href={canonical} />
+<link rel="icon" href="/favicon.ico?v=comet-20261008" sizes="16x16 24x24 32x32 48x48 64x64" />
+<link rel="icon" href="/favicon-32.png?v=comet-20261008" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=comet-20261008" sizes="180x180" />
+{(noindex || !production) && <meta name="robots" content="noindex,follow" />}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Skyhook Industries" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={shareURL} />
+<meta property="og:image" content={image} />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+<meta name="twitter:image:alt" content={imageAlt} />

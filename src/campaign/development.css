@@ -1,0 +1,60 @@
+.campaign-development{min-width:0;border:1px solid #c99b7238;border-radius:7px;background:linear-gradient(135deg,#b6844b10,#10171b 60%);scroll-margin-top:140px;overflow:hidden}
+.campaign-development>.panel-title h2{margin-top:3px}
+.development-locked,.campaign .development-intro{padding:14px 16px;font-size:11px;line-height:1.7;color:var(--ops-muted)}
+.development-locked p+p{margin-top:8px;color:#d5b28e}
+.development-capacities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 16px 14px;border-bottom:1px solid var(--ops-line)}
+.development-capacities>div{min-width:0}
+.development-capacities>div>span{display:block;font-size:8px;letter-spacing:.07em;color:var(--ops-muted)}
+.development-capacities b{display:block;margin-top:3px;font-size:clamp(21px,2vw,28px);line-height:1.3;font-weight:400;letter-spacing:-.03em;color:#e4c29e;white-space:nowrap}
+.development-capacities b small{font-size:10px;color:#b9a78f;letter-spacing:0}
+.development-capacities>div>small{display:block;margin-top:3px;font-size:9px;color:var(--ops-muted)}
+.development-project{padding:16px;border-bottom:1px solid var(--ops-line);scroll-margin-top:140px}
+.development-project-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.development-project-title>div{min-width:0}
+.development-project-title>div>span{display:block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ops-muted);margin-bottom:3px}
+.campaign .development-project-title h3{font-size:13px}
+.development-level{flex-shrink:0;padding:3px 7px;border:1px solid #ffffff16;border-radius:4px;color:#b0bcbf;font-size:9px;white-space:nowrap}
+.development-project.complete .development-level{color:#b4ceb8;border-color:#94b29830}
+.campaign .development-description{font-size:10px;color:var(--ops-muted);line-height:1.6;margin-top:8px}
+.campaign .development-benefit{margin-top:4px;font-size:11px;color:#d8ba95}
+.development-cost{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding-top:11px;font-size:10px}
+.development-cost>span{color:var(--ops-muted)}
+.development-cost b{font-weight:450;color:#d7e0df;text-align:right}
+.development-cost b>span{color:var(--ops-muted)}
+.development-cost>small{grid-column:1/-1;font-size:9px;color:var(--ops-muted)}
+.development-cost .short{color:#e5b38d}
+.campaign .development-shortfall{font-size:9px;color:var(--ops-muted);line-height:1.5;margin-top:7px}.development-shortfall b{font-weight:500;color:#e4c09c}
+.development-project-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.campaign .development-project-actions button{font-size:10px;min-height:36px}
+.campaign .development-project-actions .development-supply{margin-left:auto;border-color:transparent;background:transparent;color:#d5ad89;padding-inline:3px}
+.campaign .development-reason{font-size:9px;color:#adc4b5;line-height:1.5;margin-top:7px;min-height:1.5em}
+.campaign .development-reason.blocked,.campaign .development-reserve-status.blocked{color:#e2b28c}
+.development-reserve{padding:16px;background:#0d151833;border-bottom:1px solid var(--ops-line)}
+.development-reserve-heading{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.development-reserve-heading>span{font-size:9px;color:var(--ops-muted);white-space:nowrap}
+.development-reserve>label{display:block;margin-top:11px;font-size:10px;color:#c2cecf}
+.development-reserve>label>span{color:var(--ops-muted)}
+.development-reserve-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:6px}
+.campaign .development-reserve-controls :is(input,button){min-height:38px;font-size:11px}
+.campaign .development-reserve p{margin-top:8px;font-size:10px;line-height:1.6;color:var(--ops-muted)}
+.campaign .development-reserve .development-reserve-status{font-size:9px;color:#adc4b5;min-height:3.2em}
+.development-tracts>summary{padding:14px 16px;font-size:11px;color:#d9c7b2;cursor:pointer}
+.development-tracts>summary>span{display:block;margin:3px 0 0 15px;font-size:9px;color:var(--ops-muted)}
+.development-tracts[open]>summary{border-bottom:1px solid var(--ops-line)}
+.development-deposits{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 16px 0;padding-bottom:12px;border-bottom:1px solid var(--ops-line);font-size:10px;color:var(--ops-muted)}
+.development-deposits b{display:block;font-size:9px;font-weight:450;color:#ccd8d3;margin-top:4px}
+.development-tracts>.development-project:last-child{border-bottom:0}
+@media(min-width:1200px){
+  .development-projects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .development-projects>.development-project{display:flex;flex-direction:column;min-width:0;padding:14px;border-right:1px solid var(--ops-line)}
+  .development-projects>.development-project:last-child{border-right:0}
+  .development-projects .development-project-title{flex-direction:column;align-items:flex-start;gap:7px}
+  .development-projects .development-cost{grid-template-columns:1fr;margin-top:auto;padding-top:14px}
+  .development-projects .development-cost b{text-align:left}
+  .development-projects .development-project-actions{flex-direction:column;align-items:stretch;gap:3px}
+  .campaign .development-projects .development-project-actions .development-supply{margin-left:0}
+}
+@media(max-width:1199px){.campaign-development{grid-column:1;grid-row:6}.ops-grid>.ops-traffic{grid-row:3/span 4}}
+@media(max-width:800px){.development-cost{grid-template-columns:1fr}.development-cost b{text-align:left}.campaign .development-project-actions .development-supply{margin-left:0}}
+@media(max-width:600px){.campaign-development{order:6;scroll-margin-top:220px}.development-project{scroll-margin-top:220px}.campaign .development-project-actions button,.campaign .development-reserve-controls :is(input,button){min-height:44px}.development-tracts>summary{min-height:44px}.development-capacities b{font-size:22px}}
+@media(max-width:360px){.development-project-title{align-items:flex-start}.development-project-title h3{line-height:1.4}.development-level{font-size:8px;padding:3px 5px}.development-project-actions{gap:4px}.development-capacities{gap:8px}.development-capacities b{font-size:20px}.development-capacities b small{font-size:9px}}

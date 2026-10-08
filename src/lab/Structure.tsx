@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { compile, loadProfile, properties, type Result } from '../simulation/engine.js';
 import { sample, elapsed } from './view.js';
+import type { StudioUnits } from './StudioUnits.js';
 /** Inspect the same axial-load cuts used by the numerical stop condition. */
-export default function Structure({result,time}:{result:Result;time:number}) {
+export default function Structure({result,time,units}:{result:Result;time:number;units:StudioUnits}) {
   const [selected,setSelected]=useState(25);
   const {cuts,body,allow}=useMemo(()=>{const frame=sample(result,time),body=compile(result.design,frame.fuel,frame.loaded,result.cells);return {body,cuts:loadProfile(frame.state,body,result.design,frame.burn),allow:properties(result.design).allowable};},[result,time]);
   const cut=cuts[Math.min(selected,cuts.length-1)],peak=cuts.reduce((a,c)=>c.stress>a.stress?c:a,cuts[0]);
@@ -19,7 +20,7 @@ export default function Structure({result,time}:{result:Result;time:number}) {
       <text x="45" y="277">Opposite tip</text><text x="360" y="277" textAnchor="middle">Hub</text><text x="675" y="277" textAnchor="end">Working tip</text>
     </svg>
     <label className="section-selector">Section along tether <input type="range" aria-label="Inspected tether section" min="0" max={cuts.length-1} step="1" value={selected} onChange={e=>setSelected(Number(e.target.value))}/></label>
-    <dl className="section-readout"><div><dt>Position from hub</dt><dd>{(cut.s/1000).toFixed(1)} <small>km</small></dd></div><div><dt>Section area</dt><dd>{(cut.area*1e6).toFixed(1)} <small>mm²</small></dd></div><div><dt>Axial stress</dt><dd>{(cut.stress/1e9).toFixed(2)} <small>GPa</small></dd></div><div><dt>Tension</dt><dd>{(cut.tension/1000).toFixed(1)} <small>kN</small></dd></div></dl>
+    <dl className="section-readout"><div><dt>Position from hub</dt><dd>{(cut.s/(units.distance==='km'?1000:1)).toFixed(1)} <small>{units.distance}</small></dd></div><div><dt>Section area</dt><dd>{(cut.area*1e6).toFixed(1)} <small>mm²</small></dd></div><div><dt>Axial stress</dt><dd>{(cut.stress/1e9).toFixed(2)} <small>GPa</small></dd></div><div><dt>Tension</dt><dd>{(cut.tension/(units.force==='kN'?1000:1)).toFixed(1)} <small>{units.force}</small></dd></div></dl>
     <p className="inspector-note">Rigid-body axial-load screening only. No elastic vibration, fracture or transverse cable deformation is modeled.</p>
   </section>;
 }

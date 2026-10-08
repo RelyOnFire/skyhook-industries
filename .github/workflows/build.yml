@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SKYHOOK_DEPLOYMENT: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,14 +36,60 @@ jobs:
           diff -u analysis/reference_architecture_v04_output.md /tmp/reference_architecture_v04_output.md
       - name: Build site
         run: npm run build
+      - name: Verify production indexing and legacy redirects
+        run: node --test tests/site-launch.test.mjs
+      - name: Verify preview isolation
+        env:
+          SKYHOOK_DEPLOYMENT: preview
+          WORKERS_CI_BRANCH: dribbble-visual-redesign
+          SKYHOOK_TEST_DIST: qa/launch-preview-dist
+        run: |
+          npm run build -- --outDir qa/launch-preview-dist
+          node --test tests/site-launch.test.mjs
       - name: Install browser regression tooling
         run: |
           python3 -m pip install playwright==1.55.0
-          python3 -m playwright install --with-deps chromium
+          # Branded Chrome supplies the H264/AAC codecs used by the introduction.
+          # Keep bundled Chromium for the existing numerical/UI browser suites.
+          python3 -m playwright install --with-deps chromium chrome
+      - name: Check introduction film loading, playback and captions
+        run: python3 tests/site-film.browser.py --channel chrome
+      - name: Exercise optional departure close-up and save isolation
+        run: python3 tests/campaign-closeup.browser.py
       - name: Exercise native-origin Flight Studio and WebGL
         run: python3 tests/lab-flight-studio.browser.py --require-webgl
+      - name: Exercise delayed planetary imagery and scene fallbacks
+        run: python3 tests/planet-surfaces.browser.py
+      - name: Exercise CardioRotovator dynamics and isolated design storage
+        run: python3 tests/lab-cardio.browser.py
+      - name: Exercise Earth Lab design commissioning and v6 migration
+        run: python3 tests/lab-earth-design.browser.py
+      - name: Exercise returning-cargo recovery comparison
+        run: python3 tests/lab-return.browser.py
       - name: Exercise electrodynamic recovery and resource controls
         run: python3 tests/lab-electrodynamic.browser.py --require-webgl
+      - name: Exercise lunar Flight Studio and independent design storage
+        run: python3 tests/lab-lunar.browser.py --require-webgl
+      - name: Exercise Phobos anchored releases, loads and isolated design storage
+        run: python3 tests/lab-phobos.browser.py --require-webgl
+      - name: Exercise T4 coupled stages, phase comparison and isolated design storage
+        run: python3 tests/lab-t4.browser.py --require-webgl
+      - name: Check Flight Studio display units and campaign mass layout
+        run: python3 tests/studio-units.browser.py
+      - name: Capture and check responsive company pages
+        run: python3 tests/site-pages.browser.py
+      - name: Exercise campaign progression and durable saves
+        run: python3 tests/campaign.browser.py
+      - name: Exercise Ceres supply, water returns and v4 save migration
+        run: python3 tests/campaign-belt.browser.py
+      - name: Exercise expanded campaign traffic and v5 save continuity
+        run: python3 tests/campaign-traffic.browser.py
+      - name: Exercise industrial development, service editing and v6 save continuity
+        run: python3 tests/campaign-development.browser.py
+      - name: Exercise freight contracts, customer delivery and credit persistence
+        run: python3 tests/campaign-contracts.browser.py
+      - name: Exercise buyer demand, competing freight and locked contract migration
+        run: python3 tests/campaign-market.browser.py
       - name: Upload browser regression evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,4 +107,41 @@ jobs:
             dist/
             package-lock.json
             source-review.tar
+          retention-days: 7
+
+  launch-browsers:
+    name: Launch and save transfer (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      SKYHOOK_DEPLOYMENT: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+      - name: Install browser tooling
+        run: |
+          python3 -m pip install playwright==1.55.0
+          python3 -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Check public entry points and transfer saves between origins
+        run: python3 tests/site-launch.browser.py --browser ${{ matrix.browser }}
+      - name: Upload launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-${{ matrix.browser }}
+          path: qa/browser/site-launch/${{ matrix.browser }}/
           retention-days: 7

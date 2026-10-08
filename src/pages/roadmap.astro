@@ -13,7 +13,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
       <p class="chapter-label">Program logic</p>
       <div>
         <h2>Gates, not dates.</h2>
-        <p class="body-copy">The old roadmap used fixed years for kilometre-scale and ultimately multi-thousand-kilometre hardware. That implied more certainty than the engineering supported. The replacement roadmap is conditional: pass the exit condition, then move on.</p>
+        <p class="body-copy">Each step earns the next. Close the calculations, test the materials, then demonstrate the dynamics and payload handoff at increasing scale. Progress depends on measured results and the exit conditions below.</p>
         <div class="gate-list">
           <div class="gate"><span>GATE 01</span><div><h3>Close the reference architecture.</h3><p>Reference Architecture v0.4 now closes one 4,000 km symmetric screening geometry, ideal tapered mass versus payload/material performance, instantaneous post-capture COM change, and the first symmetric-versus-asymmetric balance trade. Full post-capture propagation, release targeting and real material-system mass remain open.</p></div><aside>STATUS / first geometry + ideal mass closure complete; dynamics still open</aside></div>
           <div class="gate"><span>GATE 02</span><div><h3>Prove the material system.</h3><p>Move beyond headline tensile strength. Characterize allowable specific strength after joints, manufacturing defects, creep, fatigue, thermal cycling, atomic oxygen, radiation and safety factor.</p></div><aside>EXIT / coupon + joint data support structural model assumptions</aside></div>
@@ -57,4 +57,21 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
       </div>
     </section>
   </div>
+  <section class="dark-section" id="finlay-study">
+    <div class="section-grid">
+      <p class="chapter-label">Mission study / 15P Finlay</p>
+      <div>
+        <h2>Bring a water source into the network.</h2>
+        <p class="lede">Alongside the tether program, the Finlay study asks whether a comet could supply its own redirection propellant and become an orbital water depot. These study gates define what must be learned before choosing a mission architecture.</p>
+        <div class="gate-list">
+          <div class="gate"><span>STUDY 01</span><div><h3>Characterize the target.</h3><p>Constrain Finlay's nucleus size, mass, spin, activity and accessible volatiles. Develop a reconnaissance and rendezvous plan from orbital observations.</p></div><aside>EXIT / a target model with explicit uncertainty and a credible survey path</aside></div>
+          <div class="gate"><span>STUDY 02</span><div><h3>Contain and extract.</h3><p>Study deployment around an irregular rotating nucleus, distributed attachment loads, dust handling, volatile collection and heat rejection. Start with small representative samples and containment tests.</p></div><aside>EXIT / measured extraction, leakage and load limits support the design</aside></div>
+          <div class="gate"><span>STUDY 03</span><div><h3>Close the propulsion budget.</h3><p>Account for the water spent as propellant, thermal power, thrust duration and changing mass. Compare plane-change strategies within the full trajectory rather than assuming inclination alone sets the maneuver.</p></div><aside>EXIT / a coupled mass, power and trajectory budget preserves a useful water reserve</aside></div>
+          <div class="gate"><span>STUDY 04</span><div><h3>Choose and reach a depot orbit.</h3><p>Compare destinations around Earth, the Moon and Mars. Solve approach, capture, long-term stability and control, including fragmentation and loss-of-thrust cases.</p></div><aside>EXIT / propagated transfers and depot operations meet explicit constraints</aside></div>
+        </div>
+        <p class="body-copy">The current workbench screens propulsion and plane-change assumptions. Full mission trajectories, whole-nucleus containment and depot capture remain open work.</p>
+        <a class="cta light" href="/missions/finlay/">Inspect the Finlay mission study →</a>
+      </div>
+    </div>
+  </section>
 </ProductionLayout>
