@@ -310,9 +310,19 @@ def main():
                     capture(lunar, moon, f'moon-{phase.lower()}-1440.png')
                 for value in [0, 235, 460, 690, 950, 1000]:
                     scrub(moon, value)
+                scrub(moon, 259)
+                expect(moon.locator('.departure-telemetry')).to_contain_text('Sled braking')
+                capture(lunar, moon, 'moon-separation-1440.png')
+                scrub(moon, 290)
+                expect(moon.locator('.departure-telemetry')).to_contain_text('Sled parked')
+                capture(lunar, moon, 'moon-runout-1440.png')
+                moon.get_by_role('button', name='Coast', exact=True).click()
+                expect(moon.locator('.departure-telemetry')).to_contain_text('Sled parked')
                 assert records(lunar) == lunar_before
                 for width, height in [(390, 844), (320, 740)]:
                     lunar.set_viewport_size({'width': width, 'height': height})
+                    moon.get_by_role('button', name='Accelerate', exact=True).click()
+                    capture(lunar, moon, f'moon-accelerate-{width}.png')
                     moon.get_by_role('button', name='Capture', exact=True).click()
                     capture(lunar, moon, f'moon-capture-{width}.png')
                     assert moon.get_by_role('button', name='Accelerate', exact=True).bounding_box()['height'] >= 44

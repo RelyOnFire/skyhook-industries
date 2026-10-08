@@ -19,7 +19,7 @@ export default function LunarDepartureScene({stage,progress}:{stage:number;progr
   scene.add(new THREE.AmbientLight('#b5c9de',.75));scene.add(new THREE.HemisphereLight('#9eb9cf','#192630',.65));
   const sun=new THREE.DirectionalLight('#fff0d9',3.2);sun.position.set(-400,800,1200);scene.add(sun);
   const geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[],textures:THREE.Texture[]=[];
-  const metal=new THREE.MeshStandardMaterial({color:'#b8c8d0',metalness:.6,roughness:.4}),dark=new THREE.MeshStandardMaterial({color:'#253642',metalness:.5,roughness:.5}),copper=new THREE.MeshStandardMaterial({color:'#d29b74',metalness:.45,roughness:.4}),lit=new THREE.MeshStandardMaterial({color:'#ffe0a9',emissive:'#eeb574',emissiveIntensity:1.5,roughness:.5});materials.push(metal,dark,copper,lit);
+ const metal=new THREE.MeshStandardMaterial({color:'#b8c8d0',metalness:.6,roughness:.4}),dark=new THREE.MeshStandardMaterial({color:'#253642',metalness:.5,roughness:.5}),copper=new THREE.MeshStandardMaterial({color:'#d29b74',metalness:.45,roughness:.4}),lit=new THREE.MeshStandardMaterial({color:'#e6b485',emissive:'#bb7435',emissiveIntensity:.6,roughness:.5}),cargo=new THREE.MeshStandardMaterial({color:'#e5e2d5',metalness:.18,roughness:.55});materials.push(metal,dark,copper,lit,cargo);
   const mesh=(g:THREE.BufferGeometry,m:THREE.Material,parent:THREE.Object3D)=>{geometries.push(g);const o=new THREE.Mesh(g,m);parent.add(o);return o;};
   const box=(p:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m=metal)=>{const o=mesh(new THREE.BoxGeometry(w,h,d),m,p);o.position.set(x,y,z);return o;};
   const rod=(p:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,r:number,m=metal)=>{const delta=b.clone().sub(a),o=mesh(new THREE.CylinderGeometry(r,r,delta.length(),8),m,p);o.position.copy(a.clone().add(b).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return o;};
@@ -35,7 +35,7 @@ export default function LunarDepartureScene({stage,progress}:{stage:number;progr
   root.dataset.moonTexture='loading';
   const texture=new THREE.TextureLoader().load('/textures/moon.webp',loaded=>{if(disposed)return;loaded.colorSpace=THREE.SRGBColorSpace;loaded.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());surface.map=loaded;surface.color.set('#a7a7a7');surface.needsUpdate=true;root.dataset.moonTexture='ready';draw.current();},undefined,()=>{if(!disposed)root.dataset.moonTexture='unavailable';});textures.push(texture);
   const normal=new THREE.Vector3(-LUNAR_RAIL.direction.y,LUNAR_RAIL.direction.x,0);
-  const launcher=createLunarLauncher({metal,dark,copper}),rail=launcher.group,coils=launcher.coils,payload=launcher.payload;
+ const launcher=createLunarLauncher({metal,dark,copper,cargo}),rail=launcher.group,coils=launcher.coils,payload=launcher.payload;
   scene.add(rail,payload);
   const point=(distance:number)=>new THREE.Vector3(LUNAR_RAIL.start.x+LUNAR_RAIL.direction.x*distance,LUNAR_RAIL.start.y+LUNAR_RAIL.direction.y*distance,0);
   for(let i=0;i<=20;i++){
@@ -80,8 +80,9 @@ export default function LunarDepartureScene({stage,progress}:{stage:number;progr
    if(disposed||lost||!root.clientWidth)return;
    const {stage,progress}=frame.current,f=lunarLaunchFrame(stage,progress),width=f.camera.width;
    camera.left=-width/2;camera.right=width/2;camera.top=width*.31;camera.bottom=-width*.31;camera.updateProjectionMatrix();
-   const ground=stage<2?1:stage===2?1-lunarEase(progress/.45):0,planetOpacity=stage===3?1-lunarEase(progress/.25):stage===4?lunarEase(progress/.32):1;
-   surface.opacity=planetOpacity;surface.depthWrite=planetOpacity===1;moon.visible=planetOpacity>0;terrainM.opacity=1-lunarEase((width-55)/100);terrain.visible=!!terrainM.map&&terrainM.opacity>0&&stage<3;orbit.visible=stage>=4;approach.visible=stage===2;release.visible=stage===5;
+   // Establish the horizon before zooming beyond the detailed local photograph.
+   const ground=stage<2?1:stage===2?1-lunarEase(progress/.16):0,planetOpacity=stage===3?1-lunarEase(progress/.25):stage===4?lunarEase(progress/.32):1;
+   surface.opacity=planetOpacity;surface.depthWrite=planetOpacity===1;moon.visible=planetOpacity>0;terrainM.opacity=ground*(1-lunarEase((width-55)/100));terrain.visible=!!terrainM.map&&terrainM.opacity>0&&stage<3;orbit.visible=stage>=4;approach.visible=stage===2;release.visible=stage===5;
    // A slightly elevated view exposes the launch rails and payload fitting. Fade
    // the distant ground before moving into the capture camera's local frame.
    const capture=stage===3?lunarEase(progress/.25):stage===4?1-lunarEase(progress/.3):0;
@@ -91,6 +92,7 @@ export default function LunarDepartureScene({stage,progress}:{stage:number;progr
    const hardware=positionLunarCargo(launcher,f,stage,progress);grapple.scale.setScalar(hardware);hub.scale.setScalar(Math.max(1,width/500));cable.scale.set(Math.max(1,width/900/.015),1,Math.max(1,width/900/.015));
    const distance=f.railProgress**2*LUNAR_RAIL.length;
    coils.forEach(o=>{o.material=stage===1&&Math.abs(o.position.x-distance)<.4?lit:copper;});
+   launcher.brakes.forEach(pack=>pack.children.forEach(o=>{(o as THREE.Mesh).material=stage===2&&f.sledSpeed>0&&Math.abs(pack.position.x-f.sledDistance)<.25?lit:copper;}));
    jaws[0].rotation.z=-f.jawAngle*Math.PI/180;jaws[1].rotation.z=f.jawAngle*Math.PI/180;latch.visible=f.latched;
    renderer.render(scene,camera);
   };

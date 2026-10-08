@@ -114,6 +114,12 @@ Load, Accelerate, Coast, Capture, Swing and Release have separate camera moments
 An original coil launcher, loading bay, capacitor banks and solar apron feed a
 raised straight ramp. Illuminated coils follow the sled; after separation the
 sled stays on the track while cargo coasts without rocket exhaust. The view
+uses spaced coil stations and a pale cargo casing to keep the load visible;
+an exposed brake section shows the empty sled decelerating to a stop. Its
+readout switches from braking to parked when the runout finishes. The same sled
+motion and cargo scale are used in the WebGL scene and diagram fallback. As cargo
+leaves the ramp, the camera establishes the horizon before widening beyond the
+detailed local photograph. It then
 zooms into the fitting and closing grapple, then widens to show both tether ends
 and the departing cargo. NASA's existing LROC texture covers the mean sphere;
 local hardware is enlarged. The ground close-up uses a native 4096 px crop from
@@ -137,18 +143,23 @@ it does not represent one uniform physical playback rate. The rail uses a linear
 physical clock, and the coast begins at that same playback rate. Only after the
 camera widens does the long coast compress; its clock eases back to the capture
 rate before rendezvous. The overlay shows the current time factor and the speed
-readout retains two decimals. Free-coast speed decreases under gravity, with no
+readout retains two decimals. Capture, the latch moment, swing and release also
+share continuous positive clock rates, preventing a stop or jump at a phase
+boundary. Free-coast speed decreases under gravity, with no
 post-exit boost or jump in projected pace. Coils, the rail, sled and actual cargo
 meshes share a single centreline, with a tested clear bore. The loading bay and
 exit are outside the coil train. Cargo attitude is
 prescribed for a visible grapple fitting. Release inherits the tip's inertial
 velocity, then coasts under lunar gravity. Conservation, matched pickup, surface
-clearance, phase continuity and wide framing are checked numerically.
+clearance, phase continuity and wide framing are checked numerically. The sled
+enters an illustrative 1.1 km braking runout at the cargo's exit speed, then
+decelerates uniformly to rest on the same physical clock. This is prescribed
+kinematics; it does not size brake forces, power electronics or heat rejection.
 
 This is an access illustration, separate from campaign transfer durations and
 the orbital-transfer Lunar Flight Studio. The equal-arm rotor, prescribed motion
 and launcher acceleration do not solve finite-mass capture recoil, structural
-loads, coil power/storage, sled braking, terrain, lunar rotation or destination
+loads, coil power/storage, braking hardware, terrain, lunar rotation or destination
 targeting. A mass driver supplies departure speed; a tether catcher supplies
 additional speed and release, rather than treating a surface shot as an already
 circularized orbit. The
