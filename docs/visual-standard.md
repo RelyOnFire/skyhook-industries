@@ -58,11 +58,16 @@ art. Schematics should say when they are not to scale. Do not draw an Earth or
 lunar rotovator as a ground-anchored elevator; Phobos is intentionally an anchor.
 The CardioRotovator thumbnail uses the synchronized model's own geometry.
 
-The shared line mark and wordmark remain in use. Do not silently replace them.
+Use the owner's original orange/gold comet, dark teal disc and three white stars
+beside the existing wordmark. The owner requested this restoration on 8 October
+2026. The shared `BrandMark.astro` component, favicon and share images use the
+same recovered artwork; the temporary Z-like line mark is retired. See
+`docs/design-references/comet-brand.md` for source and format provenance.
 Share images are authored diagrams, rendered by
 `python scripts/render-social-cards.py` using the existing Playwright setup.
 The script writes the three 1,200 × 630 PNG assets and the compatibility SVG.
-They contain no saved worlds, external images or remote fonts.
+They contain authored diagrams and the locally hosted owner logo, with no saved
+worlds or remote fonts.
 
 `PageMeta.astro` supplies consistent titles, descriptions and share cards. The
 known Workers branch uses its stable origin for share URLs and image assets;

@@ -5,10 +5,12 @@ Run from any directory: python scripts/render-social-cards.py
 No remote images, fonts, screenshots of player worlds or application data.
 """
 from html import escape
+from base64 import b64encode
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+COMET_MARK = 'data:image/png;base64,' + b64encode((ROOT / 'public/brand/comet-mark.png').read_bytes()).decode('ascii')
 CARDS = [
     ('social-card', 'ORBITAL TRANSPORT / OPEN RESEARCH', ['A different', 'way up.'],
      ['Explore the science. Design a tether.', 'Build a network across the solar system.']),
@@ -56,8 +58,8 @@ def svg(name, label, title, body):
       <style>text{{font-family:Arial,sans-serif}}.label{{font-size:13px;letter-spacing:1px}}</style>
       <rect width="1200" height="630" fill="#080e12"/>
       <path d="M64 106H1136M64 531H1136" stroke="#2d3e47"/>
-      <g stroke="#dce9ed" fill="none" stroke-width="1.4"><path d="M68 52H94M62 70H88M61 72 98 49"/></g>
-      <text x="110" y="69" fill="#e5eef1" font-size="18" letter-spacing="1.3">SKYHOOK INDUSTRIES</text>
+      <image href="{COMET_MARK}" x="62" y="38" width="46" height="46"/>
+      <text x="122" y="69" fill="#e5eef1" font-size="18" letter-spacing="1.3">SKYHOOK INDUSTRIES</text>
       <text x="66" y="160" fill="#b0c1ca" class="label">{escape(label)}</text>
       <g font-size="66" letter-spacing="-2">{lines}</g>
       <g fill="#b6c7cf" font-size="23">{copy}</g>
@@ -75,6 +77,12 @@ def main():
             source = '\n'.join(line.rstrip() for line in svg(name, label, title, body).splitlines())
             page.set_content(f'<html><body style="margin:0">{source}</body></html>')
             page.evaluate('document.fonts.ready')
+            page.evaluate('''async () => {
+                await Promise.all([...document.querySelectorAll('svg image')].map(node => new Promise((resolve, reject) => {
+                    const image = new Image(); image.onload = resolve; image.onerror = reject;
+                    image.src = node.getAttribute('href');
+                })));
+            }''')
             page.locator('svg').screenshot(path=str(ROOT / 'public' / f'{name}.png'))
             # Preserve existing SVG URLs as a compatibility asset.
             if name == 'social-card':

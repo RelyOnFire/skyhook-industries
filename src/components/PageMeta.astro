@@ -20,12 +20,15 @@ const cards = {
 };
 const [card, imageAlt] = cards[experience];
 const image = new URL(`/${card}.png`, shareOrigin);
+image.searchParams.set('v', 'comet-20261008');
 ---
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="theme-color" content="#080b0d" />
 <link rel="canonical" href={canonical} />
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico?v=comet-20261008" sizes="16x16 24x24 32x32 48x48 64x64" />
+<link rel="icon" href="/favicon-32.png?v=comet-20261008" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=comet-20261008" sizes="180x180" />
 {(noindex || !production) && <meta name="robots" content="noindex,follow" />}
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Skyhook Industries" />

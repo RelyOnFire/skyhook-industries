@@ -6,6 +6,7 @@ import '../styles/orbital.css';
 import '../styles/company.css';
 import '../styles/heritage.css';
 import SiteHeader from '../components/SiteHeader.astro';
+import BrandMark from '../components/BrandMark.astro';
 import PageMeta from '../components/PageMeta.astro';
 
 interface Props {
@@ -31,7 +32,7 @@ const path = Astro.url.pathname;
     <footer class="site-footer">
       <div class="footer-top">
         <div>
-          <a class="wordmark" href="/"><span class="wordmark-mark" aria-hidden="true"><i></i></span><span>Skyhook Industries</span></a>
+          <a class="wordmark" href="/"><BrandMark /><span>Skyhook Industries</span></a>
           <p>Rotating orbital transportation and momentum-exchange infrastructure.</p>
         </div>
         <div class="footer-nav">

@@ -29,7 +29,7 @@ This audit uses Leonxlnx's `taste-skill` and `redesign-skill` as critics, not as
 | Add scroll-driven motion | Consider | Motion should explain orbital rotation, capture or momentum exchange. Decorative animation is not enough reason. |
 | Make the About principles grid more asymmetric | Consider | The two-column grid is one of the more conventional blocks, but it is clear and not currently harmful. |
 | Publish a raster social card | Consider / high priority | PNG/WebP has broader social-crawler compatibility than SVG. Add when the binary asset workflow is convenient. |
-| Restore the purchased legacy favicon/mark | Consider / planned | Test it at favicon, wordmark and large-brand sizes when the original SVG is available. |
+| Restore the original comet mark | Implemented | The orange comet and three white stars were restored from the earlier site's artwork and shared across headers, footers, favicon and social cards. The recovered source is raster artwork, hosted locally as PNG/ICO assets. |
 
 ## Reject
 

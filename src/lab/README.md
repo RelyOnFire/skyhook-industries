@@ -25,4 +25,4 @@ is the shared Phobos/T4 numeric input; Earth texture generation is shared too.
 
 Coastlines in `land.ts`: Natural Earth public-domain low-resolution data, sourced from pyogrio test fixtures, dissolved to remove national borders and simplified to 0.7 degrees. This is a schematic offline map, not contemporary satellite imagery. Terms: https://www.naturalearthdata.com/about/terms-of-use/
 
-Illustrative sun/atmosphere, enlarged tether width/markers and fixed 28-degree display orientation are documented in the Method page. Current favicon remains the existing placeholder until the owner's purchased SVG is recovered.
+Illustrative sun/atmosphere, enlarged tether width/markers and fixed 28-degree display orientation are documented in the Method page. The shared header and favicon use the original orange comet with three white stars, restored from the earlier site's artwork and hosted locally as PNG/ICO assets. See `docs/design-references/comet-brand.md` for raster-source provenance.
