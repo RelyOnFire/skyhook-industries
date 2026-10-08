@@ -9,6 +9,7 @@
     "outDir": ".lab-test"
   },
   "include": [
+    "src/missions/finlay-model.ts",
     "src/components/flight-story-motion.ts",
     "src/campaign/model.ts",
     "src/campaign/forecast.ts",

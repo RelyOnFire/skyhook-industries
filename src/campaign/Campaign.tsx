@@ -212,6 +212,6 @@ export default function Campaign() {
       {slots.length?<ul className="campaign-slot-list">{slots.map(s=><li key={s.id}><div><b>{s.name}{s.id===world?.id&&<span className="campaign-badge">CURRENT</span>}</b><small>{s.valid?day(s.day):'Preserved for recovery or a compatible version'}</small></div><div><button disabled={busy||!s.valid} onClick={()=>resume(s.id)}>Load<span className="sr-only"> {s.name}</span></button><button disabled={busy||!s.recoverable} onClick={()=>recover(s.id)}>Recover checkpoint<span className="sr-only"> for {s.name}</span></button><button disabled={busy||s.id===world?.id} onClick={()=>{if(window.confirm(`Delete the saved campaign “${s.name}”? Download a backup first if you want to keep it.`))void task(async()=>{await deleteSave(s.id);await refresh();});}}>Delete<span className="sr-only"> {s.name}</span></button></div></li>)}</ul>:<p className="campaign-empty">{loading?'Checking saves…':'No campaigns saved here yet.'}</p>}
     </section>
     </details>
-    <footer className="campaign-footer"><span>EXPEDITIONS / NETWORK OPERATIONS</span><a href="/lab/campaign/method/">Assumptions & research</a><a href="/lab/">Open Flight Studio</a></footer>
+    <footer className="campaign-footer"><span>EXPEDITIONS / NETWORK OPERATIONS</span><a href="/lab/campaign/method/">Assumptions & research</a><a href="/lab/">Open Flight Studio</a><a href="/missions/finlay/">Finlay mission study</a></footer>
   </main>;
 }

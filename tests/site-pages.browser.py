@@ -14,7 +14,7 @@ from urllib.parse import quote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTES = ['', 'system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'help', 'archive', '404', 'lab/architectures']
+ROUTES = ['', 'system', 'research', 'roadmap', 'reference-architecture', 'about', 'contact', 'help', 'archive', 'missions/finlay', '404', 'lab/architectures']
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -32,7 +32,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chromium', headless=True)
         page = browser.new_page(reduced_motion='reduce')
-        page.on('pageerror', lambda e: report['errors'].append(str(e)))
+        page.on('pageerror', lambda e: report['errors'].append(f'{page.url}: {e}'))
         try:
             for route in ROUTES:
                 sizes = [(1440, 1000), (768, 1024), (390, 844), (320, 800)]
@@ -52,10 +52,110 @@ def main():
                     page.screenshot(path=str(out / f'{name}-viewport-{width}.png'))
                     if not route:
                         page.locator('#explore').screenshot(path=str(out / f'gateway-{width}.png'))
+                        mission = page.locator('.mission-feature')
+                        expect(mission.get_by_role('link', name='Explore the Finlay mission')).to_have_attribute('href', '/missions/finlay/')
+                        mission.screenshot(path=str(out / f'finlay-entry-{width}.png'))
+                    if route in ['', 'system', 'research', 'roadmap', 'archive']:
+                        expect(page.locator('main a[href="/missions/finlay/"]').first).to_be_visible()
+                    if not route.startswith('lab/'):
+                        expect(page.locator('.site-footer a[href="/missions/finlay/"]')).to_be_visible()
                     overflow = page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                     if overflow:
                         report['errors'].append(f'Horizontal page overflow: {route} at {width}px')
                     report['pages'].append({'route': path, 'width': width, 'overflow': overflow})
+
+            page.set_viewport_size({'width': 768, 'height': 1024})
+            page.goto(origin + '/lab/campaign/', wait_until='networkidle')
+            expect(page.locator('.campaign-footer a[href="/missions/finlay/"]')).to_be_visible()
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1'), 'Campaign footer overflows at 768px'
+            page.locator('.campaign-footer').screenshot(path=str(out / 'campaign-footer-768.png'))
+
+            # The mission study is a reversible calculator, separate from game
+            # state. Compare physical consequences using its unrounded values.
+            study_context = browser.new_context(viewport={'width': 1280, 'height': 900}, reduced_motion='reduce')
+            study = study_context.new_page()
+            study.on('pageerror', lambda e: report['errors'].append(f'{study.url}: {e}'))
+            study.goto(origin + '/404.html', wait_until='networkidle')
+            storage_before = study.evaluate('JSON.stringify({...localStorage})')
+            databases_before = study.evaluate('async () => (await indexedDB.databases()).map(db => db.name).sort()')
+            study.goto(origin + '/missions/finlay/', wait_until='networkidle')
+            concept = study.locator('.finlay-concept')
+            concept.scroll_into_view_if_needed()
+            stages = study.get_by_role('navigation', name='Finlay mission concept stages')
+            for name in ['Survey', 'Enclose', 'Extract', 'Redirect', 'Depot']:
+                button = stages.get_by_role('button', name=name, exact=True)
+                expect(button).to_be_enabled()
+                button.click()
+                expect(concept).to_have_attribute('data-phase', name.lower())
+                expect(button).to_have_attribute('aria-pressed', 'true')
+                expect(stages.locator('button[aria-pressed="true"]')).to_have_count(1)
+            stages.get_by_role('button', name='Survey', exact=True).focus()
+            study.keyboard.press('Enter')
+            expect(concept).to_have_attribute('data-phase', 'survey')
+            expect(stages.get_by_role('button', name='Survey', exact=True)).to_have_attribute('aria-pressed', 'true')
+            study.locator('#mission-budget').scroll_into_view_if_needed()
+            workbench = study.locator('.finlay-workbench')
+            location = study.get_by_label('Plane-change location', exact=True)
+            power = study.get_by_label('Usable plant power (GW)', exact=True)
+            exhaust = study.get_by_label('Exhaust speed (km/s)', exact=True)
+            water = study.get_by_label('Water allocation (%)', exact=True)
+            other = study.get_by_label('Other manoeuvres (km/s)', exact=True)
+            expect(location).to_be_enabled()
+            defaults = [control.input_value() for control in [location, power, exhaust, water, other]]
+            location.select_option('far')
+            power.select_option('10')
+            far_delta_v = float(workbench.get_attribute('data-delta-v'))
+            far_years = float(workbench.get_attribute('data-elapsed-years'))
+            assert far_years > 0
+            expect(workbench).to_have_attribute('data-feasible', 'true')
+            location.select_option('near')
+            assert float(workbench.get_attribute('data-delta-v')) > far_delta_v
+            expect(workbench).to_have_attribute('data-feasible', 'false')
+            expect(workbench.locator('.finlay-shortfall')).to_be_visible()
+            expect(workbench).to_have_attribute('data-elapsed-years', '')
+            study.set_viewport_size({'width': 320, 'height': 800})
+            assert not study.evaluate('document.documentElement.scrollWidth > innerWidth + 1'), 'Near-node shortfall overflows at 320px'
+            study.screenshot(path=str(out / 'finlay-near-node-320.png'), full_page=True)
+            study.set_viewport_size({'width': 1280, 'height': 900})
+            location.select_option('far')
+            power.select_option('100')
+            faster_years = float(workbench.get_attribute('data-elapsed-years'))
+            assert abs(faster_years * 10 / far_years - 1) < 1e-8, 'Ten times the usable power should reduce operating duration by ten'
+            exhaust.focus()
+            exhaust.press('ArrowRight')
+            assert exhaust.input_value() != defaults[2]
+            water.focus()
+            water.press('ArrowRight')
+            assert water.input_value() != defaults[3]
+            other.fill('0.5')
+            assert abs(float(workbench.get_attribute('data-delta-v')) - far_delta_v) > 1e-6
+            study.locator('summary').filter(has_text='Nucleus assumptions').click()
+            expect(study.locator('details').filter(has=study.locator('summary').filter(has_text='Nucleus assumptions'))).to_have_attribute('open', '')
+            study.get_by_role('button', name='Reset study', exact=True).click()
+            assert [control.input_value() for control in [location, power, exhaust, water, other]] == defaults
+            assert study.evaluate('JSON.stringify({...localStorage})') == storage_before
+            assert study.evaluate('async () => (await indexedDB.databases()).map(db => db.name).sort()') == databases_before
+            study.screenshot(path=str(out / 'finlay-workbench-1280.png'), full_page=True)
+            study_context.close()
+            report['navigation'].append('Finlay concept: five stages and keyboard activation; workbench: plane change, power scaling, sliders, assumptions, reset and no game storage writes')
+
+            # The default budget and its evidence stay readable without client
+            # code; controls must not imply that an inert page recalculates.
+            static_study = browser.new_page(java_script_enabled=False, viewport={'width': 320, 'height': 800})
+            static_study.goto(origin + '/missions/finlay/', wait_until='networkidle')
+            static_study.locator('#mission-budget').scroll_into_view_if_needed()
+            expect(static_study.locator('.finlay-workbench fieldset').first).to_have_attribute('disabled', '')
+            expect(static_study.get_by_label('Plane-change location', exact=True)).to_be_disabled()
+            expect(static_study.get_by_role('button', name='Reset study', exact=True)).to_be_disabled()
+            assert static_study.locator('.finlay-workbench').get_attribute('data-delta-v')
+            expect(static_study.get_by_role('region', name='Mission budget results')).to_be_visible()
+            expect(static_study.get_by_text('Time at 70% duty cycle', exact=True)).to_be_visible()
+            assert static_study.locator('a[href="https://ntrs.nasa.gov/citations/20190027057"]').count() > 0
+            assert static_study.locator('a[href="https://arxiv.org/abs/1510.06645"]').count() > 0
+            assert not static_study.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            static_study.screenshot(path=str(out / 'finlay-no-js-320.png'), full_page=True)
+            static_study.close()
+            report['navigation'].append('Finlay default budget and sources without JavaScript')
 
             # A public entry point must lead to a usable first action. Open the
             # actual worker-driven briefing and verify saved designs survive it.

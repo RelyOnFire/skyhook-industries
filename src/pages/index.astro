@@ -26,6 +26,23 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
   </section>
   <IntroductionFilm />
   <ExperienceGateway />
+  <section class="mission-feature" aria-labelledby="mission-heading">
+    <div class="mission-feature-copy">
+      <p class="section-index">MISSION STUDY / 15P FINLAY</p>
+      <h2 id="mission-heading">Bring the water<br />within reach.</h2>
+      <p>Transport gets the machinery there. Power puts it to work. The next ambition is a comet transformed into an orbital water depot, supplying a network that can keep growing.</p>
+      <a class="text-link" href="/missions/finlay/">Explore the Finlay mission <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="mission-feature-plan">
+      <span class="mission-feature-label">THE PROPOSED SEQUENCE</span>
+      <ol>
+        <li><span>01</span><div><h3>Meet and enclose.</h3><p>Survey the nucleus and study a containment system around it.</p></div></li>
+        <li><span>02</span><div><h3>Use its own volatiles.</h3><p>Extract water, heat propellant and trade some of the resource for thrust.</p></div></li>
+        <li><span>03</span><div><h3>Build a depot in orbit.</h3><p>Compare the demands of a destination near Earth, the Moon or Mars.</p></div></li>
+      </ol>
+      <p class="mission-feature-note">Open the study to explore the propulsion budget and the trajectory questions still to solve.</p>
+    </div>
+  </section>
   <section class="research-links"><div class="section-index">03 / OPEN ENGINEERING</div><h2>Ambition needs<br />working assumptions.</h2><p class="research-intro">This is a design study. Explore the calculations, the research that came before, and the questions still open.</p><a href="/reference-architecture/"><span>01</span><div><h3>Reference architecture</h3><p>The 4,000 km study, material assumptions, and ideal mass closure.</p></div><b>↗</b></a><a href="/lab/architectures/"><span>02</span><div><h3>A family of tether concepts</h3><p>Explore Earth, lunar, Phobos and T4 experiments alongside the research concepts.</p></div><b>↗</b></a><a href="/research/"><span>03</span><div><h3>The research record</h3><p>Flight heritage, published studies, and the evidence behind the idea.</p></div><b>↗</b></a><a href="/roadmap/"><span>04</span><div><h3>The engineering ahead</h3><p>Materials, capture, survivability, and recovery.</p></div><b>↗</b></a></section>
   <section class="heritage-section" aria-labelledby="heritage-heading">
     <div class="heritage-story">
@@ -42,6 +59,19 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
   <section class="new-closing"><p>SKYHOOK INDUSTRIES</p><h2>The next step<br />starts in orbit.</h2><a class="text-link" href="/lab/?mission=second-delivery">Fly your first mission <span aria-hidden="true">↗</span></a></section>
 </ProductionLayout>
 <style>
+  .mission-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:clamp(32px,6vw,88px);padding:clamp(48px,7svh,80px) max(4vw,calc((100vw - 1240px)/2));border-top:1px solid #35434b;background:radial-gradient(ellipse at 0 100%,#20313a80,transparent 65%),#0c1216;color:#e4ebed}
+  .mission-feature .section-index{color:#efa477;margin:0 0 24px}
+  .mission-feature h2{margin:0 0 22px;font:400 clamp(32px,3.3vw,48px)/1.15 var(--sans);letter-spacing:-.035em}
+  .mission-feature-copy>p:not(.section-index){max-width:52ch;color:#b6c5cc;font:17px/1.7 var(--sans);margin:0 0 28px}
+  .mission-feature .text-link{max-width:400px;gap:20px}
+  .mission-feature-label{font:11px/1.6 var(--mono);letter-spacing:.08em;color:#a9bbc3}
+  .mission-feature ol{list-style:none;padding:0;margin:16px 0 0}
+  .mission-feature li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:16px;padding:17px 0;border-top:1px solid #35434b}
+  .mission-feature li>span{font:12px/1.6 var(--mono);color:#efa477;padding-top:3px}
+  .mission-feature h3{font:500 18px/1.4 var(--sans);margin:0 0 6px;color:#e4ebed}
+  .mission-feature li p{font:15px/1.6 var(--sans);color:#b6c5cc;margin:0}
+  .mission-feature-note{font:13px/1.6 var(--sans);color:#91a7b2;margin:14px 0 0}
+  @media(max-width:700px){.mission-feature{grid-template-columns:1fr;padding-inline:20px}.mission-feature .text-link{font-size:16px}}
   .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
   .hero-actions .launch-link{gap:20px}
   .launch-secondary{background:transparent;color:#e3e9eb;border-color:#506069}
