@@ -1,295 +1,418 @@
 {
-  "duration": 90,
+  "duration": 95.375,
   "sampleRate": 48000,
   "audio": "narration.wav",
-  "voice": "Piper en_GB-cori-high, synthetic narration",
-  "modelCard": "https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/high/MODEL_CARD",
-  "voiceLicense": "Public domain, as published by model creator Bryce Beattie",
-  "voiceLicenseURL": "https://brycebeattie.com/files/tts/",
-  "engine": "piper-tts 1.8.0",
-  "encoder": "7.0.2-static",
-  "modelSHA256": "470b4dd634c98f8a4850d7626ffc3dfc90774628eeef6605a6dd8f88f30a5903",
+  "voice": "Kokoro bm_george, synthetic stock narration",
+  "modelCard": "https://huggingface.co/hexgrad/Kokoro-82M",
+  "voiceLicense": "Apache-2.0 model and stock voice weights",
+  "voiceLicenseURL": "https://huggingface.co/hexgrad/Kokoro-82M",
+  "engine": "kokoro-onnx 0.5.0",
+  "modelSource": "https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.1",
+  "modelSHA256": "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a",
+  "voicesSHA256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
   "synthesis": {
-    "length_scale": 1.19,
-    "noise_scale": 0.55,
-    "noise_w_scale": 0.7
+    "voice": "bm_george",
+    "speed": 0.96,
+    "language": "en-gb",
+    "pronunciations": {
+      "lunavator": "lˈuːnəveɪtə",
+      "Phobos": "fˈəʊbɒs"
+    }
+  },
+  "captionTiming": "Kokoro phoneme durations, 600 samples per frame at 24 kHz; no speech time stretching.",
+  "loudness": {
+    "integratedLUFS": -18,
+    "truePeakDB": -1.5
   },
   "shots": [
     {
       "id": "opening",
-      "start": 0,
-      "end": 10,
-      "text": "Reaching orbit takes speed as well as height. What if some of the machinery that gives a payload that speed could stay in space?",
+      "start": 0.0,
+      "end": 9.65,
+      "text": "Reaching orbit takes speed as well as height. What if the machinery that gives a payload that speed could stay in space?",
       "sentences": [
         {
           "text": "Reaching orbit takes speed as well as height.",
-          "start": 0.7,
-          "end": 3.475
+          "phrases": [
+            "Reaching orbit takes speed as well as height."
+          ],
+          "start": 0.925,
+          "end": 4.175
         },
         {
-          "text": "What if some of the machinery that gives a payload that speed could stay in space?",
-          "start": 3.775,
-          "end": 8.196
+          "text": "What if the machinery that gives a payload that speed could stay in space?",
+          "phrases": [
+            "What if the machinery that gives a payload that speed",
+            "could stay in space?"
+          ],
+          "start": 4.225,
+          "end": 8.825
         }
-      ]
+      ],
+      "leadingSilence": 0.6,
+      "trailingSilence": 0.8
     },
     {
-      "id": "rotation",
-      "start": 10,
-      "end": 24,
-      "text": "A skyhook is a rotating tether in orbit. Near the bottom of its swing, its tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
+      "id": "principle",
+      "start": 9.65,
+      "end": 23.25,
+      "text": "A skyhook is a rotating tether in orbit. Near the bottom of its swing, the tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
       "sentences": [
         {
           "text": "A skyhook is a rotating tether in orbit.",
-          "start": 10.3,
-          "end": 13.063
+          "phrases": [
+            "A skyhook is a rotating tether in orbit."
+          ],
+          "start": 10.275,
+          "end": 13.625
         },
         {
-          "text": "Near the bottom of its swing, its tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
-          "start": 13.363,
-          "end": 21.2
+          "text": "Near the bottom of its swing, the tip moves against the orbital motion, reducing the speed an approaching payload needs to match.",
+          "phrases": [
+            "Near the bottom of its swing,",
+            "the tip moves against the orbital motion,",
+            "reducing the speed an approaching payload needs to match."
+          ],
+          "start": 13.7,
+          "end": 22.425
         }
-      ]
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
     },
     {
-      "id": "capture",
-      "start": 24,
-      "end": 38,
-      "text": "A launch vehicle climbs to the meeting point. Position, speed and timing must align. A grapple secures the payload, and the tether carries the load.",
+      "id": "earth",
+      "start": 23.25,
+      "end": 37.975,
+      "text": "In this concept, a hypersonic aircraft climbs, then coasts toward the moving tip. Position, speed and timing must align. A grapple secures the payload, and the tether carries the load.",
       "sentences": [
         {
-          "text": "A launch vehicle climbs to the meeting point.",
-          "start": 24.3,
-          "end": 26.982
+          "text": "In this concept, a hypersonic aircraft climbs, then coasts toward the moving tip.",
+          "phrases": [
+            "In this concept, a hypersonic aircraft climbs,",
+            "then coasts toward the moving tip."
+          ],
+          "start": 23.9,
+          "end": 29.6
         },
         {
           "text": "Position, speed and timing must align.",
-          "start": 27.282,
-          "end": 31.427
+          "phrases": [
+            "Position, speed and timing must align."
+          ],
+          "start": 29.675,
+          "end": 32.85
         },
         {
           "text": "A grapple secures the payload, and the tether carries the load.",
-          "start": 31.727,
-          "end": 35.323
+          "phrases": [
+            "A grapple secures the payload,",
+            "and the tether carries the load."
+          ],
+          "start": 32.925,
+          "end": 37.15
         }
-      ]
-    },
-    {
-      "id": "swing",
-      "start": 38,
-      "end": 44,
-      "text": "As the tether turns, the payload gains orbital energy.",
-      "sentences": [
-        {
-          "text": "As the tether turns, the payload gains orbital energy.",
-          "start": 38.3,
-          "end": 42.194
-        }
-      ]
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
     },
     {
       "id": "release",
-      "start": 44,
-      "end": 50,
-      "text": "At a chosen release point, it leaves on its own trajectory.",
+      "start": 37.975,
+      "end": 47.925,
+      "text": "The tether lifts the payload and releases it onto a higher-energy trajectory. After release, it coasts under gravity.",
       "sentences": [
         {
-          "text": "At a chosen release point, it leaves on its own trajectory.",
-          "start": 44.3,
-          "end": 48.035
+          "text": "The tether lifts the payload and releases it onto a higher-energy trajectory.",
+          "phrases": [
+            "The tether lifts the payload and releases it",
+            "onto a higher-energy trajectory."
+          ],
+          "start": 38.6,
+          "end": 43.675
+        },
+        {
+          "text": "After release, it coasts under gravity.",
+          "phrases": [
+            "After release, it coasts under gravity."
+          ],
+          "start": 43.75,
+          "end": 47.1
         }
-      ]
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
     },
     {
       "id": "recovery",
-      "start": 50,
-      "end": 64,
-      "text": "That energy comes from the tether's motion. Before the next handoff, the system must recover. Propulsion, or carefully planned returning cargo, could help restore what the outgoing payload took.",
+      "start": 47.925,
+      "end": 60.1,
+      "text": "That energy comes from the tether's motion. Propulsion, or carefully planned returning cargo, could restore what the outgoing payload took before the next delivery.",
       "sentences": [
         {
           "text": "That energy comes from the tether's motion.",
-          "start": 50.3,
-          "end": 52.576
+          "phrases": [
+            "That energy comes from the tether's motion."
+          ],
+          "start": 48.55,
+          "end": 51.175
         },
         {
-          "text": "Before the next handoff, the system must recover.",
-          "start": 52.876,
-          "end": 56.219
-        },
-        {
-          "text": "Propulsion, or carefully planned returning cargo, could help restore what the outgoing payload took.",
-          "start": 56.519,
-          "end": 62.813
+          "text": "Propulsion, or carefully planned returning cargo, could restore what the outgoing payload took before the next delivery.",
+          "phrases": [
+            "Propulsion, or carefully planned returning cargo,",
+            "could restore what the outgoing payload took",
+            "before the next delivery."
+          ],
+          "start": 51.225,
+          "end": 59.275
         }
-      ]
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
+    },
+    {
+      "id": "moon",
+      "start": 60.1,
+      "end": 70.825,
+      "text": "At the Moon, a mass driver could launch cargo toward a lunavator. The payload accelerates along the track, then coasts to the grapple.",
+      "sentences": [
+        {
+          "text": "At the Moon, a mass driver could launch cargo toward a lunavator.",
+          "phrases": [
+            "At the Moon, a mass driver could launch cargo toward a lunavator."
+          ],
+          "start": 60.725,
+          "end": 65.075
+        },
+        {
+          "text": "The payload accelerates along the track, then coasts to the grapple.",
+          "phrases": [
+            "The payload accelerates along the track,",
+            "then coasts to the grapple."
+          ],
+          "start": 65.125,
+          "end": 70.0
+        }
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
     },
     {
       "id": "network",
-      "start": 64,
-      "end": 74,
-      "text": "One tether could become part of a transport network: a lunar lunavator, an anchor at Phobos, and routes further into the solar system.",
+      "start": 70.825,
+      "end": 82.925,
+      "text": "Phobos itself could anchor the network at Mars. Mercury could support solar industry. And a mission to comet Finlay could put a source of water within reach.",
       "sentences": [
         {
-          "text": "One tether could become part of a transport network: a lunar lunavator, an anchor at Phobos, and routes further into the solar system.",
-          "start": 64.3,
-          "end": 72.299
-        }
-      ]
-    },
-    {
-      "id": "invitation",
-      "start": 74,
-      "end": 90,
-      "text": "Skyhook Industries explores that possibility. Design and test a flight in Flight Studio. Build and supply a network in Expeditions. Start with one handoff. See where it could lead.",
-      "sentences": [
-        {
-          "text": "Skyhook Industries explores that possibility.",
-          "start": 74.3,
-          "end": 77.612
+          "text": "Phobos itself could anchor the network at Mars.",
+          "phrases": [
+            "Phobos itself could anchor the network at Mars."
+          ],
+          "start": 71.45,
+          "end": 74.8
         },
         {
-          "text": "Design and test a flight in Flight Studio.",
-          "start": 77.912,
-          "end": 81.581
+          "text": "Mercury could support solar industry.",
+          "phrases": [
+            "Mercury could support solar industry."
+          ],
+          "start": 74.875,
+          "end": 77.5
+        },
+        {
+          "text": "And a mission to comet Finlay could put a source of water within reach.",
+          "phrases": [
+            "And a mission to comet Finlay could put a source of water within reach."
+          ],
+          "start": 77.55,
+          "end": 82.1
+        }
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 0.8
+    },
+    {
+      "id": "endcard",
+      "start": 82.925,
+      "end": 95.375,
+      "text": "Try a guided flight in Flight Studio. Build and supply a network in Expeditions. Start with one handoff, and see where it could lead.",
+      "sentences": [
+        {
+          "text": "Try a guided flight in Flight Studio.",
+          "phrases": [
+            "Try a guided flight in Flight Studio."
+          ],
+          "start": 83.55,
+          "end": 86.3
         },
         {
           "text": "Build and supply a network in Expeditions.",
-          "start": 81.881,
-          "end": 85.058
+          "phrases": [
+            "Build and supply a network in Expeditions."
+          ],
+          "start": 86.375,
+          "end": 89.3
         },
         {
-          "text": "Start with one handoff.",
-          "start": 85.358,
-          "end": 87.236
-        },
-        {
-          "text": "See where it could lead.",
-          "start": 87.536,
-          "end": 88.882
+          "text": "Start with one handoff, and see where it could lead.",
+          "phrases": [
+            "Start with one handoff,",
+            "and see where it could lead."
+          ],
+          "start": 89.375,
+          "end": 92.85
         }
-      ]
+      ],
+      "leadingSilence": 0.3,
+      "trailingSilence": 2.5
     }
   ],
   "captions": [
     {
-      "start": 0.7,
-      "end": 3.475,
-      "text": "Reaching orbit takes\nspeed as well as height."
+      "start": 0.925,
+      "end": 4.175,
+      "text": "Reaching orbit takes speed as well as\nheight."
     },
     {
-      "start": 3.775,
-      "end": 5.433,
-      "text": "What if some of the machinery"
+      "start": 4.225,
+      "end": 7.075,
+      "text": "What if the machinery that gives a payload\nthat speed"
     },
     {
-      "start": 5.433,
-      "end": 8.196,
-      "text": "that gives a payload that\nspeed could stay in space?"
+      "start": 7.125,
+      "end": 8.825,
+      "text": "could stay in space?"
     },
     {
-      "start": 10.3,
-      "end": 13.063,
+      "start": 10.275,
+      "end": 13.625,
       "text": "A skyhook is a rotating tether in orbit."
     },
     {
-      "start": 13.363,
-      "end": 15.5,
+      "start": 13.7,
+      "end": 15.425,
       "text": "Near the bottom of its swing,"
     },
     {
-      "start": 15.5,
-      "end": 17.994,
-      "text": "its tip moves against the orbital motion,"
+      "start": 15.475,
+      "end": 18.175,
+      "text": "the tip moves against the orbital motion,"
     },
     {
-      "start": 17.994,
-      "end": 21.2,
-      "text": "reducing the speed an approaching\npayload needs to match."
+      "start": 18.225,
+      "end": 22.425,
+      "text": "reducing the speed an approaching payload\nneeds to match."
     },
     {
-      "start": 24.3,
-      "end": 26.982,
-      "text": "A launch vehicle climbs\nto the meeting point."
+      "start": 23.9,
+      "end": 27.275,
+      "text": "In this concept, a hypersonic aircraft\nclimbs,"
     },
     {
-      "start": 27.282,
-      "end": 31.427,
+      "start": 27.325,
+      "end": 29.6,
+      "text": "then coasts toward the moving tip."
+    },
+    {
+      "start": 29.675,
+      "end": 32.85,
       "text": "Position, speed and timing must align."
     },
     {
-      "start": 31.727,
-      "end": 35.323,
-      "text": "A grapple secures the payload,\nand the tether carries the load."
+      "start": 32.925,
+      "end": 34.95,
+      "text": "A grapple secures the payload,"
     },
     {
-      "start": 38.3,
-      "end": 42.194,
-      "text": "As the tether turns, the\npayload gains orbital energy."
+      "start": 35.0,
+      "end": 37.15,
+      "text": "and the tether carries the load."
     },
     {
-      "start": 44.3,
-      "end": 48.035,
-      "text": "At a chosen release point, it\nleaves on its own trajectory."
+      "start": 38.6,
+      "end": 41.2,
+      "text": "The tether lifts the payload and releases\nit"
     },
     {
-      "start": 50.3,
-      "end": 52.576,
-      "text": "That energy comes from\nthe tether's motion."
+      "start": 41.25,
+      "end": 43.675,
+      "text": "onto a higher-energy trajectory."
     },
     {
-      "start": 52.876,
-      "end": 56.219,
-      "text": "Before the next handoff,\nthe system must recover."
+      "start": 43.75,
+      "end": 47.1,
+      "text": "After release, it coasts under gravity."
     },
     {
-      "start": 56.519,
-      "end": 59.216,
-      "text": "Propulsion, or carefully\nplanned returning cargo,"
+      "start": 48.55,
+      "end": 51.175,
+      "text": "That energy comes from the tether's\nmotion."
     },
     {
-      "start": 59.216,
-      "end": 62.813,
-      "text": "could help restore what\nthe outgoing payload took."
+      "start": 51.225,
+      "end": 54.775,
+      "text": "Propulsion, or carefully planned returning\ncargo,"
     },
     {
-      "start": 64.3,
-      "end": 67.43,
-      "text": "One tether could become\npart of a transport network:"
+      "start": 54.825,
+      "end": 57.375,
+      "text": "could restore what the outgoing payload\ntook"
     },
     {
-      "start": 67.43,
-      "end": 69.865,
-      "text": "a lunar lunavator, an anchor at Phobos,"
+      "start": 57.425,
+      "end": 59.275,
+      "text": "before the next delivery."
     },
     {
-      "start": 69.865,
-      "end": 72.299,
-      "text": "and routes further into the solar system."
+      "start": 60.725,
+      "end": 65.075,
+      "text": "At the Moon, a mass driver could launch\ncargo toward a lunavator."
     },
     {
-      "start": 74.3,
-      "end": 77.612,
-      "text": "Skyhook Industries\nexplores that possibility."
+      "start": 65.125,
+      "end": 67.75,
+      "text": "The payload accelerates along the track,"
     },
     {
-      "start": 77.912,
-      "end": 81.581,
-      "text": "Design and test a flight in Flight Studio."
+      "start": 67.8,
+      "end": 70.0,
+      "text": "then coasts to the grapple."
     },
     {
-      "start": 81.881,
-      "end": 85.058,
+      "start": 71.45,
+      "end": 74.8,
+      "text": "Phobos itself could anchor the network at\nMars."
+    },
+    {
+      "start": 74.875,
+      "end": 77.5,
+      "text": "Mercury could support solar industry."
+    },
+    {
+      "start": 77.55,
+      "end": 82.1,
+      "text": "And a mission to comet Finlay could put a\nsource of water within reach."
+    },
+    {
+      "start": 83.55,
+      "end": 86.3,
+      "text": "Try a guided flight in Flight Studio."
+    },
+    {
+      "start": 86.375,
+      "end": 89.3,
       "text": "Build and supply a network in Expeditions."
     },
     {
-      "start": 85.358,
-      "end": 87.236,
-      "text": "Start with one handoff."
+      "start": 89.375,
+      "end": 90.9,
+      "text": "Start with one handoff,"
     },
     {
-      "start": 87.536,
-      "end": 88.882,
-      "text": "See where it could lead."
+      "start": 90.95,
+      "end": 92.85,
+      "text": "and see where it could lead."
     }
   ]
 }

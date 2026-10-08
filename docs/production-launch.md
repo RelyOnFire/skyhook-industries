@@ -2,7 +2,7 @@
 
 This release prepares the current Skyhook Industries site to replace the original public website. It adds legacy redirects, production search metadata, help with moving saves, and browser checks. It does not change the public domain, merge either stacked pull request, or promote the branch to production.
 
-The review address remains [dribbble-visual-redesign](https://dribbble-visual-redesign-skyhook-industries.imattoo.workers.dev/). Keep it available after launch so existing players can download their saves. The [original introduction film](storyboards/skyhook-introduction.md) is now a completed 90-second narrated first cut. Review it through the homepage's deliberate-play player; captions and a full transcript are included. Film review is independent of the website cutover.
+The review address remains [dribbble-visual-redesign](https://dribbble-visual-redesign-skyhook-industries.imattoo.workers.dev/). Keep it available after launch so existing players can download their saves. The [original introduction film](storyboards/skyhook-introduction.md) is now a 95-second film with the selected George narration and the Earth aircraft and lunar mass-driver scenes. Review it through the homepage's deliberate-play player; captions and a full transcript are included. Film review is independent of the website cutover.
 
 ## Legacy links
 

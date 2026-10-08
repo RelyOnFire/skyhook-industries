@@ -66,8 +66,8 @@ indexing, save transfer, validation and rollback.
 
 Visitors can use [Help & saves](src/pages/help.astro) to back up networks and designs. The
 [original introduction film](docs/storyboards/skyhook-introduction.md)
-is a completed 90-second narrated first cut, with captions, a transcript and a
-deliberate-play homepage player. Its regeneration scripts and voice provenance
+runs 95 seconds, with George’s selected narration, Earth aircraft and lunar mass-driver scenes,
+captions, a transcript and a deliberate-play homepage player. Its regeneration scripts and voice provenance
 are documented alongside the shot plan.
 
 ## Editorial rule

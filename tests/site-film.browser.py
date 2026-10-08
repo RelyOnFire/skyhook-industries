@@ -10,6 +10,9 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+NARRATION = json.loads((ROOT / 'docs/storyboards/skyhook-introduction.timings.json').read_text())
+FILM_URL = '/films/skyhook-introduction.mp4?v=george-20261008'
+CAPTIONS_URL = '/films/skyhook-introduction.vtt?v=george-20261008'
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -117,7 +120,8 @@ def main():
                     captions:video.textTracks[0].cues.length, captionMode:video.textTracks[0].mode,
                     hasAudio:video.mozHasAudio || video.webkitAudioDecodedByteCount>0
                 })""")
-                assert abs(details['duration']-90) < .1, details
+                assert abs(details['duration']-NARRATION['duration']) < .1, details
+                assert details['captions'] == len(NARRATION['captions']), details
                 assert details['width'] >= 1280 and details['height'] >= 720, details
                 assert details['captionMode'] == 'showing', details
                 assert details['hasAudio'], 'The narrated introduction has no decoded audio track'
@@ -164,14 +168,14 @@ def main():
                         route.fulfill(status=503, content_type='text/plain', body='Injected unavailable film')
                     else:
                         pending.append(route)
-                retry.route('**/films/skyhook-introduction.mp4', film_response)
+                retry.route('**/films/skyhook-introduction.mp4*', film_response)
                 retry.goto(origin + '/', wait_until='networkidle')
                 retry_film = retry.locator('[data-introduction-film]')
                 retry_trigger = retry_film.locator('[data-film-play]')
                 retry_trigger.click()
                 expect(retry_film.get_by_role('status')).to_contain_text('The film could not load.')
                 expect(retry_trigger).to_be_enabled()
-                expect(retry_film.get_by_role('link', name='Open the film directly', exact=True)).to_have_attribute('href', '/films/skyhook-introduction.mp4')
+                expect(retry_film.get_by_role('link', name='Open the film directly', exact=True)).to_have_attribute('href', FILM_URL)
                 expect(retry_film.locator('video')).to_have_count(0)
                 retry_trigger.click()
                 expect(retry_trigger).to_be_disabled()
@@ -200,10 +204,12 @@ def main():
                 nojs = nojs_context.new_page()
                 nojs.goto(origin + '/', wait_until='networkidle')
                 nojs_film = nojs.locator('[data-introduction-film]')
-                expect(nojs_film.get_by_role('link', name='Open the introduction film', exact=True)).to_have_attribute('href', '/films/skyhook-introduction.mp4')
-                expect(nojs_film.get_by_role('link', name='Download captions', exact=True)).to_have_attribute('href', '/films/skyhook-introduction.vtt')
+                expect(nojs_film.get_by_role('link', name='Open the introduction film', exact=True)).to_have_attribute('href', FILM_URL)
+                expect(nojs_film.get_by_role('link', name='Download captions', exact=True)).to_have_attribute('href', CAPTIONS_URL)
                 nojs_film.locator('.film-transcript > summary').click()
-                expect(nojs_film.locator('.film-transcript')).to_contain_text('Start with one handoff. See where it could lead.')
+                for shot in NARRATION['shots']:
+                    expect(nojs_film.locator('.film-transcript')).to_contain_text(shot['text'])
+                expect(nojs_film.get_by_role('link', name='Try a guided flight')).to_have_attribute('href', '/lab/?mission=second-delivery')
                 assert not nojs.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
                 nojs_film.screenshot(path=str(out / 'film-nojs-320.png'))
                 nojs_context.close()

@@ -63,6 +63,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
   const [vectors, setVectors] = useState(false), [focusScene, setFocusScene] = useState(false);
   const [units, setUnits] = useStudioUnits();
   const challengeRef = useRef<Challenge|null>(null);
+  const controlTabs = useRef<HTMLDivElement|null>(null);
   const [design, setDesign] = useState<Design>({ ...initialDesign });
   const env=environment(design),lunar=env.id==='moon',bounds=designBounds(design);
   const missions=CHALLENGES.filter(c=>c.start.architecture===design.architecture);
@@ -93,7 +94,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     setInvalidFields(old => invalid ? old.includes(label) ? old : [...old, label] : old.includes(label) ? old.filter(x => x !== label) : old);
   }, []);
 
-  const run = (candidate: Design, autoPlay = true) => {
+  const run = (candidate: Design, autoPlay = true, guided = false) => {
     let d: Design;
     try { d = validate(candidate); } catch (e) { setError((e as Error).message); setBusy(false); return; }
     worker.current?.terminate(); setBusy(true); setPlaying(false); setError(''); setNotice('');
@@ -106,7 +107,8 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
         setBusy(false); w.terminate(); worker.current = null;
         if (e.data.error) { setError(e.data.error); return; }
         if (resultRef.current) setPrevious(resultRef.current);
-        setResult(e.data.result); clock.current = 0; setTime(0); setGuide(null);
+        setResult(e.data.result); clock.current = 0; setTime(0); setGuide(guided?0:null);
+        if(guided){setSelectedObject('facility');setView(gpu?'earth':'plane');}
         const mission=challengeRef.current;
         if(mission && challengeGates(mission,e.data.result).every(g=>g.pass)) {
           setCompleted(old=>{const next=[...new Set([...old,mission.id])];
@@ -119,7 +121,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       w.postMessage({ id, design: d });
     } catch (e) { setBusy(false); setError(`Could not start the worker: ${(e as Error).message}`); }
   };
-  const adopt = (d: Design, fly = false) => {
+  const adopt = (d: Design, fly = false, guided = false) => {
     if(d.architecture!==design.architecture){
       setResult(null);resultRef.current=null;setPrevious(null);setBaseline(null);setStudyRows([]);setShareUrl('');
       chemicalBudget.current=d.architecture==='lunar-rotovator'?LUNAR_DEFAULT.fuelT:DEFAULT.fuelT;
@@ -129,7 +131,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     if(challengeRef.current&&challengeRef.current.start.architecture!==d.architecture){setChallenge(null);challengeRef.current=null;}
     setDesign(d); setExtended(d.payloadT > STANDARD_PAYLOAD_T); setInvalidFields([]);
     if (d.recovery === 'chemical') chemicalBudget.current = d.fuelT;
-    setPendingImport(null); run(d, fly);
+    setPendingImport(null); run(d, fly, guided);
   };
   useEffect(() => {
     let initial:Design = { ...initialDesign }, message = '';
@@ -227,10 +229,11 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     setSelectedObject(points[i].payloadId===2?'payload-2':points[i].payloadId===1?'payload-1':'facility');
     setView(gpu?(i===0?'earth':'follow'):'plane');
   };
-  const openEdit=(tab:ControlTab)=>{setModal(null);setControl(tab);setMobile('build');setFocusScene(false);};
+  const openEdit=(tab:ControlTab)=>{setModal(null);setGuide(null);setControl(tab);setMobile('build');setFocusScene(false);
+    requestAnimationFrame(()=>controlTabs.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus());};
   const pin=()=>{if(result){setBaseline(result);setNotice('Pinned this calculated flight. It stays available while you try other designs.');}};
   const startChallenge=()=>{challengeRef.current=brief;setChallenge(brief);setModal(null);setGuide(null);
-    adopt({...brief.start});setControl(brief.id==='light-facility'?'structure':'recovery');setMobile('fly');};
+    adopt({...brief.start},false,true);setControl(brief.id==='light-facility'?'structure':'recovery');setMobile('fly');};
   useEffect(() => { if (modal) setPlaying(false); }, [modal]);
   useEffect(() => {
     if (!focusScene) return;
@@ -239,6 +242,8 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     return () => window.removeEventListener('keydown', escape);
   }, [focusScene]);
   const diagnosis=result?diagnose(result):null;
+  const currentPass=!!challenge&&!!result&&!busy&&!dirty&&!hasInvalidInput&&!error&&challengeGates(challenge,result).every(g=>g.pass);
+  const nextChallenge=challenge?missions[missions.findIndex(c=>c.id===challenge.id)+1]??null:null;
   return <main className={`lab-app mobile-${mobile}${focusScene?' focus-scene':''}`} id="lab-content">
     <div className="workbench-bar"><div><p className="micro">{lunar?'MOON / LUNAR ROTOVATOR':'EARTH / SINGLE-STAGE ROTOVATOR'}</p><h1>Tether Lab<span className="model-tag">{design.model}</span></h1></div>
       <div className="workbench-actions"><button className="open-missions" onClick={()=>setModal('missions')}>Flight school</button><button className="open-study" onClick={()=>{setPlaying(false);setModal('study');}} disabled={busy||hasInvalidInput}>Trade study</button><button onClick={save}>Save</button><button onClick={load}>Load</button><button className="share-design" onClick={share}>Share design <span aria-hidden="true">↗</span></button></div>
@@ -249,9 +254,11 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       <span className="preset-number">0{i + 1}</span>{lunar?p.name:['Orbital relay', 'No reboost', 'Material limit', 'Long reach'][i]}<span aria-hidden="true">↗</span>
     </button>)}<a href="/lab/architectures/">Architecture catalogue <span aria-hidden="true">→</span></a></div>
 
-    {challenge ? <MissionProgress challenge={challenge} result={result} dirty={dirty}
+    {challenge ? <MissionProgress challenge={challenge} result={result} dirty={dirty} busy={busy} invalid={hasInvalidInput} error={error}
+      designUrl={currentPass&&!earthDesignReason(result!)?earthDesignUrl(result!):null} nextChallenge={nextChallenge}
       onBrief={()=>{setBrief(challenge);setModal('brief');}} onExit={()=>{setChallenge(null);challengeRef.current=null;}}
-      onReview={()=>{setPlaying(false);setModal('debrief');}} /> : <section className="flight-invitation"><div><span className="micro">BUILD. FLY. RECOVER.</span><h2>{lunar?'Build a working relay above the Moon.':'One payload is a demonstration. Two is a system.'}</h2><p>{lunar?'Catch, release, recover, repeat. Explore the orbital part of a lunavator; surface pickup and Earth–Moon targeting are not modeled.':'Start a guided challenge or change a design and see what the next flight costs.'}</p></div><button className="primary" onClick={()=>{setBrief(missions[0]);setModal('brief');}}>{lunar?'Start lunar mission':'Start your first mission'} <span aria-hidden="true">→</span></button></section>}
+      onReview={()=>{setPlaying(false);setModal('debrief');}} onReplay={()=>showCheckpoint(0)} onEdit={()=>openEdit(diagnosis?.tab??'recovery')}
+      onRun={()=>{run(design);setMobile('fly');}} onNext={()=>{if(nextChallenge){setBrief(nextChallenge);setModal('brief');}}} /> : <section className="flight-invitation"><div><span className="micro">BUILD. FLY. RECOVER.</span><h2>{lunar?'Build a working relay above the Moon.':'One payload is a demonstration. Two is a system.'}</h2><p>{lunar?'Catch, release, recover, repeat. Explore the orbital part of a lunavator; surface pickup and Earth–Moon targeting are not modeled.':'Start a guided challenge or change a design and see what the next flight costs.'}</p></div><button className="primary" onClick={()=>{setBrief(missions[0]);setModal('brief');}}>{lunar?'Start lunar mission':'Start your first mission'} <span aria-hidden="true">→</span></button></section>}
     {modal==='missions'&&<MissionSelect choices={missions} onSelect={c=>{setBrief(c);setModal('brief');}} onClose={()=>setModal(null)} completed={completed}/>}
     {modal==='brief'&&<MissionBrief challenge={brief} onStart={startChallenge} onClose={()=>setModal(null)}/>}
     {modal==='debrief'&&result&&<Debrief result={result} baseline={baseline} challenge={challenge} units={units} onClose={()=>setModal(null)} onEdit={openEdit}
@@ -268,7 +275,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     <div className="lab-workspace">
       <aside className="build-panel lab-panel" aria-label="Design controls" inert={focusScene || undefined}>
         <div className="panel-heading"><h2>Design bay</h2><span className={dirty ? 'tag tag-amber' : 'tag'}>{dirty ? 'UNRUN CHANGES' : 'CONFIGURATION'}</span></div>
-        <div className="control-tabs" role="group" aria-label="Design sections">{(['structure', 'mission', 'recovery'] as ControlTab[]).map(t => <button key={t} aria-pressed={control === t} onClick={() => setControl(t)}>{t === 'structure' ? 'Structure' : t === 'mission' ? 'Mission' : 'Recovery'}</button>)}</div>
+        <div ref={controlTabs} className="control-tabs" role="group" aria-label="Design sections">{(['structure', 'mission', 'recovery'] as ControlTab[]).map(t => <button key={t} aria-pressed={control === t} onClick={() => setControl(t)}>{t === 'structure' ? 'Structure' : t === 'mission' ? 'Mission' : 'Recovery'}</button>)}</div>
         <div className="control-scroll">
           {control === 'structure' && <>
             <div className="architecture-identity"><span className="mini-tether" aria-hidden="true" /><div><strong>{lunar?'Lunar rotovator':'Single-stage rotovator'}</strong><span>Two equal arms · rigid-body model</span></div></div>
@@ -350,7 +357,9 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
           <div className="timeline-scale"><span>00:00:00</span><span>{max ? elapsed(max) : 'Awaiting calculation'}</span></div>
           <div className="timeline-events">{result?.events.filter(e => ['capture', 'release', 'approach', 'ready', 'limit', 'miss'].includes(e.kind)).map((e, i) => <button key={i} className={e.t <= time + .01 ? 'visited' : ''} onClick={() => { setGuide(null); seek(e.t); }}><span>{elapsed(e.t)}</span>{e.title.replace(' captured', ' · capture').replace(' released', ' · release').replace(' on approach', ' · approach').replace('Facility ready for next pickup', 'Facility ready')}</button>)}</div>
         </div>
-        {guide!==null&&result?<GuidedReplay result={result} index={guide} onStep={showCheckpoint} onClose={()=>setGuide(null)}/> : <div className="mission-narration" aria-live="polite"><span className="micro">FLIGHT LOG</span><h2>{currentEvent?.title ?? 'A payload leaves. What happens next?'}</h2><p>{currentEvent?.detail ?? 'Select an experiment and run it. Every line in the scene follows a calculated state.'}</p></div>}
+        {guide!==null&&result?<GuidedReplay result={result} index={guide} onStep={showCheckpoint} onClose={()=>setGuide(null)}
+          onFinish={challenge?()=>{if(currentPass){setModal('debrief');}else openEdit(diagnosis?.tab??'recovery');}:undefined}
+          finishLabel={challenge?currentPass?'Review successful flight →':`Open ${diagnosis?.tab??'recovery'} controls →`:undefined}/> : <div className="mission-narration" aria-live="polite"><span className="micro">FLIGHT LOG</span><h2>{currentEvent?.title ?? 'A payload leaves. What happens next?'}</h2><p>{currentEvent?.detail ?? 'Select an experiment and run it. Every line in the scene follows a calculated state.'}</p></div>}
       </section>
 
       <aside inert={focusScene || undefined} className="results-panel lab-panel" aria-label="Mission telemetry">

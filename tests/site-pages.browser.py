@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import struct
 import threading
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, unquote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,6 +191,69 @@ def main():
             expect(page.get_by_role('region', name='Active challenge')).to_contain_text('Make the second delivery')
             expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
             assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            # A guided entry reaches an honest first result and an actionable
+            # recovery step without requiring visitors to find the recorder.
+            mission = page.get_by_role('region', name='Active challenge')
+            guide = page.get_by_role('region', name='Guided replay')
+            expect(guide).to_be_visible()
+            expect(mission).to_contain_text('One delivery. Now make it repeat.')
+            expect(mission.get_by_role('link')).to_have_count(0)
+            expect(page.get_by_role('button', name='Pause replay', exact=True)).to_have_count(0)
+            while guide.get_by_role('button', name='Next checkpoint →', exact=True).count():
+                guide.get_by_role('button', name='Next checkpoint →', exact=True).click()
+            expect(guide).to_contain_text('One delivery; no second operating window.')
+            page.set_viewport_size({'width': 320, 'height': 800})
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            mission.screenshot(path=str(out / 'first-flight-next-step-320.png'))
+            guide.get_by_role('button', name='Open recovery controls →', exact=True).click()
+            recovery_tab = page.get_by_role('group', name='Design sections').get_by_role('button', name='Recovery', exact=True)
+            expect(recovery_tab).to_be_focused()
+            page.get_by_role('button', name='Chemical Finite thrust, finite propellant', exact=True).click()
+            page.get_by_role('spinbutton', name='Propellant budget value', exact=True).fill('20')
+            expect(mission).to_contain_text('Your change is ready to test')
+            expect(mission.get_by_role('link')).to_have_count(0)
+            mission.get_by_role('button', name='Run changed design →', exact=True).click()
+            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
+            expect(mission).to_have_class('mission-banner mission-passed')
+            expect(mission).to_contain_text('2 of 2 deliveries')
+            handoff = mission.get_by_role('link', name='Compare this design in Expeditions')
+            expect(handoff).to_be_visible()
+            href = handoff.get_attribute('href')
+            assert href.startswith('/lab/campaign/#earth-design=')
+            candidate = json.loads(unquote(href.split('#earth-design=')[1]))
+            assert candidate['payloadT'] == 3 and candidate['recovery'] == 'chemical' and candidate['fuelT'] == 20
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            mission.screenshot(path=str(out / 'first-flight-success-320.png'))
+            page.set_viewport_size({'width': 1440, 'height': 1000})
+            mission.screenshot(path=str(out / 'first-flight-success-1440.png'))
+            mission.get_by_role('button', name='Review successful flight →', exact=True).click()
+            expect(page.locator('.objective-list .gate-open')).to_have_count(0)
+            page.keyboard.press('Escape')
+            mission.get_by_role('button', name='Next mission: Carry more with less →', exact=True).click()
+            expect(page.get_by_role('dialog', name='Carry more with less')).to_be_visible()
+            page.keyboard.press('Escape')
+            expect(mission).to_contain_text('Make the second delivery')
+            # Invalid editing, unrun changes and a worker failure must not
+            # offer a stale design as a newly verified challenge success.
+            page.get_by_role('group', name='Design sections').get_by_role('button', name='Recovery', exact=True).click()
+            fuel = page.get_by_role('spinbutton', name='Propellant budget value', exact=True)
+            fuel.fill('')
+            expect(mission).not_to_have_class('mission-banner mission-passed')
+            expect(mission.get_by_role('link')).to_have_count(0)
+            expect(mission.get_by_role('button', name='Run changed design →', exact=True)).to_be_disabled()
+            fuel.fill('19')
+            expect(mission).to_contain_text('Your change is ready to test')
+            expect(mission.get_by_role('link')).to_have_count(0)
+            fuel.fill('20')
+            expect(mission).to_have_class('mission-banner mission-passed')
+            page.evaluate("() => {window.__nativeFlightWorker=window.Worker; window.Worker=class { constructor(){throw new Error('Injected worker startup failure');} };}")
+            page.locator('.run-design').click()
+            expect(mission).to_contain_text('Your calculation needs attention')
+            expect(mission.get_by_role('link')).to_have_count(0)
+            expect(mission).not_to_have_class('mission-banner mission-passed')
+            page.evaluate('() => {window.Worker=window.__nativeFlightWorker;}')
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            report['navigation'].append('guided coast → chemical recovery → verified success and measured handoff; stale/invalid/failed runs cannot claim success')
             # Explicit shared designs win over the public mission suggestion.
             page.goto(origin + '/lab/?mission=second-delivery#d=' + quote(saved, safe=''), wait_until='networkidle')
             # A fragment-only navigation does not remount the current Studio;

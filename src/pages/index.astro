@@ -9,7 +9,7 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
     <div class="hero-topline"><span><i></i> INDEPENDENT ORBITAL RESEARCH</span><span>EARTH / MOMENTUM EXCHANGE</span></div>
     <div class="hero-editorial">
       <h1 id="hero-title">A different<br />way <span>up.</span></h1>
-      <div class="hero-intro"><p>Leave the infrastructure in orbit.<br />Send the next payload further.</p><div class="hero-actions"><a class="launch-link" href="/lab/">Enter the Tether Lab <span aria-hidden="true">↗</span></a><a class="launch-link launch-secondary" href="/lab/campaign/">Play Expeditions <span aria-hidden="true">↗</span></a></div><a class="quiet-link" href="#principle">Discover the idea ↓</a></div>
+      <div class="hero-intro"><p>Leave the infrastructure in orbit.<br />Send the next payload further.</p><div class="hero-actions"><a class="launch-link" href="/lab/?mission=second-delivery">Try a guided flight <span aria-hidden="true">↗</span></a><a class="launch-link launch-secondary" href="/lab/campaign/">Play Expeditions <span aria-hidden="true">↗</span></a></div><div class="hero-quiet-links"><a class="quiet-link" href="#principle">Discover the idea ↓</a><a class="quiet-link" href="/lab/">Open the sandbox ↗</a></div></div>
     </div>
     <OrbitalView />
     <div class="hero-caption"><span>01 — ROTATING ORBITAL TETHER</span><span>CONCEPT VIEW / NOT TO SCALE</span></div>
@@ -73,6 +73,8 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
   .mission-feature-note{font:13px/1.6 var(--sans);color:#91a7b2;margin:14px 0 0}
   @media(max-width:700px){.mission-feature{grid-template-columns:1fr;padding-inline:20px}.mission-feature .text-link{font-size:16px}}
   .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+  .hero-quiet-links{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:10px}
+  .hero-quiet-links .quiet-link{display:inline-flex;align-items:center;min-height:44px;margin:0;font-size:14px}
   .hero-actions .launch-link{gap:20px}
   .launch-secondary{background:transparent;color:#e3e9eb;border-color:#506069}
   .launch-secondary:hover{background:#162127;border-color:#efa477}
