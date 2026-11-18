@@ -8,6 +8,7 @@ const stages = [
   { label: 'Capture', heading: 'The tether swings the cargo upward.', text: 'Once attached, the cargo travels with the spinning tether. Watch what happens when the tether lets go.' },
   { label: 'Release', heading: 'One delivery. Can you do it again?', text: 'The cargo leaves on a higher orbit, taking momentum from the tether. In this flight the tether doesn’t recover enough for a second pickup. Try to get it ready again.' },
 ];
+const CAPTURE_AT = 3, RELEASE_AT = 8, REPLAY_END = 9.5;
 
 export default function FirstHandoff({ result, error, gpu, onGraphicsError, onRetry, onContinue }: {
   result: Result | null;
@@ -18,6 +19,7 @@ export default function FirstHandoff({ result, error, gpu, onGraphicsError, onRe
   onContinue: (time: number) => void;
 }) {
   const clock = useRef(0);
+  const elapsed = useRef(0);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -41,29 +43,34 @@ export default function FirstHandoff({ result, error, gpu, onGraphicsError, onRe
   useEffect(() => {
     if (!playing || capture === undefined || release === undefined || end === undefined) return;
     let last = performance.now(), frame = 0;
+    const resetTime = () => { last = performance.now(); };
     const tick = (now: number) => {
-      const dt = Math.min(0.06, (now - last) / 1000);
+      const dt = Math.max(0, (now - last) / 1000);
       last = now;
       // Give the approach and release time on screen; compress the long swing.
-      const time = clock.current;
-      const speed = time < capture ? capture / 3 : time < release ? (release - capture) / 5 : 18 / 1.5;
-      if (!document.hidden) clock.current = Math.min(end, time + dt * speed);
-      if (time < capture && clock.current >= capture) setStep(1);
-      if (clock.current >= end) { setStep(2); setPlaying(false); }
-      else frame = requestAnimationFrame(tick);
+      const before = elapsed.current;
+      const t = elapsed.current = Math.min(REPLAY_END, before + (document.hidden ? 0 : dt));
+      clock.current = t < CAPTURE_AT ? capture * t / CAPTURE_AT
+        : t < RELEASE_AT ? capture + (release - capture) * (t - CAPTURE_AT) / (RELEASE_AT - CAPTURE_AT)
+        : release + (end - release) * (t - RELEASE_AT) / (REPLAY_END - RELEASE_AT);
+      if (t >= REPLAY_END) { setStep(2); setPlaying(false); }
+      else if (before < CAPTURE_AT && t >= CAPTURE_AT) setStep(1);
+      if (t < REPLAY_END) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    document.addEventListener('visibilitychange', resetTime);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', resetTime); };
   }, [playing, capture, release, end]);
 
   const next = () => {
     if (!available) return;
     setPlaying(false);
     clock.current = step === 0 ? capture : end;
+    elapsed.current = step === 0 ? CAPTURE_AT : REPLAY_END;
     setStep(step === 0 ? 1 : 2);
   };
   const replay = () => {
-    clock.current = 0; setStep(0); setPlaying(!reduceMotion);
+    clock.current = 0; elapsed.current = 0; setStep(0); setPlaying(!reduceMotion);
   };
   const advance = () => {
     if (problem) { onRetry(); return; }
