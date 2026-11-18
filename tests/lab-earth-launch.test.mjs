@@ -45,3 +45,23 @@ test('cargo release inherits tether velocity and free coast conserves energy and
   assert.ok(launchSpeed(first.velocity)>LAUNCH.aircraftSpeed);
   assert.ok(launchAltitude(last.position)>launchAltitude(first.position));
 });
+
+test('both carrier fin tips lean inward from their own nacelle crowns',async()=>{
+  const {createHypersonicAircraft}=await import('../.lab-test/campaign/HypersonicAircraft.js');
+  const model=createHypersonicAircraft();
+  try{
+    const sides=[[],[]];
+    model.group.traverse(o=>{
+      if(!o.isMesh)return;
+      const p=o.geometry.getAttribute('position');
+      for(let i=0;i<p.count;i++){
+        const y=p.getY(i),z=p.getZ(i);
+        if(p.getX(i)<-20 && y>10.5)sides[z>0?1:0].push(Math.abs(z));
+      }
+    });
+    for(const tip of sides){
+      assert.ok(tip.length>0,'each nacelle has a fin');
+      assert.ok(Math.max(...tip)<11 && Math.min(...tip)>8,'the fin crown must be inboard of the nacelle axis at |z|=12.9');
+    }
+  }finally{model.dispose();}
+});

@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {createFlightCargo} from '../visuals/FlightHardware.js';
 import {LUNAR_BRAKE,LUNAR_RAIL,lunarEase,lunarLaunchFrame} from './lunar-launch-motion.js';
 
 /** Shared geometry keeps the launch axis, bore and actual cargo envelope aligned.
  * Distances are drawing km; the hardware remains deliberately enlarged. */
 export const LUNAR_BORE={radius:.46,tube:.035,first:.65,last:LUNAR_RAIL.length-.65} as const;
 export function createLunarLauncher(materials:{metal:THREE.Material;dark:THREE.Material;copper:THREE.Material;cargo?:THREE.Material}){
- const {metal,dark,copper,cargo=metal}=materials,geometries:THREE.BufferGeometry[]=[];
+ const {metal,dark,copper}=materials,geometries:THREE.BufferGeometry[]=[];
  const group=new THREE.Group(),payload=new THREE.Group(),sled=new THREE.Group();group.add(sled);
  group.position.set(LUNAR_RAIL.start.x,LUNAR_RAIL.start.y,0);group.rotation.z=Math.atan2(LUNAR_RAIL.direction.y,LUNAR_RAIL.direction.x);
  const mesh=(g:THREE.BufferGeometry,m:THREE.Material,parent:THREE.Object3D)=>{geometries.push(g);const o=new THREE.Mesh(g,m);parent.add(o);return o;};
@@ -27,13 +28,13 @@ export function createLunarLauncher(materials:{metal:THREE.Material;dark:THREE.M
  });
  box(sled,.54,.1,.32,0,-.205,0,dark);
  for(const z of [-.12,.12]){box(sled,.48,.025,.045,0,-.14,z,copper);box(sled,.5,.04,.035,0,-.215,z,metal);}
- box(payload,.28,.4,.24,0,-.27,0,cargo);box(payload,.29,.07,.25,0,-.28,0,copper);
- box(payload,.015,.16,.08,.147,-.28,0,dark);
- box(payload,.11,.12,.012,0,-.4,.126,dark);
- for(const x of [-.12,.12])box(payload,.015,.4,.25,x,-.27,0,metal);
- const stem=mesh(new THREE.CylinderGeometry(.022,.022,.07,12),metal,payload);stem.position.y=-.035;
- mesh(new THREE.TorusGeometry(.055,.018,12,32),copper,payload);
- return {group,payload,sled,coils,brakes,dispose:()=>geometries.forEach(g=>g.dispose())};
+ // The rail kit keeps a narrow, replaceable shoe on the Moon. The sealed
+ // cargo canister and its upper capture fitting leave without the sled.
+ for(const x of [-.17,.16])for(const side of [-1,1]){
+   const shoe=box(sled,.075,.055,.045,x,-.143,side*.096,metal);shoe.rotation.x=side*.43;
+ }
+ const pod=createFlightCargo('moon');pod.group.scale.setScalar(.185);payload.add(pod.group);
+ return {group,payload,sled,coils,brakes,dispose:()=>{pod.dispose();geometries.forEach(g=>g.dispose());}};
 }
 
 export function positionLunarCargo(launcher:ReturnType<typeof createLunarLauncher>,frame:ReturnType<typeof lunarLaunchFrame>,stage:number,progress:number){

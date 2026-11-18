@@ -1,7 +1,7 @@
 ---
 import narration from '../../docs/storyboards/skyhook-introduction.timings.json';
 const media = '/films/skyhook-introduction';
-const version = 'george-20261008';
+const version = 'flight-hardware-20261118';
 const filmUrl = `${media}.mp4?v=${version}`;
 const captionsUrl = `${media}.vtt?v=${version}`;
 const posterUrl = `${media}-poster.webp?v=${version}`;
@@ -19,7 +19,7 @@ const duration = Math.round(narration.duration);
     </button>
   </div>
   <p class="film-status" data-film-status role="status" hidden></p>
-  <div class="film-foot"><p>Concept illustration, followed by Flight Studio and Expeditions.</p><nav aria-label="Continue after the film"><a href="/lab/?mission=second-delivery">Try a guided flight ↗</a><a href="/system/#flight-story-title">Explore each moment ↗</a></nav></div>
+  <div class="film-foot"><p>Concept illustration, followed by Flight Studio and Expeditions.</p><nav aria-label="Continue after the film"><a href="/lab/?mission=second-delivery">Try a guided flight ↗</a><a href="/system/#flight-story-title">Explore each moment ↗</a><a href="/system/#flight-hardware">See the hardware ↗</a></nav></div>
   <details class="film-transcript"><summary>Read the transcript</summary><div>
     {narration.shots.map(shot => <p>{shot.text}</p>)}
     <p class="film-description">The film follows a hypersonic aircraft to an Earth tether, then shows release, recovery and a lunar mass-driver launch. The network widens to Phobos, Mercury and a proposed comet mission. The final shots show the site's calculated flight experiment and strategy game.</p>

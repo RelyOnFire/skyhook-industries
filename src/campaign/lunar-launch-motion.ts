@@ -86,7 +86,7 @@ export function lunarLaunchFrame(stage:number,progress:number){
  const state=stage===0?lunarRailAt(0):stage===1?lunarRailAt(railProgress):stage===2||stage===3&&!latched?lunarApproachAt(time):stage===5?lunarCargoCoast(p):{position:tether.tip,velocity:tether.velocity};
  const railAngle=Math.atan2(LUNAR_RAIL.direction.y,LUNAR_RAIL.direction.x)-Math.PI/2;
  const payloadAngle=stage<2?railAngle:stage===2?railAngle+(tether.angle-railAngle)*lunarEase(p/.85):stage===5?LUNAR_RELEASE.angle:tether.angle;
- const loadCamera={center:add(LUNAR_RAIL.start,scale(LUNAR_RAIL.direction,3)),width:13};
+ const loadCamera={center:add(LUNAR_RAIL.start,scale(LUNAR_RAIL.direction,.22)),width:2.55};
  const railCamera={center:add(state.position,{x:0,y:.9}),width:7};
  const coastZoom=stage===2?lunarEase((p-.1)/.3):1;
  const coastCamera={center:add(state.position,{x:0,y:.9+7.1*coastZoom}),width:7+(coastWidth-7)*coastZoom};

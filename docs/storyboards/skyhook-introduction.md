@@ -49,7 +49,7 @@ The final product clips should show actual working controls. Describe Expedition
 
 The selected voice is George (`bm_george`), a synthetic stock voice from [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), whose model and voice weights are Apache-2.0 licensed. The local [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) runtime is MIT licensed. The user selected George after hearing Emma and George auditions. Complete shots are synthesized as connected passages at 0.96 speed, with pronunciation overrides for Phobos and lunavator. The edit follows that performance; no speech is time-stretched. Caption timings come from the model’s phoneme durations. The manifest pins model and voice archive hashes, synthesis settings and provenance. No voice is presented as the founder or another identifiable speaker. The finished narration measures −18.05 LUFS integrated and −1.50 dB true peak, with no clipped samples. There is no music track.
 
-Delivery is 1280×720 at 24 fps, H264 video with AAC audio, a WebP poster, WebVTT captions and an HTML transcript. An explicit click or keyboard activation downloads the complete film (5.02 MB) while the poster shows a loading label. The native player receives a browser-local Blob URL so seeking works even when static hosting ignores byte-range requests. No video or caption resource is requested on initial homepage load. Captions start enabled, and native controls provide pause, seeking, volume and fullscreen; browsers that require another gesture after the download retain a focused native Play control. Failed requests leave a retry button and direct media link. The Blob is released when leaving the page, except when it is retained for browser back/forward restoration. Reduced-motion visitors get the same still poster until they deliberately play. The transcript and a direct media link remain usable without JavaScript. The interactive walkthrough remains available for visitors who want to pause and explore a moment themselves.
+Delivery is 1280×720 at 24 fps, H264 video with AAC audio, a WebP poster, WebVTT captions and an HTML transcript. An explicit click or keyboard activation downloads the complete film (8.83 MB in the vehicle art cut) while the poster shows a loading label. The native player receives a browser-local Blob URL so seeking works even when static hosting ignores byte-range requests. No video or caption resource is requested on initial homepage load. Captions start enabled, and native controls provide pause, seeking, volume and fullscreen; browsers that require another gesture after the download retain a focused native Play control. Failed requests leave a retry button and direct media link. The Blob is released when leaving the page, except when it is retained for browser back/forward restoration. Reduced-motion visitors get the same still poster until they deliberately play. The transcript and a direct media link remain usable without JavaScript. The interactive walkthrough remains available for visitors who want to pause and explore a moment themselves.
 
 The homepage invitation should read “Watch how a skyhook works” and show the running time. The end card should lead to the existing guided flight and Expeditions. Selected external videos can remain in further learning with their creators credited; the primary introduction should tell this project's story.
 
@@ -68,3 +68,35 @@ python scripts/render-introduction.py --ffmpeg /path/to/ffmpeg --audio /path/to/
 When publishing a new cut, update the version used for all three media URLs in `IntroductionFilm.astro` so cached audio, poster and captions cannot belong to different edits.
 
 The detailed planet imagery is the site's established imagery; its source credits remain in [the texture provenance](../../public/textures/README.md). The film's network routes and free/anchored tether symbols are original drawings. Scientific caveats remain visible during the mechanism and network views, and the final card labels the game separately from the calculated flight experiment.
+
+### Vehicle art cut (November 2026)
+
+The four launch chapters use the same Three.js world builders, camera and pose
+functions as the two Expeditions launch viewers. The Blackbird-inspired civil
+carrier has two **inward-canted** fins, each seated on its own nacelle (SR-71
+visual reference: [NASA flight report](https://ntrs.nasa.gov/api/citations/19970019923/downloads/19970019923.pdf)).
+Earth and Moon cargo share the capture interface but use distinct insulated
+bodies. The Moon mesh is included in the coil-clearance regression. All hardware
+is illustrative and enlarged; artwork and camera framing do not change flight dynamics.
+
+The ray-traced portraits use the same meshes as the flight worlds. They supply
+surface finish near the photographed angle in the 3D viewer and the edit, and
+also serve the System page and 2D alternatives. To rebuild the cut, retain the
+October edit (or the full browser render above) as the unmodified chapters and
+audio source. Run from the repository root with its JS dependencies installed.
+The offline renderer needs Blender 4.3+, desktop EGL, Python with ModernGL,
+glcontext, Pillow and NumPy, ffmpeg, and the Liberation Sans and DejaVu fonts.
+
+```sh
+mkdir -p qa/vehicle-film
+node_modules/.bin/esbuild scripts/film/export-worlds.ts --bundle --platform=node --format=esm --outfile=qa/vehicle-film/export.mjs
+node qa/vehicle-film/export.mjs qa/vehicle-film
+blender -b -t 6 -P scripts/film/render-portraits.py -- qa/vehicle-film
+python scripts/film/render-vehicle-cut.py  # proofs and poster
+python scripts/film/render-vehicle-cut.py --encode --source /path/to/previous-edit.mp4
+```
+
+Review the proofs, then copy `qa/vehicle-film/introduction.mp4` and `poster.webp`
+to their established public filenames and version all player media URLs together.
+The encoder copies the original AAC stream. Caption timestamps, transcript,
+mission clock and chapter boundaries stay tied to the selected narration.

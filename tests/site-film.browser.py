@@ -11,8 +11,8 @@ from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
 NARRATION = json.loads((ROOT / 'docs/storyboards/skyhook-introduction.timings.json').read_text())
-FILM_URL = '/films/skyhook-introduction.mp4?v=george-20261008'
-CAPTIONS_URL = '/films/skyhook-introduction.vtt?v=george-20261008'
+FILM_URL = '/films/skyhook-introduction.mp4?v=flight-hardware-20261118'
+CAPTIONS_URL = '/films/skyhook-introduction.vtt?v=flight-hardware-20261118'
 
 
 class QuietHandler(SimpleHTTPRequestHandler):

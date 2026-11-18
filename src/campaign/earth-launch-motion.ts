@@ -81,7 +81,8 @@ export function earthLaunchFrame(stage:number,progress:number) {
   const jawAngle=stage===0?36:stage===1?36*(1-smooth((p-.12)/.33)):stage===2?0:36*smooth(p/.1);
   // Start near the carrier, show the grapple in the aircraft's moving frame,
   // then smoothly widen to include both tether ends and the released cargo.
-  const carrierCamera={center:add(aircraftPosition,{x:35,y:65}),width:620};
+  const approachView=stage===0?smooth((p-.32)/.68):1;
+  const carrierCamera={center:add(aircraftPosition,{x:5+15*approachView,y:8+26*approachView}),width:165+205*approachView};
   const captureCamera={center:add(aircraft.position,{x:7,y:-10}),width:130};
   const points=[tether.tip,tether.otherTip,tether.hub,payload.position];
   const bounds=(axis:'x'|'y')=>[Math.min(...points.map(v=>v[axis])),Math.max(...points.map(v=>v[axis]))];

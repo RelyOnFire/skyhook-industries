@@ -27,8 +27,7 @@ export default function LunarDepartureDiagram({stage,progress}:{stage:number;pro
     </g>
    </g>
    <g transform={`translate(${f.payload.x-LUNAR_RAIL.direction.y*loadingLift} ${f.payload.y+LUNAR_RAIL.direction.x*loadingLift}) rotate(${f.payloadAngle*180/Math.PI}) scale(${size})`}>
-    <rect x="-6" y="-20" width="12" height="16" rx="1" fill="#e5e2d5" stroke="#b7cad5" strokeWidth="1.5"/>
-    <path d="M-6-12H6M0-4V0" stroke="#e5b084" strokeWidth="2"/><circle r="3" fill="none" stroke="#e5b084" strokeWidth="1.5"/>
+    <image href="/vehicles/lunar-cargo.webp" transform="scale(1 -1)" x="-12.95" y="-3.48" width="25.9" height="25.9"/>
    </g>
   </g>
  </svg>;

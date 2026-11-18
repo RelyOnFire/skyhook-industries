@@ -1,0 +1,23 @@
+<section class="vehicle-studies" aria-labelledby="hardware-title" id="flight-hardware">
+  <div class="studies-heading"><p>Flight hardware / Concept studies</p><h2 id="hardware-title">What makes the handoff?</h2></div>
+  <div class="studies-grid">
+    <figure class="carrier-study"><div><img src="/vehicles/carrier-loaded.webp" alt="Graphite carrier with inward-canted twin tails and a copper capsule on its dorsal saddle" width="1440" height="760" loading="lazy" decoding="async"/></div>
+      <figcaption><small>01 / Earth departure</small><h3>The carrier</h3><p>The aircraft brings the cargo up to the tether. Only the capsule goes on; the carrier returns to Earth.</p></figcaption></figure>
+    <figure><div><img src="/vehicles/earth-cargo.webp" alt="Copper-wrapped Earth cargo bus with an exposed capture fitting" width="704" height="704" loading="lazy" decoding="async"/></div>
+      <figcaption><small>02 / Earth cargo</small><h3>The cargo bus</h3><p>The grapple closes around the fitting above the insulated cargo bay, clear of the aircraft.</p></figcaption></figure>
+    <figure><div><img src="/vehicles/lunar-cargo.webp" alt="Pale lunar cargo canister with copper bands and a compact service end" width="704" height="704" loading="lazy" decoding="async"/></div>
+      <figcaption><small>03 / Lunar cargo</small><h3>The lunar canister</h3><p>The canister rides a reusable sled through the coils. The sled brakes; the cargo coasts toward the lunavator.</p></figcaption></figure>
+  </div>
+</section>
+<style>
+.vehicle-studies{padding:clamp(36px,5vw,72px) max(4vw,calc((100vw - 1240px)/2));background:#10171b;border-block:1px solid #354249;color:#e4ebed}
+.studies-heading p,.studies-grid small{font:11px/1.45 var(--mono,monospace);color:#e5aa84;letter-spacing:.085em;text-transform:uppercase}
+.studies-heading h2{font:400 clamp(28px,3vw,42px)/1.12 var(--sans,system-ui);letter-spacing:-.04em;margin:8px 0 23px}
+.studies-grid{display:grid;grid-template-columns:minmax(0,1.7fr) repeat(2,minmax(0,1fr));border-block:1px solid #38454c}
+.studies-grid figure{margin:0;min-width:0;padding:0 20px 22px}.studies-grid figure+figure{border-left:1px solid #38454c}
+.studies-grid figure>div{height:clamp(140px,16vw,218px);display:grid;place-items:center;background:radial-gradient(ellipse at center,#1e2b33 0,transparent 70%)}
+.studies-grid img{width:100%;height:100%;object-fit:contain}.studies-grid figure:not(.carrier-study) img{width:83%;height:84%}
+.studies-grid h3{font:500 20px/1.3 var(--sans,system-ui);margin:6px 0}.studies-grid figcaption p{margin:0;max-width:45ch;color:#bbc8cf;font-size:15px;line-height:1.55}
+@media(max-width:720px){.studies-grid{grid-template-columns:1fr 1fr}.studies-grid .carrier-study{grid-column:1/-1;border-bottom:1px solid #38454c}.studies-grid .carrier-study+figure{border-left:0}.studies-grid figure{padding:0 10px 17px}.studies-grid .carrier-study>div{height:clamp(140px,42vw,220px)}.studies-grid figcaption p{font-size:14px}}
+@media(max-width:380px){.studies-grid{grid-template-columns:1fr}.studies-grid figure+figure{border-left:0;border-top:1px solid #38454c}.studies-grid .carrier-study{border-bottom:0}}
+</style>
