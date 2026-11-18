@@ -1,0 +1,24 @@
+.first-handoff { max-width: 1280px; padding-bottom: 28px; }
+.first-handoff header .micro { margin: 0 0 8px; color: var(--lab-cyan); }
+.first-handoff h1 { margin: 0 0 20px; font-size: clamp(28px, 4vw, 45px); line-height: 1.15; letter-spacing: -.03em; font-weight: 500; }
+.handoff-board { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); border: 1px solid var(--lab-line); border-radius: 3px; background: var(--lab-panel); overflow: hidden; }
+.handoff-visual { display: grid; grid-template-rows: minmax(320px, 49svh) auto; min-width: 0; }
+.handoff-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 17px; padding: 8px 14px; border-top: 1px solid var(--lab-line); font-size: 11px; color: var(--lab-soft); }
+.handoff-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.handoff-legend span:last-child { margin-left: auto; color: var(--lab-muted); }
+.handoff-legend i { width: 11px; border-top: 2px solid; }
+.handoff-story { align-self: center; display: grid; gap: 18px; padding: clamp(18px, 3.2vw, 44px); min-width: 0; }
+.handoff-steps { display: flex; flex-wrap: wrap; gap: 5px 14px; padding: 0; margin: 0; list-style: none; font: 11px/1.5 var(--lab-mono); color: var(--lab-muted); }
+.handoff-steps li[aria-current] { color: var(--lab-cyan); border-bottom: 1px solid currentColor; }
+.handoff-story h2 { margin: 0 0 10px; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.18; font-weight: 500; text-wrap: balance; }
+.handoff-story p { margin: 0; color: var(--lab-soft); }
+.handoff-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.handoff-actions button { min-height: 44px; }
+.handoff-sandbox { justify-self: start; color: var(--lab-muted); font-size: 13px; padding: 4px 0; text-underline-offset: 4px; }
+@media (max-width: 760px) {
+  .handoff-board { grid-template-columns: minmax(0, 1fr); }
+  .handoff-visual { grid-template-rows: clamp(190px, 34svh, 300px) auto; }
+  .handoff-story { gap: 12px; padding: 16px; }
+  .handoff-story p { font-size: 14px; }
+  .handoff-legend span:last-child { margin-left: 0; }
+}

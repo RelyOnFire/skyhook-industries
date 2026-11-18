@@ -8,6 +8,7 @@ import ObjectTracker from './ObjectTracker.js';
 import { OBJECTS, type ObjectId } from './objects.js';
 import Structure from './Structure.js';
 import Debrief from './Debrief.js';
+import FirstHandoff from './FirstHandoff.js';
 import Studies, { type StudyRow } from './Studies.js';
 import { MissionSelect, MissionBrief, MissionProgress, GuidedReplay, checkpoints } from './Missions.js';
 import { CHALLENGES, challengeGates, diagnose, deliveries as goodDeliveries, type Challenge } from '../simulation/insights.js';
@@ -58,6 +59,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
   const initialDesign=initialArchitecture==='lunar-rotovator'?LUNAR_DEFAULT:DEFAULT;
   const [modal, setModal] = useState<'missions'|'brief'|'debrief'|'study'|'return'|null>(null);
   const [challenge, setChallenge] = useState<Challenge|null>(null), [brief, setBrief] = useState<Challenge>(CHALLENGES.find(c=>c.start.architecture===initialArchitecture)!);
+  const [handoffMission, setHandoffMission] = useState<Challenge|null>(null);
   const [completed, setCompleted] = useState<string[]>([]), [guide, setGuide] = useState<number|null>(null);
   const [baseline, setBaseline] = useState<Result|null>(null), [studyRows, setStudyRows] = useState<StudyRow[]>([]);
   const [vectors, setVectors] = useState(false), [focusScene, setFocusScene] = useState(false);
@@ -146,11 +148,12 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
         const mission=CHALLENGES.find(c=>c.id===new URLSearchParams(location.hash.slice(1)).get('m'));
         if(mission&&mission.start.architecture===initial.architecture){setChallenge(mission);challengeRef.current=mission;}
       } else {
-        // Public entry points open the same briefing as Flight school. Loading
-        // a shared design takes precedence; choosing a mission never saves it.
+        // Public entry starts with the Coast replay. A shared design still
+        // takes precedence, and the replay does not save or activate a mission.
         const requested = new URLSearchParams(location.search).get('mission');
         const mission = CHALLENGES.find(c => c.id === requested && c.start.architecture === initial.architecture);
-        if (mission) { setBrief(mission); setModal('brief'); }
+        if (mission?.id === 'second-delivery') { initial = { ...mission.start }; setHandoffMission(mission); }
+        else if (mission) { setBrief(mission); setModal('brief'); }
       }
     } catch (e) { message = `Shared design not loaded: ${(e as Error).message}`; }
     setDesign(initial); setExtended(initial.payloadT > STANDARD_PAYLOAD_T);
@@ -244,6 +247,11 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
   const diagnosis=result?diagnose(result):null;
   const currentPass=!!challenge&&!!result&&!busy&&!dirty&&!hasInvalidInput&&!error&&challengeGates(challenge,result).every(g=>g.pass);
   const nextChallenge=challenge?missions[missions.findIndex(c=>c.id===challenge.id)+1]??null:null;
+  if (handoffMission) return <FirstHandoff result={result} error={error} gpu={gpu} onGraphicsError={error3D}
+    onRetry={()=>run(design,false)} onContinue={end=>{
+      challengeRef.current=handoffMission; setChallenge(handoffMission); setHandoffMission(null);
+      seek(end); setSelectedObject('payload-1'); setView(gpu?'follow':'plane'); openEdit('recovery');
+    }} />;
   return <main className={`lab-app mobile-${mobile}${focusScene?' focus-scene':''}`} id="lab-content">
     <div className="workbench-bar"><div><p className="micro">{lunar?'MOON / LUNAR ROTOVATOR':'EARTH / SINGLE-STAGE ROTOVATOR'}</p><h1>Tether Lab<span className="model-tag">{design.model}</span></h1></div>
       <div className="workbench-actions"><button className="open-missions" onClick={()=>setModal('missions')}>Flight school</button><button className="open-study" onClick={()=>{setPlaying(false);setModal('study');}} disabled={busy||hasInvalidInput}>Trade study</button><button onClick={save}>Save</button><button onClick={load}>Load</button><button className="share-design" onClick={share}>Share design <span aria-hidden="true">↗</span></button></div>

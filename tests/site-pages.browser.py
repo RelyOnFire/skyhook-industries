@@ -157,8 +157,8 @@ def main():
             static_study.close()
             report['navigation'].append('Finlay default budget and sources without JavaScript')
 
-            # A public entry point must lead to a usable first action. Open the
-            # actual worker-driven briefing and verify saved designs survive it.
+            # A first-time visitor sees a calculated capture and release before
+            # the recovery challenge. The guided example must preserve saves.
             page.set_viewport_size({'width': 1280, 'height': 800})
             page.goto(origin + '/lab/', wait_until='networkidle')
             expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
@@ -174,40 +174,40 @@ def main():
             for href in experiments.locator('a').evaluate_all('(links) => links.map(a => a.pathname)'):
                 assert page.request.get(origin + href).ok, f'Experiment entry does not resolve: {href}'
             gateway.get_by_role('link', name='Try a guided flight').click()
-            briefing = page.get_by_role('dialog', name='Make the second delivery')
-            expect(briefing).to_be_visible()
-            expect(briefing.get_by_role('button', name='Start this mission')).to_be_visible()
-            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
-            # Briefing remains usable on a narrow phone and can be dismissed.
-            page.set_viewport_size({'width': 320, 'height': 800})
-            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
-            page.screenshot(path=str(out / 'first-flight-briefing-320.png'))
-            page.keyboard.press('Escape')
-            expect(briefing).to_have_count(0)
-            expect(page.get_by_role('region', name='Active challenge')).to_have_count(0)
-            page.set_viewport_size({'width': 1280, 'height': 800})
-            page.reload(wait_until='networkidle')
-            briefing.get_by_role('button', name='Start this mission').click()
-            expect(page.get_by_role('region', name='Active challenge')).to_contain_text('Make the second delivery')
-            expect(page.get_by_role('button', name='Full-run debrief', exact=True)).to_be_enabled(timeout=90000)
-            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
-            # A guided entry reaches an honest first result and an actionable
-            # recovery step without requiring visitors to find the recorder.
+            intro = page.get_by_role('region', name='Handoff guide')
             mission = page.get_by_role('region', name='Active challenge')
-            guide = page.get_by_role('region', name='Guided replay')
-            expect(guide).to_be_visible()
+            expect(page.get_by_role('heading', name='Watch the first handoff.')).to_be_visible()
+            expect(intro.get_by_role('button', name='Show the capture')).to_be_enabled(timeout=90000)
+            expect(mission).to_have_count(0)
+            expect(page.get_by_role('dialog')).to_have_count(0)
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
+            # Verify actual motion reaches release before exposing the challenge.
+            page.emulate_media(reduced_motion='no-preference')
+            intro.get_by_role('button', name='Play the handoff').click()
+            expect(intro.get_by_role('button', name='Pause replay')).to_be_visible()
+            expect(intro.get_by_role('button', name='Try the second delivery')).to_be_visible(timeout=35000)
+            expect(intro.get_by_role('listitem').filter(has_text='Release')).to_have_attribute('aria-current', 'step')
+            expect(mission).to_have_count(0)
+            page.screenshot(path=str(out / 'first-flight-release-1280.png'))
+            page.set_viewport_size({'width': 320, 'height': 800})
+            page.emulate_media(reduced_motion='reduce')
+            intro.get_by_role('button', name='Replay handoff').click()
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+            page.screenshot(path=str(out / 'first-flight-320.png'))
+            intro.get_by_role('button', name='Show the capture').press('Enter')
+            expect(intro.get_by_role('listitem').filter(has_text='Capture')).to_have_attribute('aria-current', 'step')
+            expect(intro.get_by_role('button', name='Try the second delivery')).to_have_count(0)
+            intro.get_by_role('button', name='Show the release').press('Enter')
+            expect(intro).to_contain_text('taking momentum from the tether')
+            intro.get_by_role('button', name='Try the second delivery').press('Enter')
+            expect(mission).to_contain_text('Make the second delivery')
+            assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
             expect(mission).to_contain_text('One delivery. Now make it repeat.')
             expect(mission.get_by_role('link')).to_have_count(0)
-            expect(page.get_by_role('button', name='Pause replay', exact=True)).to_have_count(0)
-            while guide.get_by_role('button', name='Next checkpoint →', exact=True).count():
-                guide.get_by_role('button', name='Next checkpoint →', exact=True).click()
-            expect(guide).to_contain_text('One delivery; no second operating window.')
-            page.set_viewport_size({'width': 320, 'height': 800})
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
-            mission.screenshot(path=str(out / 'first-flight-next-step-320.png'))
-            guide.get_by_role('button', name='Open recovery controls →', exact=True).click()
             recovery_tab = page.get_by_role('group', name='Design sections').get_by_role('button', name='Recovery', exact=True)
             expect(recovery_tab).to_be_focused()
+            page.screenshot(path=str(out / 'first-flight-next-step-320.png'))
             page.get_by_role('button', name='Chemical Finite thrust, finite propellant', exact=True).click()
             page.get_by_role('spinbutton', name='Propellant budget value', exact=True).fill('20')
             expect(mission).to_contain_text('Your change is ready to test')

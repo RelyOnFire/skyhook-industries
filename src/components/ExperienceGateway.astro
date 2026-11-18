@@ -33,7 +33,7 @@ import ExperimentLinks from './ExperimentLinks.astro';
         <h3>Make the second delivery.</h3>
         <p>One payload gets away. Can your tether recover and do it again? Change the design, fly the handoff, and read what the next flight costs.</p>
         <a class="gateway-action" href="/lab/?mission=second-delivery">Try a guided flight <span aria-hidden="true">↗</span></a>
-        <p class="workspace-note">Calculated trajectories, loads and recovery. Each experiment explains its assumptions.</p>
+        <p class="workspace-note">Calculated trajectories, loads and recovery. Each experiment explains its assumptions. <a href="/lab/">Open the sandbox</a>.</p>
       </div>
     </article>
     <article class="workspace network-workspace">
@@ -87,6 +87,7 @@ import ExperimentLinks from './ExperimentLinks.astro';
   .gateway-action{display:flex;justify-content:space-between;align-items:center;gap:28px;min-height:46px;padding:10px 16px;background:#efa477;color:#141c20;text-decoration:none;font-size:15px;font-weight:600;margin-top:auto;border:1px solid #efa477}
   .gateway-action:hover{background:#ffd1b3}.gateway-action>span{font-size:20px;font-weight:400}
   .workspace-copy .workspace-note{font-size:13px;color:#94aab5;line-height:1.6;margin:18px 0 0}
+  .workspace-note a{text-underline-offset:3px}
   .experiment-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px 28px;flex-wrap:wrap;margin:36px 0 18px}
   .experiment-heading h3{font-size:19px;font-weight:500;letter-spacing:-.015em;margin:0}.experiment-heading a{font-size:14px;color:#c4d3d9;text-underline-offset:5px}.experiment-heading a>span{margin-left:10px;color:#efa477}
   a:focus-visible{outline:2px solid #efa477;outline-offset:5px}
