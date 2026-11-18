@@ -247,10 +247,10 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
   const diagnosis=result?diagnose(result):null;
   const currentPass=!!challenge&&!!result&&!busy&&!dirty&&!hasInvalidInput&&!error&&challengeGates(challenge,result).every(g=>g.pass);
   const nextChallenge=challenge?missions[missions.findIndex(c=>c.id===challenge.id)+1]??null:null;
-  if (handoffMission) return <FirstHandoff result={result} error={error} gpu={gpu} onGraphicsError={error3D}
+  if (handoffMission) return <FirstHandoff result={result} error={error}
     onRetry={()=>run(design,false)} onContinue={end=>{
       challengeRef.current=handoffMission; setChallenge(handoffMission); setHandoffMission(null);
-      seek(end); setSelectedObject('payload-1'); setView(gpu?'follow':'plane'); openEdit('recovery');
+      seek(end); setSelectedObject('payload-1'); setView('plane'); openEdit('recovery');
     }} />;
   return <main className={`lab-app mobile-${mobile}${focusScene?' focus-scene':''}`} id="lab-content">
     <div className="workbench-bar"><div><p className="micro">{lunar?'MOON / LUNAR ROTOVATOR':'EARTH / SINGLE-STAGE ROTOVATOR'}</p><h1>Tether Lab<span className="model-tag">{design.model}</span></h1></div>

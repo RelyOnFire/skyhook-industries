@@ -178,6 +178,11 @@ def main():
             mission = page.get_by_role('region', name='Active challenge')
             expect(page.get_by_role('heading', name='Watch the first handoff.')).to_be_visible()
             expect(intro.get_by_role('button', name='Show the capture')).to_be_enabled(timeout=90000)
+            diagram = page.get_by_role('img', name='Calculated handoff from the side, with the tether hub centered and Earth below', exact=True)
+            hub = diagram.locator('.handoff-hub')
+            anchor = [hub.get_attribute(axis) for axis in ('x', 'y')]
+            payload = diagram.locator('.handoff-payload')
+            expect(payload).to_have_attribute('data-phase', 'approach')
             expect(mission).to_have_count(0)
             expect(page.get_by_role('dialog')).to_have_count(0)
             assert page.evaluate("localStorage.getItem('skyhook-lab-design-v2')") == saved
@@ -187,6 +192,9 @@ def main():
             expect(intro.get_by_role('button', name='Pause replay')).to_be_visible()
             expect(intro.get_by_role('button', name='Try the second delivery')).to_be_visible(timeout=35000)
             expect(intro.get_by_role('listitem').filter(has_text='Release')).to_have_attribute('aria-current', 'step')
+            expect(payload).to_have_attribute('data-phase', 'released')
+            expect(diagram.locator('.handoff-trail')).to_be_visible()
+            assert [hub.get_attribute(axis) for axis in ('x', 'y')] == anchor
             expect(mission).to_have_count(0)
             page.screenshot(path=str(out / 'first-flight-release-1280.png'))
             page.set_viewport_size({'width': 320, 'height': 800})
@@ -196,6 +204,7 @@ def main():
             page.screenshot(path=str(out / 'first-flight-320.png'))
             intro.get_by_role('button', name='Show the capture').press('Enter')
             expect(intro.get_by_role('listitem').filter(has_text='Capture')).to_have_attribute('aria-current', 'step')
+            expect(payload).to_have_attribute('data-phase', 'attached')
             expect(intro.get_by_role('button', name='Try the second delivery')).to_have_count(0)
             intro.get_by_role('button', name='Show the release').press('Enter')
             expect(intro).to_contain_text('taking momentum from the tether')
