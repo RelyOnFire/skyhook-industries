@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Result } from '../simulation/engine.js';
-import HandoffDiagram from './HandoffDiagram.js';
-import { OBJECTS } from './objects.js';
+import HandoffDiagram, { CaptureDetail } from './HandoffDiagram.js';
+import { handoffFrame } from './handoff-view.js';
+import { elapsed as flightClock } from './view.js';
 
 const stages = [
-  { label: 'Approach', heading: 'Meet the moving tether.', text: 'The orange payload is already above the atmosphere. Watch it meet the tip closest to Earth.' },
-  { label: 'Capture', heading: 'The tether carries the payload upward.', text: 'The tip catches the payload at matching speed. As the tether turns, that same tip swings away from Earth.' },
-  { label: 'Release', heading: 'One delivery. Can you do it again?', text: 'The cargo leaves on a higher orbit, taking momentum from the tether. In this flight the tether doesn’t recover enough for a second pickup. Try to get it ready again.' },
+  { label: 'Approach', heading: 'Meet the moving tip.', text: 'Follow the copper cargo capsule. It approaches from below, matching speed with the Earth-facing tip.' },
+  { label: 'Capture', heading: 'Ride the tether upward.', text: 'The capture head holds the capsule. Follow that same tip through half a turn, from the Earth-facing side to the space-facing side.' },
+  { label: 'Release', heading: 'Watch the paths split.', text: 'The capsule coasts away, taking momentum from the tether. You made one delivery. Can you recover enough momentum for the next pickup?' },
 ];
 const CAPTURE_AT = 3.5, RELEASE_AT = 11, REPLAY_END = 16;
 const sharedRate = (a: number, b: number) => 2 * a * b / (a + b);
@@ -95,38 +96,62 @@ export default function FirstHandoff({ result, error, onRetry, onContinue }: {
     : playing ? 'Pause replay' : seconds > 0 ? 'Resume replay' : 'Play the handoff';
   const stage = stages[step];
 
+  const flightTime = available ? playbackTime(seconds, capture, release, end) : 0;
+  const view = result && available ? handoffFrame(result, flightTime) : null;
+  const seek = (t: number) => {
+    elapsed.current = t; setSeconds(t); setPlaying(false);
+  };
+  const progress = seconds / REPLAY_END * 100;
+
   return <main id="lab-content" className="lab-app first-handoff">
-    <header>
-      <p className="micro">FLIGHT STUDIO / GUIDED FLIGHT</p>
-      <h1>Watch the first handoff.</h1>
+    <header className="handoff-header">
+      <div><p className="micro">Flight Studio <span>/</span> Guided flight 01</p>
+        <h1>Watch the first handoff.</h1></div>
+      <a className="handoff-sandbox" href="/lab/">Open the sandbox <span aria-hidden="true">↗</span></a>
     </header>
     <div className="handoff-board">
-      <div className="handoff-visual">
+      <section className="handoff-visual" aria-label="Flight replay">
         <div className="handoff-scene scene-box" role="region" aria-label="Calculated Earth flight">
-          {result && available
-            ? <HandoffDiagram result={result} time={playbackTime(seconds, capture, release, end)} release={release} end={end} />
-            : <div className="scene-loading">{!problem && <div className="loading-orbit" />}<p role="status">{problem ? 'The replay is unavailable.' : 'Calculating the flight…'}</p></div>}
+          <div className="handoff-frame-caption" aria-hidden="true"><span>Earth orbit <b>/</b> Side view</span><span>T + {flightClock(flightTime)}</span></div>
+          {view && result && available
+            ? <HandoffDiagram result={result} view={view} time={flightTime} capture={capture} release={release} end={end}/>
+            : <div className="scene-loading">{!problem && <div className="loading-orbit"/>}<p role="status">{problem ? 'The replay is unavailable.' : 'Calculating the flight…'}</p></div>}
+          <div className="handoff-reference" aria-hidden="true"><span>Earth below</span><span>Along orbit →</span></div>
         </div>
-        <div className="handoff-legend">
-          <span><i style={{ borderColor: OBJECTS[0].color }} />Tether</span>
-          <span><i style={{ borderColor: OBJECTS[1].color }} />Payload</span>
-          <span>Calculated flight · time compressed</span>
+        <div className="handoff-transport">
+          <label htmlFor="handoff-seek">Replay</label>
+          <div className="handoff-track">
+            <div aria-hidden="true" className="handoff-track-line"><i style={{width: progress+'%'}}/>
+              <b style={{left: CAPTURE_AT/REPLAY_END*100+'%'}}/><b style={{left: RELEASE_AT/REPLAY_END*100+'%'}}/></div>
+            <input id="handoff-seek" type="range" min="0" max={REPLAY_END} step=".1" value={seconds}
+              disabled={!available} aria-label="Replay position"
+              aria-valuetext={`${stage.label}, ${seconds.toFixed(1)} of ${REPLAY_END} seconds`}
+              onChange={e => seek(Number(e.currentTarget.value))}/>
+          </div>
+          <span aria-hidden="true">0:{String(Math.floor(seconds)).padStart(2,'0')} <b>/</b> 0:16</span>
         </div>
-      </div>
+        <div className="handoff-instruments" aria-label="Flight measurements">
+          <div><span>Payload altitude</span><strong>{view?.altitudeKm?.toLocaleString('en-US') ?? '—'} <small>km</small></strong></div>
+          <div><span>Tether span</span><strong>{result?.design.spanKm ?? '—'} <small>km</small></strong></div>
+          <div><span>Cargo mass</span><strong>{result?.design.payloadT ?? '—'} <small>t</small></strong></div>
+        </div>
+      </section>
       <section className="handoff-story" aria-label="Handoff guide">
-        <ol className="handoff-steps" aria-label="Handoff stages">{stages.map(({label}, i) => <li key={label} aria-current={step === i ? 'step' : undefined}>{label}</li>)}</ol>
-        <div aria-live="polite">
-          <h2>{stage.heading}</h2>
-          <p>{stage.text}</p>
+        <ol className="handoff-steps" aria-label="Handoff stages">{stages.map(({label}, i) =>
+          <li key={label} aria-current={step === i ? 'step' : undefined} data-past={i < step || undefined}><span>0{i+1}</span> {label}</li>)}</ol>
+        <div className="handoff-narration" aria-live="polite">
+          <h2>{stage.heading}</h2><p>{stage.text}</p>
         </div>
+        <CaptureDetail view={view} />
         {problem && <p role="alert">{problem}</p>}
         <div className="handoff-actions">
-          <button className="primary" onClick={advance} disabled={!available && !problem}>{action}</button>
+          <button className="primary" onClick={advance} disabled={!available && !problem}>
+            <span aria-hidden="true">{finished ? '→' : playing ? 'Ⅱ' : '▷'}</span>{action}</button>
           {available && finished ? <button onClick={replay}>Replay handoff</button>
             : available && !reduceMotion ? <button onClick={next}>{step === 0 ? 'Step to capture' : step === 1 ? 'Step to release' : 'Finish replay'}</button> : null}
         </div>
-        <a className="handoff-sandbox" href="/lab/">Open the sandbox</a>
       </section>
     </div>
+    <p className="handoff-footnote">Calculated trajectory · Time compressed <span>Hardware enlarged for visibility</span></p>
   </main>;
 }

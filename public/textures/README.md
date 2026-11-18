@@ -62,3 +62,11 @@ The global globe places the corridor against a mid-latitude Hadley reference
 placement of an illustrative launcher, not a surveyed site or a terrain solution.
 The asset loads only on opening and repaints a paused frame when ready. On failure,
 the globally textured Moon remains available. Sources checked 5 October 2026.
+
+The guided handoff's fixed horizon (`public/handoff/earth-limb.webp`) is an
+illustrative projection of the same credited Blue Marble and cloud maps.
+Rebuild with `python scripts/render-handoff-earth.py` (Pillow and NumPy).
+The capture head and cargo bus are original, enlarged hardware studies.
+`blender -b -t 4 -P scripts/render-handoff-hardware.py` renders both transparent
+layers. Their pose, size and appearance are illustrative; measured flight
+positions and the altitude readout come from the Earth simulation.
