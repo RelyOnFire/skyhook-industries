@@ -4,7 +4,7 @@
 .handoff-header .micro span { margin: 0 4px; color: #89949a; }
 .first-handoff h1 { margin: 0; font-size: clamp(31px, 3.85vw, 52px); line-height: 1.08; letter-spacing: -.048em; font-weight: 420; }
 .handoff-sandbox { flex-shrink: 0; padding-block: 12px 5px; color: var(--lab-soft); font-size: 13px; text-decoration: none; }
-.handoff-sandbox span { margin-left: 6px; color: #e8ad89; }
+.handoff-sandbox svg { width: 13px; height: 13px; margin-left: 4px; vertical-align: -1px; stroke: #e8ad89; stroke-width: 1.4; fill: none; }
 .handoff-sandbox:hover { text-decoration: underline; text-underline-offset: 4px; }
 .handoff-board { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(305px, 1fr); border: 1px solid #35424b; background: #101619; }
 .handoff-visual { min-width: 0; display: grid; grid-template-rows: minmax(0,1fr) auto auto; }
@@ -18,6 +18,8 @@
 .handoff-swing, .handoff-trail, .handoff-leader { fill: none; stroke: #d9a17a; stroke-width: 1; }
 .handoff-swing { opacity: .49; }
 .handoff-trail { stroke: #ffb785; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.handoff-hub-note path { fill: none; stroke: #6e8793; stroke-width: .8; }
+.handoff-hub-note text { fill: #b4c5cd; font: 12px var(--lab-mono); paint-order: stroke; stroke: #0a151b; stroke-width: 2px; }
 .handoff-leader { stroke: #c49471; stroke-width: .8; }
 .handoff-label { fill: #ffcca3; font: 500 12px var(--lab-mono); paint-order: stroke; stroke: #0b151b; stroke-width: 2px; }
 .handoff-transport { display: flex; align-items: center; gap: 15px; padding: 0 20px; min-height: 42px; background: #0c1216; border-top: 1px solid #34434a; border-bottom: 1px solid #2e393f; font: 11px var(--lab-mono); color: #b9c5cb; }
@@ -65,7 +67,8 @@
   .handoff-frame-caption, .handoff-reference { left: 12px; right: 12px; font-size: 9px; }
   .handoff-frame-caption { top: 11px; }
   .handoff-reference { bottom: 8px; }
-  .handoff-label { font-size: 15px; }
+  .handoff-diagram { top: 16px; height: calc(100% - 16px); }
+  .handoff-label, .handoff-hub-note text { font-size: 15px; }
   .handoff-transport { padding-inline: 12px; gap: 10px; }
   .handoff-story { display: grid; grid-template-columns: minmax(0,1fr); border-left: 0; border-top: 1px solid #35424b; padding: 16px; }
   .handoff-steps li span { display: inline; }

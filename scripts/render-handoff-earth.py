@@ -16,16 +16,23 @@ dist = (np.hypot(nx, ny)-1)*radius
 nz = np.sqrt(np.maximum(0, 1-nx*nx-ny*ny))
 tilt = np.deg2rad(36)
 lat = np.arcsin(np.clip(ny*np.sin(tilt)-nz*np.cos(tilt),-1,1))
-lon = np.arctan2(nx, ny*np.cos(tilt)+nz*np.sin(tilt)) + np.deg2rad(-17)
-def sample(name, du=0, dv=0):
+lon = np.arctan2(nx, ny*np.cos(tilt)+nz*np.sin(tilt)) + np.deg2rad(-83)
+def sample(name, du=0, dv=0, regional=False):
     tex = np.asarray(Image.open(root/'public/textures'/name).convert('RGB'), dtype='float32')/255
     h,w = tex.shape[:2]
     u,v = ((lon/(2*np.pi)+.5)*w+du)%w, np.clip((.5-lat/np.pi)*h+dv,0,h-1.01)
+    if regional:
+        # Same Blue Marble observation; this regional crop retains its native
+        # 2 km/pixel detail over the Caribbean and the Florida peninsula.
+        u = np.clip((np.rad2deg(lon)+105)/65*w,0,w-1.01)
+        v = np.clip((55-np.rad2deg(lat))/55*h,0,h-1.01)
     ix,iy = u.astype(int),v.astype(int)
     fx,fy = (u-ix)[:,:,None],(v-iy)[:,:,None]
     return ((tex[iy,ix]*(1-fx)+tex[iy,(ix+1)%w]*fx)*(1-fy)
           + (tex[iy+1,ix]*(1-fx)+tex[iy+1,(ix+1)%w]*fx)*fy)
 land = sample('earth.webp')
+in_crop = (np.rad2deg(lon)>-105) & (np.rad2deg(lon)<-40) & (np.rad2deg(lat)>0) & (np.rad2deg(lat)<55)
+land = np.where(in_crop[:,:,None], sample('earth-launch-atlantic.webp',regional=True), land)
 cloud = sample('earth-clouds.webp')[:,:,0]**.88
 shadow = sample('earth-clouds.webp',1.4,-.8)[:,:,0]
 land = land*(1-.33*shadow[:,:,None])

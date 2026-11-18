@@ -59,6 +59,10 @@ export default function HandoffDiagram({ result, time, capture, release, end, vi
       <path d="m-5 0 2-3h5l2 3-2 3h-5z" fill="#899ca6" stroke="#e6eeeb" strokeWidth=".8"/>
       <path d="M-1-2.8V2.8" stroke="#3c505e" strokeWidth="2"/>
     </g>
+    <g aria-hidden="true" className="handoff-hub-note">
+      <path d={`M${HUB[0]-12} ${HUB[1]-6}l-12-11h-15`}/>
+      <text x={HUB[0]-44} y={HUB[1]-14} textAnchor="end">Tether hub</text>
+    </g>
     <svg className="handoff-hub" x={HUB[0]-24} y={HUB[1]-24} width="48" height="48" viewBox="-24 -24 48 48">
       <g transform={`rotate(${angle-90}) scale(.86)`}>
         <path d="M-19 0h38" stroke="#d8c7ac" strokeWidth="2"/>
@@ -85,7 +89,7 @@ export default function HandoffDiagram({ result, time, capture, release, end, vi
 export function CaptureDetail({ view }: { view: HandoffFrame | null }) {
   // A magnified coupling study, with compressed separation. Do not imply the
   // angular pose or the illustrated size of these parts is a solver output.
-  const separation = Math.min(25, 7 * Math.log1p((view?.gap ?? 22000)/650));
+  const separation = Math.min(45, 7 * Math.log1p((view?.gap ?? 22000)/650));
   const state = view?.phase === 'attached' ? 'Latched' : view?.phase === 'released' ? 'Released' : 'Open';
   return <figure className="capture-detail" aria-label={`Capture interface, ${state.toLowerCase()}. Illustrative close-up.`}>
     <figcaption><span>Capture interface</span><span>{state}</span></figcaption>

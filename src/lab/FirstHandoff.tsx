@@ -107,7 +107,7 @@ export default function FirstHandoff({ result, error, onRetry, onContinue }: {
     <header className="handoff-header">
       <div><p className="micro">Flight Studio <span>/</span> Guided flight 01</p>
         <h1>Watch the first handoff.</h1></div>
-      <a className="handoff-sandbox" href="/lab/">Open the sandbox <span aria-hidden="true">↗</span></a>
+      <a className="handoff-sandbox" href="/lab/">Open the sandbox <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M5 3h8v8"/></svg></a>
     </header>
     <div className="handoff-board">
       <section className="handoff-visual" aria-label="Flight replay">
@@ -152,6 +152,6 @@ export default function FirstHandoff({ result, error, onRetry, onContinue }: {
         </div>
       </section>
     </div>
-    <p className="handoff-footnote">Calculated trajectory · Time compressed <span>Hardware enlarged for visibility</span></p>
+    <p className="handoff-footnote">Calculated trajectory · Time compressed <span>Illustrative horizon · Hardware enlarged</span></p>
   </main>;
 }
