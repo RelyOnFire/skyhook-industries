@@ -114,6 +114,10 @@ import FlightStory from '../components/FlightStory.astro';
         <div>
           <h2>Four thousand kilometres cannot behave like one rope.</h2>
           <p class="lede">The current structural direction is tapered, redundant and sectional: more material where the load demands it, multiple load paths where damage is credible, and boundaries that help keep a local failure local.</p>
+          <figure class="structure-study">
+            <img src="/studies/tether-specimen.webp" alt="Three braided strands with diagonal cross-links between two tensile grips" width="1280" height="680" loading="lazy" decoding="async" />
+            <figcaption><b>Multiline specimen</b> · The long strands carry tension. Diagonal links offer a path around local damage. <a href="/roadmap/">See the proposed test ↗</a></figcaption>
+          </figure>
           <div class="hard-list">
             <div class="hard-row"><b>TAPER</b><span>CROSS-SECTION FOLLOWS LOAD / MASS IS NOT UNIFORM / PEAK STRESS MUST SET GEOMETRY</span></div>
             <div class="hard-row"><b>REDUNDANCY</b><span>MULTIPLE LOAD PATHS / SPATIALLY SEPARATED ELEMENTS / DAMAGE TOLERANCE</span></div>
@@ -150,3 +154,10 @@ import FlightStory from '../components/FlightStory.astro';
     </div>
   </section>
 </ProductionLayout>
+
+<style>
+  .structure-study { margin: 26px 0 0; border-block: 1px solid #3c4a52; background: radial-gradient(ellipse at 50% 45%,#26343b,transparent 70%); }
+  .structure-study img { display: block; width: 100%; height: clamp(170px,25vw,280px); object-fit: contain; }
+  .structure-study figcaption { padding: 0 12px 14px; color: #b6c5cb; font: 14px/1.55 var(--sans); }
+  .structure-study a { color: #ebba94; text-underline-offset: 3px; }
+</style>

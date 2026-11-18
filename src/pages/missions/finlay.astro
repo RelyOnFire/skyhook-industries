@@ -12,7 +12,7 @@ import { FINLAY_ORBIT } from '../../missions/finlay-model';
       <div class="finlay-target"><span><b>1.8 km</b>Adopted nucleus diameter</span><span><b>{FINLAY_ORBIT.inclinationDeg.toFixed(2)}°</b>Reference orbital inclination</span><span><b>{(FINLAY_ORBIT.periodDays/365.25).toFixed(2)} years</b>Reference orbit around the Sun</span></div>
       <p class="finlay-target-note">The diameter follows an adopted published model. Orbit values come from a frozen JPL solution; they do not describe a planned encounter.</p>
     </header>
-    <section class="finlay-concept-section" aria-label="Finlay mission architecture"><FinlayConcept client:visible /><noscript><p>The enclosure concept is shown above. Enable JavaScript to explore the five mission stages.</p></noscript></section>
+    <section id="mission-hardware" class="finlay-concept-section" aria-label="Finlay mission architecture"><FinlayConcept client:visible /><noscript><p>The enclosure concept is shown above. Enable JavaScript to explore the five mission stages.</p></noscript></section>
     <section class="finlay-intent">
       <p class="mission-eyebrow">THE MISSION</p>
       <div><h2>Move the resource.<br/>Build the network around it.</h2><p>The ambition is to redirect the whole nucleus of 15P/Finlay and establish a water depot near Earth, the Moon or Mars. A flexible enclosure collects released volatiles. A load-bearing harness secures the nucleus and carries the engines. Local heat, vapor handling and controlled thrust turn some of that water into the means of moving the rest.</p><p>Water could support propulsion, life support and industry without lifting every shipment from a planetary surface. Its usefulness depends on the depot’s actual orbit and the cost of reaching it.</p></div>

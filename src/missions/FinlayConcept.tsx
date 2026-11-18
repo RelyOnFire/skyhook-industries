@@ -14,15 +14,29 @@ const enclosure = 'M122 180 C151 101 218 73 290 79 C365 64 444 104 482 165 C516 
 
 export default function FinlayConcept() {
   const [stage, setStage] = useState(1);
+  const [view, setView] = useState<'hardware' | 'schematic'>('hardware');
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   const prefix = `finlay-${useId().replace(/:/g, '')}`;
   const id = (name: string) => `${prefix}-${name}`;
   const selected = stages[stage];
   const enclosed = stage >= 1, processing = stage >= 2, thrusting = stage === 3, depot = stage === 4;
+  const phase = selected.name.toLowerCase();
+  const portraits = [
+    'A survey spacecraft alongside a rough, exposed comet nucleus.',
+    'Copper restraint straps pass around the translucent vapor enclosure and connect to the paired engine mounts.',
+    'A finned cold trap and banded water tank sit between the enclosure and the engines.',
+    'Two engines expel vapor toward the right, applying thrust toward the left through the restraint harness.',
+    'A visiting spacecraft connects to the water feed at the aft end of the enclosure.',
+  ];
   return <figure className="finlay-concept" data-phase={selected.name.toLowerCase()} aria-labelledby={id('heading')}>
     <div className="finlay-concept-top"><span>15P / FINLAY</span><span>System concept · not to scale</span></div>
-    <div className="finlay-concept-picture">
+    <div className="finlay-view-switch" role="group" aria-label="Mission illustration view">
+      {(['hardware', 'schematic'] as const).map(mode => <button type="button" key={mode} disabled={!ready} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'hardware' ? 'Hardware view' : 'Flow schematic'}</button>)}
+    </div>
+    <div className="finlay-concept-picture" data-view={view}>
+      {view === 'hardware' && <img className="finlay-portrait" src={'/studies/finlay-' + phase + '.webp'} width="1280" height="680" alt={portraits[stage]} decoding="async" onError={() => setView('schematic')} />}
+      <div hidden={view !== 'schematic'}>
       <svg viewBox="55 35 730 410" role="img" aria-labelledby={`${id('svg-title')} ${id('svg-desc')}`}>
         <title id={id('svg-title')}>{'Comet enclosure and water propulsion concept: ' + selected.name}</title>
         <desc id={id('svg-desc')}>An illustrative irregular nucleus sits inside a translucent vapor collection bag and a separate restraint harness. Piping leads to filtration, storage, a heater and two engines attached to the harness. {thrusting ? 'The engines expel vapor to the right, producing thrust to the left.' : depot ? 'A visiting vehicle approaches the water transfer port with engines off.' : 'Engines are off.'} The drawing does not represent a measured shape or trajectory for Finlay.</desc>
@@ -102,7 +116,8 @@ export default function FinlayConcept() {
         </g>
       </svg>
       <div className="finlay-concept-key" aria-label="Diagram legend"><span><i className="finlay-key-bag"/>Collection membrane</span><span><i className="finlay-key-load"/>Load harness</span><span><i className="finlay-key-water"/>Water / vapor feed</span><span><i className="finlay-key-heat"/>Heated propellant</span></div>
-      <p className="finlay-concept-shape">Illustrative nucleus; Finlay’s shape is not reconstructed here.</p>
+      </div>
+      <p className="finlay-concept-shape">Concept study · Illustrative nucleus shape and hardware scale</p>
     </div>
     <nav className="finlay-concept-stages" aria-label="Finlay mission concept stages">{stages.map((item, index) => <button key={item.name} type="button" disabled={!ready} aria-pressed={index === stage} aria-controls={id('caption')} onClick={() => setStage(index)}><span aria-hidden="true">0{index + 1}</span>{item.name}</button>)}</nav>
     <figcaption id={id('caption')} className="finlay-concept-caption" aria-live="polite" aria-atomic="true"><div><p className="finlay-concept-focus">{selected.focus}</p><h3 id={id('heading')}>{selected.title}</h3></div><p>{selected.text}</p></figcaption>

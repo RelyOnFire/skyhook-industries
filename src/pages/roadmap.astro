@@ -1,12 +1,17 @@
 ---
+import ReportOpening from '../components/ReportOpening.astro';
 import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
 <ProductionLayout title="Roadmap — Skyhook Industries" description="The Skyhook Industries development roadmap, organized by engineering gates rather than calendar promises.">
-  <section class="page-hero">
+  <ReportOpening>
     <p class="eyebrow">Engineering program</p>
     <h1>Earn the next scale.</h1>
     <p>A transportation-scale Skyhook should not be scheduled by optimism. Each step has to retire a specific class of uncertainty before the project earns the right to become larger, faster or more expensive.</p>
-  </section>
+    <Fragment slot="figure">
+      <img class="specimen" src="/studies/tether-specimen.webp" width="1280" height="680" alt="Three braided load paths joined by fine diagonal links and held between two bolted test grips" />
+      <figcaption><b>Multiline tether in tensile grips</b><span>Proposed materials test</span></figcaption>
+    </Fragment>
+  </ReportOpening>
 
   <section class="dark-section">
     <div class="section-grid">

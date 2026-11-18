@@ -70,3 +70,5 @@ The capture head and cargo bus are original, enlarged hardware studies.
 `blender -b -t 4 -P scripts/render-handoff-hardware.py` renders both transparent
 layers. Their pose, size and appearance are illustrative; measured flight
 positions and the altitude readout come from the Earth simulation.
+
+The homepage uses a 1536 × 768 derivative of the Earth and cloud maps credited above. Rebuild it with `node scripts/prepare-overview-earth.mjs`.

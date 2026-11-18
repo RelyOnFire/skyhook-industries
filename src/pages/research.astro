@@ -1,12 +1,17 @@
 ---
+import ReportOpening from '../components/ReportOpening.astro';
 import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
 <ProductionLayout title="Research — Skyhook Industries" description="Primary research and flight heritage behind rotating momentum-exchange tethers, electrodynamic reboost, tether deployment and payload capture.">
-  <section class="page-hero paper-hero">
+  <ReportOpening>
     <p class="eyebrow">Research record</p>
     <h1>What flew. What was studied. What remains.</h1>
     <p>The useful question is not whether “space tethers” exist as an idea. It is which parts of a transportation-scale Skyhook have already been demonstrated, which were analyzed in serious aerospace studies, and which still belong to the engineering program ahead.</p>
-  </section>
+    <Fragment slot="figure">
+      <img class="archival-print" src="/studies/sts075-701-087.webp" width="999" height="1024" alt="The spherical TSS-1R satellite on Columbia’s deployment boom, photographed from the orbiter" />
+      <figcaption><b>TSS-1R aboard Columbia · 1996</b><a href="https://www.nasa.gov/image-detail/amf-sts075-701-087/">NASA / JSC photograph ↗</a></figcaption>
+    </Fragment>
+  </ReportOpening>
 
   <section class="paper-section">
     <div class="section-grid">

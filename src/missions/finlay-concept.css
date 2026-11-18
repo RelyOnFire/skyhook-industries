@@ -58,3 +58,14 @@
 @media (prefers-reduced-motion: reduce) {
   .finlay-layer, .finlay-concept-stages button { transition: none; }
 }
+
+.finlay-view-switch { display: flex; justify-content: flex-end; gap: 3px; padding: 12px 28px 0; }
+.finlay-view-switch button { border: 1px solid #45555e; color: #bdcbd0; background: transparent; min-height: 40px; padding: 7px 14px; font: 13px/1.4 var(--sans, system-ui); cursor: pointer; }
+.finlay-view-switch button[aria-pressed=true] { color: #f3d0b5; background: #302821; border-color: #92765e; }
+.finlay-view-switch button:focus-visible { outline: 2px solid #bbe3f2; outline-offset: 2px; }
+.finlay-concept-picture { background: radial-gradient(ellipse at 42% 43%, #30414c77,transparent 68%); }
+.finlay-portrait { display: block; width: 100%; height: auto; max-height: 560px; object-fit: contain; }
+@media(max-width:600px) {
+  .finlay-view-switch { padding: 6px 16px 0; justify-content: flex-start; }
+  .finlay-view-switch button { min-height: 44px; }
+}
