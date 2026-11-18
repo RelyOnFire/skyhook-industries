@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Keep the runner compatible with the pinned Playwright browser binaries.
+    runs-on: ubuntu-24.04
     env:
       SKYHOOK_DEPLOYMENT: production
     steps:
@@ -111,7 +112,7 @@ jobs:
 
   launch-browsers:
     name: Launch and save transfer (${{ matrix.browser }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
