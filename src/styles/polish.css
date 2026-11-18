@@ -54,14 +54,6 @@ html[data-theme="paper"] .site-nav {
   color: #171a1c;
 }
 
-html[data-theme="paper"] .wordmark-mark {
-  border-color: #335e73;
-}
-
-html[data-theme="paper"] .wordmark-mark i {
-  background: #335e73;
-}
-
 html[data-theme="paper"] .desktop-nav a {
   color: #596166;
 }
@@ -358,10 +350,6 @@ html[data-theme="paper"] .mobile-nav a.active {
     gap: 0.6rem;
     font-size: 0.63rem;
     letter-spacing: 0.075em;
-  }
-
-  .wordmark-mark {
-    width: 1.5rem;
   }
 
   .hero-orbit {

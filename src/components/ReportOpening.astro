@@ -1,0 +1,27 @@
+<section class="page-hero illustrated-opening">
+  <div class="opening-copy"><slot /></div>
+  <figure class="opening-figure"><slot name="figure" /></figure>
+</section>
+<style>
+  .page-hero.illustrated-opening {
+    display: grid;
+    grid-template-columns: minmax(0,1.12fr) minmax(0,1fr);
+    gap: clamp(28px,5vw,80px);
+    align-items: center;
+  }
+  .opening-figure { min-width: 0; margin: 0; }
+  .opening-figure :global(img) { display: block; width: 100%; height: auto; }
+  .opening-figure :global(figcaption) {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px 24px; flex-wrap: wrap; border-top: 1px solid #465258; padding-top: 11px;
+    font: 12px/1.55 var(--sans,system-ui); color: #b6c5cb;
+  }
+  .opening-figure :global(figcaption b) { font-weight: 500; color: #e4ebed; }
+  .opening-figure :global(figcaption a) { color: #d7ad8c; text-underline-offset: 3px; }
+  .opening-figure :global(.archival-print) { max-height: 340px; aspect-ratio: 1.55; object-fit: cover; object-position: 50% 40%; margin-bottom: 8px; }
+  .opening-figure :global(.specimen) { background: radial-gradient(ellipse at center,#26343b80,transparent 68%); }
+  @media(max-width:800px) {
+    .page-hero.illustrated-opening { grid-template-columns: 1fr; }
+    .opening-figure { width: min(100%, 580px); }
+  }
+</style>

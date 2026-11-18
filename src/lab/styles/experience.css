@@ -14,6 +14,25 @@
 .mission-banner-actions { display:flex; gap:8px; margin-left:auto; }
 .mission-banner-actions button { font-size:12px; min-height:40px; }
 .mission-passed { border-color:#437f7a; background:linear-gradient(100deg,#173b3d,#0d202b); }
+.mission-banner { display:block; }
+.mission-banner-heading { display:flex; align-items:center; gap:24px; }
+.mission-banner-copy { min-width:0; }
+.mission-next { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,auto); align-items:center; gap:24px; margin-top:18px; padding-top:18px; border-top:1px solid var(--lab-line,#375063); }
+.mission-result h3 { margin:4px 0 7px; font-size:20px; line-height:1.25; font-weight:550; letter-spacing:-.025em; }
+.mission-result p { max-width:76ch; font-size:13px; line-height:1.65; margin:0; color:var(--lab-soft,#b4c7da); }
+.mission-next-actions { display:flex; flex-direction:column; align-items:stretch; gap:7px; }
+.mission-next-actions button,.mission-next-actions a { min-height:44px; font-size:12px; line-height:1.4; text-align:left; }
+.mission-next-actions a { display:flex; align-items:center; padding:9px 12px; color:var(--lab-cyan); border:1px solid var(--lab-line,#375063); border-radius:3px; text-decoration:none; }
+.mission-next-actions a:hover { background:var(--lab-panel,#172025); }
+.mission-next-actions a:focus-visible { outline:2px solid var(--lab-cyan); outline-offset:3px; }
+.brief-path { list-style:none; counter-reset:flight-step; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:22px 0; padding:0; }
+.brief-path li { counter-increment:flight-step; min-width:0; padding-top:12px; border-top:1px solid var(--lab-line,#375063); }
+.brief-path li::before { content:'0' counter(flight-step); display:block; color:var(--lab-cyan); font:12px var(--lab-mono); margin-bottom:9px; }
+.brief-path b { display:block; font-size:13px; line-height:1.4; margin-bottom:6px; }
+.brief-path span { display:block; font-size:12px; line-height:1.6; color:var(--lab-soft,#b4c7da); }
+.brief-constraints { margin:0 0 18px; font-size:13px; }
+.brief-constraints summary { cursor:pointer; min-height:44px; align-content:center; color:var(--lab-soft,#b4c7da); }
+.brief-constraints .brief-rules { margin:6px 0 12px; }
 .lab-workspace { min-height:735px; height:calc(100svh - 342px); max-height:1300px; }
 .field-heading { font-size:13px; }
 .lab-select,.lab-select select,.control-tabs button { font-size:13px; }
@@ -170,7 +189,7 @@
 @media(max-width:800px) {
  .workbench-bar { align-items:start; flex-wrap:wrap; gap:13px; }.workbench-bar h1{font-size:25px}.workbench-actions { width:100%; display:flex; flex-wrap:wrap; }.workbench-actions>button.open-missions,.workbench-actions>button.open-study { display:block; min-height:38px; font-size:12px; }.workbench-actions .share-design{margin-left:auto}
  .flight-invitation { display:block; padding:18px; }.flight-invitation h2{font-size:21px}.flight-invitation p{font-size:12px}.flight-invitation>button{margin:18px 0 0;width:100%;justify-content:space-between;font-size:12px}
- .mission-banner { gap:13px; flex-wrap:wrap; padding:16px; }.mission-banner-id{font-size:33px;padding-right:16px}.mission-banner-copy{flex:1;min-width:180px}.mission-banner-copy h2{font-size:19px}.mission-banner-copy p{font-size:11px}.mission-banner-actions{width:100%;margin-left:0}.mission-banner-actions button{flex:1}.mission-banner-actions button:last-child{flex:0 0 38px}
+ .mission-banner { padding:16px; }.mission-banner-heading{gap:13px;flex-wrap:wrap}.mission-banner-id{font-size:33px;padding-right:16px}.mission-banner-copy{flex:1;min-width:150px}.mission-banner-copy h2{font-size:19px}.mission-banner-copy p{font-size:11px}.mission-banner-actions{width:100%;margin-left:0}.mission-banner-actions button{flex:1;min-height:44px}.mission-banner-actions button:last-child{flex:0 0 44px}.mission-next{grid-template-columns:1fr;gap:14px}.mission-result h3{font-size:19px}.brief-path{grid-template-columns:1fr;gap:10px}.brief-path li{display:grid;grid-template-columns:25px minmax(0,1fr);column-gap:10px;padding-top:10px}.brief-path li::before{grid-row:span 2;margin-top:2px}.brief-path b{margin-bottom:3px}.brief-path span{grid-column:2}
  .lab-workspace{height:auto;min-height:0;max-height:none}.scene-toolbar{flex-wrap:wrap;gap:6px;padding:12px}.view-switch button{font-size:11px;padding:6px 7px;min-height:34px}.scene-name{font-size:8px}.scene-tools button{font-size:9px}.scene-legend{font-size:8px;right:158px;gap:5px}.camera-actions button{font-size:10px;padding:5px 8px}.world-label{font-size:9px}.replay-actions span{display:none}.replay-actions button{font-size:11px;min-height:35px}.mission-clock b{font-size:11px}.speed-label select{max-width:91px}
  .guided-replay{grid-template-columns:34px minmax(0,1fr);padding:17px;gap:12px}.guided-number{font-size:24px}.guided-replay h3{font-size:18px}.guided-buttons button{font-size:11px;min-height:38px}.recorder-insight h3{font-size:21px}.recorder-insight button{min-height:40px;font-size:12px}
  .lab-modal,.lab-modal.modal-wide { width:calc(100vw - 20px); max-height:calc(100svh - 20px); padding:20px; border-radius:10px; }.lab-modal h2{font-size:31px}.modal-intro{font-size:15px}.modal-heading .micro{font-size:9px}

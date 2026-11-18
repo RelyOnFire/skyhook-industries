@@ -1,27 +1,33 @@
 ---
 import '../lab/lab.css';
-interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures'; }
+import '../lab/styles/orbital-theme.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import PageMeta from '../components/PageMeta.astro';
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'campaign'; }
 const { title, description, active = 'lab' } = Astro.props;
-const links = [ ['lab', 'Flight deck', '/lab/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
+const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '/lab/campaign/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#080e18" />
-    <meta name="robots" content="noindex,follow" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <PageMeta title={title} description={description} experience={active === 'campaign' ? 'campaign' : 'lab'} />
   </head>
   <body class="lab-body">
     <a class="lab-skip" href="#lab-content">Skip to content</a>
-    <header class="lab-chrome">
-      <a class="lab-logo" href="/lab/" aria-label="Tether Lab home"><img src="/favicon.svg" width="30" height="30" alt="" /><span><b>TETHER LAB</b><small>by Skyhook Industries</small></span></a>
-      <nav aria-label="Lab navigation">{links.map(([id, label, href]) => <a href={href} aria-current={active === id ? 'page' : undefined}>{label}</a>)}</nav>
-      <a class="company-link" href="/">Company & research ↗</a>
-    </header>
+    <SiteHeader />
+    <nav class="lab-section-nav" aria-label="Lab navigation">
+      <span>Tether Lab</span>
+      {links.map(([id, label, href]) => <a href={href} aria-current={active === id ? 'page' : undefined}>{label}</a>)}
+    </nav>
     <slot />
+    <footer class="lab-imagery-credit">
+      <a href="/help/">Help &amp; saves</a>
+      <a href="/contact/#feedback">Feedback</a>
+      <a href="/lab/method/#imagery">Planetary imagery &amp; credits ↗</a>
+    </footer>
   </body>
 </html>
+
+<style>.lab-imagery-credit{max-width:1500px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;gap:0 24px;font-size:11px;color:#8fa1ab}.lab-imagery-credit a{display:inline-flex;align-items:center;min-height:44px;color:inherit;text-underline-offset:3px}</style>

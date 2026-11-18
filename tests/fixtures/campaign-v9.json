@@ -1,0 +1,272 @@
+{
+  "format": "skyhook-campaign",
+  "version": 9,
+  "state": {
+    "schema": 9,
+    "model": "network-0.9.0",
+    "id": "market-migration-v9",
+    "name": "Contract market migration",
+    "revision": 6,
+    "day": 107.00915919055706,
+    "fuelT": 10090.55915919056,
+    "nextShipment": 8,
+    "nextSupplyDay": 0,
+    "lunarReturnedT": 1,
+    "ports": {
+      "earth": {
+        "materialsT": 164,
+        "equipmentT": 73.50457959527853,
+        "waterT": 0,
+        "industry": true,
+        "level": 3,
+        "readyDay": 0,
+        "receivedT": 1,
+        "sentT": 0
+      },
+      "moon": {
+        "materialsT": 1060.009159190557,
+        "equipmentT": 94.64954204047217,
+        "waterT": 0,
+        "industry": true,
+        "level": 3,
+        "readyDay": 0,
+        "receivedT": 0,
+        "sentT": 47
+      },
+      "phobos": {
+        "materialsT": 100,
+        "equipmentT": 100,
+        "waterT": 0,
+        "industry": false,
+        "level": 3,
+        "readyDay": 0,
+        "receivedT": 0,
+        "sentT": 0
+      },
+      "mercury": {
+        "materialsT": 0,
+        "equipmentT": 0,
+        "waterT": 0,
+        "industry": false,
+        "level": 0,
+        "readyDay": 0,
+        "receivedT": 0,
+        "sentT": 0
+      },
+      "ceres": {
+        "materialsT": 0,
+        "equipmentT": 0,
+        "waterT": 0,
+        "industry": false,
+        "level": 0,
+        "readyDay": 0,
+        "receivedT": 0,
+        "sentT": 0
+      }
+    },
+    "flights": [
+      {
+        "id": 7,
+        "from": "moon",
+        "to": "earth",
+        "cargoT": 7,
+        "fuelT": 2.45,
+        "mode": "tug",
+        "departed": 107.00915919055706,
+        "arrival": 113.01373878583559,
+        "kind": "materials",
+        "serviceId": null,
+        "contractId": 2
+      }
+    ],
+    "log": [
+      {
+        "day": 0,
+        "text": "Earth depot commissioned. Deliver 30 t of construction cargo to the Moon to build your first lunavator."
+      },
+      {
+        "day": 0,
+        "text": "Contract 1 accepted: 30 t construction material for Terran Orbital Works, due day 36.0."
+      },
+      {
+        "day": 0,
+        "text": "Flight 1: 1 t construction material dispatched from Moon to Earth."
+      },
+      {
+        "day": 0,
+        "text": "Flight 2: 9 t construction material dispatched from Moon to Earth."
+      },
+      {
+        "day": 0,
+        "text": "Service 1 scheduled: 8 t construction material, Moon → Earth, every 2 days."
+      },
+      {
+        "day": 1,
+        "text": "Flight 3: 8 t construction material dispatched from Moon to Earth by service 1."
+      },
+      {
+        "day": 3,
+        "text": "Flight 4: 8 t construction material dispatched from Moon to Earth by service 1."
+      },
+      {
+        "day": 5,
+        "text": "Flight 5: 5 t construction material dispatched from Moon to Earth by service 1."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 1 arrived at Earth. 1 t construction material added to the depot."
+      },
+      {
+        "day": 6.004579595278523,
+        "text": "Flight 2: 9 t received by Terran Orbital Works for contract 1. 36 credits paid; cargo consumed by the customer."
+      },
+      {
+        "day": 7.004579595278523,
+        "text": "Flight 3: 8 t received by Terran Orbital Works for contract 1. 32 credits paid; cargo consumed by the customer."
+      },
+      {
+        "day": 9.004579595278523,
+        "text": "Flight 4: 8 t received by Terran Orbital Works for contract 1. 32 credits paid; cargo consumed by the customer."
+      },
+      {
+        "day": 11.004579595278523,
+        "text": "Flight 5: 5 t received by Terran Orbital Works for contract 1. 50 credits paid; cargo consumed by the customer."
+      },
+      {
+        "day": 11.004579595278523,
+        "text": "Contract 1 completed. 30 / 30 t delivered; 150 credits earned."
+      },
+      {
+        "day": 30,
+        "text": "Purchased 2 t construction material at Earth for 24 credits."
+      },
+      {
+        "day": 30,
+        "text": "Purchased 1 t construction material at Earth for 12 credits."
+      },
+      {
+        "day": 101.00457959527853,
+        "text": "Contract 2 accepted: 30 t construction material for Terran Orbital Works, due day 137.0."
+      },
+      {
+        "day": 101.00457959527853,
+        "text": "Flight 6: 9 t construction material dispatched from Moon to Earth."
+      },
+      {
+        "day": 107.00915919055706,
+        "text": "Flight 6: 9 t received by Terran Orbital Works for contract 2. 36 credits paid; cargo consumed by the customer."
+      },
+      {
+        "day": 107.00915919055706,
+        "text": "Flight 7: 7 t construction material dispatched from Moon to Earth."
+      },
+      {
+        "day": 107.00915919055706,
+        "text": "Service 2 scheduled: 8 t construction material, Moon → Earth, every 2 days."
+      }
+    ],
+    "earthDesign": null,
+    "solar": {
+      "unlocked": false,
+      "depositT": 100000,
+      "nextCycleDay": null,
+      "mirrorWorks": false,
+      "launchArray": false,
+      "powerLink": false,
+      "mirrorsT": 0,
+      "manufacturedT": 0,
+      "deployedT": 0,
+      "autoLaunch": false,
+      "nextLaunchDay": null,
+      "nextDeployment": 1,
+      "deployments": []
+    },
+    "belt": {
+      "unlocked": false,
+      "depositT": 100000,
+      "extractedT": 0,
+      "returnedWaterT": 0,
+      "refinedT": 0,
+      "propellantWorks": false,
+      "nextCycleDay": null
+    },
+    "development": {
+      "launchLevel": 0,
+      "waterLevel": 0,
+      "fuelLevel": 0,
+      "mercuryTracts": 0,
+      "ceresTracts": 0,
+      "fuelReserveT": 0
+    },
+    "commerce": {
+      "credits": 150,
+      "earnedCredits": 186,
+      "spentCredits": 36,
+      "nextContract": 3,
+      "contracts": [
+        {
+          "id": 1,
+          "offerId": "lunar-return",
+          "size": "standard",
+          "acceptedDay": 0,
+          "dueDay": 36.00457959527852,
+          "quantityT": 30,
+          "deliveredT": 30,
+          "earnedCredits": 150,
+          "status": "completed",
+          "settledDay": 11.004579595278523
+        },
+        {
+          "id": 2,
+          "offerId": "lunar-return",
+          "size": "standard",
+          "acceptedDay": 101.00457959527853,
+          "dueDay": 137.00915919055706,
+          "quantityT": 30,
+          "deliveredT": 9,
+          "earnedCredits": 36,
+          "status": "active",
+          "settledDay": null
+        }
+      ],
+      "cooldowns": {
+        "lunar-return": 101.00457959527853,
+        "mars-build": 0,
+        "mercury-tooling": 0
+      }
+    },
+    "services": [
+      {
+        "id": 1,
+        "from": "moon",
+        "to": "earth",
+        "kind": "materials",
+        "mode": "tug",
+        "cargoT": 8,
+        "intervalDays": 2,
+        "nextDay": 7,
+        "enabled": false,
+        "dispatched": 3,
+        "deliveredT": 21,
+        "contractId": 1
+      },
+      {
+        "id": 2,
+        "from": "moon",
+        "to": "earth",
+        "kind": "materials",
+        "mode": "tug",
+        "cargoT": 8,
+        "intervalDays": 2,
+        "nextDay": 108.00915919055706,
+        "enabled": true,
+        "dispatched": 0,
+        "deliveredT": 0,
+        "contractId": 2
+      }
+    ],
+    "nextService": 3,
+    "marsOperations": 0,
+    "lunarPhobosDeliveredT": 0
+  }
+}

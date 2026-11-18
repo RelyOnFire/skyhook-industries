@@ -1,12 +1,17 @@
 ---
+import ReportOpening from '../components/ReportOpening.astro';
 import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
 <ProductionLayout title="Research — Skyhook Industries" description="Primary research and flight heritage behind rotating momentum-exchange tethers, electrodynamic reboost, tether deployment and payload capture.">
-  <section class="page-hero paper-hero">
+  <ReportOpening>
     <p class="eyebrow">Research record</p>
     <h1>What flew. What was studied. What remains.</h1>
     <p>The useful question is not whether “space tethers” exist as an idea. It is which parts of a transportation-scale Skyhook have already been demonstrated, which were analyzed in serious aerospace studies, and which still belong to the engineering program ahead.</p>
-  </section>
+    <Fragment slot="figure">
+      <img class="archival-print" src="/studies/sts075-701-087.webp" width="999" height="1024" alt="The spherical TSS-1R satellite on Columbia’s deployment boom, photographed from the orbiter" />
+      <figcaption><b>TSS-1R aboard Columbia · 1996</b><a href="https://www.nasa.gov/image-detail/amf-sts075-701-087/">NASA / JSC photograph ↗</a></figcaption>
+    </Fragment>
+  </ReportOpening>
 
   <section class="paper-section">
     <div class="section-grid">
@@ -114,6 +119,27 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
           <div class="sequence-row"><b>C</b><strong>SKYHOOK STUDY</strong><span>A present architectural choice being explored by Skyhook Industries.</span></div>
           <div class="sequence-row"><b>D</b><strong>OPEN TARGET</strong><span>A number or feature that still depends on modeling, testing or material performance.</span></div>
         </div>
+      </div>
+    </div>
+  </section>
+  <section class="paper-section" id="comet-resources">
+    <div class="section-grid">
+      <p class="chapter-label">06 / Water and small bodies</p>
+      <div>
+        <h2>A resource that could also provide thrust.</h2>
+        <p class="lede">The Finlay mission study brings together comet observations, containment concepts and water propulsion. These sources support different parts of the idea at different scales.</p>
+        <div class="source-list">
+          <a class="source" href="https://www.nasa.gov/general/apis-asteroid-provided-in-situ-supplies-100mt-of-water-from-a-single-falcon-9/">
+            <span class="source-type">NIAC / concept study</span><div><h3>APIS — Asteroid Provided In-Situ Supplies</h3><p>TransAstra's concept encloses a small asteroid, extracts water with concentrated sunlight and uses water propulsion to return the harvested resource to lunar orbit. It studies water delivery, not capture of an entire comet.</p></div><span class="source-year">2015 ↗</span>
+          </a>
+          <a class="source" href="https://ntrs.nasa.gov/citations/20190027057">
+            <span class="source-type">NASA / ground demonstration</span><div><h3>WINE — The World Is Not Enough</h3><p>A NASA, Honeybee Robotics and Florida Space Institute prototype demonstrated water extraction from regolith simulant, collection and steam thrust in a vacuum chamber. The demonstration concerns a small robotic vehicle.</p></div><span class="source-year">2019 ↗</span>
+          </a>
+          <a class="source" href="https://arxiv.org/abs/1510.06645">
+            <span class="source-type">Observational research</span><div><h3>Bangs and Meteors from the Quiet Comet 15P/Finlay</h3><p>Ye and colleagues analyze Finlay's 2014–2015 outbursts using observations and a dust model. Its activity provides context for reconnaissance and containment; model assumptions are not a measured whole-nucleus mass or water inventory.</p></div><span class="source-year">2015 ↗</span>
+          </a>
+        </div>
+        <a class="cta light" href="/missions/finlay/">Explore the mission and its calculations →</a>
       </div>
     </div>
   </section>

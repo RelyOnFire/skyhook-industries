@@ -1,12 +1,30 @@
 ---
+import ReportOpening from '../components/ReportOpening.astro';
 import ProductionLayout from '../layouts/ProductionLayout.astro';
+const massCases = [
+  { strength: 4, tether: 599.9, dry: 639.9 },
+  { strength: 6, tether: 248.8, dry: 288.8 },
+  { strength: 8, tether: 148.4, dry: 188.4 },
+  { strength: 10, tether: 103.8, dry: 143.8 },
+];
 ---
-<ProductionLayout title="Reference Architecture — Skyhook Industries" description="The current numerical Skyhook study: 4,000 km geometry, first-order tether mass, payload sensitivity, architecture trades and the assumptions still left open." theme="paper">
-  <section class="page-hero paper-hero">
+<ProductionLayout title="Reference Architecture — Skyhook Industries" description="The current numerical Skyhook study: 4,000 km geometry, first-order tether mass, payload sensitivity, architecture trades and the assumptions still left open.">
+  <ReportOpening>
     <p class="eyebrow">Reference Architecture v0.4</p>
     <h1>Put the numbers where they can be challenged.</h1>
     <p>The current Skyhook study uses a 4,000 km two-arm tether as a working geometry. This page shows what that choice implies before any of it is promoted from study value to specification.</p>
-  </section>
+    <Fragment slot="figure">
+      <div class="mass-chart">
+        <div class="chart-title">Dry facility mass <span>15 t design payload</span></div>
+        <div class="mass-bars" role="img" aria-label="At 4, 6, 8 and 10 MJ/kg allowable specific strength, screening dry masses are 639.9, 288.8, 188.4 and 143.8 tonnes. Only the first exceeds the 300 tonne target.">
+          <div class="mass-target" style={`bottom:${100*300/700}%`}><span>300 t target</span></div>
+          {massCases.map(c => <div class="bar-slot"><div class="mass-bar" style={`height:${100*c.dry/700}%`}><span>{c.dry} t</span></div></div>)}
+        </div>
+        <div aria-hidden="true" class="mass-ticks">{massCases.map(c => <span>{c.strength}</span>)}</div>
+      </div>
+      <figcaption><b>Allowable specific strength (MJ/kg)</b><span>v0.4 screening model</span></figcaption>
+    </Fragment>
+  </ReportOpening>
 
   <section class="paper-section">
     <div class="section-grid">
@@ -33,10 +51,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
         <h2>“A few hundred tonnes” now has a threshold.</h2>
         <p class="body-copy">Version 0.4 adds payload tension to an ideal constant-stress taper. Both arms are sized as working arms, each capable of carrying the design payload. The strength variable is allowable specific strength after whatever derating is required for joints, environment, fatigue, manufacturing and safety factor.</p>
         <div class="sequence">
-          <div class="sequence-row"><b>4</b><strong>MJ/kg allowable</strong><span>15 t payload → 599.9 t ideal tether → 639.9 t screening dry facility.</span></div>
-          <div class="sequence-row"><b>6</b><strong>MJ/kg allowable</strong><span>15 t payload → 248.8 t ideal tether → 288.8 t screening dry facility.</span></div>
-          <div class="sequence-row"><b>8</b><strong>MJ/kg allowable</strong><span>15 t payload → 148.4 t ideal tether → 188.4 t screening dry facility.</span></div>
-          <div class="sequence-row"><b>10</b><strong>MJ/kg allowable</strong><span>15 t payload → 103.8 t ideal tether → 143.8 t screening dry facility.</span></div>
+          {massCases.map(c => <div class="sequence-row"><b>{c.strength}</b><strong>MJ/kg allowable</strong><span>15 t payload → {c.tether} t ideal tether → {c.dry} t screening dry facility.</span></div>)}
         </div>
         <p class="body-copy">Those facility totals include explicit screening allowances of 5 t for each terminal module and 30 t for central hub/power/control hardware. They are not flight mass estimates.</p>
         <p class="body-copy"><strong>For a 15 t payload, the idealized model crosses a 300 t dry-facility target at about 5.86 MJ/kg allowable specific strength.</strong> For 10 t it is about 5.09 MJ/kg; for 20 t, about 6.60 MJ/kg.</p>
@@ -112,3 +127,17 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
     </div>
   </section>
 </ProductionLayout>
+
+<style>
+  .mass-chart { padding: 18px 0 8px; color: #e1eaed; }
+  .chart-title { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font: 500 19px/1.3 var(--sans); }
+  .chart-title span { font: 12px/1.8 var(--mono); color: #b0c1c9; }
+  .mass-bars { position: relative; display: grid; grid-template-columns: repeat(4,1fr); align-items: end; height: clamp(170px,18vw,232px); margin-top: 26px; border-bottom: 1px solid #839099; }
+  .bar-slot { height: 100%; display: flex; align-items: end; justify-content: center; }
+  .mass-bar { position: relative; width: min(40%,40px); border-top: 2px solid #bbd5e1; background: linear-gradient(0deg,#384c59,#829da9); }
+  .bar-slot:nth-child(2) .mass-bar { background: linear-gradient(0deg,#624737,#c58f69); border-color: #efc29b; }
+  .mass-bar span { position: absolute; white-space: nowrap; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); font: 12px/1.4 var(--mono); }
+  .mass-target { position: absolute; inset-inline: 0; border-top: 1px dashed #d7a27e; }
+  .mass-target span { position: absolute; right: 0; bottom: 3px; font: 11px/1.4 var(--mono); color: #e4b18f; }
+  .mass-ticks { display: grid; grid-template-columns: repeat(4,1fr); padding: 6px 0; text-align: center; color: #c3ced3; font: 12px/1.3 var(--mono); }
+</style>

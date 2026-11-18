@@ -1,0 +1,96 @@
+.phobos-app{max-width:1760px;margin:auto;color:var(--lab-text)}
+.phobos-app *{min-width:0}
+.phobos-app .workbench-actions>button{display:block;min-height:40px}
+.phobos-intro{display:flex;align-items:center;justify-content:space-between;gap:30px;padding:16px 0 14px}
+.phobos-intro h2{font-size:clamp(25px,2.5vw,36px);font-weight:400;letter-spacing:-.03em;margin:8px 0}
+.phobos-intro p{font-size:14px;color:var(--lab-soft);margin:0;line-height:1.7}
+.phobos-orbit-fact{display:grid;gap:6px;font-size:11px;color:var(--lab-muted);text-align:right;white-space:nowrap}
+.phobos-orbit-fact strong{font-size:28px;font-weight:400;color:var(--lab-text)}
+.phobos-feedback{min-height:36px;font-size:12px;line-height:1.5;color:var(--lab-muted);margin-bottom:14px}
+.phobos-feedback p{margin:0}
+.phobos-workspace{display:grid;grid-template-columns:260px minmax(0,1fr) 280px;gap:14px;align-items:stretch}
+.phobos-app .lab-panel{background:#101619;border:1px solid var(--lab-line);border-radius:3px;overflow:hidden}
+.phobos-app .panel-heading{min-height:57px;padding:14px 17px;border-bottom:1px solid var(--lab-line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.phobos-app .panel-heading h2{margin:0;font-size:14px;font-weight:500}
+.phobos-app .tag{font-size:9px;white-space:normal}
+.phobos-design-content{padding:0 17px 14px}
+.phobos-help{color:var(--lab-muted);font-size:12px;line-height:1.65;margin:15px 0 18px}
+.phobos-field{margin-bottom:20px}
+.phobos-field label{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:8px}
+.phobos-field label span{color:var(--lab-muted);font-size:11px}
+.phobos-field>div{display:flex;gap:12px;align-items:center}
+.phobos-field input[type=range]{width:100%;accent-color:var(--lab-cyan)}
+.phobos-field input[type=number]{width:70px;flex:none;padding:7px 6px;border:1px solid #43535c;border-radius:3px;font:inherit;font-size:12px;color:var(--lab-text);text-align:right}
+.phobos-release{display:flex;gap:6px;margin-bottom:20px}
+.phobos-release button{flex:1;min-height:40px;font-size:13px;background:#0c1216}
+.phobos-release button[aria-pressed=true],.phobos-arm-switch button[aria-pressed=true],.phobos-scene-toolbar button[aria-pressed=true]{color:var(--lab-cyan);border-color:#85684f;background:#30271f}
+.phobos-material{font-size:12px;border-top:1px solid var(--lab-line);padding-top:14px;margin-bottom:18px;color:var(--lab-soft)}
+.phobos-material summary{cursor:pointer;min-height:25px}
+.phobos-material label{display:grid;gap:10px;margin:15px 0}
+.phobos-material select{max-width:100%;min-height:36px;color:var(--lab-text);border:1px solid var(--lab-line)}
+.phobos-material p{line-height:1.6;color:var(--lab-muted)}
+.phobos-run{width:100%;min-height:44px}
+.phobos-files{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.phobos-files button{background:transparent;border:0;font-size:11px;min-height:36px;color:var(--lab-muted)}
+.phobos-flight{display:flex;flex-direction:column}
+.phobos-scene-toolbar{display:flex;align-items:center;gap:5px;padding:12px;min-height:57px;flex-wrap:wrap;border-bottom:1px solid var(--lab-line)}
+.phobos-scene-toolbar>span{font-size:9px;letter-spacing:.12em;color:var(--lab-muted);margin-right:auto}
+.phobos-scene-toolbar button{font-size:11px;min-height:32px;padding:7px 9px;background:transparent}
+.phobos-viewport{flex:1;position:relative;min-height:385px;background:radial-gradient(ellipse at 40% 50%,#4331272b,transparent 60%),#080b0d}
+.phobos-three{position:absolute;inset:0;overflow:hidden}
+.phobos-three canvas{display:block;max-width:100%;touch-action:none}
+.phobos-world-label{position:absolute;pointer-events:none;color:#e5ddd1;font-size:10px;letter-spacing:.08em;background:#101619c9;padding:6px 9px;border-left:1px solid #a3927e}
+.phobos-world-label small{display:block;letter-spacing:0;font-size:9px;color:var(--lab-muted);margin-top:4px}
+.phobos-camera{position:absolute;right:12px;top:12px;display:flex;gap:5px}
+.phobos-camera button{background:#101619df;font-size:11px;min-height:34px;padding:7px 10px}
+.phobos-scene-caption{position:absolute;bottom:12px;left:15px;right:15px;display:flex;flex-wrap:wrap;gap:8px 16px;font-size:10px;color:#a4b3b9;pointer-events:none}
+.phobos-scene-caption span:last-child{flex-basis:100%;font-size:9px;color:#91a0a6}
+.phobos-scene-caption i{display:inline-block;width:13px;border-top:2px solid #b6c9c9;margin-right:5px;vertical-align:middle}
+.phobos-scene-caption span:nth-child(2) i{border-color:#efa477}
+.phobos-plane{width:100%;height:100%;position:absolute;inset:0}
+.phobos-fallback{position:absolute;top:16px;left:16px;font-size:11px;max-width:80%;color:var(--lab-muted)}
+.phobos-flight-readout{display:grid;grid-template-columns:1fr 1fr auto;gap:16px;border-top:1px solid var(--lab-line);padding:16px}
+.phobos-flight-readout>div{display:grid;gap:8px}
+.phobos-flight-readout span{font-size:9px;color:var(--lab-muted);letter-spacing:.05em}
+.phobos-flight-readout strong{font-size:19px;font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap}
+.phobos-flight-readout small{font-size:11px;color:var(--lab-muted)}
+.phobos-playback{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0d1316;border-top:1px solid var(--lab-line)}
+.phobos-playback input{width:100%;accent-color:var(--lab-cyan)}
+.phobos-playback label{display:flex;gap:6px;font-size:10px;color:var(--lab-muted);align-items:center}
+.phobos-playback label,.phobos-playback button{flex-shrink:0}
+.phobos-playback select{width:70px;flex-shrink:0}
+.phobos-playback button,.phobos-playback select{min-height:36px;font-size:11px;padding:7px;color:var(--lab-text)}
+.phobos-loading{min-height:580px;display:grid;place-items:center;font-size:13px;color:var(--lab-muted)}
+.phobos-verdict{padding:19px 18px 10px}
+.phobos-verdict h3{font-size:22px;font-weight:400;letter-spacing:-.02em;line-height:1.3;margin:10px 0}
+.phobos-verdict p{font-size:12px;line-height:1.7;color:var(--lab-muted);margin:0;min-height:83px}
+.phobos-metrics{margin:0;padding:0 18px}
+.phobos-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid #35434b77}
+.phobos-metrics dt{font-size:11px;color:var(--lab-soft);line-height:1.5}
+.phobos-metrics dd{font-size:20px;margin:0;font-weight:400;white-space:nowrap;font-variant-numeric:tabular-nums}
+.phobos-metrics small{font-size:10px;color:var(--lab-muted)}
+.phobos-challenge{padding:20px 18px 12px}
+.phobos-challenge ul{padding:0;margin:12px 0;list-style:none;display:grid;gap:9px;font-size:11px;color:var(--lab-muted)}
+.phobos-challenge li{display:flex;gap:8px;line-height:1.6}
+.phobos-challenge li[data-pass=true] span{color:#acd6c1}
+.phobos-challenge button,.phobos-report{background:none;border:0;color:var(--lab-cyan);text-align:left;font-size:11px;padding:7px 0;min-height:36px}
+.phobos-report{margin:0 18px 12px;color:var(--lab-muted)}
+.phobos-analysis{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:14px}
+.phobos-analysis p{font-size:12px;line-height:1.65;color:var(--lab-muted);margin:15px 18px}
+.phobos-arm-switch{display:flex;gap:4px}
+.phobos-arm-switch button{font-size:11px;min-height:32px;padding:6px 10px;background:transparent}
+.phobos-loads svg{display:block;width:100%;padding:0 12px;box-sizing:border-box}
+.phobos-loads text{fill:var(--lab-muted);font-size:11px;font-family:var(--lab-sans)}
+.phobos-load-stats{display:flex;justify-content:space-between;gap:18px;margin:14px 18px 20px;font-size:10px;color:var(--lab-muted)}
+.phobos-load-stats strong{display:block;font-size:16px;font-weight:400;color:var(--lab-text);margin-top:6px}
+.phobos-energy dl{margin:18px}
+.phobos-energy dl>div{display:flex;justify-content:space-between;gap:16px;margin:12px 0;font-size:12px}
+.phobos-energy dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.phobos-energy dl>div:last-child{padding-top:12px;border-top:1px solid var(--lab-line);color:var(--lab-cyan)}
+.phobos-energy>a{display:block;margin:0 18px 20px;font-size:11px}
+.phobos-boundary{font-size:11px;line-height:1.8;color:var(--lab-muted);padding:20px 0 32px}
+.phobos-boundary a:last-child{float:right}
+@media(max-width:750px){.phobos-app .experiment-strip{flex-wrap:wrap;gap:7px}.phobos-app .experiment-strip>button{flex:1 1 140px;display:flex;justify-content:space-between;white-space:normal;min-height:44px;padding:10px;font-size:12px}.phobos-app .experiment-strip>button .preset-number{display:none}.phobos-app .workbench-actions>button{min-height:44px}.phobos-app .workbench-actions{gap:7px}}
+@media(max-width:1250px){.phobos-workspace{grid-template-columns:250px minmax(0,1fr)}.phobos-results{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr}.phobos-results>.panel-heading{grid-column:1/-1}.phobos-results .phobos-report{grid-column:1/-1;margin-top:0}.phobos-verdict p{min-height:0}.phobos-metrics{padding-top:8px}.phobos-viewport{min-height:415px}}
+@media(max-width:750px){.phobos-workspace{grid-template-columns:1fr}.phobos-flight{grid-row:1}.phobos-results{grid-column:auto;display:block}.phobos-analysis{grid-template-columns:1fr}.phobos-design-content{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}.phobos-design-content>p,.phobos-release,.phobos-material,.phobos-run,.phobos-files{grid-column:1/-1}.phobos-viewport{min-height:390px}.phobos-orbit-fact{display:none}.phobos-flight-readout{gap:8px}.phobos-flight-readout strong{font-size:17px}.phobos-playback label{font-size:0}.phobos-playback{padding:12px;gap:7px}.phobos-boundary a:last-child{float:none;display:block;margin-top:12px}.phobos-app .phobos-field input[type=number]{width:66px}.phobos-field>div{gap:8px}.phobos-camera button,.phobos-playback button,.phobos-playback select,.phobos-scene-toolbar button,.phobos-arm-switch button{min-height:44px}}
+@media(max-width:400px){.phobos-design-content{display:block}.phobos-field{margin:18px 0}.phobos-scene-toolbar>span{width:100%;margin-bottom:3px}.phobos-viewport{min-height:345px}.phobos-flight-readout{grid-template-columns:1fr 1fr}.phobos-flight-readout>div:last-child{display:none}.phobos-load-stats{gap:8px;font-size:9px}.phobos-load-stats strong{font-size:14px}.phobos-energy dl>div{font-size:11px}}
