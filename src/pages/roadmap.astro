@@ -2,22 +2,49 @@
 import ReportOpening from '../components/ReportOpening.astro';
 import ProductionLayout from '../layouts/ProductionLayout.astro';
 ---
-<ProductionLayout title="Roadmap — Skyhook Industries" description="The Skyhook Industries development roadmap, organized by engineering gates rather than calendar promises.">
+<ProductionLayout title="Roadmap — Skyhook Industries" description="Open questions for the orbital tether and Dyson swarm, the measurements each decision needs and the proposed steps toward hardware.">
   <ReportOpening>
     <p class="eyebrow">Engineering program</p>
-    <h1>Earn the next scale.</h1>
-    <p>A transportation-scale Skyhook should not be scheduled by optimism. Each step has to retire a specific class of uncertainty before the project earns the right to become larger, faster or more expensive.</p>
+    <h1>What would let us build it?</h1>
+    <p>The immediate work is to put numbers on the decisions that could stop a skyhook or a solar collector from working. These are questions a contributor can investigate today, followed by the proposed path to hardware.</p>
     <Fragment slot="figure">
       <img class="specimen" src="/studies/tether-specimen.webp" width="1280" height="680" alt="Three braided load paths joined by fine diagonal links and held between two bolted test grips" />
       <figcaption><b>Multiline tether in tensile grips</b><span>Proposed materials test</span></figcaption>
     </Fragment>
   </ReportOpening>
 
+  <section class="paper-section" id="open-questions" aria-labelledby="open-heading">
+    <div class="section-grid">
+      <p class="chapter-label">Open research questions</p>
+      <div>
+        <h2 id="open-heading">Evidence that could change the design</h2>
+        <div class="gate-list questions">
+          <article class="gate" id="tether-strength">
+            <span>Tether structure</span>
+            <div><h3>What strength survives the joint?</h3><p>For the 15 t payload case, the ideal mass budget needs 5.86 MJ/kg after derating. Report a terminated line’s failure load and linear density from the same specimen, with the sample count, service conditions and safety allowance. If the usable value falls short, rerun the mass budget with that value.</p></div>
+            <aside><a href="/reference-architecture/#mass-closure">Reproduce the mass threshold →</a></aside>
+          </article>
+          <article class="gate" id="capture-load">
+            <span>Payload capture</span>
+            <div><h3>Can the grapple stop the relative motion within its travel?</h3><p>Start with a speed mismatch and the stroke available to absorb it. Compare the calculated load with a measured force–displacement curve. A peak load above the attachment limit would change the grapple design or the allowable rendezvous error.</p></div>
+            <aside><a href="/lab/capture/">Run the capture calculation →</a></aside>
+          </article>
+          <article class="gate" id="collector-heat">
+            <span>Dyson swarm</span>
+            <div><h3>How much usable power can a hot panel produce?</h3><p>Size one collector at two solar distances. Replace its assumed conversion efficiency and optical properties with values measured at its operating temperature. See whether moving inward still reduces the deployed area for the same electrical output.</p></div>
+            <aside><a href="/research/dyson-swarm/">Compare collector cases →</a></aside>
+          </article>
+        </div>
+        <a class="cta" href="/contact/#engineering">Contribute evidence or a correction →</a>
+      </div>
+    </div>
+  </section>
+
   <section class="dark-section">
     <div class="section-grid">
       <p class="chapter-label">Program logic</p>
       <div>
-        <h2>Gates, not dates.</h2>
+        <h2>From a reference design to an orbital test</h2>
         <p class="body-copy">Each step earns the next. Close the calculations, test the materials, then demonstrate the dynamics and payload handoff at increasing scale. Progress depends on measured results and the exit conditions below.</p>
         <div class="gate-list">
           <div class="gate"><span>GATE 01</span><div><h3>Close the reference architecture.</h3><p>Reference Architecture v0.4 now closes one 4,000 km symmetric screening geometry, ideal tapered mass versus payload/material performance, instantaneous post-capture COM change, and the first symmetric-versus-asymmetric balance trade. Full post-capture propagation, release targeting and real material-system mass remain open.</p></div><aside>STATUS / first geometry + ideal mass closure complete; dynamics still open</aside></div>

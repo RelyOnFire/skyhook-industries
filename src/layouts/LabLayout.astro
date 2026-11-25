@@ -3,7 +3,7 @@ import '../lab/lab.css';
 import '../lab/styles/orbital-theme.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import PageMeta from '../components/PageMeta.astro';
-interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'campaign'; }
+interface Props { title: string; description: string; active?: 'lab' | 'method' | 'architectures' | 'campaign' | 'capture'; }
 const { title, description, active = 'lab' } = Astro.props;
 const links = [ ['lab', 'Flight studio', '/lab/'], ['campaign', 'Expeditions', '/lab/campaign/'], ['architectures', 'Architectures', '/lab/architectures/'], ['method', 'Method', '/lab/method/'] ];
 ---

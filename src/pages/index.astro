@@ -4,24 +4,32 @@ import OrbitalView from '../components/OrbitalView.astro';
 import ExperienceGateway from '../components/ExperienceGateway.astro';
 import IntroductionFilm from '../components/IntroductionFilm.astro';
 ---
-<ProductionLayout title="Skyhook Industries — A different way up" description="Design a tether in Flight Studio. Build an interplanetary supply chain in Expeditions. Explore the science of reusable momentum-exchange transportation.">
+<ProductionLayout title="Skyhook Industries — Skyhook and Dyson swarm research" description="Open engineering studies for a rotating orbital tether and a Dyson swarm. Test capture loads, inspect the material target and calculate collector power and heat.">
   <section class="new-hero" aria-labelledby="hero-title">
-    <div class="hero-topline"><span><i></i> INDEPENDENT ORBITAL RESEARCH</span><span>EARTH / MOMENTUM EXCHANGE</span></div>
+    <div class="hero-topline"><span><i></i> INDEPENDENT ORBITAL RESEARCH</span><span>ORBITAL TRANSPORT &amp; SOLAR POWER</span></div>
     <div class="hero-editorial">
-      <h1 id="hero-title">A different<br />way <span>up.</span></h1>
+      <h1 id="hero-title">Can we build<br />a <span>skyhook?</span></h1>
       <div class="hero-intro">
-        <p>A rotating tether catches a payload above the atmosphere and swings it into a higher orbit.</p>
+        <p>We want to build a tether that lifts payloads into higher orbits and, in time, a Dyson swarm of solar collectors. Help us work out which loads the tether can carry and how much power a collector can supply.</p>
         <div class="hero-actions">
-          <a class="launch-link" href="/lab/?mission=second-delivery">Try a guided flight <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M6 3h7v7" /></svg></a>
-          <a class="launch-link launch-secondary" href="/lab/campaign/">Play Expeditions <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M6 3h7v7" /></svg></a>
+          <a class="launch-link" href="/lab/capture/">Test a tether capture <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M6 3h7v7" /></svg></a>
+          <a class="launch-link launch-secondary" href="/research/dyson-swarm/">Size a solar collector <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M6 3h7v7" /></svg></a>
         </div>
       </div>
     </div>
     <OrbitalView />
     <div class="hero-caption"><span>01 — ROTATING ORBITAL TETHER</span><span>NASA / INOVE imagery · Concept view / not to scale</span></div>
   </section>
+  <section class="research-links" aria-labelledby="work-heading">
+    <h2 id="work-heading">Engineering questions you can work on</h2>
+    <p class="research-intro">A result that rules out a design is worth sharing. Each study below names the assumption that could change the decision.</p>
+    <a href="/lab/capture/"><span>01</span><div><h3>What can the grapple absorb?</h3><p>Change the payload’s arrival-speed error and the distance available to stop it. Compare the required load with the grapple’s force budget.</p></div><b aria-hidden="true">↗</b></a>
+    <a href="/reference-architecture/#mass-closure"><span>02</span><div><h3>Can the tether carry its own mass?</h3><p>Our 4,000 km reference design needs 5.86 MJ/kg of allowable specific strength to carry a 15 t payload within a 300 t dry mass budget. Reproduce the calculation or challenge a material assumption.</p></div><b aria-hidden="true">↗</b></a>
+    <a href="/research/dyson-swarm/"><span>03</span><div><h3>Where should a solar collector operate?</h3><p>Move one collector closer to the Sun. Compare the area needed for a megawatt of electrical output with the heat it must shed.</p></div><b aria-hidden="true">↗</b></a>
+    <a href="/roadmap/#open-questions"><span>04</span><div><h3>Which measurement would change a design?</h3><p>Pick an open question, see what evidence is missing and contribute a calculation, a test result or a correction.</p></div><b aria-hidden="true">↗</b></a>
+  </section>
   <section class="principle-section" id="principle">
-    <div class="section-index">01 / THE PRINCIPLE</div>
+    <div class="section-index">TETHER OPERATION</div>
     <div class="principle-copy"><h2>Momentum.<br />Passed forward.</h2><p>A rotating tether meets a payload above the atmosphere, swings it upward, and releases it onto a higher-energy trajectory. The tether gives up momentum. Recovering it is what makes the next handoff possible.</p><a class="text-link" href="/system/">Explore the system <span>↗</span></a></div>
     <div class="transfer-sequence">
       <article><span>01</span><h3>Meet.</h3><p>A launch vehicle approaches the moving lower tip.</p></article>
@@ -50,10 +58,10 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
       <p class="mission-feature-note">Open the study to explore the propulsion budget and the trajectory questions still to solve.</p>
     </div>
   </section>
-  <section class="research-links"><div class="section-index">03 / OPEN ENGINEERING</div><h2>Ambition needs<br />working assumptions.</h2><p class="research-intro">This is a design study. Explore the calculations, the research that came before, and the questions still open.</p><a href="/reference-architecture/"><span>01</span><div><h3>Reference architecture</h3><p>The 4,000 km study, material assumptions, and ideal mass closure.</p></div><b>↗</b></a><a href="/lab/architectures/"><span>02</span><div><h3>A family of tether concepts</h3><p>Explore Earth, lunar, Phobos and T4 experiments alongside the research concepts.</p></div><b>↗</b></a><a href="/research/"><span>03</span><div><h3>The research record</h3><p>Flight heritage, published studies, and the evidence behind the idea.</p></div><b>↗</b></a><a href="/roadmap/"><span>04</span><div><h3>The engineering ahead</h3><p>Materials, capture, survivability, and recovery.</p></div><b>↗</b></a></section>
+
   <section class="heritage-section" aria-labelledby="heritage-heading">
     <div class="heritage-story">
-      <p class="section-index">04 / THE PROJECT'S ROOTS</p>
+      <p class="section-index">PROJECT ORIGINS</p>
       <h2 id="heritage-heading">The idea has a history.<br />So does this project.</h2>
       <p>Skyhook Industries began with a bold transport idea, a foundation in tether research and the ambition to explore where that infrastructure could lead.</p>
       <a class="text-link" href="/about/#founder">Meet founder Isaac Mattoo <span>↗</span></a>
@@ -63,7 +71,7 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
       <a href="/archive/"><span>EARLY EXPLORATION / ARCHIVED</span><strong>Comet 26P mission proposal</strong><small>Explore an early vision for what a tether-enabled expedition could reach. ↗</small></a>
     </div>
   </section>
-  <section class="new-closing"><p>SKYHOOK INDUSTRIES</p><h2>The next step<br />starts in orbit.</h2><a class="text-link" href="/lab/?mission=second-delivery">Fly your first mission <span aria-hidden="true">↗</span></a></section>
+  <section class="new-closing"><p>SKYHOOK INDUSTRIES</p><h2>What have we<br />overlooked?</h2><a class="text-link" href="/contact/#engineering">Contribute an engineering result <span aria-hidden="true">↗</span></a></section>
 </ProductionLayout>
 <style>
   .mission-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:clamp(32px,6vw,88px);padding:clamp(48px,7svh,80px) max(4vw,calc((100vw - 1240px)/2));border-top:1px solid #35434b;background:radial-gradient(ellipse at 0 100%,#20313a80,transparent 65%),#0c1216;color:#e4ebed}
@@ -82,7 +90,7 @@ import IntroductionFilm from '../components/IntroductionFilm.astro';
   .mission-feature-note{font:13px/1.6 var(--sans);color:#91a7b2;margin:14px 0 0}
   @media(max-width:700px){.mission-feature{grid-template-columns:1fr;padding-inline:20px}.mission-feature .text-link{font-size:16px}}
   .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
-  .hero-intro > p{max-width:34ch;text-wrap:pretty}
+  .hero-intro > p{max-width:47ch;text-wrap:pretty}
   .hero-actions .launch-link{gap:20px;min-height:44px}
   .hero-actions svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5}
   .launch-secondary{background:transparent;color:#e3e9eb;border-color:#506069}

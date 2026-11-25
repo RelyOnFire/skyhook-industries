@@ -14,7 +14,7 @@ from urllib.parse import quote, unquote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTES = ['', 'system', 'research', 'research/library', 'roadmap', 'reference-architecture', 'about', 'contact', 'help', 'archive', 'missions/finlay', '404', 'lab/architectures']
+ROUTES = ['', 'system', 'research', 'research/library', 'research/dyson-swarm', 'lab/capture', 'roadmap', 'reference-architecture', 'about', 'contact', 'help', 'archive', 'missions/finlay', '404', 'lab/architectures']
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -63,6 +63,24 @@ def main():
                     if overflow:
                         report['errors'].append(f'Horizontal page overflow: {route} at {width}px')
                     report['pages'].append({'route': path, 'width': width, 'overflow': overflow})
+
+            page.goto(origin + '/research/dyson-swarm/')
+            collector = page.get_by_role('region', name='Collector calculation')
+            expect(collector).to_contain_text('Heat limits output here')
+            distance = page.get_by_label('Distance from the Sun (AU)', exact=True)
+            distance.fill('1')
+            expect(collector).to_contain_text('The panel can face the Sun')
+            case_link = collector.get_by_role('link', name='Link to this case')
+            case_link.click()
+            page.reload()
+            expect(distance).to_have_value('1')
+            with page.expect_download() as csv_download:
+                collector.get_by_role('link', name='Download calculation (CSV)').click()
+            csv = csv_download.value.path().read_text()
+            assert 'electricalOutput,340.25,W/m2' in csv
+            page.get_by_role('button', name='Reset assumptions').click()
+            expect(collector).to_contain_text('Heat limits output here')
+            report['navigation'].append('Solar collector distance, thermal limit, shared case, CSV and reset')
 
             page.set_viewport_size({'width': 768, 'height': 1024})
             page.goto(origin + '/lab/campaign/', wait_until='networkidle')

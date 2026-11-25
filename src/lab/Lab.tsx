@@ -244,6 +244,7 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
     window.addEventListener('keydown', escape);
     return () => window.removeEventListener('keydown', escape);
   }, [focusScene]);
+  const earthRun = result?.design.architecture === 'single-stage-rotovator' ? result.design : null;
   const diagnosis=result?diagnose(result):null;
   const currentPass=!!challenge&&!!result&&!busy&&!dirty&&!hasInvalidInput&&!error&&challengeGates(challenge,result).every(g=>g.pass);
   const nextChallenge=challenge?missions[missions.findIndex(c=>c.id===challenge.id)+1]??null:null;
@@ -266,7 +267,22 @@ export default function Lab({initialArchitecture='single-stage-rotovator'}:{init
       designUrl={currentPass&&!earthDesignReason(result!)?earthDesignUrl(result!):null} nextChallenge={nextChallenge}
       onBrief={()=>{setBrief(challenge);setModal('brief');}} onExit={()=>{setChallenge(null);challengeRef.current=null;}}
       onReview={()=>{setPlaying(false);setModal('debrief');}} onReplay={()=>showCheckpoint(0)} onEdit={()=>openEdit(diagnosis?.tab??'recovery')}
-      onRun={()=>{run(design);setMobile('fly');}} onNext={()=>{if(nextChallenge){setBrief(nextChallenge);setModal('brief');}}} /> : <section className="flight-invitation"><div><span className="micro">BUILD. FLY. RECOVER.</span><h2>{lunar?'Build a working relay above the Moon.':'One payload is a demonstration. Two is a system.'}</h2><p>{lunar?'Catch, release, recover, repeat. Explore the orbital part of a lunavator; surface pickup and Earth–Moon targeting are not modeled.':'Start a guided challenge or change a design and see what the next flight costs.'}</p></div><button className="primary" onClick={()=>{setBrief(missions[0]);setModal('brief');}}>{lunar?'Start lunar mission':'Start your first mission'} <span aria-hidden="true">→</span></button></section>}
+      onRun={()=>{run(design);setMobile('fly');}} onNext={()=>{if(nextChallenge){setBrief(nextChallenge);setModal('brief');}}} /> : (
+      <section className="flight-invitation">
+        <div>
+          <span className="micro">{lunar ? 'LUNAR RELAY' : 'EARTH CAPTURE STUDY'}</span>
+          <h2>{lunar ? 'Build a working relay above the Moon.' : 'How much speed error can the grapple absorb?'}</h2>
+          <p>{lunar ? 'Catch, release, recover, repeat. Explore the orbital part of a lunavator; surface pickup and Earth–Moon targeting are not modeled.' :
+            'Change the closing speed, available stroke and contact force. Find the energy a capture mechanism must absorb.'}</p>
+          {!lunar && <a className="capture-study-link" href={'/lab/capture/' + (earthRun ? '?' + designFragment(earthRun).slice(1) : '')}>
+            {earthRun ? 'Check capture loads for the last simulated design' : 'Open the capture load study'} →
+          </a>}
+        </div>
+        <button className="primary" onClick={() => { setBrief(missions[0]); setModal('brief'); }}>
+          {lunar ? 'Start lunar mission' : 'Start your first mission'} <span aria-hidden="true">→</span>
+        </button>
+      </section>
+    )}
     {modal==='missions'&&<MissionSelect choices={missions} onSelect={c=>{setBrief(c);setModal('brief');}} onClose={()=>setModal(null)} completed={completed}/>}
     {modal==='brief'&&<MissionBrief challenge={brief} onStart={startChallenge} onClose={()=>setModal(null)}/>}
     {modal==='debrief'&&result&&<Debrief result={result} baseline={baseline} challenge={challenge} units={units} onClose={()=>setModal(null)} onEdit={openEdit}

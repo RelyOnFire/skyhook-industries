@@ -1,11 +1,39 @@
 ---
 import ProductionLayout from '../layouts/ProductionLayout.astro';
+const findings = 'https://github.com/RelyOnFire/skyhook-industries/issues';
+const outline = [
+  'Question or design decision',
+  'Study URL, shared case or model revision',
+  'Inputs, units and assumptions',
+  'Method and steps to reproduce',
+  'Expected and observed result, with uncertainty',
+  'Public source, data or code',
+  'What should change, and what remains open?',
+].join('\n\n');
+const issue = new URL(findings + '/new');
+issue.searchParams.set('title', 'Research finding — ');
+issue.searchParams.set('body', outline);
+const mail = 'mailto:skyhookindustries@protonmail.com?subject=' + encodeURIComponent('Skyhook Industries research finding') + '&body=' + encodeURIComponent(outline);
+
 ---
-<ProductionLayout title="Contact — Skyhook Industries" description="Share feedback on Expeditions or the Tether Lab, report a problem, or discuss rotating tether research and engineering collaboration with Skyhook Industries.">
+<ProductionLayout title="Contact — Skyhook Industries" description="Share measurements, reproducible calculations and corrections for the Skyhook and Dyson swarm studies, or give feedback on the tools.">
   <section class="page-hero paper-hero">
     <p class="eyebrow">Contact</p>
     <h1>Tell us what you found.</h1>
-    <p>A good playthrough, a confusing control, an unexpected flight result or a better engineering approach: help us make Skyhook Industries clearer, more useful and more engaging.</p>
+    <p>A failed replication, a measured material property or a correction to an equation can change a design. We welcome early results and reports about the tools themselves.</p>
+  </section>
+
+  <section class="paper-section" id="engineering" aria-labelledby="finding-heading">
+    <div class="section-grid">
+      <p class="chapter-label">Research contributions</p>
+      <div>
+        <h2 id="finding-heading">Share a result someone else can check.</h2>
+        <p class="lede">Name the design decision your finding affects. Include the study link, inputs with units, assumptions, and enough detail to rerun the calculation or interpret the measurement. An unexpected result is welcome even if you do not yet know the cause.</p>
+        <p class="body-copy">For example, a terminated-line strength measurement is most useful with the line’s mass per metre, the load it sustained, the joint construction, the test conditions and the spread across samples. Those details let someone compare it with the tether mass budget.</p>
+        <a class="cta" href={issue.href}>Draft a public research finding on GitHub ↗</a>
+        <p class="body-copy">Prefer to write privately? <a href={mail}>Email the same outline</a>. You can also <a href={findings}>read existing issues</a> or <a href="/roadmap/#open-questions">choose an open research question</a>.</p>
+      </div>
+    </div>
   </section>
 
   <section class="paper-section">

@@ -1,0 +1,54 @@
+---
+import ProductionLayout from '../../layouts/ProductionLayout.astro';
+import DysonCollector from '../../missions/DysonCollector';
+import '../../missions/dyson-collector.css';
+---
+<ProductionLayout title="Dyson swarm collector study — Skyhook Industries" description="Size one solar collector for a Dyson swarm. Compare distance, temperature limits, panel area and mass per megawatt, then inspect the energy balance.">
+  <header class="page-hero swarm-intro">
+    <p class="eyebrow"><a href="/research/">Research</a> / Dyson swarm</p>
+    <h1>How close should a solar collector fly?</h1>
+    <p>A Dyson swarm would use many independent collectors in solar orbit. Start with one photovoltaic panel. Moving it inward increases the available sunlight. The panel’s ability to shed heat sets how much of that light it can use.</p>
+  </header>
+
+  <section class="paper-section swarm-section" id="collector-budget" aria-labelledby="swarm-heading">
+    <p class="chapter-label">Collector sizing</p>
+    <h2 id="swarm-heading">Size a panel for one megawatt.</h2>
+    <p class="body-copy">Change the orbit or substitute properties for a candidate panel. Each input starts as an illustrative design assumption. The target is continuous DC output at the panel terminals under steady illumination.</p>
+    <DysonCollector client:load />
+    <noscript><p class="body-copy">The default case is shown. Enable JavaScript to change assumptions or load a shared case.</p></noscript>
+  </section>
+
+  <section class="dark-section" id="collector-method">
+    <div class="section-grid">
+      <p class="chapter-label">Energy balance</p>
+      <div>
+        <h2>Follow the watts.</h2>
+        <p class="body-copy">The angle θ is measured between the panel’s front surface normal and the direction to the Sun’s center. Both faces radiate to deep space at the same temperature and infrared emissivity. Electricity leaves the panel and is used elsewhere.</p>
+        <dl class="swarm-equations">
+          <div><dt>Incoming sunlight</dt><dd><code>S = 1,361 / r²</code> W/m² for distance <i>r</i> in AU. A tilted panel intercepts <code>S cos θ</code> per square metre.</dd></div>
+          <div><dt>Electricity and heat</dt><dd><code>P/A = η S cos θ</code>. The panel absorbs a solar fraction α and converts a fraction η of incident sunlight to electricity. Heat per panel area is <code>(α − η) S cos θ</code>.</dd></div>
+          <div><dt>Thermal ceiling</dt><dd>Balance heat against <code>2 ε σ T⁴</code>, with <i>T</i> in kelvin and ε the emissivity of each face. At the ceiling, the usable flux is the smaller of <i>S</i> and <code>2 ε σ T⁴ / (α − η)</code>.</dd></div>
+          <div><dt>Hardware requirement</dt><dd>Divide 1,000,000 W by the DC power per square metre to obtain panel area. Multiply by the assumed kilograms per square metre to obtain panel mass.</dd></div>
+        </dl>
+        <p class="body-copy">The calculation holds optical properties and efficiency constant with temperature and angle. It assumes unobstructed views of space, uniform illumination and perfect pointing. It flags grazing angles where part of the solar disk would illuminate the rear face. Wiring, storage, power transmission, deployment hardware, propulsion, mutual shading and degradation all require separate budgets.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paper-section" id="collector-evidence">
+    <div class="section-grid">
+      <p class="chapter-label">Evidence and next test</p>
+      <div>
+        <h2>Would a real panel keep its output at that angle?</h2>
+        <p class="lede">The default 0.4 AU case requires roughly 70° of tilt. At that angle the model still uses the same absorptance and efficiency as at normal incidence. Oblique-incidence data for an actual panel would directly test that assumption.</p>
+        <p class="body-copy">A useful contribution is a published dataset or a thermal-vacuum measurement that identifies the panel construction, illuminated area, incident irradiance and angle, electrical output, panel temperature and uncertainty. Compare the measured watts per square metre with the downloadable case. Include the rear surface finish and test geometry so someone else can reproduce the thermal comparison.</p>
+        <p class="body-copy"><a href="/contact/#engineering">Contribute collector measurements or a model correction →</a></p>
+        <ul class="swarm-sources">
+          <li>The irradiance scale uses the IAU’s nominal value at 1 AU. <a href="https://www.iau.org/common/Uploaded%20files/IAUGA2015-Resolution-B3-recommended-nominal-conversion.pdf">IAU Resolution B3 (PDF)</a></li>
+          <li>The thermal calculation uses σ = 5.670374419 × 10⁻⁸ W m⁻² K⁻⁴. <a href="https://physics.nist.gov/cuu/pdf/wallet_2022.pdf">NIST 2022 CODATA constants (PDF)</a></li>
+          <li>MESSENGER used mirrors and off-pointing to limit array temperature near the Sun. Its flight experience gives a practical comparison for this idealized calculation. <a href="https://science.nasa.gov/wp-content/uploads/2023/09/Solar_Power_Tech_Report_FINAL.pdf">JPL, Solar Power Technologies for Future Planetary Science Missions (PDF)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</ProductionLayout>

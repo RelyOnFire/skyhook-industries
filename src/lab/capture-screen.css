@@ -1,0 +1,19 @@
+.capture-calculator { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);padding-block:36px;border-bottom:1px solid var(--lab-line) }
+.capture-calculator h2 { margin:0 0 12px;font-size:clamp(22px,2.3vw,31px);font-weight:500 }
+.capture-calculator p { line-height:1.6;color:var(--lab-soft) }
+.capture-design { padding:12px 0;border-block:1px solid var(--lab-line) }
+.capture-design a,.capture-result a { color:var(--lab-cyan);text-underline-offset:3px;overflow-wrap:anywhere }
+.capture-inputs fieldset { display:grid;gap:14px;border:0;margin:0;padding:0 }
+.capture-inputs legend { position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden }
+.capture-field { display:grid;grid-template-columns:minmax(0,1fr) minmax(125px,42%);gap:12px;align-items:center;color:var(--lab-soft) }
+.capture-field input,.capture-field select { box-sizing:border-box;min-width:0;max-width:100%;width:100%;min-height:44px;padding:7px 10px;border:1px solid var(--lab-line);background:var(--lab-panel);color:var(--lab-text);font:inherit }
+.capture-result { align-self:start;padding:clamp(18px,3vw,32px);border:1px solid var(--lab-line);background:var(--lab-panel) }
+.capture-result .capture-energy { margin:0;color:var(--lab-text);font:400 clamp(32px,4.5vw,57px)/1.15 var(--lab-mono);overflow-wrap:anywhere }
+.capture-energy small { font-size:.48em }
+.capture-result h3 { font-size:20px;font-weight:550;margin:18px 0 8px }
+.capture-result dl { margin:16px 0 }
+.capture-result dl div { display:flex;justify-content:space-between;align-items:baseline;gap:15px;padding:9px 0;border-top:1px solid var(--lab-line) }
+.capture-result dt,.capture-result .capture-detail { color:var(--lab-muted);font-size:13px }
+.capture-result dd { margin:0;white-space:nowrap;font-family:var(--lab-mono) }
+@media(max-width:760px){.capture-calculator{grid-template-columns:1fr}}
+@media(max-width:420px){.capture-field{grid-template-columns:1fr;gap:5px}}

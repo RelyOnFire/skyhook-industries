@@ -11,7 +11,7 @@ export default function SolarChapter({world,busy,act}:{world:Campaign;busy:boole
     <header className="panel-title"><div><p className="campaign-eyebrow">MERCURY → SUN</p><h2 id="solar-heading">{s.unlocked?'Mirror operations':'Mercury expedition'}</h2></div><a href="/lab/campaign/method/#mercury">Model ↗</a></header>
     <figure className="solar-hardware">
       <img src="/studies/solar-mirror.webp" width="1280" height="680" loading="lazy" decoding="async" alt="Reflective film held between six radial booms on a compact spacecraft bus" />
-      <figcaption><b>Solar mirror</b><span>Deployable reflector concept</span></figcaption>
+      <figcaption><b>Solar mirror</b><span>Deployable reflector concept</span><a href="/research/dyson-swarm/#collector-budget">Study a photovoltaic collector ↗</a></figcaption>
     </figure>
     {!s.unlocked?<div className="solar-expedition"><p>{n(world.marsOperations)} / 100 Mars points · <b>60 t material +20 t equipment at Earth</b>. Survey and ground support; Mercury cargo ships separately.</p><button disabled={busy||!!unlock} title={unlock||undefined} onClick={()=>act(unlockMercury)}>Open Mercury expedition</button>{unlock&&<p className="tiny">{unlock}</p>}</div>:<>
       <div className="solar-stock"><div><span>MIRRORS READY</span><b data-testid="mirrors-ready" className={n(s.mirrorsT).length>6?'readout-long':undefined}>{n(s.mirrorsT)} <small>t</small></b></div><div><span>DEPLOYED</span><b data-testid="swarm-mass" className={n(s.deployedT).length>6?'readout-long':undefined}>{n(s.deployedT)} <small>t</small></b></div><div><span>SCENARIO AREA</span><b className={n(power.areaKm2).length>6?'readout-long':undefined}>{n(power.areaKm2)} <small>km²</small></b></div></div>
@@ -30,7 +30,7 @@ export default function SolarChapter({world,busy,act}:{world:Campaign;busy:boole
           <div className="power-connect"><button className="primary" disabled={busy||!!linkReason} aria-describedby="power-link-cost" onClick={()=>act(connectSwarmPower)}>Connect swarm power</button><span id="power-link-cost">{POWER.linkMaterialsT} t material + {POWER.linkEquipmentT} t equipment at Mercury</span></div>
           <p className="power-condition">{linkReason||'Ready to connect. Keep some material or equipment for the first cycle.'}</p>
         </>}
-        <p className="power-assumption">Scenario: 20% of intercepted sunlight returned; every 20 GW adds 1× capacity. <a href="/lab/campaign/method/#power">How it works ↗</a></p>
+        <p className="power-assumption">Sunlight follows the inverse-square law at {SOLAR.radiusAU} AU. The game assumes that a connected link returns {100 * POWER.returnedFraction}% to Mercury and adds one unit of base production capacity per {POWER.capacityGW} GW returned. <a href="/lab/campaign/method/#power">See the calculation ↗</a></p>
       </section>
       {!s.powerLink&&<p className="solar-advice">Before the power link, supply <b>10 t equipment every 60 days</b> for the refinery + mirror works. Ship extra for construction. Area assumes 10 g/m².</p>}
     </>}
