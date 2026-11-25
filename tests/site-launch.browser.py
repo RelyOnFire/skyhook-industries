@@ -168,13 +168,16 @@ def main():
                     assert event.value.path().read_bytes() == (ROOT / 'public' / path.lstrip('/')).read_bytes(), path
                 done('All five papers download intact from the library at phone width')
 
-                page.goto(origin + '/lab/')
-                study_entry = page.get_by_role('link', name='Check capture loads for the last simulated design')
+                # Keep study navigation and HTTP caching separate from the first-visit launch checks.
+                capture_page = browser.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
+                capture_page.on('pageerror', lambda error: report['errors'].append(str(error)))
+                capture_page.goto(origin + '/lab/')
+                study_entry = capture_page.get_by_role('link', name='Check capture loads for the last simulated design')
                 expect(study_entry).to_be_visible(timeout=90000)
                 selected_design = study_entry.get_attribute('href')
                 assert selected_design.startswith('/lab/capture/?d=')
                 study_entry.click()
-                study = page.get_by_role('region', name='Set the contact conditions')
+                study = capture_page.get_by_role('region', name='Set the contact conditions')
                 speed = study.get_by_label('Closing speed error (m/s)', exact=True)
                 stroke = study.get_by_label('Available stopping stroke (m)', exact=True)
                 direction = study.get_by_label('Direction at contact', exact=True)
@@ -191,18 +194,19 @@ def main():
                 expect(study.get_by_role('alert')).to_be_visible()
                 expect(energy).to_have_count(0)
                 stroke.fill('2')
-                page.get_by_role('link', name='Test the assumption', exact=True).click()
+                capture_page.get_by_role('link', name='Test the assumption', exact=True).click()
                 expect(stroke).to_have_value('2')
                 expect(speed).to_have_value('4')
                 case_link = study.get_by_role('link', name='Permalink to these inputs').get_attribute('href')
-                page.goto(origin + case_link)
+                capture_page.goto(origin + case_link)
                 expect(speed).to_have_value('4')
                 expect(stroke).to_have_value('2')
                 expect(direction).to_have_value('across')
                 for width in [320, 1440]:
-                    page.set_viewport_size({'width': width, 'height': 900})
-                    assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1'), f'Capture study overflow at {width}'
+                    capture_page.set_viewport_size({'width': width, 'height': 900})
+                    assert not capture_page.evaluate('document.documentElement.scrollWidth > innerWidth + 1'), f'Capture study overflow at {width}'
                 done('Capture study uses the flown design, updates its work budget, rejects zero stroke and restores a shared case')
+                capture_page.close()
 
                 page.set_viewport_size({'width': 1440, 'height': 1000})
                 for path in ['/', '/system/', '/lab/', '/lab/campaign/', '/help/']:
