@@ -1,0 +1,106 @@
+---
+import ProductionLayout from '../../layouts/ProductionLayout.astro';
+
+const papers = [
+  {
+    id: 'hastol-cardiorotovator', date: 'November 1999', kind: 'NIAC Fellows Meeting',
+    title: 'Hypersonic Airplane Space Tether Orbital Launch (HASTOL) System',
+    credit: 'Thomas J. Bogar, Robert L. Forward, Michal E. Bangham and Mark J. Lewis',
+    note: 'The early HASTOL slides illustrate the CardioRotovator and compare tether mass ratios for a hypersonic aircraft handoff.',
+    pages: 19, size: '2.35 MB',
+  },
+  {
+    id: 'hastol-annual-meeting', date: 'June 2001', kind: 'NIAC annual meeting',
+    title: 'Hypersonic Airplane Space Tether Orbital Launch — HASTOL',
+    credit: 'John E. Grant · The Boeing Company',
+    note: 'Grant’s presentation at NASA Ames follows the aircraft and orbit design choices that the Phase II team was studying.',
+    pages: 29, size: '537 kB',
+  },
+  {
+    id: 'hastol-phase-ii', date: 'October 2001', kind: 'Phase II final report',
+    title: 'Hypersonic Airplane Space Tether Orbital Launch (HASTOL) Architecture Study',
+    credit: 'The Boeing Company, with subcontract support from Tethers Unlimited, Inc.',
+    note: 'The full engineering study covers vehicle performance, tether sizing and how an aircraft could rendezvous with the moving tip.',
+    pages: 150, size: '6.25 MB',
+  },
+  {
+    id: 'tethers-in-space-handbook', date: 'December 1997', kind: 'Handbook · Third edition',
+    title: 'Tethers in Space Handbook',
+    credit: 'Edited by M. L. Cosmo and E. C. Lorenzini · Smithsonian Astrophysical Observatory',
+    note: 'Prepared for NASA Marshall Space Flight Center, the handbook brings together tether missions, deployment hardware and the mechanics of tethered flight.',
+    pages: 274, size: '3.48 MB',
+  },
+  {
+    id: 'cislunar-tether-transport', date: '1999', kind: 'Conference paper · AIAA-99-2690',
+    title: 'Cislunar Tether Transport System',
+    credit: 'Robert P. Hoyt and Chauncey Uphoff',
+    note: 'Hoyt and Uphoff trace a payload from low Earth orbit to the lunar surface through two rotating tethers, then examine the return trip.',
+    pages: 15, size: '2.79 MB',
+  },
+];
+---
+<ProductionLayout title="Research Library — Skyhook Industries" description="Read and download the original HASTOL studies, Tethers in Space Handbook and cislunar tether conference paper hosted by Skyhook Industries with the authors’ permission.">
+  <section class="page-hero library-intro">
+    <a class="eyebrow" href="/research/">← Research</a>
+    <h1>Research library</h1>
+    <p>Read the papers behind the Skyhook concept, from the first HASTOL aircraft studies to a two-tether route to the Moon. These original PDFs are hosted here with the authors’ permission.</p>
+  </section>
+  <section class="paper-section library-shelf" aria-label="Research papers">
+    {papers.map(paper => {
+      const pdf = `/research/papers/${paper.id}.pdf`;
+      return (
+        <article class="library-paper" id={paper.id}>
+          <div class="cover"><img src={`/studies/paper-covers/${paper.id}.webp`} alt="" loading="lazy" decoding="async" /></div>
+          <div>
+            <p class="paper-type">{paper.date} · {paper.kind}</p>
+            <h2><a href={pdf}>{paper.title}</a></h2>
+            <p class="credit">{paper.credit}</p>
+            <p class="paper-note">{paper.note}</p>
+            {paper.id === 'cislunar-tether-transport' && <p class="related">Companion reading · <a href="https://www.niac.usra.edu/files/studies/final_report/7Hoyt.pdf">NIAC Phase I final report (154 pages)</a></p>}
+          </div>
+          <div class="paper-actions">
+            <a href={pdf} download aria-label={`Download ${paper.title} (${paper.kind}), PDF`}>Download PDF <span aria-hidden="true">↓</span></a>
+            <span>{paper.pages} pages · {paper.size}</span>
+          </div>
+        </article>
+      );
+    })}
+  </section>
+</ProductionLayout>
+
+<style>
+  .library-intro .eyebrow { text-decoration: none; }
+  .library-intro .eyebrow:hover { text-decoration: underline; }
+  :global(.company-page) .library-shelf { padding-block: 0; }
+  .library-paper {
+    display: grid;
+    grid-template-columns: clamp(90px, 10vw, 144px) minmax(0, 1fr) max-content;
+    align-items: start;
+    gap: 20px clamp(22px, 4vw, 54px);
+    padding-block: clamp(28px, 4vw, 48px);
+    scroll-margin-top: 90px;
+  }
+  .library-paper + .library-paper { border-top: 1px solid #38454b; }
+  .cover { aspect-ratio: 1; background: #192226; border: 1px solid #354249; display: grid; place-items: center; padding: 8%; }
+  .cover img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+  .paper-type, .paper-actions span { font: 12px/1.55 var(--mono); }
+  .paper-type { margin: 0 0 9px; color: #efa477; }
+  :global(.company-page) .library-paper h2 { max-width: 38ch; margin: 0 0 10px; font-size: clamp(22px, 2.4vw, 32px); }
+  :global(.company-page main) .library-paper h2 a { color: #e4ebed; text-decoration: none; }
+  :global(.company-page main) .library-paper h2 a:hover { color: #efb18d; text-decoration: underline; }
+  .credit, .paper-note, .related { max-width: 65ch; margin: 0; font: 16px/1.65 var(--sans); }
+  .credit { color: #d1dde1; }
+  .paper-note, .related { margin-top: 8px; color: #b6c3c9; }
+  .paper-actions { display: grid; justify-items: start; gap: 4px; }
+  .paper-actions a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font: 600 15px/1.5 var(--sans); }
+  .paper-actions span { color: #b6c3c9; }
+  @media (max-width: 820px) {
+    .library-paper { grid-template-columns: 80px minmax(0, 1fr); gap: 12px 20px; }
+    .paper-actions { grid-column: 2; }
+  }
+  @media (max-width: 500px) {
+    .library-paper { grid-template-columns: minmax(0, 1fr); }
+    .cover { width: 88px; padding: 7px; }
+    .paper-actions { grid-column: 1; }
+  }
+</style>

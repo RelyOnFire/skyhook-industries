@@ -5,7 +5,7 @@ const nav = [['Tether Lab', '/lab/'], ['Expeditions', '/lab/campaign/'], ['The S
 const current = (href: string) => path === href;
 const inCampaign = path.startsWith('/lab/campaign/');
 const active = (href: string) => current(href) || (href === '/lab/' && path.startsWith('/lab/') && !inCampaign)
-  || (href === '/lab/campaign/' && inCampaign);
+  || (href === '/lab/campaign/' && inCampaign) || (href === '/research/' && path.startsWith('/research/'));
 ---
 <header class="brand-header">
   <a class="brand-wordmark" href="/" aria-label="Skyhook Industries home" aria-current={path === '/' ? 'page' : undefined}>

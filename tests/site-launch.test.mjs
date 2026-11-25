@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { PUBLIC_ORIGIN, PREVIEW_ORIGIN, deploymentPolicy, indexablePage } from '../src/site/deployment.mjs';
@@ -40,6 +41,25 @@ function attribute(tag, name) {
 function meta(html, key, value) {
   return [...html.matchAll(/<meta\b[^>]*>/g)].map(match => match[0]).find(tag => attribute(tag, key) === value);
 }
+
+test('the library serves the five exact original PDFs from the site itself', async () => {
+  const originals = {
+    'hastol-cardiorotovator': '8e69a21fb506ba89b79110058653b9d80924f051efc2dfc56f932d2099610a96',
+    'hastol-annual-meeting': 'e4197c9e9932fb655a58b800a2f11db4d793f48fa83b0cb81a1de51c986f9089',
+    'hastol-phase-ii': 'e80890a22d788f606fb8296f97086f17cdf9d0cab994057e64782ccb12256797',
+    'tethers-in-space-handbook': '3fb340678124c011f71e98b6dfcdd57d257f5f1f26d9f04043b77339b88d12bf',
+    'cislunar-tether-transport': 'b5e1f6d06390fb3483b80fd70eb301ed3df2ea0f3f8a7c765dab3704b3880b0a',
+  };
+  const library = await readFile(join(dist, 'research/library/index.html'), 'utf8');
+  for (const [id, sha256] of Object.entries(originals)) {
+    const path = `/research/papers/${id}.pdf`;
+    const links = [...library.matchAll(/<a\b[^>]*>/g)].map(match => match[0]).filter(tag => attribute(tag, 'href') === path);
+    assert.ok(links.some(tag => /\bdownload\b/.test(tag)), `Missing download for ${id}`);
+    assert.ok(library.includes(`id="${id}"`), `Missing bookmark for ${id}`);
+    const bytes = await readFile(join(dist, path));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), sha256, id);
+  }
+});
 
 test('built HTML and sitemap agree on preview/production policy for every route', async () => {
   const files = await filesIn(dist);
