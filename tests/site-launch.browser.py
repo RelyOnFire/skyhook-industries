@@ -154,6 +154,20 @@ def main():
                     welcome.close()
 
             try:
+                page.set_viewport_size({'width': 390, 'height': 844})
+                page.goto(origin + '/about/#principles')
+                page.get_by_role('link', name='research library', exact=True).click()
+                expect(page.locator('main h1')).to_have_text('Research library')
+                downloads = page.locator('main a[download]')
+                expect(downloads).to_have_count(5)
+                for link in downloads.all():
+                    path = link.get_attribute('href')
+                    with page.expect_download() as event:
+                        link.click()
+                    assert event.value.failure() is None, path
+                    assert event.value.path().read_bytes() == (ROOT / 'public' / path.lstrip('/')).read_bytes(), path
+                done('All five papers download intact from the library at phone width')
+                page.set_viewport_size({'width': 1440, 'height': 1000})
                 for path in ['/', '/system/', '/lab/', '/lab/campaign/', '/help/']:
                     response = page.goto(origin + path, wait_until='networkidle')
                     assert response and response.ok, f'Failed route: {path}'
