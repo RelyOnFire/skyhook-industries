@@ -66,8 +66,8 @@ export default function CaptureScreen() {
           <input type="number" step="any" min={field.min} value={values[field.name]}
             onChange={e => setValues({...values, [field.name]: e.target.value})}/>
         </label>)}
-        <label className="capture-field"><span>Direction at contact</span><select value={axis} onChange={e => setAxis(e.target.value as CaptureAxis)}>
-          <option value="along">Along the tether</option><option value="across">Across the tether, in plane</option></select></label>
+        <div className="capture-field"><label htmlFor="capture-direction">Direction at contact</label><select id="capture-direction" value={axis} onChange={e => setAxis(e.target.value as CaptureAxis)}>
+          <option value="along">Along the tether</option><option value="across">Across the tether, in plane</option></select></div>
       </fieldset>
       <noscript><p>The reference case is shown. Enable JavaScript to change its inputs.</p></noscript>
     </div>
