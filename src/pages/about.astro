@@ -5,7 +5,7 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
   <section class="page-hero paper-hero">
     <p class="eyebrow">About Skyhook Industries</p>
     <h1>Build the part that stays in space.</h1>
-    <p>Skyhook Industries is an independent engineering project exploring rotating orbital tethers as reusable transportation infrastructure. The thesis is simple: if part of the launch system can remain in orbit and be used again, each mission does not have to buy the same velocity from scratch.</p>
+    <p>Skyhook Industries is an independent project with two long-term goals. Build a rotating orbital tether that can accelerate payloads repeatedly, and develop the technology for a Dyson swarm of independent solar collectors. The work here is open so that people can challenge the designs while there is still time to change them.</p>
   </section>
 
   <section class="paper-section">
@@ -25,17 +25,18 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
       <div>
         <h2>The interesting part starts after the equation works.</h2>
         <p class="body-copy">Rotating tether mechanics have been studied for decades. The harder question is whether the idea can become a maintainable transportation system: one that can be built, deployed, inspected, controlled, repaired, survived through damage, recovered after each payload and operated often enough to matter.</p>
-        <p class="body-copy">Skyhook Industries exists to treat that system-level problem seriously, without pretending that a compelling orbital-mechanics diagram is the same thing as an engineered machine.</p>
+        <p class="body-copy">That is why the project publishes its assumptions and calculations. If a joint fails below the strength a design requires, or a collector overheats at its proposed orbit, that result should change the plan. <a href="/roadmap/#open-questions">See the questions we are working on.</a></p>
       </div>
     </div>
   </section>
 
   <div class="paper-band">
-    <section class="paper-section">
+    <section class="paper-section" id="principles">
       <div class="section-grid">
         <p class="chapter-label">03 / Principles</p>
         <div>
           <h2>How the work should be done.</h2>
+          <p class="body-copy">The <a href="/research/library/">research library</a> preserves the HASTOL presentations, the Phase II final report and the <a href="/research/library/#tethers-in-space-handbook"><i>Tethers in Space Handbook</i></a> that informed the project.</p>
           <div class="principles">
             <article class="principle"><b>01 / TEST THE ASSUMPTION</b><h3>Build experiments around what could make the design wrong.</h3><p>A good prototype should answer a question. It does not need to resemble the final machine if a simpler article can expose the same uncertainty.</p></article>
             <article class="principle"><b>02 / DESIGN THE FAILURE</b><h3>A broken system is still a system state.</h3><p>Damage tolerance, severed trajectories, aborts and loss of control belong in the architecture from the beginning.</p></article>
@@ -48,13 +49,21 @@ import ProductionLayout from '../layouts/ProductionLayout.astro';
       </div>
     </section>
 
-    <section class="paper-section">
+    <section class="paper-section" id="founder">
       <div class="section-grid">
         <p class="chapter-label">04 / Founder</p>
-        <div>
-          <h2>Isaac Mattoo</h2>
-          <p class="lede">Founder of Skyhook Industries, with a professional background in complex technical infrastructure and systems engineering.</p>
-          <p class="body-copy">The project is intentionally interdisciplinary. A transportation-scale tether touches orbital mechanics, structures, materials, controls, plasma physics, navigation, robotics, manufacturing, debris analysis and operations. Skyhook Industries is not presented as having solved all of those disciplines internally. The goal is to build a coherent system problem that serious specialists can attack together.</p>
+        <div class="founder-profile">
+          <figure>
+            <img src="/founder-isaac-mattoo.jpg" width="720" height="720" loading="lazy" decoding="async" alt="Isaac Mattoo, founder of Skyhook Industries" />
+            <figcaption>ISAAC MATTOO / FOUNDER</figcaption>
+          </figure>
+          <div>
+            <h2>Isaac Mattoo</h2>
+            <p class="lede">Founder of Skyhook Industries, with a professional background in complex technical infrastructure and systems engineering.</p>
+            <p class="body-copy">The project is intentionally interdisciplinary. A transportation-scale tether touches orbital mechanics, structures, materials, controls, plasma physics, navigation, robotics, manufacturing, debris analysis and operations. Skyhook Industries is not presented as having solved all of those disciplines internally. The goal is to build a coherent system problem that serious specialists can attack together.</p>
+            <blockquote>“Test how you fly and fly how you test.”<cite>Skyhook Industries ethos</cite></blockquote>
+            <a class="founder-archive-link" href="/archive/">Explore the project's early concepts ↗</a>
+          </div>
         </div>
       </div>
     </section>

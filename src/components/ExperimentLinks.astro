@@ -1,0 +1,28 @@
+---
+import ExperimentMark from './ExperimentMark.astro';
+const experiments = [
+  { kind: 'earth' as const, name: 'Earth', href: '/lab/', question: 'Capture, release, recover' },
+  { kind: 'moon' as const, name: 'Moon', href: '/lab/lunar/', question: 'Repeat a lunar delivery' },
+  { kind: 'phobos' as const, name: 'Phobos', href: '/lab/phobos/', question: 'Release from an anchored arm' },
+  { kind: 't4' as const, name: 'T4', href: '/lab/t4/', question: 'Combine two rotating stages' },
+  { kind: 'cardio' as const, name: 'CardioRotovator', href: '/lab/cardio/', question: 'Explore phased pickup' },
+];
+---
+<nav class="experiment-links" aria-label="Choose a tether experiment">
+  {experiments.map(experiment => <a href={experiment.href}>
+    <ExperimentMark kind={experiment.kind}/>
+    <span class="experiment-name">{experiment.name}<span aria-hidden="true">↗</span></span>
+    <span class="experiment-question">{experiment.question}</span>
+  </a>)}
+</nav>
+<style>
+  .experiment-links{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-block:1px solid #34434b}
+  a{display:grid;grid-template-rows:auto auto 1fr;gap:6px;min-width:0;padding:16px 18px 22px;text-decoration:none;border-right:1px solid #29383f;color:#e3ebef;transition:background .15s}
+  a:last-child{border-right:0}a:hover{background:#162127}a:hover .experiment-name{color:#f1ad84}
+  a:focus-visible{outline:2px solid #efa477;outline-offset:-3px}
+  .experiment-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font:500 15px/1.4 var(--sans,system-ui)}
+  .experiment-name>span{color:#efa477}.experiment-question{font:14px/1.5 var(--sans,system-ui);color:#aabcc5}
+  @media(max-width:850px){a{padding:12px 10px 16px}.experiment-name{font-size:14px}.experiment-question{font-size:13px}}
+  @media(max-width:600px){.experiment-links{grid-template-columns:1fr}a{grid-template-columns:76px 1fr;grid-template-rows:auto auto;column-gap:16px;row-gap:2px;border-right:0;border-bottom:1px solid #29383f;padding:12px 6px;align-items:center}a:last-child{border-bottom:0}a :global(svg){grid-row:1/3}.experiment-name{align-self:end;font-size:15px}.experiment-question{grid-column:2;align-self:start;font-size:14px}}
+  @media(prefers-reduced-motion:reduce){a{transition:none}}
+</style>

@@ -2,12 +2,12 @@
 import Lab from '../lab/Lab';
 import LabLayout from '../layouts/LabLayout.astro';
 ---
-<LabLayout title="Tether Lab — Orbital Workbench" description="Design a space tether, fly a payload transfer, and recover the orbit. An interactive orbital workbench by Skyhook Industries.">
+<LabLayout title="Tether Lab — Orbital Workbench" description="Test a tether design against capture loads, orbital dynamics and recovery limits in the Skyhook Industries engineering workbench.">
   <Lab client:only="react">
     <main slot="fallback" class="guide" id="lab-content">
       <h1>Loading the orbital workbench…</h1>
       <p>Design. Fly. Recover. Your calculation runs in this browser.</p>
-      <noscript><p>The simulator needs JavaScript. The <a href="/lab/method/">model guide</a> and <a href="/lab/architectures/">architecture catalogue</a> do not.</p></noscript>
+      <noscript><p>The simulator needs JavaScript. You can read the <a href="/lab/capture/">reference capture case</a>, <a href="/lab/method/">model guide</a> and <a href="/lab/architectures/">architecture catalogue</a> here.</p></noscript>
     </main>
   </Lab>
 </LabLayout>

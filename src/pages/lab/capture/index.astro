@@ -1,0 +1,38 @@
+---
+import LabLayout from '../../../layouts/LabLayout.astro';
+import CaptureScreen from '../../../lab/CaptureScreen';
+---
+<LabLayout active="capture" title="Capture load study — Tether Lab" description="Estimate the energy, stopping stroke and contact force needed at a rotating tether tip when a payload arrives with a velocity mismatch.">
+  <main class="guide" id="lab-content">
+    <header class="guide-header">
+      <p class="micro">Earth tether / Capture mechanics</p>
+      <h1>How much speed error can the grapple absorb?</h1>
+      <p>Flight Studio matches the incoming payload to the tip before attachment. Real guidance leaves some relative velocity. This study asks whether a grapple has enough travel and force capacity to remove that motion on first contact.</p>
+    </header>
+    <CaptureScreen client:load />
+    <div class="guide-layout">
+      <nav class="guide-nav" aria-label="Capture study sections"><a href="#calculation">Calculation</a><a href="#experiment">Test the assumption</a><a href="#sources">Prior work</a></nav>
+      <div class="guide-body">
+        <section class="guide-section" id="calculation">
+          <h2>From closing speed to stopping work</h2>
+          <p>The closing speed Δv is measured relative to the moving tip along the chosen contact direction. The first-capture model treats the payload as a point mass <i>m</i> and takes the unloaded facility’s mass <i>M</i>, moment of inertia <i>I</i> and tip distance <i>r</i> from the same distributed-mass model used by Flight Studio. Initial propellant is included.</p>
+          <p>An impulse along the tether changes the facility’s translation. Across the tether, an in-plane impulse also changes its rotation. Applying equal and opposite impulses until the contact points match speed gives an effective mass μ.</p>
+          <div class="equation-panel" aria-label="Capture equations">Along the tether:  1/μ = 1/m + 1/M<br/>Across the tether: 1/μ = 1/m + 1/M + r²/I<br/>Stopping work: E = ½ μ Δv²<br/>Mean force: F = E/s<br/>Ideal speed ceiling: Δv = √(2 F_limit s / μ)</div>
+          <p>The mean is taken over the full stopping stroke <i>s</i>. Any mechanism whose contact force stays below the specified limit can do at most F<sub>limit</sub> × s of work. At the calculated ceiling it must sustain the full limit throughout the stroke. Doubling closing speed quadruples the work.</p>
+        </section>
+        <section class="guide-section" id="experiment">
+          <h2>What would settle the next question?</h2>
+          <p>Measure force against displacement for a candidate absorber at a specified approach speed and direction. Integrate the loading curve up to the usable stroke and check both its area and its highest force. Record rebound and whether the latch retains the payload. A spring can store stopping work and return it on unloading.</p>
+          <p>The screen assumes one-axis contact, a freely recoiling rigid facility and a short event with negligible external impulse. Flexible tether waves can change the mass that responds during contact. Attachment compliance, transverse motion, payload rotation, guidance errors and latch timing need separate models or measurements. Existing tether tension uses some of the available hardware load capacity.</p>
+          <p><a href="/contact/#engineering">Contribute a force–stroke measurement or challenge an assumption</a>. Include the case permalink, force and displacement units, closing speed, and how the test article was supported.</p>
+        </section>
+        <section class="guide-section" id="sources">
+          <h2>Prior work</h2>
+          <p>The MXER team studied a multi-axis grapple and tested a prototype under dynamically similar conditions. Its later contractor report also describes elastic tether models. Those results provide a basis for investigating the compliance and capture geometry outside this calculation.</p>
+          <p><a href="https://ntrs.nasa.gov/citations/20070001536">Design Rules and Analysis of a Capture Mechanism for Rendezvous between a Space Tether and Payload</a><br/><a href="https://ntrs.nasa.gov/citations/20080002099">Developing Capture Mechanisms and High-Fidelity Dynamic Models for the MXER Tether System</a></p>
+          <p><a href="/lab/method/#events">How Flight Studio models capture and release</a> · <a href="/research/library/#hastol-phase-ii">HASTOL Phase II final report</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+</LabLayout>

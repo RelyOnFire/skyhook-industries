@@ -1,0 +1,79 @@
+---
+import ExperimentLinks from './ExperimentLinks.astro';
+---
+<section class="experience-gateway" id="explore" aria-labelledby="experience-heading">
+  <div class="gateway-heading">
+    <div><p class="section-index">SIMULATION</p><h2 id="experience-heading">One flight.<br />A whole network.</h2></div>
+    <p>Follow one capture and recovery in Flight Studio, or explore how a transport network might supply its own expansion in Expeditions.</p>
+  </div>
+  <div class="workspace-pair">
+    <article class="workspace flight-workspace">
+      <div class="workspace-top"><span>FLIGHT STUDIO</span><span>ENGINEERING SANDBOX</span></div>
+      <div class="workspace-art" aria-hidden="true">
+        <svg viewBox="0 0 560 280" focusable="false">
+          <path d="M0 137H560" stroke="#667883" stroke-dasharray="2 7" opacity=".45"/>
+          <image href="/handoff/capture-head.webp" x="-17" y="40" width="555" height="195"/>
+          <image href="/handoff/cargo-bus.webp" x="58" y="40" width="555" height="195"/>
+          <g fill="none" stroke="#8396a1"><path d="M158 106V51h-52"/><path d="M393 172v43h56"/></g>
+          <g fill="#c8d5db"><text x="38" y="54">GRAPPLE</text><text x="455" y="218">CARGO</text></g>
+        </svg>
+        <span class="art-caption">Earth handoff · Interface study</span>
+      </div>
+      <div class="workspace-copy">
+        <h3>Make the second delivery.</h3>
+        <p>One payload gets away. Can your tether recover and do it again? Change the design, fly the handoff, and read what the next flight costs.</p>
+        <a class="gateway-action" href="/lab/?mission=second-delivery">Try a guided flight <span aria-hidden="true">↗</span></a>
+        <p class="workspace-note">Calculated trajectories, loads and recovery. Each experiment explains its assumptions. <a href="/lab/">Open the sandbox</a>.</p>
+      </div>
+    </article>
+    <article class="workspace network-workspace">
+      <div class="workspace-top"><span>EXPEDITIONS</span><span>STRATEGY GAME</span></div>
+      <div class="workspace-art" aria-hidden="true">
+        <svg viewBox="0 0 560 280" focusable="false">
+          <g fill="none" stroke="#886a4e"><ellipse cx="13" cy="191" rx="190" ry="80" transform="rotate(-22 13 191)" opacity=".55"/><ellipse cx="13" cy="191" rx="212" ry="99" transform="rotate(-22 13 191)" stroke-dasharray="2 8" opacity=".45"/></g>
+          <image href="/planets/mercury-small.webp" x="-51" y="105" width="193" height="193"/>
+          <image href="/studies/solar-mirror.webp" x="128" y="-12" width="440" height="248"/>
+          <path d="M349 182v31h80" fill="none" stroke="#89979c"/>
+          <g fill="#dbc4aa"><text x="360" y="232">MIRROR MODULE</text><text x="38" y="95">MERCURY</text></g>
+        </svg>
+        <span class="art-caption">Solar swarm · Deployment concept</span>
+      </div>
+      <div class="workspace-copy">
+        <h3>A foothold. Then an industry.</h3>
+        <p>Supply the Moon. Anchor your Mars network at Phobos. Turn Mercury’s resources into a solar swarm, then reach into the belt.</p>
+        <a class="gateway-action" href="/lab/campaign/">Play Expeditions <span aria-hidden="true">↗</span></a>
+        <p class="workspace-note"><a href="/lab/campaign/capture/">Fly the 3D capture pass</a> and operate the grapple yourself. The game assigns production rates to keep the network playable. For power and temperature estimates, <a href="/research/dyson-swarm/">calculate a collector design</a>.</p>
+      </div>
+    </article>
+  </div>
+  <div class="experiment-heading"><h3>Five machines. Different questions.</h3><a href="/lab/architectures/">Compare the models <span aria-hidden="true">↗</span></a></div>
+  <ExperimentLinks />
+</section>
+<style>
+  .experience-gateway{padding:clamp(48px,7svh,80px) max(4vw,calc((100vw - 1240px)/2));background:linear-gradient(#080b0d,#101619);border-top:1px solid #29343b}
+  .gateway-heading{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:end;margin-bottom:32px}
+  .gateway-heading .section-index{color:#efa477;margin:0 0 22px}
+  .gateway-heading h2{font-size:clamp(32px,3.3vw,48px);font-weight:400;line-height:1.15;letter-spacing:-.035em;margin:0}
+  .gateway-heading>p{color:#b6c5cc;font-size:17px;line-height:1.7;max-width:440px;margin:0 0 4px}
+  .workspace-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+  .workspace{border:1px solid #34434b;min-width:0;background:#0d151a;display:flex;flex-direction:column}
+  .workspace-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 24px;border-bottom:1px solid #29383f;font:11px/1.5 var(--mono);letter-spacing:.075em;color:#b4c5cd}
+  .workspace-top>span:first-child{color:#f1ad84}
+  .workspace-art{position:relative;overflow:hidden;border-bottom:1px solid #29383f;background:radial-gradient(ellipse at 65% 80%,#1a2a33,#0b1217 75%)}
+  .network-workspace .workspace-art{background:radial-gradient(ellipse at 75% 40%,#26241f,#0b1217 65%)}
+  .workspace-art svg{display:block;width:100%;height:auto;aspect-ratio:2/1}
+  .workspace-art text{font:12px var(--mono);letter-spacing:.04em}.workspace-art .art-title{font:18px var(--sans);letter-spacing:0}
+  .art-caption{position:absolute;bottom:10px;left:16px;font:9px/1.4 var(--mono);letter-spacing:.055em;color:#9aadb7}
+  .workspace-copy{padding:26px;display:flex;flex-direction:column;align-items:start;flex:1}
+  .workspace-copy h3{font-size:clamp(23px,2vw,29px);font-weight:500;line-height:1.2;letter-spacing:-.02em;margin:0 0 14px}
+  .workspace-copy>p{color:#b8c8cf;font-size:16px;line-height:1.65;margin:0 0 22px;max-width:52ch}
+  .gateway-action{display:flex;justify-content:space-between;align-items:center;gap:28px;min-height:46px;padding:10px 16px;background:#efa477;color:#141c20;text-decoration:none;font-size:15px;font-weight:600;margin-top:auto;border:1px solid #efa477}
+  .gateway-action:hover{background:#ffd1b3}.gateway-action>span{font-size:20px;font-weight:400}
+  .workspace-copy .workspace-note{font-size:13px;color:#94aab5;line-height:1.6;margin:18px 0 0}
+  .workspace-note a{text-underline-offset:3px}
+  .experiment-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px 28px;flex-wrap:wrap;margin:36px 0 18px}
+  .experiment-heading h3{font-size:19px;font-weight:500;letter-spacing:-.015em;margin:0}.experiment-heading a{font-size:14px;color:#c4d3d9;text-underline-offset:5px}.experiment-heading a>span{margin-left:10px;color:#efa477}
+  a:focus-visible{outline:2px solid #efa477;outline-offset:5px}
+  @media(max-width:850px){.workspace-top{padding:14px 18px}.workspace-copy{padding:22px}.gateway-heading{gap:28px}.workspace-pair{gap:18px}}
+  @media(max-width:700px){.experience-gateway{padding:44px 20px}.gateway-heading{grid-template-columns:1fr;gap:20px}.gateway-heading>p{font-size:16px}.workspace-pair{grid-template-columns:1fr;gap:24px}.workspace-copy{padding:22px 20px}.workspace-top{font-size:10px}.art-caption{font-size:8px;left:12px;bottom:7px}.workspace-art .art-title{font-size:21px}.experiment-heading{margin-top:32px}}
+</style>

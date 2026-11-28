@@ -1,0 +1,17 @@
+# Legacy routes from sitemap.website.xml and sitemap.blog.xml, checked 2026-10-03.
+# Workers Static Assets applies these path redirects. Host canonicalization
+# (www -> apex) remains in the existing domain configuration, not this file.
+/team /about/#founder 301
+/team/ /about/#founder 301
+/ethos /about/#principles 301
+/ethos/ /about/#principles 301
+/the-skyhook /system/ 301
+/the-skyhook/ /system/ 301
+/mission-proposal /archive/#mission-proposal 301
+/mission-proposal/ /archive/#mission-proposal 301
+/mission-proposal/f/high-wire-act /archive/#high-wire-act 301
+/mission-proposal/f/high-wire-act/ /archive/#high-wire-act 301
+/mission-proposal/f/orbital-bridges /archive/#orbital-bridges 301
+/mission-proposal/f/orbital-bridges/ /archive/#orbital-bridges 301
+/mission-proposal/f/a-non-synchronous-orbital-skyhook /archive/#non-synchronous-skyhook 301
+/mission-proposal/f/a-non-synchronous-orbital-skyhook/ /archive/#non-synchronous-skyhook 301

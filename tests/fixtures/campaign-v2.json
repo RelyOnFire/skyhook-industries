@@ -1,0 +1,489 @@
+{
+  "format": "skyhook-campaign",
+  "version": 2,
+  "state": {
+    "schema": 2,
+    "model": "network-0.2.0",
+    "id": "e2eb6a6d-dd79-47ef-86af-53f0107e9a85",
+    "name": "Lunar bridge",
+    "revision": 67,
+    "day": 1341.8657589178094,
+    "fuelT": 1148.88575891781,
+    "nextShipment": 69,
+    "nextSupplyDay": 0,
+    "lunarReturnedT": 10,
+    "ports": {
+      "earth": {
+        "materialsT": 0,
+        "equipmentT": 609.9328794589047,
+        "industry": true,
+        "level": 1,
+        "readyDay": 1284.8657589178094,
+        "receivedT": 10,
+        "sentT": 251
+      },
+      "moon": {
+        "materialsT": 452.9954204047215,
+        "equipmentT": 5.85022897976393,
+        "industry": true,
+        "level": 2,
+        "readyDay": 1324.8657589178094,
+        "receivedT": 170,
+        "sentT": 340
+      },
+      "phobos": {
+        "materialsT": 7.432879458904722,
+        "equipmentT": 11.4973151783562,
+        "industry": true,
+        "level": 1,
+        "readyDay": 1325.8657589178094,
+        "receivedT": 295,
+        "sentT": 0
+      }
+    },
+    "flights": [
+      {
+        "id": 53,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1093.8657589178094,
+        "arrival": 1356.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 55,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1113.8657589178094,
+        "arrival": 1376.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 56,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1133.8657589178094,
+        "arrival": 1396.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 57,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1153.8657589178094,
+        "arrival": 1416.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 58,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 3,
+        "fuelT": 1.44,
+        "mode": "tether",
+        "departed": 1155.8657589178094,
+        "arrival": 1417.731517835619,
+        "kind": "equipment",
+        "serviceId": 2
+      },
+      {
+        "id": 59,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1173.8657589178094,
+        "arrival": 1436.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 61,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1193.8657589178094,
+        "arrival": 1456.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 62,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1213.8657589178094,
+        "arrival": 1476.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 63,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1233.8657589178094,
+        "arrival": 1496.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 64,
+        "from": "earth",
+        "to": "phobos",
+        "cargoT": 3,
+        "fuelT": 1.44,
+        "mode": "tether",
+        "departed": 1255.8657589178094,
+        "arrival": 1517.731517835619,
+        "kind": "equipment",
+        "serviceId": 2
+      },
+      {
+        "id": 66,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1283.8657589178094,
+        "arrival": 1546.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 67,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1303.8657589178094,
+        "arrival": 1566.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      },
+      {
+        "id": 68,
+        "from": "moon",
+        "to": "phobos",
+        "cargoT": 10,
+        "fuelT": 4.8,
+        "mode": "tether",
+        "departed": 1323.8657589178094,
+        "arrival": 1586.731517835619,
+        "kind": "materials",
+        "serviceId": 3
+      }
+    ],
+    "log": [
+      {
+        "day": 922.8657589178094,
+        "text": "Flight 41: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 928.870338513088,
+        "text": "Flight 41 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 933.8657589178094,
+        "text": "Flight 42: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 936.7315178356189,
+        "text": "Flight 24 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 953.8657589178094,
+        "text": "Flight 43: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 955.8657589178094,
+        "text": "Flight 44: 3 t equipment dispatched from Earth to Phobos by service 2."
+      },
+      {
+        "day": 956.7315178356189,
+        "text": "Flight 25 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 973.8657589178094,
+        "text": "Flight 45: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 976.7315178356189,
+        "text": "Flight 26 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 993.8657589178094,
+        "text": "Flight 46: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 996.7315178356189,
+        "text": "Flight 27 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1012.8657589178094,
+        "text": "Flight 47: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 1013.8657589178094,
+        "text": "Flight 48: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1016.7315178356189,
+        "text": "Flight 29 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1017.7315178356189,
+        "text": "Flight 30 arrived at Phobos. 3 t equipment added to the depot."
+      },
+      {
+        "day": 1018.870338513088,
+        "text": "Flight 47 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 1033.8657589178094,
+        "text": "Flight 49: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1036.731517835619,
+        "text": "Flight 31 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1053.8657589178094,
+        "text": "Flight 50: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1055.8657589178094,
+        "text": "Flight 51: 3 t equipment dispatched from Earth to Phobos by service 2."
+      },
+      {
+        "day": 1056.731517835619,
+        "text": "Flight 32 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1073.8657589178094,
+        "text": "Flight 52: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1076.731517835619,
+        "text": "Flight 33 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1093.8657589178094,
+        "text": "Flight 53: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1096.731517835619,
+        "text": "Flight 35 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1102.8657589178094,
+        "text": "Flight 54: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 1108.870338513088,
+        "text": "Flight 54 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 1113.8657589178094,
+        "text": "Flight 55: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1116.731517835619,
+        "text": "Flight 36 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1117.731517835619,
+        "text": "Flight 37 arrived at Phobos. 3 t equipment added to the depot."
+      },
+      {
+        "day": 1133.8657589178094,
+        "text": "Flight 56: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1136.731517835619,
+        "text": "Flight 38 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1153.8657589178094,
+        "text": "Flight 57: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1155.8657589178094,
+        "text": "Flight 58: 3 t equipment dispatched from Earth to Phobos by service 2."
+      },
+      {
+        "day": 1156.731517835619,
+        "text": "Flight 39 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1173.8657589178094,
+        "text": "Flight 59: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1176.731517835619,
+        "text": "Flight 40 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1192.8657589178094,
+        "text": "Flight 60: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 1193.8657589178094,
+        "text": "Flight 61: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1196.731517835619,
+        "text": "Flight 42 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1198.870338513088,
+        "text": "Flight 60 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 1213.8657589178094,
+        "text": "Flight 62: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1216.731517835619,
+        "text": "Flight 43 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1217.731517835619,
+        "text": "Flight 44 arrived at Phobos. 3 t equipment added to the depot."
+      },
+      {
+        "day": 1233.8657589178094,
+        "text": "Flight 63: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1236.731517835619,
+        "text": "Flight 45 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1251.8657589178094,
+        "text": "Service 3 paused."
+      },
+      {
+        "day": 1255.8657589178094,
+        "text": "Flight 64: 3 t equipment dispatched from Earth to Phobos by service 2."
+      },
+      {
+        "day": 1256.731517835619,
+        "text": "Flight 46 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1276.731517835619,
+        "text": "Flight 48 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1281.8657589178094,
+        "text": "Service 3 resumed."
+      },
+      {
+        "day": 1282.8657589178094,
+        "text": "Flight 65: 5 t equipment dispatched from Earth to Moon by service 1."
+      },
+      {
+        "day": 1283.8657589178094,
+        "text": "Flight 66: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1288.870338513088,
+        "text": "Flight 65 arrived at Moon. 5 t equipment added to the depot."
+      },
+      {
+        "day": 1296.731517835619,
+        "text": "Flight 49 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1303.8657589178094,
+        "text": "Flight 67: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1316.731517835619,
+        "text": "Flight 50 arrived at Phobos. 10 t construction material added to the depot."
+      },
+      {
+        "day": 1317.731517835619,
+        "text": "Flight 51 arrived at Phobos. 3 t equipment added to the depot."
+      },
+      {
+        "day": 1323.8657589178094,
+        "text": "Flight 68: 10 t construction material dispatched from Moon to Phobos by service 3."
+      },
+      {
+        "day": 1336.731517835619,
+        "text": "Flight 52 arrived at Phobos. 10 t construction material added to the depot."
+      }
+    ],
+    "services": [
+      {
+        "id": 1,
+        "from": "earth",
+        "to": "moon",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 5,
+        "intervalDays": 90,
+        "nextDay": 1372.8657589178094,
+        "enabled": true,
+        "dispatched": 8,
+        "deliveredT": 40
+      },
+      {
+        "id": 2,
+        "from": "earth",
+        "to": "phobos",
+        "kind": "equipment",
+        "mode": "tether",
+        "cargoT": 3,
+        "intervalDays": 100,
+        "nextDay": 1355.8657589178094,
+        "enabled": true,
+        "dispatched": 7,
+        "deliveredT": 15
+      },
+      {
+        "id": 3,
+        "from": "moon",
+        "to": "phobos",
+        "kind": "materials",
+        "mode": "tether",
+        "cargoT": 10,
+        "intervalDays": 20,
+        "nextDay": 1343.8657589178094,
+        "enabled": true,
+        "dispatched": 33,
+        "deliveredT": 220
+      }
+    ],
+    "nextService": 4,
+    "marsOperations": 425.13424108219056,
+    "lunarPhobosDeliveredT": 220
+  }
+}
