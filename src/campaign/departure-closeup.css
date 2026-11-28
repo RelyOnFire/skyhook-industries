@@ -14,3 +14,4 @@
 
 .campaign .departure-dialog[data-origin=moon] .departure-phases{grid-template-columns:repeat(6,minmax(0,1fr))}
 @media(max-width:600px){.campaign .departure-dialog[data-origin=moon] .departure-phases{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.campaign .departure-flight-link{margin:0;padding:4px 24px 12px;font-size:13px}.departure-flight-link a{color:#f2c59f;text-underline-offset:4px}

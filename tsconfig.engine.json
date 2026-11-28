@@ -16,6 +16,8 @@
     "src/campaign/service-edit.ts",
     "src/campaign/supply.ts",
     "src/campaign/earth-launch-motion.ts",
+    "src/campaign/capture/pass.ts",
+    "src/campaign/capture/ride.ts",
     "src/campaign/lunar-launch-motion.ts",
     "src/campaign/LunarLauncher.ts",
     "src/campaign/HypersonicAircraft.ts",

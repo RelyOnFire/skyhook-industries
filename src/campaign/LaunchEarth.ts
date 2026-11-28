@@ -17,10 +17,10 @@ function surface(latitude:number,longitude:number,height:number) {
 /** Pickup is +Y in the existing motion plane, with geographic east along +X.
  * The planar orbit is inclined by approximately 28.5° to the Earth equator.
  */
-export function launchEarthOrientation() {
-  const lon=LAUNCH_GEOGRAPHY.longitude*radians;
+export function launchEarthOrientation(location:{latitude:number;longitude:number}=LAUNCH_GEOGRAPHY) {
+  const lon=location.longitude*radians;
   const east=new THREE.Vector3(-Math.sin(lon),0,-Math.cos(lon));
-  const radial=surface(LAUNCH_GEOGRAPHY.latitude,LAUNCH_GEOGRAPHY.longitude,0).normalize();
+  const radial=surface(location.latitude,location.longitude,0).normalize();
   const normal=east.clone().cross(radial).normalize();
   return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(east,radial,normal).transpose());
 }

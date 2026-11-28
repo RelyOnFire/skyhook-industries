@@ -191,3 +191,9 @@
 .solar-hardware img { display: block; width: min(47%,180px); height: auto; }
 .solar-hardware figcaption { display: grid; gap: 4px; font: 12px/1.4 var(--sans,system-ui); color: var(--ops-muted); }
 .solar-hardware b { color: #e9d4b6; font-size: 14px; font-weight: 500; }
+
+.map-actions .map-capture-link{color:#f3bf91;font-size:13px;text-underline-offset:4px;margin-right:auto;padding:8px 0}
+.campaign-welcome .campaign-flight-entry{position:relative;isolation:isolate;display:flex;align-items:flex-end;overflow:hidden;min-height:118px;max-width:560px;margin-top:16px;padding:14px 18px;border:1px solid #52636c;border-radius:5px;color:white;text-decoration:none;background:#10171c}
+.campaign-flight-entry img,.campaign-flight-entry:after{position:absolute;inset:0;width:100%;height:100%;z-index:-1;object-fit:cover;object-position:center 49%}
+.campaign-flight-entry:after{content:'';background:linear-gradient(90deg,#050a11d9,transparent 72%)}
+.campaign-flight-entry span{display:grid;gap:4px;text-shadow:0 1px 4px #000}.campaign-flight-entry small{font:9px var(--lab-mono,monospace);letter-spacing:.09em;color:#f5cba2}.campaign-flight-entry strong{font-size:18px;font-weight:550}.campaign-flight-entry:hover{border-color:#f3bf91}

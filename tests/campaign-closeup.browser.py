@@ -549,6 +549,54 @@ def main():
                 assert records(texture_page) == texture_before
                 texture_context.close()
                 done('regional imagery loads only on opening, repaints paused ground views on arrival, and retains the globe and controls on failure without save changes')
+                # The playable pass has two real perspective renderers. A browser without
+                # WebGL should retain all camera stations and the same capture result.
+                for graphics, width, height in [('webgl', 1440, 960), ('software', 390, 844)]:
+                    pilot = browser.new_context(viewport={'width': width, 'height': height})
+                    if graphics == 'software':
+                        pilot.add_init_script("""const original = HTMLCanvasElement.prototype.getContext;
+                            HTMLCanvasElement.prototype.getContext = function(kind, ...args) {
+                                return String(kind).includes('webgl') ? null : original.call(this,kind,...args);
+                            };""")
+                    station = pilot.new_page()
+                    station.on('pageerror', lambda error: report['errors'].append(str(error)))
+                    station.on('console', lambda msg: report['errors'].append(msg.text) if 'Shader Error' in msg.text else None)
+                    station.goto(origin + '/lab/campaign/capture/', wait_until='networkidle')
+                    expect(station.locator('[data-graphics="' + graphics + '"] canvas')).to_be_visible(timeout=30000)
+                    assert not station.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
+                    views = []
+                    for mount in ['Tracking', 'Payload', 'Grapple']:
+                        station.get_by_role('button', name=mount, exact=True).click()
+                        views.append(station.locator('.flight-canvas canvas').screenshot(
+                            path=str(out / f'capture-station-{graphics}-{mount.lower()}.png')))
+                    assert len(set(views)) == 3
+                    station.get_by_role('button', name='Begin approach').click()
+                    station.get_by_role('button', name='Pause', exact=True).click()
+                    scope = station.get_by_role('group', name=re.compile('^Aim grapple'))
+                    for key, count in [('ArrowRight', 9), ('ArrowUp', 6)]:
+                        for _ in range(count):
+                            scope.press(key)
+                    step = station.get_by_role('button', name='Step 0.05 s')
+                    # The slower clock lets us check the same contact in each renderer,
+                    # independent of how much wall time the GPU runner takes to paint.
+                    for _ in range(62):
+                        if station.get_by_text('Capture window open', exact=True).count():
+                            break
+                        step.click()
+                    expect(station.get_by_text('Capture window open', exact=True)).to_be_visible()
+                    scope.press('Space')
+                    expect(station.get_by_role('heading', name='Cargo secured')).to_be_visible()
+                    expect(station.get_by_role('link', name='Study the axial stopping load')).to_have_attribute('href', re.compile(r'speedMs='))
+                    station.get_by_role('button', name='Ride your captured pod').click()
+                    station.get_by_role('button', name='Release', exact=True).click()
+                    expect(station.get_by_text('Released', exact=True)).to_be_visible()
+                    expect(station.get_by_text('FREE COAST', exact=True)).to_be_visible()
+                    station.get_by_role('button', name='Back to grapple controls').click()
+                    station.get_by_role('button', name='Fly again').click()
+                    station.get_by_role('button', name='Close jaws').click()
+                    expect(station.get_by_role('heading', name='Jaws closed early')).to_be_visible()
+                    pilot.close()
+                done('playable capture succeeds and fails from keyboard input with all three cameras on desktop WebGL and mobile software graphics')
                 assert not report['errors'], report['errors']
                 report['status'] = 'passed'
             except Exception as error:
