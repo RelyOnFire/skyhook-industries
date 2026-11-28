@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {launchTetherAt, launchAircraftAt} from '../.lab-test/campaign/earth-launch-motion.js';
 import {EYE,PIN,bearingHeight,fittingClearance,innerRadius,pinTip} from '../.lab-test/visuals/capture-fitting.js';
-import {lockDuration,latchPose,passes, encounter, closeJaws, neutral, moveCarriage, separationAcceleration, LIMIT} from '../.lab-test/campaign/capture/pass.js';
+import {lockDuration,latchPose,passes, encounter, insertionOutcome, neutral, moveCarriage, separationAcceleration, LIMIT} from '../.lab-test/campaign/capture/pass.js';
 
 test('terminal approach reproduces the radial separation of the Earth launch model within one centimetre at its tabulated times', () => {
   for (const t of [-3, -2, -1, 0, .5]) {
@@ -14,11 +14,11 @@ test('terminal approach reproduces the radial separation of the Earth launch mod
 test('each pass can be caught, and position, velocity and timing independently affect capture', () => {
   for (const name of Object.keys(passes)) {
     const c = {...neutral(), x: passes[name].x, z: passes[name].z};
-    assert.equal(closeJaws(encounter(name,0,c),0),'secured');
-    assert.ok(['fork','offset'].includes(closeJaws(encounter(name,0,neutral()),0)));
-    assert.equal(closeJaws(encounter(name,0,{...c,vx:4}),0),'speed');
-    assert.equal(closeJaws(encounter(name,-1,c),-1),'early');
-    assert.equal(closeJaws(encounter(name,1,c),1),'late');
+    assert.equal(insertionOutcome(encounter(name,0,c)),'secured');
+    assert.ok(['fork','offset'].includes(insertionOutcome(encounter(name,0,neutral()))));
+    assert.equal(insertionOutcome(encounter(name,0,{...c,vx:4})),'speed');
+    assert.equal(insertionOutcome(encounter(name,-1,c)),'early');
+    assert.equal(insertionOutcome(encounter(name,1,c)),'late');
   }
 });
 
@@ -47,20 +47,24 @@ test('the pin must fit through the circular bore and the loop must fit between b
   const p=passes.offset, c={...neutral(),x:p.x,z:p.z};
   const at=(dx,dz)=>encounter('offset',-.06,{...c,x:p.x-dx,z:p.z-dz});
   for(const side of [-1,1]){
-    assert.equal(closeJaws(at(side*.17,0),-.06),'offset'); // passed the old 28 cm gate
-    assert.equal(closeJaws(at(0,side*.16),-.06),'fork');
+    assert.equal(insertionOutcome(at(side*.17,0)),'offset'); // passed the old 28 cm gate
+    assert.equal(insertionOutcome(at(0,side*.16)),'fork');
   }
-  assert.equal(closeJaws(at(.06,.06),-.06),'secured');
+  assert.equal(insertionOutcome(at(.06,.06)),'secured');
+  // Late in the window several gates can fail. Report the tightest clearance.
+  const missedFork=encounter('offset',.04,{...c,z:c.z+.20});
+  assert.ok(missedFork.forkMargin<missedFork.boreMargin&&missedFork.boreMargin<0);
+  assert.equal(insertionOutcome(missedFork),'fork');
   const offPlane=encounter('drift',-.05,{...neutral(),x:passes.drift.x,z:passes.drift.z-.13});
   assert.ok(offPlane.clearance.fork>PIN.guard&&offPlane.forkMargin<0);
-  assert.equal(closeJaws(offPlane,-.05),'fork');
+  assert.equal(insertionOutcome(offPlane),'fork');
 });
 
 test('an accepted stroke clears the moving eye throughout insertion and finishes in the receiver', () => {
   for(const name of Object.keys(passes)){
     const head={...neutral(),x:passes[name].x+.025,z:passes[name].z-.04};
     const at=-.07;
-    assert.equal(closeJaws(encounter(name,at,head),at),'secured');
+    assert.equal(insertionOutcome(encounter(name,at,head)),'secured');
     const initial=latchPose(name,at,head,0),end=latchPose(name,at,head,PIN.strokeSeconds);
     assert.ok(pinTip(initial.stroke)<initial.cargo.z-head.z-EYE.tube);
     assert.ok(pinTip(end.stroke)>PIN.forkHalfGap);

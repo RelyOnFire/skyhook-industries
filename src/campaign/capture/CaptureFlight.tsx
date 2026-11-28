@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState, type CSSProperties,type PointerEvent} from 'react';
-import {START, END, PREVIEW_TIME, LIMIT, passes, neutral, bound, moveCarriage, encounter, closeJaws, latchPose,lockDuration,separationAcceleration, type Outcome,type Pass} from './pass.js';
+import {START, END, PREVIEW_TIME, LIMIT, passes, neutral, bound, moveCarriage, encounter, insertionOutcome, latchPose,lockDuration,separationAcceleration, type Outcome,type Pass} from './pass.js';
 import {PIN,innerRadius} from '../../visuals/capture-fitting.js';
 import FittingMonitor from './FittingMonitor.js';
 import type {Exposure,CameraName} from './flight-camera.js';
@@ -44,7 +44,7 @@ export default function CaptureFlight(){
     cargo:lift?.data.cargo??contact?.cargo??f.cargo,stroke:lift?.stroke??contact?.stroke??0,camera,yaw:view.yaw,pitch:view.pitch};
   const shot=useRef(state);shot.current=state;
   const close=()=>{const current=a.current;if(current.phase!=='running'&&current.phase!=='paused')return;
-    const outcome=closeJaws(encounter(pass,current.time,current.carriage),current.time);
+    const outcome=insertionOutcome(encounter(pass,current.time,current.carriage));
     sync(outcome==='secured'?{...current,phase:'inserting',strokeTime:0}:{...current,phase:'finished',outcome});};
   const inspect=()=>{
     const passTime=-PIN.strokeSeconds/2,p=passes[pass];
@@ -118,7 +118,7 @@ export default function CaptureFlight(){
   const toggle=()=>{if(a.current.phase==='running'||a.current.phase==='paused')sync({...a.current,phase:a.current.phase==='running'?'paused':'running'});};
   const inPass=phase==='running'||phase==='paused';
   const latchMode=result==='secured'?'Pin seated':phase==='inserting'?(state.stroke<1?'Inserting pin':'Taking up clearance'):result?'Pin held open':'Pin retracted';
-  const guidance=closeJaws(f,attempt.time);
+  const guidance=insertionOutcome(f);
   return <main className="capture-flight" id="lab-content">
     <header className="flight-title"><div><a href="/lab/campaign/">← Expeditions</a><h1>Capture station</h1></div><p>Catch a ballistic cargo pod with the moving tip of an Earth skyhook.</p></header>
     <div className="flight-console">

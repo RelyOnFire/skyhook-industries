@@ -35,22 +35,25 @@ export function encounter(pass:Pass,time:number,c:Carriage) {
   const axialRate=-separationAcceleration*time;
   const speed=Math.hypot(p.vx-c.vx,axialRate,p.vz-c.vz);
   const end=time+PIN.strokeSeconds;
-  const exit=fittingClearance(cargoAt(pass,end),c);
+  const endCargo=cargoAt(pass,end);
+  const exit=fittingClearance(endCargo,c);
   // With the commanded carriage held and eye attitude fixed, X and Z are
   // linear in time; squared bore offset is a convex quadratic plus t^4.
   // The smallest clearance anywhere in the stroke is therefore at an end.
+  const worstAtStart=clearance.bore<=exit.bore;
+  const worstBore=worstAtStart?{x:clearance.dx,y:cargo.y,time}:{x:exit.dx,y:endCargo.y,time:end};
   const boreMargin=Math.min(clearance.bore,exit.bore)-PIN.guard;
   const forkMargin=Math.min(clearance.fork,exit.fork)-PIN.guard;
   const peakSpeed=Math.max(speed,Math.hypot(p.vx,axialRate,p.vz),Math.hypot(p.vx,separationAcceleration*end,p.vz));
   const within=boreMargin>=0&&forkMargin>=0&&peakSpeed<=LIMIT.speed;
-  return {cargo,clearance,boreMargin,forkMargin,speed,peakSpeed,axialRate,within,
+  return {cargo,clearance,worstBore,boreMargin,forkMargin,speed,peakSpeed,axialRate,within,
     lateral:Math.hypot(clearance.dx,clearance.dz),range:Math.hypot(clearance.dx,cargo.y,clearance.dz)};
 }
 export type Telemetry = ReturnType<typeof encounter>;
 export type Outcome = 'secured' | 'offset' | 'fork' | 'speed' | 'early' | 'late';
-export function closeJaws(f:Telemetry,t:number):Outcome {
-  if(f.boreMargin<0 && Math.abs(f.cargo.y)>Math.abs(f.clearance.dx))return t<0?'early':'late';
+export function insertionOutcome(f:Telemetry):Outcome {
   if(f.forkMargin<0 && f.forkMargin<f.boreMargin)return 'fork';
+  if(f.boreMargin<0 && Math.abs(f.worstBore.y)>Math.abs(f.worstBore.x))return f.worstBore.time<0?'early':'late';
   if(f.boreMargin<0)return 'offset';
   if(f.forkMargin<0)return 'fork';
   return f.peakSpeed<=LIMIT.speed?'secured':'speed';

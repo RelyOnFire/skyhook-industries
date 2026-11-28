@@ -595,15 +595,17 @@ def main():
                     station.get_by_role('button', name='Fly again').click()
                     station.get_by_role('button', name='Insert pin').click()
                     expect(station.get_by_role('heading', name='Eye below the pin')).to_be_visible()
-                    station.get_by_role('button', name='Practice with the eye aligned').click()
-                    for _ in range(2):
-                        scope.press('ArrowRight')
-                    for _ in range(2):
-                        step.click()
-                    station.get_by_role('button', name='Insert pin').click()
-                    expect(station.get_by_role('heading', name='Pin would strike the rim')).to_be_visible()
-                    expect(station.get_by_text('Pin held open', exact=True)).to_be_visible()
-                    expect(station.get_by_text(re.compile(r'· 0% pin stroke'))).to_be_visible()
+                    for key, outcome in [('ArrowRight', 'Pin would strike the rim'), ('ArrowDown', 'Eye outside the fork')]:
+                        station.get_by_role('button', name='Practice with the eye aligned').click()
+                        expect(step).to_be_visible()
+                        for _ in range(2):
+                            scope.press(key)
+                        for _ in range(2):
+                            step.click()
+                        station.get_by_role('button', name='Insert pin').click()
+                        expect(station.get_by_role('heading', name=outcome)).to_be_visible()
+                        expect(station.get_by_text('Pin held open', exact=True)).to_be_visible()
+                        expect(station.get_by_text(re.compile(r'· 0% pin stroke'))).to_be_visible()
                     station.get_by_role('button', name='Practice with the eye aligned').click()
                     station.get_by_role('button', name='Insert pin').click()
                     expect(station.get_by_text('Pin seated', exact=True)).to_be_visible()
