@@ -93,15 +93,18 @@ export default function CaptureFlight(){
   useEffect(()=>{
     if(phase!=='inserting')return;
     let id=0,last=performance.now();
+    const resetClock=()=>{last=performance.now();};
+    document.addEventListener('visibilitychange',resetClock);
     const tick=(now:number)=>{
       const current=a.current;if(current.phase!=='inserting')return;
-      const dt=document.hidden?0:Math.min(.1,(now-last)/1000)*Math.min(rate,.2);last=now;
+      const dt=document.hidden?0:Math.max(0,(now-last)/1000)*.2;last=now;
       const strokeTime=Math.min(lockDuration,current.strokeTime+dt);
       sync(strokeTime>=lockDuration?{...current,strokeTime,phase:'finished',outcome:'secured'}:{...current,strokeTime});
       if(strokeTime<lockDuration)id=requestAnimationFrame(tick);
     };
-    id=requestAnimationFrame(tick);return()=>cancelAnimationFrame(id);
-  },[phase,rate]);
+    id=requestAnimationFrame(tick);
+    return()=>{cancelAnimationFrame(id);document.removeEventListener('visibilitychange',resetClock);};
+  },[phase]);
   useEffect(()=>{
     if(!ride?.playing)return;
     let id=0,previous=performance.now();
@@ -159,10 +162,10 @@ export default function CaptureFlight(){
         <div className="scope-key"><span>◇ Eye</span><span>+ Carriage</span></div>
         <p className="flight-instruction">Tap the diamond or use the arrow keys to put the carriage cross on the eye. Insert the pin when both clearances are positive and the stroke speed is within limit.</p>
         <div className={'capture-light'+(f.within?' within':'')} role="status">{phase==='inserting'?latchMode:result?reports[result][0]:phase==='ready'?'Ready for approach':f.within?'Capture window open':guidance==='fork'?'Correct Z · eye outside fork':guidance==='offset'?'Correct X · pin outside eye':guidance==='speed'?'Wait for speed match':guidance==='late'?'Eye moving away':'Eye approaching'}</div>
-        <button className="capture-primary" disabled={phase==='inserting'} onClick={inPass?close:start}>{phase==='inserting'?latchMode:inPass?'Insert pin':phase==='finished'?'Fly again':'Begin approach'} <span aria-hidden="true">{inPass?'⌖':'→'}</span></button>
+        <button className="capture-primary" disabled={phase==='inserting'||rendering==='loading'} onClick={inPass?close:start}>{phase==='inserting'?latchMode:inPass?'Insert pin':phase==='finished'?'Fly again':'Begin approach'} <span aria-hidden="true">{inPass?'⌖':'→'}</span></button>
         {inPass&&<div className="clock-tools"><button onClick={toggle}>{phase==='running'?'Pause':'Resume'}</button>{phase==='paused'&&<button onClick={()=>sync(advance(a.current,.05))}>Step 0.05 s</button>}<button onClick={()=>sync(fresh())}>Reset</button></div>}
         <label className="flight-rate">Playback speed<select value={rate} onChange={e=>setRate(Number(e.target.value))}><option value={.2}>⅕ speed</option><option value={1}>Real time</option></select></label>
-        {(phase==='ready'||phase==='finished')&&<button className="flight-secondary inspect-lock" onClick={inspect}>Practice with the eye aligned</button>}
+        {(phase==='ready'||phase==='finished')&&<button className="flight-secondary inspect-lock" disabled={rendering==='loading'} onClick={inspect}>Practice with the eye aligned</button>}
         {phase==='ready'&&<button className="flight-secondary" onClick={beginRide}>Preview the tether ride ↗</button>}
         {result==='secured'&&<button className="flight-secondary" onClick={beginRide}>Ride your captured pod ↗</button>}</>}
       </section>
