@@ -1,3 +1,4 @@
+import {PIN,bearingHeight,fittingClearance,type Point3} from '../../visuals/capture-fitting.js';
 import { LAUNCH } from '../earth-launch-motion.js';
 
 // Local expansion about the nominal lower-tip velocity match. All local units are SI.
@@ -7,7 +8,7 @@ const spinSpeed = Math.sqrt(LAUNCH.mu / hubRadius) - LAUNCH.aircraftSpeed;
 export const separationAcceleration = 1000 * (
   LAUNCH.mu / tipRadius ** 2 - LAUNCH.mu / hubRadius ** 2 + spinSpeed ** 2 / LAUNCH.arm
 );
-export const LIMIT = { lateral: .28, axial: .18, speed: 1.5, travel: 2, slew: 2.2 } as const;
+export const LIMIT = { speed: 1.5, travel: 2, slew: 2.2 } as const;
 export const VIEW_LOCATION = {latitude:23.3, longitude:-75.5} as const;
 export const START = -3, END = .65, PREVIEW_TIME = -.41;
 export const passes = {
@@ -25,20 +26,43 @@ export function moveCarriage(c: Carriage, goal: {x: number; z: number}, dt: numb
   const step = Math.min(1, LIMIT.slew * dt / (Math.hypot(dx, dz) || 1));
   return { x: c.x + dx * step, z: c.z + dz * step, vx: dx * step / dt, vz: dz * step / dt };
 }
-export function encounter(pass: Pass, time: number, c: Carriage) {
-  const p = passes[pass];
-  const cargo = {x: p.x + time * p.vx, y: -.5 * separationAcceleration * time ** 2, z: p.z + time * p.vz};
-  const lateral = Math.hypot(cargo.x - c.x, cargo.z - c.z);
-  const speed = Math.hypot(p.vx - c.vx, separationAcceleration * time, p.vz - c.vz);
-  const range = Math.hypot(lateral, cargo.y);
-  const within = lateral <= LIMIT.lateral && -cargo.y <= LIMIT.axial && speed <= LIMIT.speed;
-  return { cargo, lateral, range, speed, within };
+function cargoAt(pass:Pass,t:number):Point3 {
+  const p=passes[pass];
+  return {x:p.x+t*p.vx,y:-.5*separationAcceleration*t*t,z:p.z+t*p.vz};
+}
+export function encounter(pass:Pass,time:number,c:Carriage) {
+  const p=passes[pass],cargo=cargoAt(pass,time),clearance=fittingClearance(cargo,c);
+  const axialRate=-separationAcceleration*time;
+  const speed=Math.hypot(p.vx-c.vx,axialRate,p.vz-c.vz);
+  const end=time+PIN.strokeSeconds;
+  const exit=fittingClearance(cargoAt(pass,end),c);
+  // With the commanded carriage held and eye attitude fixed, X and Z are
+  // linear in time; squared bore offset is a convex quadratic plus t^4.
+  // The smallest clearance anywhere in the stroke is therefore at an end.
+  const boreMargin=Math.min(clearance.bore,exit.bore)-PIN.guard;
+  const forkMargin=Math.min(clearance.fork,exit.fork)-PIN.guard;
+  const peakSpeed=Math.max(speed,Math.hypot(p.vx,axialRate,p.vz),Math.hypot(p.vx,separationAcceleration*end,p.vz));
+  const within=boreMargin>=0&&forkMargin>=0&&peakSpeed<=LIMIT.speed;
+  return {cargo,clearance,boreMargin,forkMargin,speed,peakSpeed,axialRate,within,
+    lateral:Math.hypot(clearance.dx,clearance.dz),range:Math.hypot(clearance.dx,cargo.y,clearance.dz)};
 }
 export type Telemetry = ReturnType<typeof encounter>;
-export type Outcome = 'secured' | 'offset' | 'speed' | 'early' | 'late';
-export function closeJaws(f: Telemetry, t: number): Outcome {
-  if (-f.cargo.y > LIMIT.axial) return t < 0 ? 'early' : 'late';
-  if (f.lateral > LIMIT.lateral) return 'offset';
-  if (f.speed > LIMIT.speed) return 'speed';
-  return 'secured';
+export type Outcome = 'secured' | 'offset' | 'fork' | 'speed' | 'early' | 'late';
+export function closeJaws(f:Telemetry,t:number):Outcome {
+  if(f.boreMargin<0 && Math.abs(f.cargo.y)>Math.abs(f.clearance.dx))return t<0?'early':'late';
+  if(f.forkMargin<0 && f.forkMargin<f.boreMargin)return 'fork';
+  if(f.boreMargin<0)return 'offset';
+  if(f.forkMargin<0)return 'fork';
+  return f.peakSpeed<=LIMIT.speed?'secured':'speed';
+}
+
+export const lockDuration=PIN.strokeSeconds+PIN.seatSeconds;
+export function latchPose(pass:Pass,commandTime:number,c:Carriage,elapsed:number) {
+  const t=Math.max(0,Math.min(elapsed,lockDuration)),stroke=Math.min(1,t/PIN.strokeSeconds);
+  const cargo=cargoAt(pass,commandTime+Math.min(t,PIN.strokeSeconds));
+  // After insertion, show bounded kinematic take-up to the bearing surface.
+  // No lateral snap. Impact forces and the settling transient are unmodelled.
+  const u=Math.min(1,Math.max(0,(t-PIN.strokeSeconds)/PIN.seatSeconds));
+  cargo.y+=(bearingHeight(cargo.x-c.x)-cargo.y)*u*u*(3-2*u);
+  return {cargo,stroke,latched:t>=lockDuration};
 }

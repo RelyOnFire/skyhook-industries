@@ -5,11 +5,12 @@ import { launchTetherAt } from '../earth-launch-motion.js';
 import { makeGrapple,makeServiceBay } from './Grapple.js';
 import { makeSoftwareCamera } from './software-camera.js';
 import { makeOrbitalBackground } from './orbital-background.js';
-import type { Carriage, Telemetry } from './pass.js';
+import type {Point3} from '../../visuals/capture-fitting.js';
+import type { Carriage } from './pass.js';
 
 export const cameraNames = ['Tracking', 'Payload', 'Grapple'] as const;
 export type CameraName = typeof cameraNames[number];
-export type Exposure = { time:number; carriage:Carriage; data:Telemetry; camera:CameraName; secured:boolean; yaw:number; pitch:number };
+export type Exposure = { time:number; carriage:Carriage; cargo:Point3; camera:CameraName; stroke:number; yaw:number; pitch:number };
 
 function flightPlate() {
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=192;
@@ -60,9 +61,9 @@ export function openFlightCamera(host:HTMLElement, last:()=>Exposure, failed:()=
   }
   function draw(force=false) {
     if(disposed||!host.clientWidth)return;
-    const f=last(), p=f.data.cargo, c=f.carriage;
+    const f=last(), p=f.cargo, c=f.carriage;
     cargo.group.position.set(p.x,p.y,p.z);
-    grapple.pose(c.x,c.z,f.secured);
+    grapple.pose(c.x,c.z,f.stroke);
     const target=new T.Vector3(), eye=new T.Vector3();
     const narrow=Math.max(1,1.16/camera.aspect);
     camera.up.set(0,1,0);
@@ -75,8 +76,10 @@ export function openFlightCamera(host:HTMLElement, last:()=>Exposure, failed:()=
       eye.set(p.x+1.22,p.y-.03,p.z+1.85);
       target.set(p.x-.30,p.y+.19,p.z-.38);
     } else {
-      eye.set(c.x+.85,1.35,c.z+.94);
-      target.set(p.x*.78+c.x*.22,Math.min(-.16,p.y-.52),p.z*.78+c.z*.22);
+      // A fixed inspection camera beside the receiver shows the fork gap
+      // and looks through the eye at the advancing pin.
+      eye.set(c.x+.76,.38,c.z+1.12);
+      target.set(c.x,.02,c.z);
     }
     camera.position.copy(eye);camera.lookAt(target);
     if(f.camera==='Tracking')camera.rotateZ(-.17);
@@ -87,7 +90,7 @@ export function openFlightCamera(host:HTMLElement, last:()=>Exposure, failed:()=
     sun.position.set(-8*cs+6.4*sn,8*sn+6.4*cs,4);
     if(software){
       const movedCamera=previous?.camera!==f.camera||previous.yaw!==f.yaw||previous.pitch!==f.pitch;
-      software.draw(camera,tether.tip,tether.angle,force||movedCamera||previous?.time===f.time||previous?.secured!==f.secured);
+      software.draw(camera,tether.tip,tether.angle,force||movedCamera||previous?.time===f.time||previous?.stroke!==f.stroke);
     }else if(renderer&&background){
       renderer.clear();background.draw(camera,tether.tip,tether.angle);renderer.clearDepth();renderer.render(scene,camera);
     }

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {EYE} from './capture-fitting.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Bake rigid details by finish. A hundred fittings should not cost a hundred
@@ -34,8 +35,8 @@ export function createFlightCargo(kind:'earth'|'moon') {
   const drum=(a:number,b:number,r:number,r2:number,m:T.Material,n=48)=>w.rod(vec(0,-a,0),vec(0,-b,0),r,m,r2,n);
   const at=(d:number,r:number,t:number)=>vec(Math.cos(t)*r,-d,Math.sin(t)*r);
   // A real opening, stepped stem and shoulder give the grip an identifiable mating surface.
-  w.part(new T.TorusGeometry(.26,.070,12,48),silver);
-  drum(.17,.47,.11,.16,silver);drum(.40,.56,.24,.24,carbon);
+  w.part(new T.TorusGeometry(EYE.radius,EYE.tube,20,80),silver);
+  drum(EYE.radius,.47,.095,.16,silver);drum(.40,.56,.24,.24,carbon);
   drum(.48,.66,.32,.32,silver);drum(.55,.58,.334,.334,bronze);
   drum(.63,1.05,.30,.705,carbon);drum(.95,1.05,.73,.73,silver);
   const bays=12;

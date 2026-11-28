@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {PIN,pinTip} from '../../visuals/capture-fitting.js';
 import {workshop, vec} from '../../visuals/FlightHardware.js';
 
 // The stationary cross rails carry the X bridge. Its travelling carriage carries
@@ -37,31 +38,43 @@ export function makeGrapple() {
     head.rod(vec(.47*cx,1.30,.47*cz),vec(.32*cx,1.98,.32*cz),.035,steel);
     head.rod(vec(.46*cx,1.37,.46*cz),vec(.46*cx,1.405,.46*cz),.035,gold,.035,6);
   }
-  frame.bake();bridge.bake();head.bake();
-  const base=new T.Group(); base.add(frame.group,bridge.group);bridge.group.add(head.group);
-  const finger=workshop();
-  // A pair of side plates, three pivot pins and an exposed actuator per jaw.
-  for (const z of [-.067,.067]) {
-    finger.rod(vec(0,0,z),vec(.17,-.49,z),.085,titanium,.077,8);
-    finger.rod(vec(.17,-.49,z),vec(.04,-.90,z),.071,steel,.055,8);
-    finger.rod(vec(.04,-.90,z),vec(-.24,-1.03,z),.066,steel,.04,8);
+  // A clevis leaves an unobstructed slot for the eye. Both bearing sleeves
+  // have actual through-holes. The gold pin moves from the rear sleeve into
+  // the front receiver, along the normal to the eye.
+  const sleeveOuter=.111, sleeveBore=PIN.radius+.007;
+  function sleeve(zStart:number,length:number,outer:number,inner:number,finish:T.Material){
+    const outline=new T.Shape();outline.absarc(0,0,outer,0,2*Math.PI,false);
+    const hole=new T.Path();hole.absarc(0,0,inner,0,2*Math.PI,true);outline.holes.push(hole);
+    const g=new T.ExtrudeGeometry(outline,{depth:length,bevelEnabled:false,curveSegments:32});
+    head.part(g,finish,vec(0,0,zStart));
   }
-  for (const [x,y] of [[0,0],[.17,-.49],[.04,-.90]]) finger.rod(vec(x,y,-.109),vec(x,y,.109),.079,gold,.079,16);
-  finger.rod(vec(-.19,.01,0),vec(.04,-.34,0),.052,graphite,.052);
-  finger.rod(vec(.04,-.34,0),vec(.15,-.49,0),.027,steel);
-  finger.bake();
-  const jaws = Array.from({length:3},(_,i)=>{
-    const ring = new T.Group(), pivot=new T.Group();
-    ring.rotation.y=i*Math.PI*2/3+.20;
-    pivot.position.set(.43,1.02,0);
-    pivot.add(finger.group.clone());ring.add(pivot);head.group.add(ring);
-    return pivot;
-  });
-  base.traverse(o=>{ if(o instanceof T.Mesh){o.castShadow=true;o.receiveShadow=true;} });
-  return {base, pose(x:number,z:number,closed:boolean){
-    bridge.group.position.x=x;head.group.position.z=z;
-    jaws.forEach(jaw=>{jaw.rotation.z=closed?-.10:.36;});
-  },dispose(){frame.dispose();bridge.dispose();head.dispose();finger.dispose();}};
+  for(const side of [-1,1]){
+    const z=side*(PIN.forkHalfGap+PIN.sleeveLength/2);
+    // Twin machined ribs flank the bore; their lower ends meet the sleeve wall.
+    for(const x of [-1,1]){
+      head.rod(vec(x*.22,1.00,z),vec(x*.15,.46,z),.070,titanium,.054);
+      head.rod(vec(x*.15,.46,z),vec(x*.080,.068,z),.054,titanium,.037);
+      head.rod(vec(x*.22,.99,z-side*.08),vec(x*.22,.99,z+side*.08),.060,steel);
+    }
+    const lo=side<0?-PIN.forkHalfGap-PIN.sleeveLength:PIN.forkHalfGap;
+    sleeve(lo,PIN.sleeveLength,sleeveOuter,sleeveBore,titanium);
+    sleeve(side<0?lo-.014:lo+PIN.sleeveLength,.014,.124,sleeveBore,steel);
+  }
+  // The drive housing stays behind the rear cheek. The receiver is open on
+  // the camera side so the inserted tip can be inspected through its bore.
+  sleeve(-.78,.43,.096,sleeveBore,graphite);
+  for(const z of [-.75,-.60,-.43])sleeve(z,.020,.106,sleeveBore,steel);
+  const bolt=workshop();
+  bolt.rod(vec(0,0,-.66),vec(0,0,-.018),PIN.radius,gold,PIN.radius,36);
+  bolt.rod(vec(0,0,-.018),vec(0,0,0),PIN.radius,gold,PIN.radius*.80,36);
+  const mark=bolt.finish('Pin tip witness','#f5bf48',.28,.33);
+  bolt.rod(vec(0,0,-.001),vec(0,0,0),PIN.radius*.79,mark,PIN.radius*.79,32);
+  frame.bake();bridge.bake();head.bake();bolt.bake();
+  const base=new T.Group();base.add(frame.group,bridge.group);bridge.group.add(head.group);head.group.add(bolt.group);
+  base.traverse(o=>{if(o instanceof T.Mesh){o.castShadow=true;o.receiveShadow=true;}});
+  return {base,pose(x:number,z:number,stroke:number){
+    bridge.group.position.x=x;head.group.position.z=z;bolt.group.position.z=pinTip(stroke);
+  },dispose(){frame.dispose();bridge.dispose();head.dispose();bolt.dispose();}};
 }
 
 // An optical tracking target and a recessed service bay give the operator
